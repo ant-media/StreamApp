@@ -1,0 +1,93 @@
+dist: xenial
+language: java
+jdk:
+  - openjdk8
+sudo: required
+before_install:
+- sudo apt-get update
+- sudo apt-get install openjfx
+- openssl aes-256-cbc -k "$GPG_PASSPHRASE" -in codesigning.asc.enc -out codesigning.asc -d
+- gpg --fast-import codesigning.asc
+# get parent project
+- (if [ $(git ls-remote https://github.com/ant-media/ant-media-server-parent.git $TRAVIS_BRANCH  | wc -l) == "1" ];  
+    then 
+      echo " $TRAVIS_BRANCH branch found";  
+      git clone --depth=1 -b $TRAVIS_BRANCH https://github.com/ant-media/ant-media-server-parent.git;  
+    else
+      echo "branch not found"; 
+      git clone --depth=1 https://github.com/ant-media/ant-media-server-parent.git;  
+  fi)
+- cd ant-media-server-parent
+- mvn clean install -DskipTests -Dmaven.javadoc.skip=true -Dgpg.skip=true --quiet
+- cd ..
+# get common project
+- (if [ $(git ls-remote https://github.com/ant-media/Ant-Media-Server-Common.git $TRAVIS_BRANCH  | wc -l) == "1" ];  
+    then 
+      echo " $TRAVIS_BRANCH branch found";  
+      git clone --depth=1 -b $TRAVIS_BRANCH https://github.com/ant-media/Ant-Media-Server-Common.git;  
+    else
+      echo "branch not found"; 
+      git clone --depth=1 https://github.com/ant-media/Ant-Media-Server-Common.git;  
+  fi)
+- cd Ant-Media-Server-Common
+- mvn clean install -DskipTests -Dmaven.javadoc.skip=true -Dgpg.skip=true --quiet
+- cd ..
+
+#get service project
+- (if [ $(git ls-remote https://github.com/ant-media/Ant-Media-Server-Service.git $TRAVIS_BRANCH  | wc -l) == "1" ];  
+   then 
+     echo " $TRAVIS_BRANCH branch found";  
+     git clone --depth=1 -b $TRAVIS_BRANCH https://github.com/ant-media/Ant-Media-Server-Service.git; 
+     cd Ant-Media-Server-Service; 
+     mvn install -DskipTests=true -Dmaven.javadoc.skip=true -Dgpg.skip=true -B -V --quiet;
+     cd ..;
+   else
+     echo "branch not found. Using version in sonatype"; 
+  fi) 
+  
+#get server project
+- (if [ $(git ls-remote https://github.com/ant-media/Ant-Media-Server.git $TRAVIS_BRANCH  | wc -l) == "1" ];  
+    then 
+      echo "$TRAVIS_BRANCH branch found in Ant-Media-Server";  
+      git clone --depth=1 -b $TRAVIS_BRANCH https://github.com/ant-media/Ant-Media-Server.git;  
+    else 
+      echo "$TRAVIS_BRANCH branch not found checkout master"; 
+      git clone --depth=1 https://github.com/ant-media/Ant-Media-Server.git;  
+  fi)
+- cd Ant-Media-Server 
+- mvn clean install -DskipTests -Dgpg.skip=true --quiet
+- cd ..  #up to Ant-Media-Server 
+ # get enterprise project 
+- (if [ $(git ls-remote https://"$GITLAB_USERNAME":"$GITLAB_TOKEN"@"$GITLAB_REPO" $TRAVIS_BRANCH  | wc -l) == "1" ];  
+    then 
+      echo " $TRAVIS_BRANCH branch found";  
+      git clone --depth=1 -b $TRAVIS_BRANCH https://"$GITLAB_USERNAME":"$GITLAB_TOKEN"@"$GITLAB_REPO";  
+    else
+      echo "branch not found"; 
+      git clone --depth=1 https://"$GITLAB_USERNAME":"$GITLAB_TOKEN"@"$GITLAB_REPO";  
+  fi)
+- cd Ant-Media-Enterprise
+- mvn clean install -DskipTests -Dmaven.javadoc.skip=true -Dgpg.skip=true --quiet
+- cd ..
+
+install:
+- mvn install -DskipTests=true -Dmaven.javadoc.skip=true -Dgpg.skip=true -B -V --quiet
+script: 
+cache:
+  directories:
+  - "$HOME/.m2/repository"
+deploy:
+- provider: script
+  script: mvn deploy -DskipTests --quiet --settings mvn-settings.xml
+  skip_cleanup: true
+  on:
+    tags: false
+    all_branches: true
+    condition: $(mvn -q -Dexec.executable="echo" -Dexec.args='${project.version}'
+      --non-recursive exec:exec)  = *"SNAPSHOT"*
+- provider: script
+  script: mvn deploy -DskipTests --quiet --settings mvn-settings.xml
+  skip_cleanup: true
+  on:
+    tags: true
+    condition: $TRAVIS_TAG =~ ^ams-v
