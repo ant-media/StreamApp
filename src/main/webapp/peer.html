@@ -1,0 +1,160 @@
+
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="UTF-8">
+<link rel="stylesheet"
+	href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
+	integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u"
+	crossorigin="anonymous">
+<script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
+<script src="js/webrtc_adaptor.js" ></script>
+
+</head>
+<body>
+
+	<nav class="navbar navbar-inverse navbar-fixed-top">
+		<div class="container">
+			<div class="navbar-header">
+				<button type="button" class="navbar-toggle collapsed"
+					data-toggle="collapse" data-target="#navbar" aria-expanded="false"
+					aria-controls="navbar">
+					<span class="sr-only">Toggle navigation</span> <span
+						class="icon-bar"></span> <span class="icon-bar"></span> <span
+						class="icon-bar"></span>
+				</button>
+				<a class="navbar-brand" href="#">WebRTC Peer to Peer</a>
+			</div>
+			<div id="navbar" class="collapse navbar-collapse">
+				<ul class="nav navbar-nav pull-right">
+
+					<li><a href="http://antmedia.io">Contact</a></li>
+				</ul>
+			</div>
+			<!--/.nav-collapse -->
+		</div>
+	</nav>
+
+	<div class="container" style="padding: 40px 15px; text-align: center">
+
+		<video id="localVideo" autoplay muted width="480"></video>
+		<video id="remoteVideo" autoplay controls width="480"></video>
+		<br /> <br />
+		<div class="input-group col-sm-offset-2 col-sm-8">
+			<input type="text" class="form-control" value="stream1" id="streamName"
+				placeholder="Type stream name"> <span
+				class="input-group-btn">
+				<button onclick="join()" class="btn btn-default" disabled id="join_button">Join</button>
+				<button onclick="leave()" class="btn btn-default" disabled id="leave_button">Leave</button>
+			</span>
+		</div>
+		<div style="padding:10px">
+			<button onclick="turnOffLocalCamera()" class="btn btn-default"  >Turn off Camera</button>
+			<button onclick="turnOnLocalCamera()" class="btn btn-default"  >Turn on Camera</button>
+			
+			<button onclick="muteLocalMic()" class="btn btn-default"  >Mute Local Mic</button>
+			<button onclick="unmuteLocalMic()" class="btn btn-default"  >Unmute Local Mic</button>	
+		</div>
+		
+	</div>
+    
+    <script>
+    
+    </script>
+</body>
+<script>
+	
+	var join_button = document.getElementById("join_button");
+	var leave_button = document.getElementById("leave_button");
+
+
+	var streamNameBox = document.getElementById("streamName");
+
+	function join() {
+		webRTCAdaptor.join(streamNameBox.value);
+	}
+
+	function leave() {
+		webRTCAdaptor.leave(streamNameBox.value);
+	}
+	
+	function turnOffLocalCamera() {
+		webRTCAdaptor.turnOffLocalCamera();
+	}
+	
+	function turnOnLocalCamera() {
+		webRTCAdaptor.turnOnLocalCamera();
+	}
+	
+	function muteLocalMic(){
+		webRTCAdaptor.muteLocalMic();
+	}
+	
+	function unmuteLocalMic() {
+		webRTCAdaptor.unmuteLocalMic();
+	}
+	
+	
+	  
+	var pc_config = null;
+	/*{
+		'iceServers' : [ {
+			'urls' : 'stun:stun.l.google.com:19302'
+		} ]
+	};
+	*/
+
+	var sdpConstraints = 
+	{
+		OfferToReceiveAudio : true,
+		OfferToReceiveVideo : true
+			
+	};
+	var mediaConstraints = {
+	          video: true,
+	          audio: true
+	        };
+	
+	var websocketURL = "ws://" + location.hostname + ":5080/StreamApp/websocket";
+	
+	if (location.protocol.startsWith("https")) {
+		websocketURL = "wss://" + location.hostname + ":5443/StreamApp/websocket";
+	}
+	
+	var webRTCAdaptor = new WebRTCAdaptor({
+		  websocket_url: websocketURL,
+		  mediaConstraints: mediaConstraints,
+		  peerconnection_config: pc_config,
+		  sdp_constraints: sdpConstraints,
+		  localVideoId: "localVideo",
+		  remoteVideoId: "remoteVideo",
+		  callback: function(info) {
+			  if (info == "initialized") {
+				  console.log("initialized");
+				  join_button.disabled = false;
+				  leave_button.disabled = true;
+			  }
+			  else if (info == "joined") {
+				  //joined the stream
+				  console.log("joined");
+				  join_button.disabled = true;
+				  leave_button.disabled = false;
+			  }
+			  else if (info == "leaved") {
+				  //leaved the stream
+				  console.log("leaved");
+				  join_button.disabled = false;
+				  leave_button.disabled = true;
+			  }
+		  },
+		  callbackError: function(error) {
+			  //some of the possible errors, NotFoundError, SecurityError,PermissionDeniedError
+			  
+			  console.log("error callback: " + error);
+			  alert(error);
+		  }
+	  });
+	
+
+</script>
+</html>
