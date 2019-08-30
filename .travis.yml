@@ -78,7 +78,7 @@ cache:
   - "$HOME/.m2/repository"
 deploy:
 - provider: script
-  script: mvn deploy -DskipTests --settings mvn-settings.xml
+  script: mvn deploy -DskipTests --quiet --settings mvn-settings.xml
   skip_cleanup: true
   on:
     tags: false
@@ -86,7 +86,7 @@ deploy:
     condition: $(mvn -q -Dexec.executable="echo" -Dexec.args='${project.version}'
       --non-recursive exec:exec)  = *"SNAPSHOT"*
 - provider: script
-  script: mvn deploy -DskipTests --settings mvn-settings.xml
+  script: mvn deploy -DskipTests --quiet --settings mvn-settings.xml
   skip_cleanup: true
   on:
     tags: true
