@@ -63,5 +63,5 @@
 	</bean>
 	
     <bean id="webrtc.adaptor"  
-    	class="#{ T(io.antmedia.rest.BroadcastRestService).isEnterprise() ? 'io.antmedia.enterprise.webrtc.WebRTCAdaptor' : 'null' }"/>
+    	class="#{ T(io.antmedia.rest.BroadcastRestService).isEnterprise() ? 'io.antmedia.enterprise.webrtc.WebRTCAdaptor' : 'io.antmedia.webrtc.MockWebRTCAdaptor' }"/>
 </beans>
