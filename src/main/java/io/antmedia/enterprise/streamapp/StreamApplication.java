@@ -40,6 +40,13 @@ public class StreamApplication extends MultiThreadedApplicationAdapter implement
 		}
 		appAdaptor.setAppSettings(getAppSettings());
 		appAdaptor.setStreamPublishSecurityList(getStreamPublishSecurityList());
+		
+		if (getStreamPublishSecurityList() != null) {
+			for (IStreamPublishSecurity streamPublishSecurity : getStreamPublishSecurityList()) {
+				registerStreamPublishSecurity(streamPublishSecurity);
+			}
+		}
+		
 		appAdaptor.setDataStoreFactory(getDataStoreFactory());
 		appAdaptor.appStart(app);
 		
