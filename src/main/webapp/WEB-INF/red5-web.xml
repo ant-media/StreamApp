@@ -26,10 +26,6 @@
 		<property name="handler" ref="web.handler" />
 	</bean>
 
-	<bean id="preference.store" class="io.antmedia.datastore.preference.PreferenceStore">
-		<constructor-arg value="/WEB-INF/red5-web.properties" />
-	</bean>
-
 	<bean id="dataStoreFactory" class="io.antmedia.datastore.db.DataStoreFactory"/>
 
 	<context:component-scan base-package="io.antmedia.rest" />
