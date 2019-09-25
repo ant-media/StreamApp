@@ -67,7 +67,7 @@ public class StreamApplication extends MultiThreadedApplicationAdapter implement
 	@Override
 	public void streamPlayItemStop(ISubscriberStream stream, IPlayItem item) {
 		super.streamPlayItemStop(stream, item);
-		appAdaptor.streamPlayItemStop(stream, item);
+		appAdaptor.streamPlayItemStop(item);
 	}
 
 	@Override
