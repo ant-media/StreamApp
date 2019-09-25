@@ -2,59 +2,102 @@
 pageEncoding="UTF-8"%>
 <html>
 <head>
-	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-	<title>Ant Media Server</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Ant Media Server</title>
 
+<!-- videojs includes  -->
+<link href="//vjs.zencdn.net/6.6.0/video-js.css" rel="stylesheet">
+<!-- If you'd like to support IE8 -->
+<script src="//vjs.zencdn.net/ie8/1.1.2/videojs-ie8.min.js"></script>
+<script src="//vjs.zencdn.net/6.6.0/video.js"></script>
+<script
+		src="//cdnjs.cloudflare.com/ajax/libs/videojs-contrib-hls/5.12.2/videojs-contrib-hls.min.js"></script>
+<!--  end of video js includes  -->
 
-	<link rel="stylesheet"
-		  href="https://releases.flowplayer.org/7.2.7/skin/skin.css">
-	<!-- hls.js -->
-	<script
-			src="https://cdnjs.cloudflare.com/ajax/libs/hls.js/0.10.1/hls.light.min.js"></script>
-	<!-- flowplayer -->
-	<script src="https://releases.flowplayer.org/7.2.7/flowplayer.min.js"></script>
+<script src="js/fetch.js"></script>
+<script src="js/promise.min.js"></script>
+<script src="js/fetch.stream.js"></script>
+<script src="js/webrtc_adaptor.js"></script>
+<script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
 
-
-	<script src="js/fetch.js"></script>
-	<script src="js/promise.min.js"></script>
-	<script src="js/fetch.stream.js"></script>
-	<script src="js/webrtc_adaptor.js"></script>
-	<script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
-
-
-	<link href="css/player.css" rel="stylesheet">
+<link href="css/player.css" rel="stylesheet">
 
 </head>
 <body>
 
 
-<div id="video_info">
-	Stream will start playing automatically<br />when it is live
-</div>
+	<div id="video_info">
+		Stream will start playing automatically<br />when it is live
+	</div>
 
-<!-- HLS Player -->
-<div style="width: 100%; max-width: 960px;" id="video_container">
-	<div id="video-player" class="fp-slim"></div>
-</div>
+	<!-- HLS Player -->
+	<div style="width: 100%; max-width: 960px;" id="video_container">
+		<video id="video-player"
+			class="video-js vjs-default-skin vjs-16-9 vjs-big-play-centered"
+			controls preload="auto" data-setup='{"fluid": true}'>
+			<p class="vjs-no-js">
+				To view this video please enable JavaScript, and consider upgrading
+				to a web browser that <a
+					href="http://videojs.com/html5-video-support/" target="_blank">supports
+					HTML5 video</a>
+			</p>
+		</video>
+	</div>
 
 
-<!-- WebRTC Player -->
-<video id="remoteVideo" autoplay controls playsinline
-	   style="display: none; width: 100%; max-width: 640px;"></video>
-<img id="play_button" src="images/play.png" onclick="playWebRTCVideo()"
-	 style="position: absolute; top: 30px; left: 30px; display: none;" />
+	<!-- WebRTC Player -->
+	<video id="remoteVideo" autoplay controls playsinline
+		style="display: none; width: 100%; max-width: 640px;"></video>
+	<img id="play_button" src="images/play.png" onclick="playWebRTCVideo()"
+		style="position: absolute; top: 30px; left: 30px; display: none;" />
 
 
-<script>
+	<script>
+    /**
+    * This page accepts 4 arguments. 
+    * 1. "id": the stream id to play.It is mandatory
+    * 2. "token": the token to play stream. It's mandatory if token security is enabled on server side.
+    * 3. "autoplay": To start playing automatically if streams is available. Optional. Default value is true
+    * 4. "playOrder": the order which technologies is used in playing. Optional. Default value is "webrtc,hls".
+    *     possible values are "hls,webrtc","webrtc","hls"
+    */
+
 
 	//The play order, player tries to play according to this order, if it can not play then tries following format
-	var playOrder = ["WebRTC", "HLS"];
+   
+<% 
+    String playOrder = request.getParameter("playOrder") ;
+	if (playOrder == null || playOrder.equals("webrtc,hls")) {
+	   %>
+	   var  playOrder = ["webrtc", "hls"];
+	   <%
+	}
+	else if(playOrder.equals("hls,webrtc")) {
+	   %>
+	   var  playOrder = ["hls", "webrtc"];
+	   <%
+	}
+	else if(playOrder.equals("hls")) {
+	   %>
+	   var  playOrder = ["hls"];
+	   <%
+	}
+	else if(playOrder.equals("webrtc")) {
+	   %>
+	   var  playOrder = ["webrtc"];
+	   <%
+	}	
+	
+	String streamId = request.getParameter("id");
+	if (streamId == null) {
+		//check name variable for compatibility with older versions
+		streamId = request.getParameter("name");
+	}
+		
+%>
 
-
-	var name = "<%= request.getParameter("name") %>";
+	var name = "<%= streamId %>";
 	var token = "<%= request.getParameter("token") %>";
-	var player = "<%= request.getParameter("player") %>";
-
 
 	var pAutoplay = "<%= request.getParameter("autoplay") %>";
 	var autoPlay = true;
@@ -62,44 +105,52 @@ pageEncoding="UTF-8"%>
 		autoPlay = false;
 	}
 
-	
+	var webRTCAdaptor = null;
 	var streamsFolder = "streams";
-	 if (name != "null") 
-	 {
-		
-		if (name.startsWith(streamsFolder)) 
+	
+    function webrtcNoStreamCallback() {
+      	/**
+		 * If HLS is in the play order then try to play HLS, if not wait for WebRTC stream
+		 * In some cases user may want to remove HLS from the order and force to play WebRTC only
+		 * in these cases player only waits for WebRTC streams
+		 */
+	   setTimeout(function(){
+		 if (playOrder.includes("hls"))
+		 {
+		   tryToHLSPlay(name, token, hlsNoStreamCallback);	
+		 } 
+		 else
+		 {
+			webRTCAdaptor.getStreamInfo(name);		
+		 }
+		}, 3000);
+	}
+    
+    function hlsNoStreamCallback() 
+    {
+	    	document.getElementById("video_info").innerHTML="Stream will start playing automatically<br/>when it is live";
+		setTimeout(function() 
 		{
-			/*
-			* If name starts with streams, it's hls or mp4 file to be played
-			*/
-			var lastIndexOfDot = name.lastIndexOf(".")
-			streamPath = name.substring(streamsFolder.length+1, lastIndexOfDot);
-			var extension = name.substring(lastIndexOfDot+1);
-			initializeHLSPlayer(streamPath, extension, token);
-		}
-		else if(player=="hls") {
-			tryToHLSPlay(name, token);
-		}
-		else {
-			/*
-			 * Check that which one is in the first order
-		    */
-			if (playOrder[0] == "WebRTC" ){
-				initializeWebRTCPlayer(name, token);
-			} else if (playOrder[0] == "HLS" ){
-				tryToHLSPlay(name, token);
+			if (playOrder.includes("webrtc")) 
+			{
+				// It means there is no HLS stream, so try to play WebRTC stream
+				if (webRTCAdaptor == null) {
+					initializeWebRTCPlayer(name, token, webrtcNoStreamCallback);
+				}
+				else {
+					webRTCAdaptor.getStreamInfo(name);
+				}
 			}
-		}
-	 }
-	 else {
-		 alert("No stream specified. Please add ?name={STREAM_ID}  to the url");
-	 }
-
-
+			else 
+			{
+				tryToHLSPlay(name, token, hlsNoStreamCallback);	
+			}
+		}, 3000);
+	    	
+    }
+    
 	function hideHLSElements(){
-
 		document.getElementById("video_container").style.display="none";
-
 	}
 
 	function hideWebRTCElements(){
@@ -122,20 +173,27 @@ pageEncoding="UTF-8"%>
 
 	}
 
-
 	function initializeHLSPlayer(name, extension, token) {
 
 		hideWebRTCElements();
 
+		startHLSPlayer(name, extension, token)
+
+	}
+	
+	
+	function startHLSPlayer(name, extension, token) {
 		var type;
 		var liveStream = false;
 		if (extension == "mp4") {
 			type = "video/mp4";
 			liveStream = false;
-		} else if (extension == "m3u8") {
-			type = "application/x-mpegurl";
+		}
+		else if (extension == "m3u8") {
+			type = "application/x-mpegURL";
 			liveStream = true;
-		} else {
+		}
+		else {
 			console.log("Unknown extension: " + extension);
 			return;
 		}
@@ -145,33 +203,26 @@ pageEncoding="UTF-8"%>
 			preview = name.substring(0, name.indexOf("_adaptive"));
 		}
 
-		flowplayer("#video-player", {
-			poster : "previews/" + preview + ".png",
-			autoplay : autoPlay,
-			ratio : 9 / 16,
-			fullscreen : true,
-			native_fullscreen : true,
-			clip : {
-				live : liveStream,
-				sources : [ {
-					type : type,
-					src : "streams/" + name + "." + extension + "?token="
-							+ token
-				} ]
-			},
-			hlsjs : {
-				recoverMediaError : true,
-				recoverNetworkError : true,
-			}
+		var player = videojs('video-player', {
+					poster: "previews/"+preview+".png"
 		});
 
+		player.src({
+  			src: "streams/" + name + "." + extension + "?token=" + token,
+  			type: type,
+		});
+		
+		player.poster("previews/"+preview+".png");
+
+		if (autoPlay) {
+			player.play();
+		}
 		document.getElementById("video_container").style.display = "block";
 		document.getElementById("video_info").hidden = true;
-
 	}
 
 
-	function initializeWebRTCPlayer(name, token) {
+	function initializeWebRTCPlayer(name, token, noStreamCallback) {
 
 		hideHLSElements();
 
@@ -189,14 +240,16 @@ pageEncoding="UTF-8"%>
 			audio : false
 		};
 
-		var path =  location.hostname + ":" + location.port + "/StreamApp/websocket";
+		var appName = location.pathname.substring(0, location.pathname.lastIndexOf("/")+1);
+		var path =  location.hostname + ":" + location.port + appName + "websocket";
 		var websocketURL =  "ws://" + path;
 
 		if (location.protocol.startsWith("https")) {
 			websocketURL = "wss://" + path;
 		}
 
-		var webRTCAdaptor = new WebRTCAdaptor({
+		//webRTCAdaptor is a global variable
+		webRTCAdaptor = new WebRTCAdaptor({
 			websocket_url : websocketURL,
 			mediaConstraints : mediaConstraints,
 			peerconnection_config : pc_config,
@@ -241,28 +294,49 @@ pageEncoding="UTF-8"%>
 
 				if (error == "no_stream_exist" ) {
 
-					/**
-					 * If HLS is in the play order then try to play HLS, if not wait for WebRTC stream
-					 * In some cases user may want to remove HLS from the order and force to play WebRTC only
-					 * in these cases player only waits for WebRTC streams
-					 */
-
-					if( playOrder.includes("HLS")){
-
-						tryToHLSPlay(name, token);
-
-					} else{
-						setTimeout(function(){
-							webRTCAdaptor.getStreamInfo(name);
-						}, 3000);
+					if (typeof noStreamCallback != "undefined") {
+						noStreamCallback();
 					}
-
 				}
-
-				//alert(JSON.stringify(error));
 			}
 		});
 	}
+	
+	
+	
+	 if (name != "null") 
+	 {
+		
+		if (name.startsWith(streamsFolder)) 
+		{
+			/*
+			* If name starts with streams, it's hls or mp4 file to be played
+			*/
+			var lastIndexOfDot = name.lastIndexOf(".")
+			streamPath = name.substring(streamsFolder.length+1, lastIndexOfDot);
+			var extension = name.substring(lastIndexOfDot+1);
+			initializeHLSPlayer(streamPath, extension, token);
+		}
+		else {
+			/*
+			 * Check that which one is in the first order
+		    */
+			if (playOrder[0] == "webrtc" )
+			{
+				initializeWebRTCPlayer(name, token, webrtcNoStreamCallback);
+			} 
+			else if (playOrder[0] == "hls" )
+			{
+				tryToHLSPlay(name, token, hlsNoStreamCallback);
+			}
+			else {
+				alert("Unsupported play order requested. Supported formats are webrtc and hls. Use something like playOrder=webrtc,hls");
+			}
+		}
+	 }
+	 else {
+		 alert("No stream specified. Please add ?id={STREAM_ID}  to the url");
+	 }
 </script>
 
 </body>

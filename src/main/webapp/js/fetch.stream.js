@@ -14,7 +14,7 @@ if (!String.prototype.endsWith)
 }
 
 
-function tryToHLSPlay(name, token) {
+function tryToHLSPlay(name, token, noStreamCallback) {
 	fetch("streams/"+ name +"_adaptive.m3u8", {method:'HEAD'})
 	.then(function(response) {
 		if (response.status == 200) {
@@ -43,10 +43,9 @@ function tryToHLSPlay(name, token) {
 						}
 						else {
 							console.log("No stream found");
-							document.getElementById("video_info").innerHTML="Stream will start playing automatically<br/>when it is live";
-							result = 0;
-							// It means there is no HLS stream, so try to play WebRTC stream
-							initializeWebRTCPlayer(name, token);
+							if (typeof noStreamCallback != "undefined") {
+								noStreamCallback();
+							}
 
 						}
 					}).catch(function(err) {
