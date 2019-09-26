@@ -103,20 +103,32 @@ body {
 		<div class="jumbotron">
 
 			<div class="row">
-				<div class="col-sm-6">
+				<div class="col-sm-3">
 					<video id="localVideo" autoplay muted></video>
 				</div>
-				<div class="col-sm-6">
+				<div class="col-sm-3">
 					<video id="remoteVideo0" autoplay></video>
+				</div>
+				<div class="col-sm-3">
+					<video id="remoteVideo1" autoplay></video>
+				</div>
+				<div class="col-sm-3">
+					<video id="remoteVideo2" autoplay></video>
 				</div>
 			</div>
 
 			<div class="row">
-				<div class="col-sm-6">
-					<video id="remoteVideo1" autoplay></video>
+			    <div class="col-sm-3">
+					<video id="remoteVideo3" autoplay></video>
 				</div>
-				<div class="col-sm-6">
-					<video id="remoteVideo2" autoplay></video>
+				<div class="col-sm-3">
+					<video id="remoteVideo4" autoplay></video>
+				</div>
+				<div class="col-sm-3">
+					<video id="remoteVideo5" autoplay></video>
+				</div>
+				<div class="col-sm-3">
+					<video id="remoteVideo6" autoplay></video>
 				</div>
 			</div>
 
@@ -231,6 +243,7 @@ body {
 		video : true,
 		audio : true
 	};
+
 	var appName = location.pathname.substring(0, location.pathname.lastIndexOf("/")+1);
 	var path =  location.hostname + ":" + location.port + appName + "websocket";
 	var websocketURL = "ws://" + path;
@@ -264,12 +277,12 @@ body {
 						if (obj.streams != null) {
 							obj.streams.forEach(function(item) {
 								console.log(item);
-								webRTCAdaptor.play(item, token);
+								webRTCAdaptor.play(item, token, roomNameBox.value);
 							});
 						}
 					} else if (info == "streamJoined") {
 						console.debug("stream joined with id " + obj.streamId);
-						webRTCAdaptor.play(obj.streamId, token);
+						webRTCAdaptor.play(obj.streamId, token, roomNameBox.value);
 					} else if (info == "newStreamAvailable") {
 						var room = roomOfStream[obj.streamId];
 						console.log("new stream available with id: "
@@ -330,18 +343,24 @@ body {
 					}
 					var errorMessage = JSON.stringify(error);
 					if (error.indexOf("NotFoundError") != -1) {
-						errorMessage = "Camera or Mic are not found or not allowed in your device";
+						errorMessage = "Camera or Mic are not found or not allowed in your device.";
 					} else if (error.indexOf("NotReadableError") != -1
 							|| error.indexOf("TrackStartError") != -1) {
-						errorMessage = "Camera or Mic is being used by some other process that does not let read the devices";
+						errorMessage = "Camera or Mic is being used by some other process that does not not allow these devices to be read.";
 					} else if (error.indexOf("OverconstrainedError") != -1
 							|| error.indexOf("ConstraintNotSatisfiedError") != -1) {
-						errorMessage = "There is no device found that fits your video and audio constraints. You may change video and audio constraints"
+						errorMessage = "There is no device found that fits your video and audio constraints. You may change video and audio constraints."
 					} else if (error.indexOf("NotAllowedError") != -1
 							|| error.indexOf("PermissionDeniedError") != -1) {
 						errorMessage = "You are not allowed to access camera and mic.";
 					} else if (error.indexOf("TypeError") != -1) {
-						errorMessage = "Video/Audio is required";
+						errorMessage = "Video/Audio is required.";
+					}
+					else if (error.indexOf("UnsecureContext") != -1) {
+						errorMessage = "Fatal Error: Browser cannot access camera and mic because of unsecure context. Please install SSL and access via https";
+					}
+					else if (error.indexOf("WebSocketNotSupported") != -1) {
+						errorMessage = "Fatal Error: WebSocket not supported in this browser";
 					}
 
 					alert(errorMessage);
