@@ -190,7 +190,7 @@ body {
 		remoteVideoId : "remoteVideo",
 		isPlayMode : true,
 		debug : true,
-		callback : function(info, description) {
+		callback : function(info, obj) {
 			if (info == "initialized") {
 				console.log("initialized");
 				start_play_button.disabled = false;
@@ -208,10 +208,22 @@ body {
 				stop_play_button.disabled = true;
 			} else if (info == "closed") {
 				//console.log("Connection closed");
-				if (typeof description != "undefined") {
+				if (typeof obj != "undefined") {
 					console.log("Connecton closed: "
-							+ JSON.stringify(description));
+							+ JSON.stringify(obj));
 				}
+			}
+			else if (info == "updated_stats") {
+				//obj is the PeerStats which has fields
+				 //averageIncomingBitrate - kbits/sec
+				//currentIncomingBitrate - kbits/sec
+				//packetsLost - total number of packet lost
+				//fractionLost - fraction of packet lost
+				console.log("Average incoming kbits/sec: " + obj.averageIncomingBitrate 
+						+ " Current incoming kbits/sec: " + obj.currentIncomingBitrate
+						+ " packetLost: " + obj.packetsLost 
+						+ " fractionLost: " + obj.fractionLost);
+				 
 			}
 		},
 		callbackError : function(error) {

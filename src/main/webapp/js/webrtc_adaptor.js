@@ -4,10 +4,77 @@
  */
 function WebRTCAdaptor(initialValues)
 {
+	
+	class PeerStats {
+
+		constructor(streamId) {
+			this.streamId = streamId;
+			this.totalBytesReceivedCount = 0;
+			this.totalBytesSent = 0;
+			this.packetsLost = 0;
+			this.fractionLost = 0;
+			this.startTime = 0;
+			this.lastBytesReceived = 0;
+			this.lastBytesSent = 0;
+			this.currentTimestamp = 0;
+			this.lastTime = 0;
+			this.timerId = 0;
+			this.firstByteSentCount = 0;
+			this.firstBytesReceivedCount = 0;
+		}
+		
+		//kbits/sec
+		get averageOutgoingBitrate() {
+			return Math.floor(8 * (this.totalBytesSentCount - this.firstByteSentCount) / (this.currentTimestamp - this.startTime));
+		}
+		
+		//kbits/sec
+		get averageIncomingBitrate() {
+			return Math.floor(8 * (this.totalBytesReceivedCount - this.firstBytesReceivedCount) / (this.currentTimestamp - this.startTime));
+		}
+		
+		//kbits/sec
+		get currentOutgoingBitrate() {
+			return Math.floor(8 * (this.totalBytesSentCount - this.lastBytesSent) / (this.currentTimestamp - this.lastTime));
+		}
+		
+		//kbits/sec
+		get currentIncomingBitrate() {
+			return Math.floor(8 * (this.totalBytesReceivedCount - this.lastBytesReceived) / (this.currentTimestamp - this.lastTime));
+		}
+		
+		set currentTime(timestamp) {
+			this.lastTime = this.currentTimestamp;
+			this.currentTimestamp = timestamp;
+			if (this.startTime == 0) {
+				this.startTime = timestamp-1; // do not have zero division error
+			}
+		}
+		
+		set totalBytesReceived(bytesReceived) {
+			this.lastBytesReceived = this.totalBytesReceivedCount;
+			this.totalBytesReceivedCount = bytesReceived;
+			if (this.firstBytesReceivedCount == 0) {
+				this.firstBytesReceivedCount = bytesReceived;
+			}
+		}
+		
+		set totalBytesSent(bytesSent) {
+			this.lastBytesSent = this.totalBytesSentCount;
+			this.totalBytesSentCount = bytesSent;
+			if (this.firstByteSentCount == 0) {
+				this.firstByteSentCount = bytesSent;
+			}
+		}
+		
+		
+	}
+
 	var thiz = this;
 	thiz.peerconnection_config = null;
 	thiz.sdp_constraints = null;
 	thiz.remotePeerConnection = new Array();
+	thiz.remotePeerConnectionStats = new Array();
 	thiz.remoteDescriptionSet = new Array();
 	thiz.iceCandidateList = new Array();
 	thiz.webSocketAdaptor = null;
@@ -614,15 +681,23 @@ function WebRTCAdaptor(initialValues)
 
 	this.closePeerConnection = function(streamId) {
 		if (thiz.remotePeerConnection[streamId] != null
-				&& thiz.remotePeerConnection[streamId].signalingState != "closed") {
+				&& thiz.remotePeerConnection[streamId].signalingState != "closed") 
+		{
 			thiz.remotePeerConnection[streamId].close();
 			thiz.remotePeerConnection[streamId] = null;
 			delete thiz.remotePeerConnection[streamId];
 			var playStreamIndex = thiz.playStreamId.indexOf(streamId);
-			if (playStreamIndex != -1) {
+			if (playStreamIndex != -1) 
+			{
 				thiz.playStreamId.splice(playStreamIndex, 1);
 			}
 
+		}
+		
+		if (thiz.remotePeerConnectionStats[streamId] != null) 
+		{	
+			clearInterval(thiz.remotePeerConnectionStats[streamId].timerId);
+			delete thiz.remotePeerConnectionStats[streamId];
 		}
 	}
 
@@ -815,6 +890,53 @@ function WebRTCAdaptor(initialValues)
 			console.error("create offer error for stream id: " + streamId + " error: " + error);
 		});
 	};
+	
+	this.getStats = function(streamId) 
+	{
+		thiz.remotePeerConnection[streamId].getStats(null).then(stats => 
+		{	
+			 var bytesReceived = 0;
+			 var packetsLost = 0;
+			 var fractionLost = 0;					
+			 var currentTime = 0;
+			 var bytesSent = 0;		
+			 
+			 stats.forEach(value => {
+				 
+				if (value.type == "inbound-rtp") 
+				{
+					bytesReceived += value.bytesReceived;
+					packetsLost += value.packetsLost;
+					fractionLost += value.fractionLost;
+					currentTime = value.timestamp;
+				}
+				else if (value.type == "outbound-rtp") 
+				{
+					bytesSent += value.bytesSent
+					currentTime = value.timestamp
+				}
+			});
+			
+			 thiz.remotePeerConnectionStats[streamId].totalBytesReceived = bytesReceived;
+			 thiz.remotePeerConnectionStats[streamId].packetsLost = packetsLost;
+			 thiz.remotePeerConnectionStats[streamId].fractionLost = fractionLost;					
+			 thiz.remotePeerConnectionStats[streamId].currentTime = currentTime;
+			 thiz.remotePeerConnectionStats[streamId].totalBytesSent = bytesSent;
+			 
+			 thiz.callback("updated_stats", thiz.remotePeerConnectionStats[streamId]);
+		
+		});
+	}
+	
+	
+	this.enableStats = function(streamId) {
+		thiz.remotePeerConnectionStats[streamId] = new PeerStats(streamId);
+		thiz.remotePeerConnectionStats[streamId].timerId = setInterval(() => 
+		{
+			thiz.getStats(streamId);
+			
+		}, 5000);
+	}
 	
 	/**
 	 * After calling this function, create new WebRTCAdaptor instance, don't use the the same objectone
