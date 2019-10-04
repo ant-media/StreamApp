@@ -40,6 +40,13 @@ public class StreamApplication extends MultiThreadedApplicationAdapter implement
 		}
 		appAdaptor.setAppSettings(getAppSettings());
 		appAdaptor.setStreamPublishSecurityList(getStreamPublishSecurityList());
+		
+		if (getStreamPublishSecurityList() != null) {
+			for (IStreamPublishSecurity streamPublishSecurity : getStreamPublishSecurityList()) {
+				registerStreamPublishSecurity(streamPublishSecurity);
+			}
+		}
+		
 		appAdaptor.setDataStoreFactory(getDataStoreFactory());
 		appAdaptor.appStart(app);
 		
@@ -60,7 +67,7 @@ public class StreamApplication extends MultiThreadedApplicationAdapter implement
 	@Override
 	public void streamPlayItemStop(ISubscriberStream stream, IPlayItem item) {
 		super.streamPlayItemStop(stream, item);
-		appAdaptor.streamPlayItemStop(stream, item);
+		appAdaptor.streamPlayItemStop(item);
 	}
 
 	@Override

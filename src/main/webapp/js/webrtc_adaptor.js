@@ -846,14 +846,11 @@ function WebRTCAdaptor(initialValues)
 			}
 		}
 		
-		var sendPing = function() {
-			wsConn.send
-			
+		var sendPing = function() {			
 			var jsCmd = {
 					command : "ping"
 			};
 			wsConn.send(JSON.stringify(jsCmd));
-
 		}
 		
 		this.close = function() {
@@ -867,7 +864,7 @@ function WebRTCAdaptor(initialValues)
 
 			pingTimerId = setInterval(() => {
 				sendPing();
-			}, 5000);
+			}, 3000);
 			
 			connected = true;
 			thiz.callback("initialized");

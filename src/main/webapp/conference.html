@@ -244,8 +244,9 @@ body {
 		audio : true
 	};
 
-	var path = location.hostname + ":" + location.port
-			+ "/WebRTCAppEE/websocket";
+
+	var appName = location.pathname.substring(0, location.pathname.lastIndexOf("/")+1);
+	var path =  location.hostname + ":" + location.port + appName + "websocket";
 	var websocketURL = "ws://" + path;
 
 	if (location.protocol.startsWith("https")) {
