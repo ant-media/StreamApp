@@ -8,35 +8,46 @@ import javax.websocket.OnOpen;
 import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
 
+import org.apache.catalina.core.ApplicationContextFacade;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.apache.commons.lang3.reflect.FieldUtils;
 import org.apache.tomcat.websocket.server.DefaultServerEndpointConfigurator;
-import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.ApplicationContext;
+import org.springframework.web.context.WebApplicationContext;
+import org.springframework.web.context.support.WebApplicationContextUtils;
 
-import io.antmedia.AppSettings;
-import io.antmedia.StreamIdValidator;
-import io.antmedia.enterprise.webrtc.WebRTCApplication;
-import io.antmedia.enterprise.webrtc.WebSocketEnterpriseHandler;
-import io.antmedia.webrtc.adaptor.RTMPAdaptor;
 import io.antmedia.websocket.WebSocketCommunityHandler;
-import io.antmedia.websocket.WebSocketConstants;
 
 
 @ServerEndpoint(value="/websocket", configurator=DefaultServerEndpointConfigurator.class)
 public class WebSocketLocalHandler {
 
 	WebSocketCommunityHandler handler;
-	public static StreamApplication app;
 
 	protected static Logger logger = LoggerFactory.getLogger(WebSocketLocalHandler.class);
 
 	@OnOpen
 	public void onOpen(Session session, EndpointConfig config)
 	{
-		createHandler();
-		handler.onOpen(session, config);
+        try {
+        	ApplicationContextFacade servletContext = (ApplicationContextFacade) FieldUtils.readField(session.getContainer(), "servletContext", true);
+    		WebApplicationContext ctxt = WebApplicationContextUtils.getWebApplicationContext(servletContext); 
+    		
+    		if(io.antmedia.rest.BroadcastRestService.isEnterprise()) {
+    			Class clazz = Class.forName("io.antmedia.enterprise.webrtc.WebSocketEnterpriseHandler");
+				handler = (WebSocketCommunityHandler) clazz.newInstance();
+    		}
+    		else {
+    			handler = new WebSocketCommunityHandler();
+    		}
+    		handler.setAppContext(ctxt);
+    		
+    		handler.onOpen(session, config);
+    		
+        } catch (Exception e) {
+			logger.error(ExceptionUtils.getStackTrace(e));
+		} 
 	}
 
 
@@ -53,17 +64,5 @@ public class WebSocketLocalHandler {
 	@OnMessage
 	public void onMessage(Session session, String message) {
 		handler.onMessage(session, message);
-	}
-
-
-	private void createHandler() {
-		if(io.antmedia.rest.BroadcastRestService.isEnterprise()) {
-			handler = new WebSocketEnterpriseHandler();
-			((WebSocketEnterpriseHandler)handler).setApplicationAdaptor((WebRTCApplication) app.getAppAdaptor());
-		}
-		else {
-			handler = new WebSocketCommunityHandler();
-		}
-		handler.setAppContext(app.getAppContx());
 	}
 }

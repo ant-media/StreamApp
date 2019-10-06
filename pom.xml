@@ -138,12 +138,6 @@
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
-			<groupId>io.antmedia.enterprise</groupId>
-			<artifactId>ant-media-enterprise</artifactId>
-			<version>${project.parent.version}</version>
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-api</artifactId>
 			<version>${slf4j.version}</version>
@@ -253,14 +247,9 @@
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
-	<description>StreamApp for Ant Media Server Enterprise Edition</description>
+	<description>StreamApp for Ant Media Server</description>
 	<organization>
 		<name>Ant Media</name>
 		<url>http://antmedia.io</url>
 	</organization>
-	<!-->scm>
-		<url>https://github.com/ant-media/WebRTCApp4Enterprise.git</url>
-		<connection>https://github.com/ant-media/WebRTCApp4Enterprise.git</connection>
-		<developerConnection>https://github.com/ant-media/WebRTCApp4Enterprise.git</developerConnection>
-	</scm-->
 </project>

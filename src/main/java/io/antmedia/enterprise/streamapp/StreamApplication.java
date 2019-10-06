@@ -1,14 +1,18 @@
 package io.antmedia.enterprise.streamapp;
 
 import java.io.File;
+import java.util.HashMap;
 import java.util.List;
 
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.red5.server.adapter.MultiThreadedApplicationAdapter;
 import org.red5.server.api.scope.IScope;
 import org.red5.server.api.stream.IBroadcastStream;
 import org.red5.server.api.stream.IPlayItem;
 import org.red5.server.api.stream.IStreamPublishSecurity;
 import org.red5.server.api.stream.ISubscriberStream;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -17,12 +21,12 @@ import io.antmedia.AntMediaApplicationAdapter;
 import io.antmedia.AppSettings;
 import io.antmedia.IApplicationAdaptorFactory;
 import io.antmedia.datastore.db.DataStoreFactory;
-import io.antmedia.enterprise.webrtc.WebRTCApplication;
 import io.antmedia.muxer.IAntMediaStreamHandler;
 import io.antmedia.muxer.MuxAdaptor;
 
 public class StreamApplication extends MultiThreadedApplicationAdapter implements IAntMediaStreamHandler, ApplicationContextAware, IApplicationAdaptorFactory {
 	
+	protected static Logger logger = LoggerFactory.getLogger(StreamApplication.class);
 	private ApplicationContext appContx;
 	private List<IStreamPublishSecurity> streamPublishSecurityList;
 	private DataStoreFactory dataStoreFactory;
@@ -31,9 +35,13 @@ public class StreamApplication extends MultiThreadedApplicationAdapter implement
 	
 	@Override
 	public boolean appStart(IScope app) {
-		WebSocketLocalHandler.app = this;
 		if(io.antmedia.rest.BroadcastRestService.isEnterprise()) {
-			appAdaptor = new WebRTCApplication();
+			try {
+				Class clazz = Class.forName("io.antmedia.enterprise.webrtc.WebRTCApplication");
+				appAdaptor = (AntMediaApplicationAdapter) clazz.newInstance();
+			} catch (Exception e) {
+				logger.error(ExceptionUtils.getStackTrace(e));
+			}
 		}
 		else {
 			appAdaptor = new AntMediaApplicationAdapter();
@@ -62,6 +70,12 @@ public class StreamApplication extends MultiThreadedApplicationAdapter implement
 	public void streamBroadcastClose(IBroadcastStream stream) {
 		appAdaptor.streamBroadcastClose(stream);
 		super.streamBroadcastClose(stream);
+	}
+	
+	@Override
+	public void streamPlayItemPlay(ISubscriberStream stream, IPlayItem item, boolean isLive) {
+		super.streamPlayItemPlay(stream, item, isLive);
+		appAdaptor.streamPlayItemPlay(item, isLive);
 	}
 	
 	@Override

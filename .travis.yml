@@ -57,18 +57,6 @@ before_install:
 - cd Ant-Media-Server 
 - mvn clean install -DskipTests -Dgpg.skip=true --quiet
 - cd ..  #up to Ant-Media-Server 
- # get enterprise project 
-- (if [ $(git ls-remote https://"$GITLAB_USERNAME":"$GITLAB_TOKEN"@"$GITLAB_REPO" $TRAVIS_BRANCH  | wc -l) == "1" ];  
-    then 
-      echo " $TRAVIS_BRANCH branch found";  
-      git clone --depth=1 -b $TRAVIS_BRANCH https://"$GITLAB_USERNAME":"$GITLAB_TOKEN"@"$GITLAB_REPO";  
-    else
-      echo "branch not found"; 
-      git clone --depth=1 https://"$GITLAB_USERNAME":"$GITLAB_TOKEN"@"$GITLAB_REPO";  
-  fi)
-- cd Ant-Media-Enterprise
-- mvn clean install -DskipTests -Dmaven.javadoc.skip=true -Dgpg.skip=true --quiet
-- cd ..
 
 install:
 - mvn install -DskipTests=true -Dmaven.javadoc.skip=true -Dgpg.skip=true -B -V --quiet
