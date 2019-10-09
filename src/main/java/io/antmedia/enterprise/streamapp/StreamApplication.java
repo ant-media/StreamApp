@@ -1,7 +1,6 @@
 package io.antmedia.enterprise.streamapp;
 
 import java.io.File;
-import java.util.HashMap;
 import java.util.List;
 
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -35,7 +34,7 @@ public class StreamApplication extends MultiThreadedApplicationAdapter implement
 	
 	@Override
 	public boolean appStart(IScope app) {
-		if(io.antmedia.rest.BroadcastRestService.isEnterprise()) {
+		if(io.antmedia.rest.RestServiceBase.isEnterprise()) {
 			try {
 				Class clazz = Class.forName("io.antmedia.enterprise.webrtc.WebRTCApplication");
 				appAdaptor = (AntMediaApplicationAdapter) clazz.newInstance();

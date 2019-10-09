@@ -34,7 +34,7 @@ public class WebSocketLocalHandler {
         	ApplicationContextFacade servletContext = (ApplicationContextFacade) FieldUtils.readField(session.getContainer(), "servletContext", true);
     		WebApplicationContext ctxt = WebApplicationContextUtils.getWebApplicationContext(servletContext); 
     		
-    		if(io.antmedia.rest.BroadcastRestService.isEnterprise()) {
+    		if(io.antmedia.rest.RestServiceBase.isEnterprise()) {
     			Class clazz = Class.forName("io.antmedia.enterprise.webrtc.WebSocketEnterpriseHandler");
 				handler = (WebSocketCommunityHandler) clazz.newInstance();
     		}
@@ -44,9 +44,11 @@ public class WebSocketLocalHandler {
     		handler.setAppContext(ctxt);
     		
     		handler.onOpen(session, config);
+    		logger.error("WebSocket opened for {}", ctxt.getApplicationName());
     		
         } catch (Exception e) {
-			logger.error(ExceptionUtils.getStackTrace(e));
+        	logger.error("Exception in WebSocket handler open");
+			logger.error(ExceptionUtils.getMessage(e));
 		} 
 	}
 
