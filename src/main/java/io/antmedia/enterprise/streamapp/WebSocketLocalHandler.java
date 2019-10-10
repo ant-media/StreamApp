@@ -78,7 +78,7 @@ public class WebSocketLocalHandler {
 		try {
 			if(io.antmedia.rest.RestServiceBase.isEnterprise()) {
 				Class clazz = Class.forName("io.antmedia.enterprise.webrtc.WebSocketEnterpriseHandler");
-				handler = (WebSocketCommunityHandler) clazz.getConstructor(ApplicationContext.class).newInstance(context);
+				handler = (WebSocketCommunityHandler) clazz.getConstructor(ApplicationContext.class, Session.class).newInstance(context, session);
 			}
 			else {
 				handler = new WebSocketCommunityHandler(context, session);
