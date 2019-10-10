@@ -1,5 +1,7 @@
 package io.antmedia.enterprise.streamapp;
 
+import java.io.IOException;
+
 import javax.websocket.EndpointConfig;
 import javax.websocket.OnClose;
 import javax.websocket.OnError;
@@ -12,12 +14,15 @@ import org.apache.catalina.core.ApplicationContextFacade;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.apache.tomcat.websocket.server.DefaultServerEndpointConfigurator;
+import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.web.context.WebApplicationContext;
+import org.springframework.context.ApplicationContext;
+import org.springframework.web.context.ConfigurableWebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
 import io.antmedia.websocket.WebSocketCommunityHandler;
+import io.antmedia.websocket.WebSocketConstants;
 
 
 @ServerEndpoint(value="/websocket", configurator=DefaultServerEndpointConfigurator.class)
@@ -28,43 +33,71 @@ public class WebSocketLocalHandler {
 	protected static Logger logger = LoggerFactory.getLogger(WebSocketLocalHandler.class);
 
 	@OnOpen
-	public void onOpen(Session session, EndpointConfig config)
-	{
-        try {
-        	ApplicationContextFacade servletContext = (ApplicationContextFacade) FieldUtils.readField(session.getContainer(), "servletContext", true);
-    		WebApplicationContext ctxt = WebApplicationContextUtils.getWebApplicationContext(servletContext); 
-    		
-    		if(io.antmedia.rest.RestServiceBase.isEnterprise()) {
-    			Class clazz = Class.forName("io.antmedia.enterprise.webrtc.WebSocketEnterpriseHandler");
-				handler = (WebSocketCommunityHandler) clazz.newInstance();
-    		}
-    		else {
-    			handler = new WebSocketCommunityHandler();
-    		}
-    		handler.setAppContext(ctxt);
-    		
-    		handler.onOpen(session, config);
-    		logger.error("WebSocket opened for {}", ctxt.getApplicationName());
-    		
-        } catch (Exception e) {
-        	logger.error("Exception in WebSocket handler open");
-			logger.error(ExceptionUtils.getMessage(e));
-		} 
+	public void onOpen(Session session, EndpointConfig config) {
+		//do nothing
 	}
 
 
 	@OnClose
 	public void onClose(Session session) {
-		handler.onClose(session);
+		if(handler != null) {
+			handler.onClose(session);
+		}
 	}
 
 	@OnError
 	public void onError(Session session, Throwable throwable) {
-		handler.onError(session, throwable);
+		if(handler != null) {
+			handler.onError(session, throwable);
+		}
 	}
 
 	@OnMessage
 	public void onMessage(Session session, String message) {
-		handler.onMessage(session, message);
+		if(handler == null) {
+			ConfigurableWebApplicationContext ctxt = null;
+			try {
+				ApplicationContextFacade servletContext = (ApplicationContextFacade) FieldUtils.readField(session.getContainer(), "servletContext", true);
+				ctxt = (ConfigurableWebApplicationContext) WebApplicationContextUtils.getWebApplicationContext(servletContext); 
+			} catch (Exception e) {
+				logger.error("Application context can not be set to WebSocket handler");
+				logger.error(ExceptionUtils.getMessage(e));
+			} 
+			
+			if(ctxt != null && ctxt.isRunning()) {
+				createHandler(ctxt, session);
+				handler.onMessage(session, message);
+			}
+		}
+		else {
+			handler.onMessage(session, message);
+		}
+	}
+	
+	private void createHandler(ApplicationContext context, Session session) {
+		try {
+			if(io.antmedia.rest.RestServiceBase.isEnterprise()) {
+				Class clazz = Class.forName("io.antmedia.enterprise.webrtc.WebSocketEnterpriseHandler");
+				handler = (WebSocketCommunityHandler) clazz.getConstructor(ApplicationContext.class).newInstance(context);
+			}
+			else {
+				handler = new WebSocketCommunityHandler(context, session);
+			}
+		} catch (Exception e) {
+			logger.error("WebSocket handler cannot be created");
+			logger.error(ExceptionUtils.getMessage(e));
+		} 
+	}
+
+
+	public void sendNotInitializedError(Session session) {
+		JSONObject jsonResponse = new JSONObject();
+		jsonResponse.put(WebSocketConstants.COMMAND, WebSocketConstants.ERROR_COMMAND);
+		jsonResponse.put(WebSocketConstants.DEFINITION, WebSocketConstants.NOT_INITIALIZED_YET);
+		try {
+			session.getBasicRemote().sendText(jsonResponse.toJSONString());
+		} catch (IOException e) {
+			logger.error(ExceptionUtils.getStackTrace(e));
+		}
 	}
 }
