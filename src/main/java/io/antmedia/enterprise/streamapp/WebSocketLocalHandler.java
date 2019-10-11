@@ -34,7 +34,7 @@ public class WebSocketLocalHandler {
 
 	@OnOpen
 	public void onOpen(Session session, EndpointConfig config) {
-		//do nothing
+		logger.info("Web Socket opened");
 	}
 
 
@@ -67,6 +67,9 @@ public class WebSocketLocalHandler {
 			if(ctxt != null && ctxt.isRunning()) {
 				createHandler(ctxt, session);
 				handler.onMessage(session, message);
+			}
+			else {
+				sendNotInitializedError(session);
 			}
 		}
 		else {
