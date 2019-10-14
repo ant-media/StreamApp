@@ -84,6 +84,7 @@ function WebRTCAdaptor(initialValues)
 	thiz.playStreamId = new Array();
 	thiz.micGainNode = null;
 	thiz.localStream = null;
+	thiz.bandwidth = "unlimited";
 
 	thiz.isPlayMode = false;
 	thiz.debug = false;
@@ -676,6 +677,19 @@ function WebRTCAdaptor(initialValues)
 			thiz.remotePeerConnection[streamId].ontrack = function(event) {
 				thiz.onTrack(event, closedStreamId);
 			}
+			
+			if (!thiz.isPlayMode) {
+				thiz.remotePeerConnection[streamId].oniceconnectionstatechange = function (event) 
+				{
+					if (thiz.remotePeerConnection[streamId].iceConnectionState == "connected") {
+						thiz.changeBandwidth(thiz.bandwidth, streamId).then(() => {
+						      console.log("Bandwidth is changed to " + thiz.bandwidth);
+					    })
+					    .catch(e => console.error(e));
+					}
+				}
+				
+			}
 		}
 	}
 
@@ -889,6 +903,54 @@ function WebRTCAdaptor(initialValues)
 
 			console.error("create offer error for stream id: " + streamId + " error: " + error);
 		});
+	};
+	
+	/**
+	 * bandwidth is in kbps
+	 */
+	this.changeBandwidth = function(bandwidth, streamId) {
+		
+		var errorDefinition = "";
+		if ((adapter.browserDetails.browser === 'chrome' ||
+			       (adapter.browserDetails.browser === 'firefox' &&
+			        adapter.browserDetails.version >= 64)) &&
+			      'RTCRtpSender' in window &&
+			      'setParameters' in window.RTCRtpSender.prototype)  
+		{
+			const senders = thiz.remotePeerConnection[streamId].getSenders();
+			var videoSender = null;
+			for (let i = 0; i < senders.length; i++) {
+				if (senders[i].track != null && senders[i].track.kind == "video") {
+					videoSender = senders[i];
+					break;
+				}
+			}
+			if (videoSender != null) {
+				const parameters = videoSender.getParameters();
+				
+				if (!parameters.encodings) {
+				      parameters.encodings = [{}];
+				}
+				
+				if (bandwidth === 'unlimited') {
+					delete parameters.encodings[0].maxBitrate;
+				} 
+				else {
+					parameters.encodings[0].maxBitrate = bandwidth * 1000;
+				}
+				
+				return videoSender.setParameters(parameters)
+			}
+			else {
+				errorDefinition = "Video sender not found to change bandwidth";
+			}
+			
+		}
+		else {
+			errorDefinition = "Change bandwidth is not supported in this browser";
+		}	
+		
+		return Promise.reject(errorDefinition);
 	};
 	
 	this.getStats = function(streamId) 
