@@ -170,10 +170,10 @@ body {
 	};
 
 	var appName = location.pathname.substring(0, location.pathname.lastIndexOf("/")+1);
-	var websocketURL = "ws://" + location.hostname + ":5080" + appName + websocket";
+	var websocketURL = "ws://" + location.hostname + ":5080" + appName + "websocket";
 	
 	if (location.protocol.startsWith("https")) {
-		websocketURL = "wss://" + location.hostname + ":5443" + appName + websocket";
+		websocketURL = "wss://" + location.hostname + ":5443" + appName + "websocket";
 	}
 	
 	
