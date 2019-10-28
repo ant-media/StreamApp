@@ -101,34 +101,9 @@ body {
 		</div>
 
 		<div class="jumbotron">
-
-			<div class="row">
+			<div id="players">
 				<div class="col-sm-3">
 					<video id="localVideo" autoplay muted></video>
-				</div>
-				<div class="col-sm-3">
-					<video id="remoteVideo0" autoplay></video>
-				</div>
-				<div class="col-sm-3">
-					<video id="remoteVideo1" autoplay></video>
-				</div>
-				<div class="col-sm-3">
-					<video id="remoteVideo2" autoplay></video>
-				</div>
-			</div>
-
-			<div class="row">
-			    <div class="col-sm-3">
-					<video id="remoteVideo3" autoplay></video>
-				</div>
-				<div class="col-sm-3">
-					<video id="remoteVideo4" autoplay></video>
-				</div>
-				<div class="col-sm-3">
-					<video id="remoteVideo5" autoplay></video>
-				</div>
-				<div class="col-sm-3">
-					<video id="remoteVideo6" autoplay></video>
 				</div>
 			</div>
 
@@ -174,11 +149,7 @@ body {
 
 	var roomNameBox = document.getElementById("roomName");
 
-	var remoteVideos = new Array();
-
 	var roomOfStream = new Array();
-
-	var remoteVideoIndex = 0;
 
 	var publishStreamId;
 	function joinRoom() {
@@ -187,21 +158,54 @@ body {
 	}
 
 	function leaveRoom() {
-
 		webRTCAdaptor.leaveFromRoom(roomNameBox.value);
 
-		for ( var key in remoteVideos) {
-			console.log("index: " + key);
-			remoteVideos[key].srcObject = null;
-			remoteVideos[key] = null;
-			delete remoteVideos[key];
+		for (var node in document.getElementById("players").childNodes) {
+			if(node.id != "localVideo") {
+				document.getElementById("players").removeChild(node);
+			}
 		}
-		remoteVideoIndex = 0;
 	}
 
 	function publish(streamName, token) {
 		publishStreamId = streamName;
 		webRTCAdaptor.publish(streamName, token);
+	}
+	
+	function streamInformation(obj) {
+		webRTCAdaptor.play(obj.streamId, token,	roomNameBox.value);
+	}
+	
+	function playVideo(obj) {
+		var room = roomOfStream[obj.streamId];
+		console.log("new stream available with id: "
+				+ obj.streamId + "on the room:" + room);
+
+		var video = document.getElementById("remoteVideo"+obj.streamId);
+		
+		if (video == null) {
+			createRemoteVideo(obj.streamId);
+			video = document.getElementById("remoteVideo"+obj.streamId);
+		}
+
+		video.srcObject = obj.track;
+	}
+	
+	function createRemoteVideo(streamId) {
+		var player = document.createElement("div"); 
+		player.className = "col-sm-3";
+		player.id = "player"+streamId;
+		player.innerHTML = '<video id="remoteVideo'+streamId+'" autoplay muted></video>';
+		document.getElementById("players").appendChild(player);
+	}
+	
+	function removeRemoteVideo(streamId) {
+		var video = document.getElementById("remoteVideo"+streamId);
+		if (video != null) {
+			var player = document.getElementById("player" + streamId);
+			video.srcObject = null;
+			document.getElementById("players").removeChild(player);
+		}
 	}
 
 	function startAnimation() {
@@ -244,9 +248,9 @@ body {
 		audio : true
 	};
 
-
-	var appName = location.pathname.substring(0, location.pathname.lastIndexOf("/")+1);
-	var path =  location.hostname + ":" + location.port + appName + "websocket";
+	var appName = location.pathname.substring(0, location.pathname
+			.lastIndexOf("/") + 1);
+	var path = location.hostname + ":" + location.port + appName + "websocket";
 	var websocketURL = "ws://" + path;
 
 	if (location.protocol.startsWith("https")) {
@@ -278,38 +282,19 @@ body {
 						if (obj.streams != null) {
 							obj.streams.forEach(function(item) {
 								console.log(item);
-								webRTCAdaptor.play(item, token, roomNameBox.value);
+								webRTCAdaptor.play(item, token,
+										roomNameBox.value);
 							});
 						}
 					} else if (info == "streamJoined") {
 						console.debug("stream joined with id " + obj.streamId);
-						webRTCAdaptor.play(obj.streamId, token, roomNameBox.value);
+						webRTCAdaptor.play(obj.streamId, token,
+								roomNameBox.value);
 					} else if (info == "newStreamAvailable") {
-						var room = roomOfStream[obj.streamId];
-						console.log("new stream available with id: "
-								+ obj.streamId + "on the room:" + room);
-
-						if (remoteVideos[obj.streamId] == null) {
-							console
-									.log("getting video object from DOM with index: "
-											+ remoteVideoIndex);
-							remoteVideos[obj.streamId] = document
-									.getElementById("remoteVideo"
-											+ remoteVideoIndex);
-							remoteVideoIndex++;
-						}
-
-						remoteVideos[obj.streamId].srcObject = obj.track;
-
+						playVideo(obj);
 					} else if (info == "streamLeaved") {
 						console.debug(" stream leaved with id " + obj.streamId);
-						if (remoteVideos[obj.streamId] != null) {
-							remoteVideos[obj.streamId].srcObject = null;
-							remoteVideos[obj.streamId] = null;
-							delete remoteVideos[obj.streamId];
-							remoteVideoIndex--;
-						}
-
+						removeRemoteVideo(obj.streamId);
 					} else if (info == "publish_started") {
 						//stream is being published
 						console.debug("publish started to room: "
@@ -332,6 +317,16 @@ body {
 							console.log("Connecton closed: "
 									+ JSON.stringify(obj));
 						}
+					} else if (info == "play_finished") {
+						console.log("play_finished");
+						var video = document.getElementById("remoteVideo"
+								+ obj.streamId);
+						if (video != null) {
+							video.srcObject = null;
+						}
+						webRTCAdaptor.getStreamInfo(obj.streamId);
+					} else if (info == "streamInformation") {
+						streamInformation(obj);
 					}
 				},
 				callbackError : function(error, message) {
@@ -356,12 +351,12 @@ body {
 						errorMessage = "You are not allowed to access camera and mic.";
 					} else if (error.indexOf("TypeError") != -1) {
 						errorMessage = "Video/Audio is required.";
-					}
-					else if (error.indexOf("UnsecureContext") != -1) {
+					} else if (error.indexOf("UnsecureContext") != -1) {
 						errorMessage = "Fatal Error: Browser cannot access camera and mic because of unsecure context. Please install SSL and access via https";
-					}
-					else if (error.indexOf("WebSocketNotSupported") != -1) {
+					} else if (error.indexOf("WebSocketNotSupported") != -1) {
 						errorMessage = "Fatal Error: WebSocket not supported in this browser";
+					} else if (error.indexOf("no_stream_exist") != -1) {
+						//TODO: removeRemoteVideo(error.streamId);
 					}
 
 					alert(errorMessage);
