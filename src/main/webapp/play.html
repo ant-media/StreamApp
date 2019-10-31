@@ -31,7 +31,7 @@ pageEncoding="UTF-8"%>
 	</div>
 
 	<!-- HLS Player -->
-	<div style="width: 100%; max-width: 960px;" id="video_container">
+	<div style="width: 100%; max-width: 640px; max-height: 480px;" id="video_container">
 		<video id="video-player"
 			class="video-js vjs-default-skin vjs-16-9 vjs-big-play-centered"
 			controls preload="auto" data-setup='{"fluid": true}'>
@@ -47,7 +47,7 @@ pageEncoding="UTF-8"%>
 
 	<!-- WebRTC Player -->
 	<video id="remoteVideo" autoplay controls playsinline
-		style="display: none; width: 100%; max-width: 640px;"></video>
+		style="display: none; width: 100%; max-width: 640px; max-height: 480px;"></video>
 	<img id="play_button" src="images/play.png" onclick="playWebRTCVideo()"
 		style="position: absolute; top: 30px; left: 30px; display: none;" />
 
