@@ -2,6 +2,9 @@
  *
  * @returns
  */
+
+"use strict";
+
 function WebRTCAdaptor(initialValues)
 {
 	
@@ -66,10 +69,9 @@ function WebRTCAdaptor(initialValues)
 				this.firstByteSentCount = bytesSent;
 			}
 		}
-		
-		
+			
 	}
-
+	
 	var thiz = this;
 	thiz.peerconnection_config = null;
 	thiz.sdp_constraints = null;
@@ -84,7 +86,7 @@ function WebRTCAdaptor(initialValues)
 	thiz.playStreamId = new Array();
 	thiz.micGainNode = null;
 	thiz.localStream = null;
-	thiz.bandwidth = "unlimited";
+	thiz.bandwidth = "unlimited"; //kbps
 
 	thiz.isPlayMode = false;
 	thiz.debug = false;
@@ -681,7 +683,9 @@ function WebRTCAdaptor(initialValues)
 			if (!thiz.isPlayMode) {
 				thiz.remotePeerConnection[streamId].oniceconnectionstatechange = function (event) 
 				{
+					
 					if (thiz.remotePeerConnection[streamId].iceConnectionState == "connected") {
+						
 						thiz.changeBandwidth(thiz.bandwidth, streamId).then(() => {
 						      console.log("Bandwidth is changed to " + thiz.bandwidth);
 					    })
@@ -874,8 +878,7 @@ function WebRTCAdaptor(initialValues)
 			console.debug("Ice candidate is added to list because remote description is not set yet");
 			thiz.iceCandidateList[streamId].push(candidate);
 		}
-
-	}
+	};
 	
 	this.addIceCandidate = function(streamId, candidate) {
 		thiz.remotePeerConnection[streamId].addIceCandidate(candidate)
@@ -888,7 +891,7 @@ function WebRTCAdaptor(initialValues)
 			console.error("ice candiate cannot be added for stream id: " + streamId + " error is: " + error  );
 			console.error(candidate);
 		});
-	}
+	};
 
 	this.startPublishing = function(idOfStream) {
 		var streamId = idOfStream;
@@ -900,17 +903,16 @@ function WebRTCAdaptor(initialValues)
 			thiz.gotDescription(configuration, streamId);
 		})
 		.catch(function (error) {
-
 			console.error("create offer error for stream id: " + streamId + " error: " + error);
 		});
 	};
 	
 	/**
-	 * bandwidth is in kbps
+	 * If we have multiple video tracks in coming versions, this method may cause some issues
 	 */
-	this.changeBandwidth = function(bandwidth, streamId) {
+	this.getVideoSender = function(streamId) {
 		
-		var errorDefinition = "";
+		var videoSender = null;
 		if ((adapter.browserDetails.browser === 'chrome' ||
 			       (adapter.browserDetails.browser === 'firefox' &&
 			        adapter.browserDetails.version >= 64)) &&
@@ -918,37 +920,46 @@ function WebRTCAdaptor(initialValues)
 			      'setParameters' in window.RTCRtpSender.prototype)  
 		{
 			const senders = thiz.remotePeerConnection[streamId].getSenders();
-			var videoSender = null;
+			
 			for (let i = 0; i < senders.length; i++) {
 				if (senders[i].track != null && senders[i].track.kind == "video") {
 					videoSender = senders[i];
 					break;
 				}
 			}
-			if (videoSender != null) {
-				const parameters = videoSender.getParameters();
-				
-				if (!parameters.encodings) {
-				      parameters.encodings = [{}];
-				}
-				
-				if (bandwidth === 'unlimited') {
-					delete parameters.encodings[0].maxBitrate;
-				} 
-				else {
-					parameters.encodings[0].maxBitrate = bandwidth * 1000;
-				}
-				
-				return videoSender.setParameters(parameters)
-			}
-			else {
-				errorDefinition = "Video sender not found to change bandwidth";
-			}
 			
 		}
+		return videoSender;
+	}
+	
+	/**
+	 * bandwidth is in kbps
+	 */
+	this.changeBandwidth = function(bandwidth, streamId) {
+		
+		var errorDefinition = "";
+
+		var videoSender = thiz.getVideoSender(streamId);
+		
+		if (videoSender != null) {
+			const parameters = videoSender.getParameters();
+			
+			if (!parameters.encodings) {
+			      parameters.encodings = [{}];
+			}
+			
+			if (bandwidth === 'unlimited') {
+				delete parameters.encodings[0].maxBitrate;
+			} 
+			else {
+				parameters.encodings[0].maxBitrate = bandwidth * 1000;
+			}
+			
+			return videoSender.setParameters(parameters)
+		}
 		else {
-			errorDefinition = "Change bandwidth is not supported in this browser";
-		}	
+			errorDefinition = "Video sender not found to change bandwidth";
+		}
 		
 		return Promise.reject(errorDefinition);
 	};
