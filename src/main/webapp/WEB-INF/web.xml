@@ -38,6 +38,20 @@
 		<filter-name>TokenFilter</filter-name>
 		<url-pattern>*.mp4</url-pattern>
 	</filter-mapping>
+	
+	<filter>
+		<filter-name>HttpForwardFilter</filter-name>
+		<filter-class>io.antmedia.filter.HttpForwardFilter</filter-class>
+	</filter>
+	<filter-mapping>
+		<filter-name>HttpForwardFilter</filter-name>
+		<url-pattern>*.m3u8</url-pattern>
+	</filter-mapping>
+
+	<filter-mapping>
+		<filter-name>HttpForwardFilter</filter-name>
+		<url-pattern>*.mp4</url-pattern>
+	</filter-mapping>
 
 	<filter>
 		<filter-name>HlsStatisticsFilter</filter-name>
