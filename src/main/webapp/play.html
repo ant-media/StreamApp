@@ -298,6 +298,12 @@ pageEncoding="UTF-8"%>
 						noStreamCallback();
 					}
 				}
+				else{
+					/*
+					* WebRTC player getting any error, redirect HLS player.
+					*/
+					tryToHLSPlay(name, token, hlsNoStreamCallback);
+				}
 			}
 		});
 	}
