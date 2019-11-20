@@ -86,7 +86,7 @@ function WebRTCAdaptor(initialValues)
 	thiz.playStreamId = new Array();
 	thiz.micGainNode = null;
 	thiz.localStream = null;
-	thiz.bandwidth = "unlimited"; //kbps
+	thiz.bandwidth = 900; //default bandwidth kbps
 
 	thiz.isPlayMode = false;
 	thiz.debug = false;
