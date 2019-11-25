@@ -298,9 +298,9 @@ pageEncoding="UTF-8"%>
 						noStreamCallback();
 					}
 				}
-				if (error == "InvalidAccessError" || error == "notSetRemoteDescription" ) {
+				if (error == "notSetRemoteDescription" ) {
 					/*
-					* If getting Codec or Remote description error, redirect HLS player.
+					* If getting codec incompatible or remote description error, it will redirect HLS player.
 					*/
 					tryToHLSPlay(name, token, hlsNoStreamCallback);
 					}
