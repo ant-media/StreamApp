@@ -854,6 +854,9 @@ function WebRTCAdaptor(initialValues)
 			if (thiz.debug) {
 				console.error("set remote description is failed with error: " + error);
 			}
+			if(error=="InvalidAccessError: Failed to execute 'setRemoteDescription' on 'RTCPeerConnection': Failed to set remote offer sdp: Failed to set remote video description send parameters."){
+                thiz.callbackError("InvalidAccessError");
+        }
 		});
 
 	}

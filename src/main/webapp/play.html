@@ -298,11 +298,12 @@ pageEncoding="UTF-8"%>
 						noStreamCallback();
 					}
 				}
-				else{
+				if (error == "InvalidAccessError" || error == "notSetRemoteDescription" ) {
 					/*
-					* WebRTC player getting any error, redirect HLS player.
+					* If getting Codec or Remote description error, redirect HLS player.
 					*/
 					tryToHLSPlay(name, token, hlsNoStreamCallback);
+					}
 				}
 			}
 		});
