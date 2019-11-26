@@ -854,7 +854,7 @@ function WebRTCAdaptor(initialValues)
 			if (thiz.debug) {
 				console.error("set remote description is failed with error: " + error);
 			}
-			if(error.indexOf("InvalidAccessError") > -1 || error.indexOf("setRemoteDescription")  > -1){
+			if(error.toString().indexOf("InvalidAccessError") > -1 || error.toString().indexOf("setRemoteDescription")  > -1){
 			/**
 	 		* This error generally occurs in codec incompatibility.
 	 		* AMS for a now supports H.264 codec. This error happens when some browsers try to open it from VP8.
