@@ -1,12 +1,13 @@
 dist: xenial
 language: java
 jdk:
-  - openjdk8
+- openjdk8
 sudo: required
 before_install:
+- openssl aes-256-cbc -K $encrypted_bbedb246563f_key -iv $encrypted_bbedb246563f_iv
+  -in codesigning.asc.enc -out codesigning.asc -d
 - sudo apt-get update
 - sudo apt-get install openjfx
-- openssl aes-256-cbc -k "$GPG_PASSPHRASE" -in codesigning.asc.enc -out codesigning.asc -d
 - gpg --fast-import codesigning.asc
 # get parent project
 - (if [ $(git ls-remote https://github.com/ant-media/ant-media-server-parent.git $TRAVIS_BRANCH  | wc -l) == "1" ];  
@@ -78,4 +79,4 @@ deploy:
   skip_cleanup: true
   on:
     tags: true
-    condition: $TRAVIS_TAG =~ ^ams-v
+    condition: "$TRAVIS_TAG =~ ^ams-v"
