@@ -767,7 +767,12 @@ function WebRTCAdaptor(initialValues)
 		if (thiz.remotePeerConnection != null) {
 
 			var track = thiz.localStream.getVideoTracks()[0];
-			track.enabled = false;
+			if (adapter.browserDetails.browser == "firefox") {
+				track.enabled = false;
+			}
+			else {
+				track.stop();
+			}
 		}
 		else {
 			this.callbackError("NoActiveConnection");
