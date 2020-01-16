@@ -87,6 +87,8 @@ function WebRTCAdaptor(initialValues)
 	thiz.micGainNode = null;
 	thiz.localStream = null;
 	thiz.bandwidth = 900; //default bandwidth kbps
+	thiz.isMultiPeer = false; //used for multiple peer client
+	thiz.streamIdReal; //used for multiple peer client
 
 	thiz.isPlayMode = false;
 	thiz.debug = false;
@@ -485,8 +487,9 @@ function WebRTCAdaptor(initialValues)
 		var jsCmd = {
 				command : "join",
 				streamId : streamId,
+				multiPeer : thiz.isMultiPeer,
+				mode : thiz.isPlayMode ? "play" : "both",
 		};
-
 
 		thiz.webSocketAdaptor.send(JSON.stringify(jsCmd));
 	}
@@ -506,7 +509,7 @@ function WebRTCAdaptor(initialValues)
 
 		var jsCmd = {
 				command : "leave",
-				streamId: streamId,
+				streamId: thiz.streamId,
 		};
 
 		thiz.webSocketAdaptor.send(JSON.stringify(jsCmd));
@@ -665,13 +668,15 @@ function WebRTCAdaptor(initialValues)
 		if (thiz.remotePeerConnection[streamId] == null) 
 		{
 			var closedStreamId = streamId;
-			console.log("stream id in init peer connection: " + streamId + " close dstream id: " + closedStreamId);
+			console.log("stream id in init peer connection: " + streamId + " close stream id: " + closedStreamId);
 			thiz.remotePeerConnection[streamId] = new RTCPeerConnection(thiz.peerconnection_config);
 			thiz.remoteDescriptionSet[streamId] = false;
 			thiz.iceCandidateList[streamId] = new Array();
 			if (!thiz.playStreamId.includes(streamId)) 
 			{
-				thiz.remotePeerConnection[streamId].addStream(thiz.localStream);
+				if(thiz.localStream != null) {
+					thiz.remotePeerConnection[streamId].addStream(thiz.localStream);
+				}
 			}
 			thiz.remotePeerConnection[streamId].onicecandidate = function(event) {
 				thiz.iceCandidateReceived(event, closedStreamId);
@@ -1134,6 +1139,11 @@ function WebRTCAdaptor(initialValues)
 			}
 			else if (obj.command == "pong") {
 				thiz.callback(obj.command);
+			}
+			else if (obj.command == "connectWithNewId") {
+				thiz.streamId = obj.streamId;
+				thiz.isMultiPeer = false;
+				thiz.join(obj.streamId);
 			}
 
 		}
