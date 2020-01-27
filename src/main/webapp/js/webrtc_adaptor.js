@@ -356,7 +356,7 @@ function WebRTCAdaptor(initialValues)
                 window.removeEventListener("message", callback);
             }
 
-			if (message.data == "rtcmulticonnection-extension-loaded") {
+            else if (message.data == "rtcmulticonnection-extension-loaded") {
 				thiz.callback("screen_share_extension_available");
 				window.removeEventListener("message", callback);
 			}
