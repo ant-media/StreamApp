@@ -317,6 +317,30 @@ function WebRTCAdaptor(initialValues)
         });
 		
 	}
+	
+	/**
+	 * Checks browser supports screen share without extension is available
+	 * if exists it call callback with "browser_screen_share_supported"
+	 */
+	
+    this.checkBrowserScreenShareSupported = function() {
+        var callback = function (message) {
+
+            if (navigator.mediaDevices.getDisplayMedia || navigator.getDisplayMedia ) {
+
+                thiz.callback("browser_screen_share_supported");
+                window.removeEventListener("message", callback);
+            }
+        };
+
+        //add event listener for desktop capture
+        window.addEventListener("message", callback, false);
+
+        window.postMessage("are-you-there", "*");
+
+    };
+
+    thiz.checkBrowserScreenShareSupported();
 
 
 	/**
@@ -325,6 +349,12 @@ function WebRTCAdaptor(initialValues)
 	 */
 	this.checkExtension = function() {
 		var callback = function (message) {
+			
+			 // Check browser supports already screen share.
+            if (navigator.mediaDevices.getDisplayMedia || navigator.getDisplayMedia) {
+                console.log("screen share already supported");
+                window.removeEventListener("message", callback);
+            }
 
 			if (message.data == "rtcmulticonnection-extension-loaded") {
 				thiz.callback("screen_share_extension_available");
@@ -541,17 +571,115 @@ function WebRTCAdaptor(initialValues)
 
 	this.switchDesktopCapture = function(streamId) {
 		
+		 //Check browser is support screen share feature by default
+        if(navigator.mediaDevices.getDisplayMedia || navigator.getDisplayMedia){
+
+        var screenShareBrowserSupported = true;
+
+        //add event listener
+        window.addEventListener("message", screenShareExtensionCallback, false);
+
+        // check mozilla&chrome browser is support screen share support
+        if(navigator.mediaDevices.getDisplayMedia){
+
+              navigator.mediaDevices.getDisplayMedia({
+                audio: false,
+                video: true
+        }).then(
+            stream => {
+
+            // Screen share open in stream
+            thiz.arrangeStreams(stream, null);
+
+             // If screen share is stopped with Stop Sharing
+            stream.oninactive = () => {
+                thiz.switchVideoSource(streamId, mediaConstraints, function(event) {
+                    thiz.callback("screen_share_stopped");
+                    thiz.switchVideoCapture(streamId);
+                });
+            } 
+        },
+        error => {
+            window.addEventListener("message", screenShareExtensionCallback);
+
+            thiz.switchVideoSource(streamId, mediaConstraints, function(event) {
+                thiz.callback("screen_share_stopped");
+                thiz.switchVideoCapture(streamId);
+            });
+
+            console.debug("Permission denied error");
+            thiz.callbackError("screen_share_permission_denied");
+
+        }).catch(function(error) {
+            window.addEventListener("message", screenShareExtensionCallback);
+            thiz.switchVideoSource(streamId, mediaConstraints, function(event) {
+                thiz.callback("screen_share_stopped");
+                thiz.switchVideoCapture(streamId);
+            });
+            thiz.callbackError(error.name);
+        });
+
+
+        }
+
+        // check edge browser is support screen share support
+        else if(navigator.getDisplayMedia){
+
+              navigator.getDisplayMedia({
+                audio: false,
+                video: true
+        }).then(
+            stream => {
+
+            // Screen share open in stream
+            thiz.arrangeStreams(stream, null);
+
+             // If screen share is stopped with Stop Sharing
+            stream.oninactive = () => {
+                thiz.switchVideoSource(streamId, mediaConstraints, function(event) {
+                    thiz.callback("screen_share_stopped");
+                    thiz.switchVideoCapture(streamId);
+                });
+            } 
+        },
+        error => {
+            window.addEventListener("message", screenShareExtensionCallback);
+
+            thiz.switchVideoSource(streamId, mediaConstraints, function(event) {
+                thiz.callback("screen_share_stopped");
+                thiz.switchVideoCapture(streamId);
+            });
+
+            console.debug("Permission denied error");
+            thiz.callbackError("screen_share_permission_denied");
+
+        }).catch(function(error) {
+
+            window.addEventListener("message", screenShareExtensionCallback);
+
+            thiz.switchVideoSource(streamId, mediaConstraints, function(event) {
+                thiz.callback("screen_share_stopped");
+                thiz.switchVideoCapture(streamId);
+            });
+
+            thiz.callbackError(error.name);
+
+        });
+
+        }
+    }
+		
 		var screenShareExtensionCallback =  function(message) {
 
-			if (message.data == "rtcmulticonnection-extension-loaded") {
+			if (message.data == "rtcmulticonnection-extension-loaded" && !screenShareBrowserSupported) {
 				console.debug("rtcmulticonnection-extension-loaded parameter is received");
 				window.postMessage("get-sourceId", "*");
 			}
-			else if (message.data == "PermissionDeniedError") {
+			else if (message.data == "PermissionDeniedError" && !screenShareBrowserSupported) {
 				console.debug("Permission denied error");
 				thiz.callbackError("screen_share_permission_denied");
 			}
-			else if (message.data && message.data.sourceId) {
+			else if (message.data && message.data.sourceId && !screenShareBrowserSupported) {
 				var mediaConstraints = {
 						audio: false,
 						video: {

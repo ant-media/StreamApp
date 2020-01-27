@@ -248,6 +248,11 @@ body {
 				start_publish_button.disabled = false;
 				stop_publish_button.disabled = true;
 			}
+			else if (info == "browser_screen_share_supported") {
+				screen_share_checkbox.disabled = false;
+				console.log("browser screen share supported");
+				install_extension_link.style.display = "none";
+			}
 			else if (info == "screen_share_extension_available") {
 				screen_share_checkbox.disabled = false;
 				console.log("screen share extension available");
