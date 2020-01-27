@@ -88,7 +88,6 @@ function WebRTCAdaptor(initialValues)
 	thiz.localStream = null;
 	thiz.bandwidth = 900; //default bandwidth kbps
 	thiz.isMultiPeer = false; //used for multiple peer client
-	thiz.streamIdReal; //used for multiple peer client
 
 	thiz.isPlayMode = false;
 	thiz.debug = false;
@@ -484,6 +483,7 @@ function WebRTCAdaptor(initialValues)
 	}
 
 	this.join = function(streamId) {
+		thiz.streamId = streamId;
 		var jsCmd = {
 				command : "join",
 				streamId : streamId,
