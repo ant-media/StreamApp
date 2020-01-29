@@ -88,7 +88,8 @@ function WebRTCAdaptor(initialValues)
 	thiz.localStream = null;
 	thiz.bandwidth = 900; //default bandwidth kbps
 	thiz.isMultiPeer = false; //used for multiple peer client
-
+	thiz.multiPeerStreamId = null;   //used for multiple peer client
+	
 	thiz.isPlayMode = false;
 	thiz.debug = false;
 	
@@ -483,11 +484,10 @@ function WebRTCAdaptor(initialValues)
 	}
 
 	this.join = function(streamId) {
-		thiz.streamId = streamId;
 		var jsCmd = {
 				command : "join",
 				streamId : streamId,
-				multiPeer : thiz.isMultiPeer,
+				multiPeer : thiz.isMultiPeer && thiz.multiPeerStreamId == null,
 				mode : thiz.isPlayMode ? "play" : "both",
 		};
 
@@ -509,11 +509,12 @@ function WebRTCAdaptor(initialValues)
 
 		var jsCmd = {
 				command : "leave",
-				streamId: thiz.streamId,
+				streamId: thiz.isMultiPeer && thiz.multiPeerStreamId != null ? thiz.multiPeerStreamId : streamId,
 		};
 
 		thiz.webSocketAdaptor.send(JSON.stringify(jsCmd));
 		thiz.closePeerConnection(streamId);
+		thiz.multiPeerStreamId = null;
 	}
 
 	this.getStreamInfo = function(streamId) {
@@ -1141,8 +1142,7 @@ function WebRTCAdaptor(initialValues)
 				thiz.callback(obj.command);
 			}
 			else if (obj.command == "connectWithNewId") {
-				thiz.streamId = obj.streamId;
-				thiz.isMultiPeer = false;
+				thiz.multiPeerStreamId = obj.streamId;
 				thiz.join(obj.streamId);
 			}
 
