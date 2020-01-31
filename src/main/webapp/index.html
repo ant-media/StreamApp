@@ -111,8 +111,9 @@ body {
   					<label class="form-check-label" for="screen_share_checkbox" style="font-weight:normal">
     						Screen Share
   					</label>	<br/>
-  					<a id="install_chrome_extension_link" href="https://chrome.google.com/webstore/detail/jaefaokkgpkkjijgddghhcncipkebpnb">Install Chrome Extension</a>
-  				</div>
+  			
+  					<a id="browser_screen_share_doesnt_support" href="https://caniuse.com/#search=getDisplayMedia">Your browser doesn't support screen share. You can see supported browsers in this link </a>
+  					</div>
 			</p>
 			<p>
 				
@@ -251,12 +252,7 @@ body {
 			else if (info == "browser_screen_share_supported") {
 				screen_share_checkbox.disabled = false;
 				console.log("browser screen share supported");
-				install_extension_link.style.display = "none";
-			}
-			else if (info == "screen_share_extension_available") {
-				screen_share_checkbox.disabled = false;
-				console.log("screen share extension available");
-				install_extension_link.style.display = "none";
+				browser_screen_share_doesnt_support.style.display = "none";
 			}
 			else if (info == "screen_share_stopped") {
 				console.log("screen share stopped");

@@ -128,98 +128,84 @@ function WebRTCAdaptor(initialValues)
 		thiz.callbackError("UnsecureContext");
 		return;
 	}
+	
+	this.setCameraScreen = function(stream,audioStream) {
 
-	/**
-	 * Get user media
-	 */
-	this.getUserMedia = function (mediaConstraints, audioConstraint) {
-		navigator.mediaDevices.getUserMedia(mediaConstraints)
-		.then(function(stream){
+		navigator.mediaDevices.getUserMedia({video: true, audio: false})
+			.then(function(cameraStream) {
 
-			//this trick, getting audio and video separately, make us add or remove tracks on the fly
-			var audioTrack = stream.getAudioTracks();
-			if (audioTrack.length > 0) {
-				stream.removeTrack(audioTrack[0]);
-			}
-					
-			//add callback if desktop is sharing
-			if (mediaConstraints.video != "undefined" 
-				  && typeof mediaConstraints.video.mandatory != "undefined"
-				  && typeof mediaConstraints.video.mandatory.chromeMediaSource != "undefined"
-				  && mediaConstraints.video.mandatory.chromeMediaSource == "desktop") {
-				
-				stream.getVideoTracks()[0].onended = function(event) {
-					thiz.callback("screen_share_stopped");
-				}
-			}
+				//create a canvas element
+				var canvas = document.createElement("canvas");
+				var canvasContext = canvas.getContext("2d");
 
-			//now get only audio to add this stream
-			if (audioConstraint != "undefined" && audioConstraint != false) {
-				var media_audio_constraint = { audio: audioConstraint};
-				navigator.mediaDevices.getUserMedia(media_audio_constraint)
+				//create video element for screen
+				//var screenVideo = document.getElementById('sourceVideo');
+				var screenVideo = document.createElement('video');
+				//TODO: check audio track
+				screenVideo.srcObject = stream;
+				screenVideo.play();
+				//create video element for camera
+				var cameraVideo = document.createElement('video');
+				//TODO: check audio track
+				cameraVideo.srcObject = cameraStream;
+				cameraVideo.play();
+				var canvasStream = canvas.captureStream(15);
+				canvasStream.addTrack(audioStream.getAudioTracks()[0]);
+				//call gotStream
+				thiz.gotStream(canvasStream);
+
+				//update the canvas
+				setInterval(function(){
+					//draw screen to canvas
+					canvas.width = screenVideo.videoWidth;
+					canvas.height = screenVideo.videoHeight;
+					canvasContext.drawImage(screenVideo, 0, 0, canvas.width, canvas.height);
+
+					var cameraWidth = screenVideo.videoWidth * (thiz.camera_percent/100);
+					var cameraHeight = (cameraVideo.videoHeight/cameraVideo.videoWidth)*cameraWidth
+
+					var positionX = (canvas.width - cameraWidth) - thiz.camera_margin;
+					var positionY;
+
+					if (thiz.camera_location == "top") {
+						positionY = thiz.camera_margin;
+					}
+					else { //if not top, make it bottom
+						//draw camera on right bottom corner
+						positionY = (canvas.height - cameraHeight) - thiz.camera_margin;
+					}
+					canvasContext.drawImage(cameraVideo, positionX, positionY, cameraWidth, cameraHeight);
+				}, 66);
+
+			})
+			.catch(function(error) {
+				thiz.callbackError(error.name, error.message);
+			});
+	}
+	
+	this.getUserMediaDetail = function (mediaConstraints,audioConstraint,stream) {
+
+		//this trick, getting audio and video separately, make us add or remove tracks on the fly
+		var audioTrack = stream.getAudioTracks();
+		if (audioTrack.length > 0) {
+			stream.removeTrack(audioTrack[0]);
+		}
+
+		//add callback if desktop is sharing
+		stream.getVideoTracks()[0].onended = function(event) {
+			thiz.callback("screen_share_stopped");
+			thiz.switchVideoSource(streamId, mediaConstraints, null);
+		}
+
+		//now get only audio to add this stream
+		if (audioConstraint != "undefined" && audioConstraint != false) {
+			var media_audio_constraint = { audio: audioConstraint};
+			navigator.mediaDevices.getUserMedia(media_audio_constraint)
 				.then(function(audioStream) {
-					
-					
-					if (thiz.mediaConstraints != "undefined" && thiz.mediaConstraints.video == "screen+camera" )
+
+					if (thiz.mediaConstraints.video == "screen+camera" )
 					{
-						navigator.mediaDevices.getUserMedia({video: true, audio: false})
-						.then(function(cameraStream) {
-							//create a canvas element
-							var canvas = document.createElement("canvas"); 
-							var canvasContext = canvas.getContext("2d");
-							
-							//create video element for screen
-							//var screenVideo = document.getElementById('sourceVideo');
-							var screenVideo = document.createElement('video');
-							//TODO: check audio track
-							screenVideo.srcObject = stream;
-							screenVideo.play();
-							
-
-
-                            //create video element for camera
-							var cameraVideo = document.createElement('video');
-							//TODO: check audio track
-							cameraVideo.srcObject = cameraStream;
-							cameraVideo.play();
-							
-						
-							var canvasStream = canvas.captureStream(15);
-							canvasStream.addTrack(audioStream.getAudioTracks()[0]);
-							//call gotStream
-							thiz.gotStream(canvasStream);
-
-							//update the canvas
-							setInterval(function(){
-								
-								//draw screen to canvas
-								canvas.width = screenVideo.videoWidth;
-								canvas.height = screenVideo.videoHeight;
-								canvasContext.drawImage(screenVideo, 0, 0, canvas.width, canvas.height);
-							
-							    var cameraWidth = screenVideo.videoWidth * (thiz.camera_percent/100);
-							    var cameraHeight = (cameraVideo.videoHeight/cameraVideo.videoWidth)*cameraWidth
-							        
-								var positionX = (canvas.width - cameraWidth) - thiz.camera_margin;
-								var positionY;
-							    
-							    if (thiz.camera_location == "top") {
-							     	positionY = thiz.camera_margin;
-							    }
-							    else { //if not top, make it bottom							    	
-							    		//draw camera on right bottom corner
-								    	positionY = (canvas.height - cameraHeight) - thiz.camera_margin;
-							    }
-							    
-							    canvasContext.drawImage(cameraVideo, positionX, positionY, cameraWidth, cameraHeight);
-								
-															
-							}, 66);
-							
-						})
-						.catch(function(error) {
-							thiz.callbackError(error.name, error.message);
-						});
+						thiz.setCameraScreen(stream,audioStream);
 					}
 					else {
 						stream.addTrack(audioStream.getAudioTracks()[0]);
@@ -229,71 +215,54 @@ function WebRTCAdaptor(initialValues)
 				.catch(function(error) {
 					thiz.callbackError(error.name, error.message);
 				});
-			}
-			else {
-				stream.addTrack(audioStream.getAudioTracks()[0]);
-				thiz.gotStream(stream);
-			}
-		})
-		.catch(function(error) {
-			thiz.callbackError(error.name, error.message);
-		});
-	}
-	
-	this.openScreen = function(audioConstraint, openCamera) 
-	{
-		var callback = function(message) 
-		{
-			if (message.data == "rtcmulticonnection-extension-loaded") {
-				console.debug("rtcmulticonnection-extension-loaded parameter is received");
-				window.postMessage("get-sourceId", "*");
-			}
-			else if (message.data == "PermissionDeniedError") {
-				console.debug("Permission denied error");
-				thiz.callbackError("screen_share_permission_denied");
-			}
-			else if (message.data && message.data.sourceId) {
-				var mediaConstraints = {
-						audio: false,
-						video: {
-							mandatory: {
-								chromeMediaSource: 'desktop',
-								chromeMediaSourceId: message.data.sourceId,
-							},
-							optional: []
-						}
-				};
-
-				thiz.getUserMedia(mediaConstraints, audioConstraint);
-
-				//remove event listener
-				window.removeEventListener("message", callback);	    
-			}
-
 		}
-		window.addEventListener("message", callback, false);
-
-		window.postMessage("are-you-there", "*");
+		else {
+			stream.addTrack(audioStream.getAudioTracks()[0]);
+			thiz.gotStream(stream);
+		}
 	}
 
+	/**
+	 * Get user media
+	 */
+	this.getUserMedia = function (mediaConstraints, audioConstraint) {
+
+		// Check Media Constraint video value screen or screen + camera
+		if(mediaConstraints.video == "screen+camera" || mediaConstraints.video == "screen"){
+
+			navigator.mediaDevices.getDisplayMedia(mediaConstraints)
+				.then(function(stream){
+					thiz.getUserMediaDetail(mediaConstraints,audioConstraint,stream);
+				})
+				.catch(function(error) {
+					thiz.callbackError(error.name, error.message);
+				});
+		}
+
+		// If mediaConstraints only user camera
+		else {
+			navigator.mediaDevices.getUserMedia(mediaConstraints)
+				.then(function(stream){
+					thiz.getUserMediaDetail(mediaConstraints,audioConstraint,stream);
+				})
+				.catch(function(error) {
+					thiz.callbackError(error.name, error.message);
+				});
+		}
+	}	
 	/**
 	 * Open media stream, it may be screen, camera or audio
 	 */
 	this.openStream = function(mediaConstraints) {
+
 		thiz.mediaConstraints = mediaConstraints;
 		var audioConstraint = false;
 		if (typeof mediaConstraints.audio != "undefined" && mediaConstraints.audio != false) {
 			audioConstraint = mediaConstraints.audio;
 		}
-		
+
 		if (typeof mediaConstraints.video != "undefined") {
-			
-			if (mediaConstraints.video == "screen+camera" || mediaConstraints.video == "screen") {
-				this.openScreen(audioConstraint);
-			}
-		    else {
-				thiz.getUserMedia(mediaConstraints, audioConstraint);
-		    }
+			thiz.getUserMedia(mediaConstraints, audioConstraint);
 		}
 		else {
 			console.error("MediaConstraint video is not defined");
