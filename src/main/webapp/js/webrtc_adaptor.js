@@ -680,20 +680,22 @@ function WebRTCAdaptor(initialValues)
 				thiz.onTrack(event, closedStreamId);
 			}
 			
-			if (!thiz.isPlayMode) {
-				thiz.remotePeerConnection[streamId].oniceconnectionstatechange = function (event) 
-				{
+
+			thiz.remotePeerConnection[streamId].oniceconnectionstatechange = function (event) {
+				var obj = {state:thiz.remotePeerConnection[streamId].iceConnectionState, streamId:streamId};
+				thiz.callback("ice_connection_state_changed",obj);
 					
+				if (!thiz.isPlayMode) {
 					if (thiz.remotePeerConnection[streamId].iceConnectionState == "connected") {
-						
+							
 						thiz.changeBandwidth(thiz.bandwidth, streamId).then(() => {
-						      console.log("Bandwidth is changed to " + thiz.bandwidth);
-					    })
-					    .catch(e => console.error(e));
+					    console.log("Bandwidth is changed to " + thiz.bandwidth); 
+						})
+						.catch(e => console.error(e));
 					}
 				}
-				
 			}
+				
 		}
 	}
 
