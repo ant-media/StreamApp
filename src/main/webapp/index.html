@@ -303,6 +303,11 @@ body {
 			else if (error.indexOf("TypeError") != -1) {
 				errorMessage = "Video/Audio is required";
 			}
+			else if (error.indexOf("ScreenSharePermissionDenied") != -1) {
+				errorMessage = "You are not allowed to access screen share";
+				screen_share_checkbox.checked = false;
+			}
+			
 		
 			alert(errorMessage);
 		}

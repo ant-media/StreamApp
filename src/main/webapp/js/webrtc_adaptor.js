@@ -208,8 +208,15 @@ function WebRTCAdaptor(initialValues)
 						thiz.setCameraScreen(stream,audioStream);
 					}
 					else {
-						stream.addTrack(audioStream.getAudioTracks()[0]);
-						thiz.gotStream(stream);
+
+						if(thiz.mediaConstraints.video == "screen"){
+							thiz.switchDesktopSource(stream,streamId,mediaConstraints,onended);
+						}
+						else
+						{
+							stream.addTrack(audioStream.getAudioTracks()[0]);
+							thiz.gotStream(stream);
+						}
 					}
 				})
 				.catch(function(error) {
@@ -232,10 +239,18 @@ function WebRTCAdaptor(initialValues)
 
 			navigator.mediaDevices.getDisplayMedia(mediaConstraints)
 				.then(function(stream){
+
 					thiz.getUserMediaDetail(mediaConstraints,audioConstraint,stream);
+
 				})
 				.catch(function(error) {
-					thiz.callbackError(error.name, error.message);
+					if (error.name === "NotAllowedError") {
+						console.debug("Permission denied error");
+						thiz.callbackError("ScreenSharePermissionDenied");
+					}
+					else{
+						thiz.callbackError(error.name, error.message);
+					}
 				});
 		}
 
@@ -243,13 +258,17 @@ function WebRTCAdaptor(initialValues)
 		else {
 			navigator.mediaDevices.getUserMedia(mediaConstraints)
 				.then(function(stream){
+
 					thiz.getUserMediaDetail(mediaConstraints,audioConstraint,stream);
+
 				})
 				.catch(function(error) {
 					thiz.callbackError(error.name, error.message);
 				});
+
 		}
-	}	
+	}
+	
 	/**
 	 * Open media stream, it may be screen, camera or audio
 	 */
@@ -292,24 +311,23 @@ function WebRTCAdaptor(initialValues)
 	 * if exists it call callback with "browser_screen_share_supported"
 	 */
 	
-    this.checkBrowserScreenShareSupported = function() {
-        var callback = function (message) {
+	this.checkBrowserScreenShareSupported = function() {
+		var callback = function (message) {
 
-            if (navigator.mediaDevices.getDisplayMedia || navigator.getDisplayMedia ) {
+			if (navigator.mediaDevices.getDisplayMedia || navigator.getDisplayMedia ) {
+				thiz.callback("browser_screen_share_supported");
+				window.removeEventListener("message", callback);
+			}
+		};
 
-                thiz.callback("browser_screen_share_supported");
-                window.removeEventListener("message", callback);
-            }
-        };
+		//add event listener for desktop capture
+		window.addEventListener("message", callback, false);
 
-        //add event listener for desktop capture
-        window.addEventListener("message", callback, false);
+		window.postMessage("are-you-there", "*");
 
-        window.postMessage("are-you-there", "*");
+	};
 
-    };
-
-    thiz.checkBrowserScreenShareSupported();
+	thiz.checkBrowserScreenShareSupported();
 
 
 	/**
