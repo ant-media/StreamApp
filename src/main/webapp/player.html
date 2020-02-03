@@ -212,6 +212,8 @@ body {
 					console.log("Connecton closed: "
 							+ JSON.stringify(obj));
 				}
+			}else if (info == "ice_connection_state_changed") {
+				console.log("iceConnectionState Changed: ",JSON.stringify(obj));
 			}
 			else if (info == "updated_stats") {
 				//obj is the PeerStats which has fields
