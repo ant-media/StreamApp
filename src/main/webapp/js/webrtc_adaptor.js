@@ -632,7 +632,8 @@ function WebRTCAdaptor(initialValues)
 		}
 		else {
 			var dataObj = {
-					track: event.streams[0],
+					stream: event.streams[0],
+					track: event.track,
 					streamId: streamId
 			}
 			thiz.callback("newStreamAvailable", dataObj);
