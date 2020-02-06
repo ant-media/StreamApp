@@ -80,16 +80,16 @@ public class WebSocketLocalHandler {
 	private void createHandler(ApplicationContext context, Session session) {
 		try {
 
-			String rtmpRequest;
+			boolean rtmpForward;
 			
 			try {
-				rtmpRequest = session.getRequestParameterMap().get("rtmpRequest").get(0);	
+				rtmpForward = session.getRequestParameterMap().get("rtmpForward").get(0).contains("true");	
 			} catch (Exception e) {
-				rtmpRequest = "";
+				rtmpForward = false;
 			}
 
 			// If user want to RTMP play, should add rtmp query in websocket URL.
-			if(io.antmedia.rest.RestServiceBase.isEnterprise() && !rtmpRequest.equals("rtmp")) {
+			if(io.antmedia.rest.RestServiceBase.isEnterprise() && !rtmpForward) {
 				Class clazz = Class.forName("io.antmedia.enterprise.webrtc.WebSocketEnterpriseHandler");
 				handler = (WebSocketCommunityHandler) clazz.getConstructor(ApplicationContext.class, Session.class).newInstance(context, session);
 			}
