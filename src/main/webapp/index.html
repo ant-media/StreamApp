@@ -111,8 +111,9 @@ body {
   					<label class="form-check-label" for="screen_share_checkbox" style="font-weight:normal">
     						Screen Share
   					</label>	<br/>
-  					<a id="install_chrome_extension_link" href="https://chrome.google.com/webstore/detail/jaefaokkgpkkjijgddghhcncipkebpnb">Install Chrome Extension</a>
-  				</div>
+  			
+  					<a id="browser_screen_share_doesnt_support" href="https://caniuse.com/#search=getDisplayMedia">Your browser doesn't support screen share. You can see supported browsers in this link </a>
+  					</div>
 			</p>
 			<p>
 				
@@ -167,6 +168,8 @@ body {
 		streamNameBox.value = name;
 	}
 	
+	// It should be true
+	var rtmpForward = getUrlParameter("rtmpForward");
 
 	function startPublishing() {
 		streamId = streamNameBox.value;
@@ -216,7 +219,7 @@ body {
 	};
 
 	var appName = location.pathname.substring(0, location.pathname.lastIndexOf("/")+1);
-	var path =  location.hostname + ":" + location.port + appName + "websocket";
+	var path =  location.hostname + ":" + location.port + appName + "websocket?rtmpForward=" + rtmpForward;
 	var websocketURL =  "ws://" + path;
 	
 	if (location.protocol.startsWith("https")) {
@@ -248,10 +251,10 @@ body {
 				start_publish_button.disabled = false;
 				stop_publish_button.disabled = true;
 			}
-			else if (info == "screen_share_extension_available") {
+			else if (info == "browser_screen_share_supported") {
 				screen_share_checkbox.disabled = false;
-				console.log("screen share extension available");
-				install_extension_link.style.display = "none";
+				console.log("browser screen share supported");
+				browser_screen_share_doesnt_support.style.display = "none";
 			}
 			else if (info == "screen_share_stopped") {
 				console.log("screen share stopped");
@@ -268,6 +271,9 @@ body {
 			}
 			else if (info == "refreshConnection") {
 				startPublishing();
+			}
+			else if (info == "ice_connection_state_changed") {
+				console.log("iceConnectionState Changed: ",JSON.stringify(obj));
 			}
 			else if (info == "updated_stats") {
 				//obj is the PeerStats which has fields
@@ -302,7 +308,13 @@ body {
 			else if (error.indexOf("TypeError") != -1) {
 				errorMessage = "Video/Audio is required";
 			}
-		
+			else if (error.indexOf("ScreenSharePermissionDenied") != -1) {
+				errorMessage = "You are not allowed to access screen share";
+				screen_share_checkbox.checked = false;
+			}
+			else if (error.indexOf("WebSocketNotConnected") != -1) {
+				errorMessage = "WebSocket Connection is disconnected.";
+			}
 			alert(errorMessage);
 		}
 	});

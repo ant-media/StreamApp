@@ -2,18 +2,18 @@
 pageEncoding="UTF-8"%>
 <html>
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta charset="UTF-8">
-<link rel="stylesheet"
-	href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
-	integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u"
-	crossorigin="anonymous">
-<script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
-<script src="js/webrtc_adaptor.js"></script>
-<script
-	src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta charset="UTF-8">
+	<link rel="stylesheet"
+		  href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
+		  integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u"
+		  crossorigin="anonymous">
+	<script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
+	<script src="js/webrtc_adaptor.js"></script>
+	<script
+			src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
 
-<style>
+	<style>
 video {
 	width: 100%;
 	max-width: 320px;
@@ -89,55 +89,55 @@ body {
 </style>
 </head>
 <body>
-	<div class="container">
+<div class="container">
 
-		<div class="header clearfix">
-			<nav>
-				<ul class="nav navbar-pills pull-right">
-					<li><a href="http://antmedia.io">Contact</a></li>
-				</ul>
-			</nav>
-			<h3 class="text-muted">WebRTC Conference</h3>
+	<div class="header clearfix">
+		<nav>
+			<ul class="nav navbar-pills pull-right">
+				<li><a href="http://antmedia.io">Contact</a></li>
+			</ul>
+		</nav>
+		<h3 class="text-muted">WebRTC Conference</h3>
+	</div>
+
+	<div class="jumbotron">
+		<div id="players">
+			<div class="col-sm-3">
+				<video id="localVideo" autoplay muted></video>
+			</div>
 		</div>
 
-		<div class="jumbotron">
-			<div id="players">
-				<div class="col-sm-3">
-					<video id="localVideo" autoplay muted></video>
-				</div>
-			</div>
 
 
-
-			<div class="row">
-				<div class="col-sm-6 col-sm-offset-3">
-					<p>
-						<input type="text" class="form-control" value="room1"
-							id="roomName" placeholder="Type room name">
-					</p>
-					<p>
-						<button onclick="joinRoom()" class="btn btn-info" disabled
+		<div class="row">
+			<div class="col-sm-6 col-sm-offset-3">
+				<p>
+					<input type="text" class="form-control" value="room1"
+						   id="roomName" placeholder="Type room name">
+				</p>
+				<p>
+					<button onclick="joinRoom()" class="btn btn-info" disabled
 							id="join_publish_button">Join Room</button>
-						<button onclick="leaveRoom()" class="btn btn-info" disabled
+					<button onclick="leaveRoom()" class="btn btn-info" disabled
 							id="stop_publish_button">Leave Room</button>
-					</p>
+				</p>
 
 
-					<span class="label label-success" id="broadcastingInfo"
-						style="font-size: 14px; display: none" style="display: none">Publishing</span>
-				</div>
+				<span class="label label-success" id="broadcastingInfo"
+					  style="font-size: 14px; display: none" style="display: none">Publishing</span>
 			</div>
-
-
 		</div>
-		<footer class="footer">
-			<p>
-				<a href="http://antmedia.io">Ant Media Server Enterprise
-					Edition</a>
-			</p>
-		</footer>
+
 
 	</div>
+	<footer class="footer">
+		<p>
+			<a href="http://antmedia.io">Ant Media Server Enterprise
+				Edition</a>
+		</p>
+	</footer>
+
+</div>
 </body>
 <script>
 	var token = "<%= request.getParameter("token") %>";
@@ -188,17 +188,17 @@ body {
 			video = document.getElementById("remoteVideo"+obj.streamId);
 		}
 
-		video.srcObject = obj.track;
+		video.srcObject = obj.stream;
 	}
 	
 	function createRemoteVideo(streamId) {
 		var player = document.createElement("div"); 
 		player.className = "col-sm-3";
 		player.id = "player"+streamId;
-		player.innerHTML = '<video id="remoteVideo'+streamId+'" autoplay muted></video>';
+		player.innerHTML = '<video id="remoteVideo'+streamId+'"controls autoplay></video>';
 		document.getElementById("players").appendChild(player);
 	}
-	
+
 	function removeRemoteVideo(streamId) {
 		var video = document.getElementById("remoteVideo"+streamId);
 		if (video != null) {
@@ -324,7 +324,6 @@ body {
 						if (video != null) {
 							video.srcObject = null;
 						}
-						webRTCAdaptor.getStreamInfo(obj.streamId);
 					} else if (info == "streamInformation") {
 						streamInformation(obj);
 					}
