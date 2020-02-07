@@ -1020,6 +1020,17 @@ function WebRTCAdaptor(initialValues)
 		thiz.remotePeerConnection = new Array();
 		thiz.webSocketAdaptor.close();
 	}
+	
+	this.peerMessage = function (streamId, definition, data) {
+		var jsCmd = {
+				command : "peerMessageCommand",
+				streamId : streamId,
+				definition : definition,
+				data: data,
+		};
+
+		thiz.webSocketAdaptor.send(JSON.stringify(jsCmd));
+	}
 
 	function WebSocketAdaptor() {
 		var wsConn = new WebSocket(thiz.websocket_url);
@@ -1129,7 +1140,9 @@ function WebRTCAdaptor(initialValues)
 				thiz.multiPeerStreamId = obj.streamId;
 				thiz.join(obj.streamId);
 			}
-
+			else if (obj.command == "peerMessageCommand") {
+				thiz.callback(obj.streamId, obj);
+			}
 		}
 
 		wsConn.onerror = function(error) {
@@ -1144,7 +1157,5 @@ function WebRTCAdaptor(initialValues)
 			clearPingTimer();
 			thiz.callback("closed", event);
 		}
-
-
 	}
 }
