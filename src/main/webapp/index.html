@@ -168,6 +168,8 @@ body {
 		streamNameBox.value = name;
 	}
 	
+	// It should be true
+	var rtmpForward = getUrlParameter("rtmpForward");
 
 	function startPublishing() {
 		streamId = streamNameBox.value;
@@ -217,7 +219,7 @@ body {
 	};
 
 	var appName = location.pathname.substring(0, location.pathname.lastIndexOf("/")+1);
-	var path =  location.hostname + ":" + location.port + appName + "websocket";
+	var path =  location.hostname + ":" + location.port + appName + "websocket?rtmpForward=" + rtmpForward;
 	var websocketURL =  "ws://" + path;
 	
 	if (location.protocol.startsWith("https")) {
