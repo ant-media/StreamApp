@@ -56,7 +56,7 @@ before_install:
       git clone --depth=1 https://github.com/ant-media/Ant-Media-Server.git;  
   fi)
 - cd Ant-Media-Server 
-- mvn clean install -DskipTests -Dgpg.skip=true --quiet
+- mvn clean install -DskipTests -Dmaven.javadoc.skip=true -Dgpg.skip=true --quiet
 - cd ..  #up to Ant-Media-Server 
 
 install:
