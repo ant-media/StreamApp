@@ -20,6 +20,7 @@ import io.antmedia.AntMediaApplicationAdapter;
 import io.antmedia.AppSettings;
 import io.antmedia.IApplicationAdaptorFactory;
 import io.antmedia.datastore.db.DataStoreFactory;
+import io.antmedia.filter.StreamAcceptFilter;
 import io.antmedia.muxer.IAntMediaStreamHandler;
 import io.antmedia.muxer.MuxAdaptor;
 
@@ -31,6 +32,7 @@ public class StreamApplication extends MultiThreadedApplicationAdapter implement
 	private DataStoreFactory dataStoreFactory;
 	private AppSettings appSettings;
 	private AntMediaApplicationAdapter appAdaptor;
+	private StreamAcceptFilter streamAcceptFilter;
 	
 	@Override
 	public boolean appStart(IScope app) {
@@ -125,6 +127,16 @@ public class StreamApplication extends MultiThreadedApplicationAdapter implement
 
 	public void setAppSettings(AppSettings appSettings) {
 		this.appSettings = appSettings;
+	}
+	
+
+	public StreamAcceptFilter getStreamAcceptFilter() {
+		return streamAcceptFilter;
+	}
+	
+
+	public void setStreamAcceptFilter(StreamAcceptFilter streamAcceptFilter) {
+		this.streamAcceptFilter = streamAcceptFilter;
 	}
 
 	public AntMediaApplicationAdapter getAppAdaptor() {
