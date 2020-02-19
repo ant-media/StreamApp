@@ -520,6 +520,16 @@ function WebRTCAdaptor(initialValues)
 		};
 		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
 	}
+	
+	this.enableTrack = function(mainTrackId, trackId, enabled) {
+		var jsCmd = {
+				command : "enableTrack",
+				streamId : mainTrackId,
+				trackId : trackId,
+				enabled : enabled,
+		};
+		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
+	}
 
 	this.gotStream = function (stream) 
 	{	

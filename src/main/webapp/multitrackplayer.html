@@ -110,6 +110,12 @@ body {
 
 			</p>
 		</div>
+
+		<div class="container" style="padding: 40px 15px; text-align: center">
+			<ul id="trackList" name="trackList"">
+			</ul>
+		</div>
+
 		<footer class="footer">
 			<p>
 				<a href="http://antmedia.io">Ant Media Server Enterprise
@@ -149,7 +155,6 @@ body {
 	{
 		streamNameBox.value = name;
 	}
-	
 	
 	function startPlaying() {
 		streamId = streamNameBox.value;
@@ -210,6 +215,7 @@ body {
 							+ JSON.stringify(obj));
 				}
 			} else if (info == "newStreamAvailable") {
+				addVideoTrack(obj);
 				playVideoTrack(obj);
 			}
 			else if (info == "updated_stats") {
@@ -232,6 +238,31 @@ body {
 			alert(JSON.stringify(error));
 		}
 	});
+	
+	function addVideoTrack(obj) {
+		if(obj.track.kind == "video") {
+			var trackUl = document.getElementById("trackList");
+			var li = document.createElement("li");
+			var checkbox = document.createElement("input");
+			var label= document.createElement("label");
+			var desc = obj.track.label.replace("ARDAMSv", "");
+			var description = document.createTextNode(desc);
+	
+			checkbox.type = "checkbox";
+			checkbox.name = desc;  
+			checkbox.checked = true;
+			checkbox.onclick = function(){enableTrack(this);};
+			label.appendChild(checkbox);
+			label.appendChild(description);
+			li.appendChild(label);
+			trackUl.appendChild(li);
+		}
+	}
+	
+	function enableTrack(checkBox) {
+		trackId = checkBox.name;
+		webRTCAdaptor.enableTrack(streamNameBox.value, trackId, checkBox.checked);
+	}
 	
 	function playVideoTrack(obj) {
 		var index = "0";
@@ -265,7 +296,7 @@ body {
 		var player = document.createElement("div"); 
 		player.className = "col-sm-6";
 		player.id = "player"+index;
-		player.innerHTML = '<video id="remoteVideo'+index+'" autoplay controls playsinline></video>';
+		player.innerHTML = '<video id="remoteVideo'+index+'" autoplay controls playsinline></video>'+'video:'+index;
 		document.getElementById("players").appendChild(player);
 	}
 </script>
