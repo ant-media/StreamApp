@@ -448,7 +448,7 @@ function WebRTCAdaptor(initialValues)
 
 	}
 
-	this.play = function (streamId, token, roomId) {
+	this.play = function (streamId, token, roomId, enableTracks) {
 		thiz.playStreamId.push(streamId);
 		var jsCmd =
 		{
@@ -456,6 +456,7 @@ function WebRTCAdaptor(initialValues)
 				streamId : streamId,
 				token : token,
 				room : roomId,
+				trackList : enableTracks,
 		}
 
 		thiz.webSocketAdaptor.send(JSON.stringify(jsCmd));
@@ -512,6 +513,28 @@ function WebRTCAdaptor(initialValues)
 				streamId: streamId,
 		};
 		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
+	}
+	
+	this.enableTrack = function(mainTrackId, trackId, enabled) {
+		var jsCmd = {
+				command : "enableTrack",
+				streamId : mainTrackId,
+				trackId : trackId,
+				enabled : enabled,
+		};
+		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
+	}
+	
+	this.getTracks = function(streamId, token) {
+		thiz.playStreamId.push(streamId);
+		var jsCmd =
+		{
+				command : "getTrackList",
+				streamId : streamId,
+				token : token,
+		}
+
+		thiz.webSocketAdaptor.send(JSON.stringify(jsCmd));
 	}
 
 	this.gotStream = function (stream) 
@@ -1136,12 +1159,15 @@ function WebRTCAdaptor(initialValues)
 			else if (obj.command == "pong") {
 				thiz.callback(obj.command);
 			}
+			else if (obj.command == "trackList") {
+				thiz.callback(obj.command, obj);
+			}
 			else if (obj.command == "connectWithNewId") {
 				thiz.multiPeerStreamId = obj.streamId;
 				thiz.join(obj.streamId);
 			}
 			else if (obj.command == "peerMessageCommand") {
-				thiz.callback(obj.streamId, obj);
+				thiz.callback(obj.command, obj);
 			}
 		}
 
