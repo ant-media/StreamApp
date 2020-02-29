@@ -131,7 +131,7 @@ function WebRTCAdaptor(initialValues)
 		return;
 	}
 
-	this.setCameraScreen = function(stream,audioStream) {
+	this.switchDesktopwithCameraSource = function(stream, streamId, audioStream, onEndedCallback) {
 
 		navigator.mediaDevices.getUserMedia({video: true, audio: false})
 		.then(function(cameraStream) {
@@ -155,6 +155,8 @@ function WebRTCAdaptor(initialValues)
 			canvasStream.addTrack(audioStream.getAudioTracks()[0]);
 			//call gotStream
 			thiz.gotStream(canvasStream);
+			//Add camera track in stream
+			thiz.arrangeDesktopwithCamera(canvasStream, streamId,onEndedCallback);
 
 			//update the canvas
 			setInterval(function(){
@@ -205,20 +207,15 @@ function WebRTCAdaptor(initialValues)
 			navigator.mediaDevices.getUserMedia(media_audio_constraint)
 			.then(function(audioStream) {
 
-				if (thiz.mediaConstraints.video == "screen+camera" )
-				{
-					thiz.setCameraScreen(stream,audioStream);
+				if(thiz.mediaConstraints.video == "screen"){
+					thiz.switchDesktopSource(stream,streamId,mediaConstraints,onended);
 				}
-				else {
-
-					if(thiz.mediaConstraints.video == "screen"){
-						thiz.switchDesktopSource(stream,streamId,mediaConstraints,onended);
-					}
-					else
-					{
-						stream.addTrack(audioStream.getAudioTracks()[0]);
-						thiz.gotStream(stream);
-					}
+				else if(thiz.mediaConstraints.video == "screen+camera" ){
+					thiz.switchDesktopwithCameraSource(stream,streamId,audioStream,onended);
+				}
+				else{
+					stream.addTrack(audioStream.getAudioTracks()[0]);
+					thiz.gotStream(stream);
 				}
 			})
 			.catch(function(error) {
@@ -558,15 +555,51 @@ function WebRTCAdaptor(initialValues)
 	this.switchDesktopCapture = function(streamId) {
 
 		mediaConstraints.video = "screen";
+		mediaConstraints.audio = true;
 
 		var audioConstraint = false;
 		if (typeof mediaConstraints.audio != "undefined" && mediaConstraints.audio != false) {
 			audioConstraint = mediaConstraints.audio;
 		}
 
-
 		thiz.getUserMedia(mediaConstraints, audioConstraint);
 
+	}
+
+
+	this.switchDesktopCaptureWithCamera = function(streamId) {
+
+		mediaConstraints.video = "screen+camera";
+		mediaConstraints.audio = true;
+
+		thiz.camera_location = "top"
+		thiz.camera_margin = 15;	
+		thiz.camera_percent = 15;
+
+		var audioConstraint = false;
+		if (typeof mediaConstraints.audio != "undefined" && mediaConstraints.audio != false) {
+			audioConstraint = mediaConstraints.audio;
+		}
+		thiz.getUserMedia(mediaConstraints, audioConstraint);
+	}
+
+	this.arrangeDesktopwithCamera = function (canvasStream,streamId,onEndedCallback) {
+
+		if (thiz.remotePeerConnection[streamId] != null) {
+
+			var videoTrackSender = thiz.remotePeerConnection[streamId].getSenders().find(function(s) {
+				return s.track.kind == "video";
+			});
+
+			videoTrackSender.replaceTrack(canvasStream.getVideoTracks()[0]).then(function(result) {
+
+				thiz.localStream.addTrack(canvasStream.getVideoTracks()[0]);
+				thiz.localVideo.srcObject = thiz.localStream;
+
+			}).catch(function(error) {
+				thiz.callbackError(error.name, error.message);
+			});
+		}
 	}
 
 	thiz.arrangeStreams = function(stream, onEndedCallback) {
