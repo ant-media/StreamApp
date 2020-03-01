@@ -247,6 +247,9 @@ function WebRTCAdaptor(initialValues)
 				if (error.name === "NotAllowedError") {
 					console.debug("Permission denied error");
 					thiz.callbackError("ScreenSharePermissionDenied");
+					
+					// Redirect Stream Camera
+					thiz.switchVideoSource(streamId, mediaConstraints, null, true);
 				}
 				else{
 					thiz.callbackError(error.name, error.message);
