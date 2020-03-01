@@ -107,9 +107,17 @@ body {
 					id="start_play_button">Start Playing</button>
 				<button onclick="stopPlaying()" class="btn btn-info"
 					id="stop_play_button">Stop Playing</button>
+				<button onclick="getTracks()" class="btn btn-info"
+					id="get_tracks_button">Tracks</button>
 
 			</p>
 		</div>
+
+		<div class="container" style="padding: 40px 15px; text-align: center">
+			<ul id="trackList" name="trackList"">
+			</ul>
+		</div>
+
 		<footer class="footer">
 			<p>
 				<a href="http://antmedia.io">Ant Media Server Enterprise
@@ -128,6 +136,8 @@ body {
 	var streamNameBox = document.getElementById("streamName");
 
 	var streamId;
+	
+	var tracks = [];
 	
 	function getUrlParameter(sParam) {
 	    var sPageURL = decodeURIComponent(window.location.search.substring(1)),
@@ -150,14 +160,26 @@ body {
 		streamNameBox.value = name;
 	}
 	
-	
 	function startPlaying() {
+		var enabledTracks = [];
+		tracks.forEach(function(trackId) {
+			var checkBox = document.getElementById("cbx"+trackId);
+			if(checkBox.checked) {
+				enabledTracks.push(trackId);
+			}
+		});
+		
 		streamId = streamNameBox.value;
-		webRTCAdaptor.play(streamNameBox.value, token);
+		webRTCAdaptor.play(streamNameBox.value, token, "", enabledTracks);
 	}
-
+	
 	function stopPlaying() {
 		webRTCAdaptor.stop(streamId);
+	}
+	
+	function getTracks() {
+		streamId = streamNameBox.value;
+		webRTCAdaptor.getTracks(streamNameBox.value, token);
 	}
 
 	var pc_config = null;
@@ -224,6 +246,9 @@ body {
 						+ " fractionLost: " + obj.fractionLost);
 				 
 			}
+			else if (info == "trackList") {
+				addTrackList(obj.streamId, obj.trackList);
+			}
 		},
 		callbackError : function(error) {
 			//some of the possible errors, NotFoundError, SecurityError,PermissionDeniedError
@@ -232,6 +257,37 @@ body {
 			alert(JSON.stringify(error));
 		}
 	});
+	
+	function addTrackList(streamId, trackList) {
+		addVideoTrack(streamId);
+		trackList.forEach(function(trackId) {
+			addVideoTrack(trackId);
+		});
+	}
+	
+	function addVideoTrack(trackId) {
+		tracks.push(trackId);
+
+		var trackUl = document.getElementById("trackList");
+		var li = document.createElement("li");
+		var checkbox = document.createElement("input");
+		var label= document.createElement("label");
+		var description = document.createTextNode(trackId);
+		checkbox.type = "checkbox";
+		checkbox.name = trackId;  
+		checkbox.id = "cbx"+trackId;  
+		checkbox.checked = false;
+		checkbox.onclick = function(){enableTrack(trackId);};
+		label.appendChild(checkbox);
+		label.appendChild(description);
+		li.appendChild(label);
+		trackUl.appendChild(li);
+	}
+	
+	function enableTrack(trackId) {
+		var checkBox = document.getElementById("cbx"+trackId);
+		webRTCAdaptor.enableTrack(streamNameBox.value, trackId, checkBox.checked);
+	}
 	
 	function playVideoTrack(obj) {
 		var index = "0";
@@ -265,7 +321,7 @@ body {
 		var player = document.createElement("div"); 
 		player.className = "col-sm-6";
 		player.id = "player"+index;
-		player.innerHTML = '<video id="remoteVideo'+index+'" autoplay controls playsinline></video>';
+		player.innerHTML = '<video id="remoteVideo'+index+'" autoplay controls playsinline></video>'+'video:'+index;
 		document.getElementById("players").appendChild(player);
 	}
 </script>
