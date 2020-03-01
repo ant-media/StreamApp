@@ -106,13 +106,21 @@ body {
 				<input type="text" class="form-control" value="stream1"
 					id="streamName" placeholder="Type stream name">
 				<div class="form-check">	
-					<input class="form-check-input" disabled onchange="enableDesktopCapture(event.target.checked)" type="checkbox" value="" 
-					id="screen_share_checkbox">
-  					<label class="form-check-label" for="screen_share_checkbox" style="font-weight:normal">
-    						Screen Share
+
+					<input class="form-check-input" checked="true"  onchange="switchMode(event.target)" type="checkbox" value="" 
+					id="camera_checkbox">
+  					<label class="form-check-label" for="camera_checkbox" style="font-weight:normal">
+    						Camera
   					</label>	<br/>
 
-  					<input class="form-check-input" disabled onchange="enableDesktopWithCameraCapture(event.target.checked)" type="checkbox" value="" 
+  					<input class="form-check-input" disabled onchange="switchMode(event.target)" type="checkbox" value="" 
+  					id="screen_share_checkbox">
+  					<label class="form-check-label" for="screen_share_checkbox" style="font-weight:normal">
+    						Screen Share
+  					</label>
+  					<br/>
+
+  					<input class="form-check-input" disabled onchange="switchMode(event.target)" type="checkbox" value="" 
 					id="screen_share_with_camera_checkbox">
   					<label class="form-check-label" for="screen_share_with_camera_checkbox" style="font-weight:normal">
     						Screen Share with Camera
@@ -146,10 +154,13 @@ body {
 <script>
 	var token = "<%= request.getParameter("token") %>";
 
+	var camera_checkbox = document.getElementById("camera_checkbox");
+	var screen_share_checkbox = document.getElementById("screen_share_checkbox");
+  	var screen_share_with_camera_checkbox = document.getElementById("screen_share_with_camera_checkbox");
+
 	var start_publish_button = document.getElementById("start_publish_button");
 	var stop_publish_button = document.getElementById("stop_publish_button");
 	
-	var screen_share_checkbox = document.getElementById("screen_share_checkbox");
 	var install_extension_link = document.getElementById("install_chrome_extension_link");
 
 	var streamNameBox = document.getElementById("streamName");
@@ -189,26 +200,38 @@ body {
 		webRTCAdaptor.stop(streamId);
 	}
 	
-	function enableDesktopCapture(enable) {
-		if (enable == true) {
-			screen_share_with_camera_checkbox.checked = false;
-			webRTCAdaptor.switchDesktopCapture(streamId);
-		}
-		else {
-			webRTCAdaptor.switchVideoCapture(streamId);
-		}
-	}
+  	function switchMode(chbx) {
 
-	function enableDesktopWithCameraCapture(enable) {
-		if (enable == true) {
-			screen_share_checkbox.checked = false
-			webRTCAdaptor.switchDesktopCaptureWithCamera(streamId);
-		}
-		else {
-			webRTCAdaptor.switchVideoCapture(streamId);
-		}
-	}
-	
+ 		if(camera_checkbox == chbx && camera_checkbox.checked == true){
+
+			camera_checkbox.checked = true;
+  			screen_share_checkbox.checked = false;
+  			screen_share_with_camera_checkbox.checked = false;
+
+  			webRTCAdaptor.switchVideoCapture(streamId);
+
+  		}
+  		else if(screen_share_checkbox == chbx && screen_share_checkbox.checked == true ){
+
+  			camera_checkbox.checked = false;
+  			screen_share_checkbox.checked = true;
+  			screen_share_with_camera_checkbox.checked = false;
+
+  			webRTCAdaptor.switchDesktopCapture(streamId);
+  		}
+  		else if(screen_share_with_camera_checkbox == chbx && screen_share_with_camera_checkbox.checked == true){
+
+  			camera_checkbox.checked = false;
+  			screen_share_checkbox.checked = false;
+  			screen_share_with_camera_checkbox.checked = true;
+
+  			webRTCAdaptor.switchDesktopCaptureWithCamera(streamId);
+  		}
+  		else {
+  			chbx.checked = true;
+  		}
+  	}
+
     function startAnimation() {
 
         $("#broadcastingInfo").fadeIn(800, function () {
@@ -222,7 +245,6 @@ body {
             }
           });
         });
-
       }
 
 	var pc_config = null;
@@ -272,12 +294,14 @@ body {
 				stop_publish_button.disabled = true;
 			}
 			else if (info == "browser_screen_share_supported") {
+				camera_checkbox.disabled = false;
 				screen_share_checkbox.disabled = false;
 				screen_share_with_camera_checkbox.disabled = false;
 				console.log("browser screen share supported");
 				browser_screen_share_doesnt_support.style.display = "none";
 			}
 			else if (info == "screen_share_stopped") {
+				camera_checkbox.checked = true;
 				screen_share_checkbox.checked = false;
 				screen_share_with_camera_checkbox.checked = false;
 				console.log("screen share stopped");
@@ -333,6 +357,7 @@ body {
 			}
 			else if (error.indexOf("ScreenSharePermissionDenied") != -1) {
 				errorMessage = "You are not allowed to access screen share";
+				camera_checkbox.checked = true;
 				screen_share_checkbox.checked = false;
 				screen_share_with_camera_checkbox.checked = false;
 			}
