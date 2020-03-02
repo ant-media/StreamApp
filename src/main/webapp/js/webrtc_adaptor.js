@@ -92,7 +92,18 @@ function WebRTCAdaptor(initialValues)
 	
 	thiz.isPlayMode = false;
 	thiz.debug = false;
+
+	/**
+	 * Supported candidate types. Below types are for both sending and receiving candidates. 
+	 * It means if when client receives candidate from STUN server, it sends to the server if candidate's protocol
+	 * is in the list. Likely, when client receives remote candidate from server, it adds as ice candidate
+	 * if candidate protocol is in the list below.
+	 */
+	thiz.candidateTypes = ["udp", "tcp"];
+
+
 	thiz.desktopStream = null;
+
 	/**
 	 * The cam_location below is effective when camera and screen is send at the same time.
 	 * possible values are top and bottom. It's on right all the time
@@ -675,18 +686,26 @@ function WebRTCAdaptor(initialValues)
 
 	this.iceCandidateReceived = function(event, streamId) {
 		if (event.candidate) {
+			
+			if (thiz.candidateTypes.includes(event.candidate.protocol)) {
 
-			var jsCmd = {
-					command : "takeCandidate",
-					streamId : streamId,
-					label : event.candidate.sdpMLineIndex,
-					id : event.candidate.sdpMid,
-					candidate : event.candidate.candidate
-			};
-
-			if (thiz.debug) {
-				console.log("sending ice candiate for stream Id " + streamId );
-				console.log(JSON.stringify(event.candidate));
+				var jsCmd = {
+						command : "takeCandidate",
+						streamId : streamId,
+						label : event.candidate.sdpMLineIndex,
+						id : event.candidate.sdpMid,
+						candidate : event.candidate.candidate
+				};
+	
+				if (thiz.debug) {
+					console.log("sending ice candiate for stream Id " + streamId );
+					console.log(JSON.stringify(event.candidate));
+				}
+			}
+			else {
+				if (thiz.debug) {
+					console.log("Candidate's protocol("+event.candidate.protocol+") is not supported. Supported protocols: " + thiz.candidateTypes);
+				}
 			}
 
 			thiz.webSocketAdaptor.send(JSON.stringify(jsCmd));
@@ -925,16 +944,25 @@ function WebRTCAdaptor(initialValues)
 	};
 
 	this.addIceCandidate = function(streamId, candidate) {
-		thiz.remotePeerConnection[streamId].addIceCandidate(candidate)
-		.then(function(response) {
+		if (thiz.candidateTypes.includes(candidate.protocol)) 
+		{
+		
+			thiz.remotePeerConnection[streamId].addIceCandidate(candidate)
+			.then(function(response) {
+				if (thiz.debug) {
+					console.log("Candidate is added for stream " + streamId);
+				}
+			})
+			.catch(function (error) {
+				console.error("ice candiate cannot be added for stream id: " + streamId + " error is: " + error  );
+				console.error(candidate);
+			});
+		}
+		else {
 			if (thiz.debug) {
-				console.log("Candidate is added for stream " + streamId);
+				console.log("Candidate's protocol("+candidate.protocol+") is not supported. Supported protocols:" + thiz.candidateTypes);
 			}
-		})
-		.catch(function (error) {
-			console.error("ice candiate cannot be added for stream id: " + streamId + " error is: " + error  );
-			console.error(candidate);
-		});
+		}
 	};
 
 	this.startPublishing = function(idOfStream) {
