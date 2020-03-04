@@ -4,6 +4,8 @@ import java.io.File;
 import java.util.List;
 
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.bytedeco.javacpp.avcodec.AVPacket;
+import org.bytedeco.javacpp.avformat.AVFormatContext;
 import org.red5.server.adapter.MultiThreadedApplicationAdapter;
 import org.red5.server.api.scope.IScope;
 import org.red5.server.api.stream.IBroadcastStream;
@@ -55,6 +57,8 @@ public class StreamApplication extends MultiThreadedApplicationAdapter implement
 				registerStreamPublishSecurity(streamPublishSecurity);
 			}
 		}
+		
+		appAdaptor.setStreamAcceptFilter(getStreamAcceptFilter());
 		
 		appAdaptor.setDataStoreFactory(getDataStoreFactory());
 		appAdaptor.appStart(app);
@@ -161,5 +165,10 @@ public class StreamApplication extends MultiThreadedApplicationAdapter implement
 	@Override
 	public void muxAdaptorRemoved(MuxAdaptor muxAdaptor) {
 		appAdaptor.muxAdaptorRemoved(muxAdaptor);		
+	}
+
+	@Override
+	public boolean isValidStreamParameters(AVFormatContext inputFormatContext, AVPacket pkt) {
+		return appAdaptor.isValidStreamParameters(inputFormatContext,pkt);
 	}
 }
