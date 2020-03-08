@@ -35,11 +35,11 @@
 	<bean id="hls.viewerstats" class="io.antmedia.statistic.HlsViewerStats" />
 	
 	<bean id="token.service"
-		class="#{ T(io.antmedia.rest.BroadcastRestService).isEnterprise() ? 'io.antmedia.enterprise.security.TokenService' : 'io.antmedia.security.MockTokenService' }">
+		class="#{ T(io.antmedia.rest.RestServiceBase).isEnterprise() ? 'io.antmedia.enterprise.security.TokenService' : 'io.antmedia.security.MockTokenService' }">
 	</bean>
 	
 	<bean id="publishIPFilter"
-		class="#{ T(io.antmedia.rest.BroadcastRestService).isEnterprise() ? 'io.antmedia.enterprise.security.PublishIPFilter' : 'io.antmedia.security.MockTokenService' }">
+		class="#{ T(io.antmedia.rest.RestServiceBase).isEnterprise() ? 'io.antmedia.enterprise.security.PublishIPFilter' : 'io.antmedia.security.MockTokenService' }">
     </bean>
     
     <bean id="streamAcceptFilter" class="io.antmedia.filter.StreamAcceptFilter"/>
@@ -62,5 +62,5 @@
 	</bean>
 	
     <bean id="webrtc.adaptor"  
-    	class="#{ T(io.antmedia.rest.BroadcastRestService).isEnterprise() ? 'io.antmedia.enterprise.webrtc.WebRTCAdaptor' : 'io.antmedia.webrtc.MockWebRTCAdaptor' }"/>
+    	class="#{ T(io.antmedia.rest.RestServiceBase).isEnterprise() ? 'io.antmedia.enterprise.webrtc.WebRTCAdaptor' : 'io.antmedia.webrtc.MockWebRTCAdaptor' }"/>
 </beans>
