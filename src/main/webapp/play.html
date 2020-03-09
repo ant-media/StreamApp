@@ -215,7 +215,10 @@ pageEncoding="UTF-8"%>
 		player.poster("previews/"+preview+".png");
 
 		if (autoPlay) {
-			player.play();
+			player.ready(function() {
+				player.play();
+			});
+			
 		}
 		document.getElementById("video_container").style.display = "block";
 		document.getElementById("video_info").hidden = true;
