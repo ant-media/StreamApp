@@ -735,7 +735,7 @@ function WebRTCAdaptor(initialValues)
 			}
 			
 			const dataChannelOptions = {
-					ordered: true, // do not guarantee order
+					ordered: true,
 			};
 			var dataChannel = thiz.remotePeerConnection[streamId].createDataChannel(streamId, dataChannelOptions);
 
@@ -1143,7 +1143,7 @@ function WebRTCAdaptor(initialValues)
 		thiz.webSocketAdaptor.send(JSON.stringify(jsCmd));
 	}
 	
-	this.sendViaDataChannel = function(streamId, message) {
+	this.sendData = function(streamId, message) {
 		var dataChannel = thiz.remotePeerConnection[streamId].dataChannel;
 		dataChannel.send(message);
 	}
