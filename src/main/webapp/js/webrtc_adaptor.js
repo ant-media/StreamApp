@@ -733,6 +733,27 @@ function WebRTCAdaptor(initialValues)
 			thiz.remotePeerConnection[streamId].ontrack = function(event) {
 				thiz.onTrack(event, closedStreamId);
 			}
+			
+			const dataChannelOptions = {
+					ordered: true,
+			};
+			var dataChannel = thiz.remotePeerConnection[streamId].createDataChannel(streamId, dataChannelOptions);
+
+			dataChannel.onerror = (error) => {
+				console.log("Data Channel Error:", error);
+			};
+
+			dataChannel.onmessage = (event) => {
+				console.log("Got Data Channel Message:", event.data);
+			};
+
+			dataChannel.onopen = () => {
+				thiz.remotePeerConnection[streamId].dataChannel = dataChannel;
+			};
+
+			dataChannel.onclose = () => {
+				console.log("The Data Channel is Closed");
+			};
 
 
 			thiz.remotePeerConnection[streamId].oniceconnectionstatechange = function (event) {
@@ -749,7 +770,24 @@ function WebRTCAdaptor(initialValues)
 					}
 				}
 			}
+			
+			thiz.remotePeerConnection[streamId].ondatachannel = function(ev) {
+				ev.channel.onopen = function() {
+					thiz.remotePeerConnection[streamId].dataChannel = ev.channel; 
+					console.log('Data channel is open and ready to be used.');
+				};
 
+				ev.channel.onmessage = function(event) {
+					console.log('Data Channel OnMessage :', event.data);
+				}
+				ev.channel.onclose = () => {
+					console.log("The Data Channel is Closed");
+				};
+
+				ev.channel.onerror = (error) => {
+					console.log("Data Channel Error:", error);
+				};
+			}
 		}
 	}
 
@@ -814,8 +852,6 @@ function WebRTCAdaptor(initialValues)
 		}).catch(function(error){
 			console.error("Cannot set local description. Error is: " + error);
 		});
-
-
 	}
 
 
@@ -1106,7 +1142,12 @@ function WebRTCAdaptor(initialValues)
 
 		thiz.webSocketAdaptor.send(JSON.stringify(jsCmd));
 	}
-
+	
+	this.sendData = function(streamId, message) {
+		var dataChannel = thiz.remotePeerConnection[streamId].dataChannel;
+		dataChannel.send(message);
+	}
+	
 	function WebSocketAdaptor() {
 		var wsConn = new WebSocket(thiz.websocket_url);
 
@@ -1161,7 +1202,7 @@ function WebRTCAdaptor(initialValues)
 		this.isConnected = function() {
 			return connected;
 		}
-
+		
 		wsConn.onmessage = function(event) {
 			var obj = JSON.parse(event.data);
 
