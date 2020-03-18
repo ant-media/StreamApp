@@ -167,7 +167,13 @@ function WebRTCAdaptor(initialValues)
 			var canvasStream = canvas.captureStream(15);
 			canvasStream.addTrack(audioStream.getAudioTracks()[0]);
 
-			thiz.switchDesktopSource(canvasStream,streamId,mediaConstraints,onended,null);
+			if(thiz.localStream == null){
+				stream.addTrack(audioStream.getAudioTracks()[0]);
+				thiz.gotStream(canvasStream);
+			}
+			else{
+				thiz.switchDesktopSource(canvasStream,streamId,mediaConstraints,onended,null);
+			}
 
 			//update the canvas
 			setInterval(function(){
@@ -260,7 +266,19 @@ function WebRTCAdaptor(initialValues)
 					thiz.callbackError("ScreenSharePermissionDenied");
 					
 					// Redirect Stream Camera
-					thiz.switchVideoSource(streamId, mediaConstraints, null, true);
+					if(thiz.localStream == null){
+
+						var mediaConstraints = {
+							video : true,
+							audio : true
+						};
+
+						thiz.openStream(mediaConstraints);
+					}
+					else{
+						thiz.switchVideoCapture(streamId);
+					}
+
 				}
 				else{
 					thiz.callbackError(error.name, error.message);
@@ -568,9 +586,10 @@ function WebRTCAdaptor(initialValues)
 	}
 
 	this.switchDesktopCapture = function(streamId) {
-
-		mediaConstraints.video = "screen";
-		mediaConstraints.audio = true;
+		var mediaConstraints = {
+			video : "screen",
+			audio : true
+		};
 
 		var audioConstraint = false;
 		if (typeof mediaConstraints.audio != "undefined" && mediaConstraints.audio != false) {
@@ -583,9 +602,10 @@ function WebRTCAdaptor(initialValues)
 
 
 	this.switchDesktopCaptureWithCamera = function(streamId) {
-
-		mediaConstraints.video = "screen+camera";
-		mediaConstraints.audio = true;
+		var mediaConstraints = {
+			video : "screen+camera",
+			audio : true
+		};
 
 		thiz.camera_location = "top"
 		thiz.camera_margin = 15;	
