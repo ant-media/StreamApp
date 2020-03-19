@@ -586,10 +586,9 @@ function WebRTCAdaptor(initialValues)
 	}
 
 	this.switchDesktopCapture = function(streamId) {
-		var mediaConstraints = {
-			video : "screen",
-			audio : true
-		};
+
+		mediaConstraints.video = "screen";
+		mediaConstraints.audio = true;
 
 		var audioConstraint = false;
 		if (typeof mediaConstraints.audio != "undefined" && mediaConstraints.audio != false) {
@@ -602,10 +601,9 @@ function WebRTCAdaptor(initialValues)
 
 
 	this.switchDesktopCaptureWithCamera = function(streamId) {
-		var mediaConstraints = {
-			video : "screen+camera",
-			audio : true
-		};
+
+		mediaConstraints.video = "screen+camera";
+		mediaConstraints.audio = true;
 
 		thiz.camera_location = "top"
 		thiz.camera_margin = 15;	

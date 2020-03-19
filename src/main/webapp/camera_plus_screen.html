@@ -111,7 +111,7 @@ body {
   					<label class="form-check-label" for="screen_share_checkbox" style="font-weight:normal">
     						Screen Share
   					</label>	<br/>
-  				<a id="browser_screen_share_doesnt_support" href="https://caniuse.com/#search=getDisplayMedia">Your browser doesn't support screen share. You can see supported browsers in this link </a>
+  				  	<a id="browser_screen_share_doesnt_support" href="https://caniuse.com/#search=getDisplayMedia">Your browser doesn't support screen share. You can see supported browsers in this link </a>
   				</div>
 			</p>
 			<p>
@@ -257,6 +257,7 @@ body {
 				browser_screen_share_doesnt_support.style.display = "none";
 			}
 			else if (info == "screen_share_stopped") {
+				screen_share_checkbox.checked = false;
 				console.log("screen share stopped");
 			}
 			else if (info == "closed") {
