@@ -142,7 +142,10 @@ body {
 <script>
 	var token = "<%= request.getParameter("token") %>";
 	var streamId = "<%= request.getParameter("streamId") %>";
-
+	var playOnly = "<%= request.getParameter("playOnly") %>";
+	if(playOnly == "null") {
+		playOnly = false;	
+	}
 	
 	var join_publish_button = document.getElementById("join_publish_button");
 	var stop_publish_button = document.getElementById("stop_publish_button");
@@ -161,7 +164,7 @@ body {
 		webRTCAdaptor.leaveFromRoom(roomNameBox.value);
 
 		for (var node in document.getElementById("players").childNodes) {
-			if(node.id != "localVideo") {
+			if(node.tagName == 'DIV' && node.id != "localVideo") {
 				document.getElementById("players").removeChild(node);
 			}
 		}
@@ -264,6 +267,7 @@ body {
 				peerconnection_config : pc_config,
 				sdp_constraints : sdpConstraints,
 				localVideoId : "localVideo",
+				isPlayMode : playOnly,
 				debug : true,
 				callback : function(info, obj) {
 					if (info == "initialized") {
@@ -276,7 +280,13 @@ body {
 						console.log("joined the room: "
 								+ roomOfStream[obj.streamId]);
 						console.log(obj)
-						publish(obj.streamId, token);
+						if(playOnly) {
+							join_publish_button.disabled = true;
+							stop_publish_button.disabled = false;	
+						}
+						else {
+							publish(obj.streamId, token);
+						}
 						var streams = obj.streams;
 
 						if (obj.streams != null) {
@@ -310,6 +320,10 @@ body {
 					} else if (info == "leavedFromRoom") {
 						var room = obj.ATTR_ROOM_NAME;
 						console.debug("leaved from the room:" + room);
+						if(playOnly) {
+							join_publish_button.disabled = false;
+							stop_publish_button.disabled = true;	
+						}
 
 					} else if (info == "closed") {
 						//console.log("Connection closed");
