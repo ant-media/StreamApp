@@ -92,6 +92,8 @@ function WebRTCAdaptor(initialValues)
 	
 	thiz.isPlayMode = false;
 	thiz.debug = false;
+	
+	thiz.publishMode="camera"; //screen, screen+camera
 
 	/**
 	 * Supported candidate types. Below types are for both sending and receiving candidates. 
@@ -129,6 +131,17 @@ function WebRTCAdaptor(initialValues)
 
 	thiz.localVideo = document.getElementById(thiz.localVideoId);
 	thiz.remoteVideo = document.getElementById(thiz.remoteVideoId);
+	
+	// it's should be compatibility previous version
+	if(thiz.mediaConstraints.video == "camera") {
+		thiz.publishMode="camera";
+	}
+	else if(thiz.mediaConstraints.video == "screen") {
+		thiz.publishMode="screen";
+	}
+	else if(thiz.mediaConstraints.video == "screen+camera") {
+		thiz.publishMode="screen+camera";
+	}
 
 	if (!("WebSocket" in window)) {
 		console.log("WebSocket not supported.");
@@ -167,7 +180,13 @@ function WebRTCAdaptor(initialValues)
 			var canvasStream = canvas.captureStream(15);
 			canvasStream.addTrack(audioStream.getAudioTracks()[0]);
 
-			thiz.switchDesktopSource(canvasStream,streamId,mediaConstraints,onended,null);
+			if(thiz.localStream == null){
+				stream.addTrack(audioStream.getAudioTracks()[0]);
+				thiz.gotStream(canvasStream);
+			}
+			else{
+				thiz.switchDesktopSource(canvasStream,streamId,thiz.mediaConstraints,onended,null);
+			}
 
 			//update the canvas
 			setInterval(function(){
@@ -219,10 +238,10 @@ function WebRTCAdaptor(initialValues)
 			navigator.mediaDevices.getUserMedia(media_audio_constraint)
 			.then(function(audioStream) {
 
-				if(thiz.mediaConstraints.video == "screen"){
+				if(thiz.publishMode == "screen"){
 					thiz.switchDesktopSource(stream,streamId,mediaConstraints,onended,true);
 				}
-				else if(thiz.mediaConstraints.video == "screen+camera" ){
+				else if(thiz.publishMode == "screen+camera" ){
 					thiz.switchDesktopwithCameraSource(stream,streamId,audioStream,onended);
 				}
 				else{
@@ -246,7 +265,7 @@ function WebRTCAdaptor(initialValues)
 	this.getUserMedia = function (mediaConstraints, audioConstraint) {
 
 		// Check Media Constraint video value screen or screen + camera
-		if(mediaConstraints.video == "screen+camera" || mediaConstraints.video == "screen"){
+		if(thiz.publishMode == "screen+camera" || thiz.publishMode == "screen"){
 
 			navigator.mediaDevices.getDisplayMedia(mediaConstraints)
 			.then(function(stream){
@@ -259,8 +278,20 @@ function WebRTCAdaptor(initialValues)
 					console.debug("Permission denied error");
 					thiz.callbackError("ScreenSharePermissionDenied");
 					
-					// Redirect Stream Camera
-					thiz.switchVideoSource(streamId, mediaConstraints, null, true);
+					// Redirect Default Stream Camera
+					if(thiz.localStream == null){
+
+						var mediaConstraints = {
+							video : true,
+							audio : true
+						};
+
+						thiz.openStream(mediaConstraints);
+					}
+					else{
+						thiz.switchVideoCapture(streamId);
+					}
+					
 				}
 				else{
 					thiz.callbackError(error.name, error.message);
@@ -559,34 +590,29 @@ function WebRTCAdaptor(initialValues)
 	};
 
 	this.switchVideoCapture = function(streamId) {
-		var mediaConstraints = {
-				video : true,
-				audio : false
-		};
+		
+		thiz.publishMode = "camera";
 
-		thiz.switchVideoSource(streamId, mediaConstraints, null, true);
+		thiz.switchVideoSource(streamId, thiz.mediaConstraints, null, true);
 	}
 
 	this.switchDesktopCapture = function(streamId) {
 
-		mediaConstraints.video = "screen";
-		mediaConstraints.audio = true;
+		thiz.publishMode = "screen";
 
 		var audioConstraint = false;
 		if (typeof mediaConstraints.audio != "undefined" && mediaConstraints.audio != false) {
 			audioConstraint = mediaConstraints.audio;
 		}
 
-		thiz.getUserMedia(mediaConstraints, audioConstraint);
-
+		thiz.getUserMedia(thiz.mediaConstraints, audioConstraint);
 	}
 
 
 	this.switchDesktopCaptureWithCamera = function(streamId) {
 
-		mediaConstraints.video = "screen+camera";
-		mediaConstraints.audio = true;
-
+		thiz.publishMode = "screen+camera";
+		
 		thiz.camera_location = "top"
 		thiz.camera_margin = 15;	
 		thiz.camera_percent = 15;
@@ -628,14 +654,14 @@ function WebRTCAdaptor(initialValues)
 				});
 
 				videoTrackSender.replaceTrack(stream.getVideoTracks()[0]).then(function(result) {
-					thiz.arrangeStreams(stream, onEndedCallback,stopDesktop);
+					thiz.arrangeStreams(stream, onEndedCallback, stopDesktop);
 
 				}).catch(function(error) {
 					console.log(error.name);
 				});
 			}
 			else {
-				thiz.arrangeStreams(stream, onEndedCallback,stopDesktop);	
+				thiz.arrangeStreams(stream, onEndedCallback, stopDesktop);	
 			}
 
 		})
@@ -652,14 +678,14 @@ function WebRTCAdaptor(initialValues)
 			});
 
 			videoTrackSender.replaceTrack(stream.getVideoTracks()[0]).then(function(result) {
-				thiz.arrangeStreams(stream, onEndedCallback,stopDesktop);
+				thiz.arrangeStreams(stream, onEndedCallback, stopDesktop);
 
 			}).catch(function(error) {
 				console.log(error.name);
 			});
 		}
 		else {
-			thiz.arrangeStreams(stream, onEndedCallback,stopDesktop);
+			thiz.arrangeStreams(stream, onEndedCallback, stopDesktop);
 		}
 	}
 
