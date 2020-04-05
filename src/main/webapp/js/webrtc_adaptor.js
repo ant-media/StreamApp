@@ -713,6 +713,38 @@ function WebRTCAdaptor(initialValues)
 	}
 
 
+	this.initDataChannel = function(streamId, dataChannel) {
+		dataChannel.onerror = (error) => {
+			console.log("Data Channel Error:", error);
+			var obj = {
+				streamId: streamId,
+				error: error
+			};
+			thiz.callbackError("data_channel_error", obj);
+		};
+
+		dataChannel.onmessage = (event) => {
+			var obj = {
+				streamId: streamId,
+				event: event,
+			};
+			thiz.callback("data_received", obj);
+		};
+
+		dataChannel.onopen = () => {
+			thiz.remotePeerConnection[streamId].dataChannel = dataChannel;
+			console.log("Data channel is opened");
+			thiz.callback("data_channel_opened", streamId)
+		};
+
+		dataChannel.onclose = () => {
+			console.log("Data channel is closed");
+			thiz.callback("data_channel_closed", streamId);
+		};
+		
+	}
+
+
 	this.initPeerConnection = function(streamId) {
 		if (thiz.remotePeerConnection[streamId] == null) 
 		{
@@ -734,26 +766,20 @@ function WebRTCAdaptor(initialValues)
 				thiz.onTrack(event, closedStreamId);
 			}
 			
-			const dataChannelOptions = {
-					ordered: true,
-			};
-			var dataChannel = thiz.remotePeerConnection[streamId].createDataChannel(streamId, dataChannelOptions);
-
-			dataChannel.onerror = (error) => {
-				console.log("Data Channel Error:", error);
-			};
-
-			dataChannel.onmessage = (event) => {
-				console.log("Got Data Channel Message:", event.data);
-			};
-
-			dataChannel.onopen = () => {
-				thiz.remotePeerConnection[streamId].dataChannel = dataChannel;
-			};
-
-			dataChannel.onclose = () => {
-				console.log("The Data Channel is Closed");
-			};
+			if (thiz.isPlayMode == false) {
+				//open data channel if it's not play mode,
+				const dataChannelOptions = {
+						ordered: true,
+				};
+				var dataChannel = thiz.remotePeerConnection[streamId].createDataChannel(streamId, dataChannelOptions);
+				thiz.initDataChannel(streamId, dataChannel);
+			}
+			else {
+				//in play mode, server opens the datachannel
+				thiz.remotePeerConnection[streamId].ondatachannel = function(ev) {
+					thiz.initDataChannel(streamId, ev.channel);
+				}
+			}
 
 
 			thiz.remotePeerConnection[streamId].oniceconnectionstatechange = function (event) {
@@ -771,23 +797,7 @@ function WebRTCAdaptor(initialValues)
 				}
 			}
 			
-			thiz.remotePeerConnection[streamId].ondatachannel = function(ev) {
-				ev.channel.onopen = function() {
-					thiz.remotePeerConnection[streamId].dataChannel = ev.channel; 
-					console.log('Data channel is open and ready to be used.');
-				};
 
-				ev.channel.onmessage = function(event) {
-					console.log('Data Channel OnMessage :', event.data);
-				}
-				ev.channel.onclose = () => {
-					console.log("The Data Channel is Closed");
-				};
-
-				ev.channel.onerror = (error) => {
-					console.log("Data Channel Error:", error);
-				};
-			}
 		}
 	}
 

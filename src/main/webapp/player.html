@@ -1,13 +1,11 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8"
 pageEncoding="UTF-8"%>
-<html>
+<!doctype html>
+<html lang="en">
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta charset="UTF-8">
-<link rel="stylesheet"
-	href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
-	integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u"
-	crossorigin="anonymous">
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
 <script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
 <script src="js/webrtc_adaptor.js"></script>
 <style>
@@ -15,35 +13,15 @@ video {
 	width: 100%;
 	max-width: 640px;
 }
-/* Space out content a bit */
-body {
-	padding-top: 20px;
-	padding-bottom: 20px;
-}
 
 /* Everything but the jumbotron gets side spacing for mobile first views */
 .header, .marketing, .footer {
-	padding-right: 15px;
-	padding-left: 15px;
+	padding: 15px;
 }
 
 /* Custom page header */
 .header {
 	padding-bottom: 20px;
-	border-bottom: 1px solid #e5e5e5;
-}
-/* Make the masthead heading the same height as the navigation */
-.header h3 {
-	margin-top: 0;
-	margin-bottom: 0;
-	line-height: 40px;
-}
-
-/* Custom page footer */
-.footer {
-	padding-top: 19px;
-	color: #777;
-	border-top: 1px solid #e5e5e5;
 }
 
 /* Customize container */
@@ -60,7 +38,6 @@ body {
 /* Main marketing message and sign up button */
 .jumbotron {
 	text-align: center;
-	border-bottom: 1px solid #e5e5e5;
 }
 
 /* Responsive: Portrait tablets and up */
@@ -70,55 +47,70 @@ body {
 		padding-right: 0;
 		padding-left: 0;
 	}
-	/* Space out the masthead */
-	.header {
-		margin-bottom: 30px;
-	}
-	/* Remove the bottom border on the jumbotron for visual effect */
-	.jumbotron {
-		border-bottom: 0;
-	}
 }
+.options {
+		display:none;
+	}
 </style>
 </head>
 <body>
 
 	<div class="container">
 		<div class="header clearfix">
-			<nav>
-				<ul class="nav navbar-pills pull-right">
-					<li><a href="http://antmedia.io">Contact</a></li>
-				</ul>
-			</nav>
-			<h3 class="text-muted">WebRTC Play</h3>
+			<div class="row">
+				<h3 class="col text-muted">WebRTC Play</h3>
+				<nav class="col align-self-center">
+					<ul class="nav float-right">
+						<li><a href="http://antmedia.io">Contact</a></li>
+					</ul>
+				</nav>
+			</div>
 		</div>
-
 
 
 		<div class="jumbotron">
 
-			<p>
+			<div class="col-sm-12 form-group">
 				<video id="remoteVideo" autoplay controls playsinline ></video>
-			</p>
-			<p>
+			</div>
+			<div class="form-group col-sm-12 text-left">
 				<input type="text" class="form-control" value="stream1"
 					id="streamName" placeholder="Type stream name">
-			</p>
+			</div>
+			<div class="col-sm-12 text-right">
+				<button type="button" class="btn btn-outline-primary btn-sm" onclick="toggleOptions()">Options</button>
+			</div>
+			<div class="form-group col-sm-12 text-left options">
+				<label>Data Channel Messages</label>
+				<textarea class="form-control" id="dataMessagesTextarea" style="font-size:10px" rows="8"></textarea>
+				<div class="form-row">
+					<div class="form-group col-sm-10">
+						<input type="text" class="form-control" id="dataTextbox" placeholder="Write your message to send publisher/players">
+					</div>
+					<div class="form-group col-sm-2">
+					<button type="button" class="btn btn-outline-primary btn-block" onclick="sendData()">Send</button>
+					</div>
+				</div>
+			</div>
+
 			<p>
-				<button onclick="startPlaying()" class="btn btn-info"
+				<button onclick="startPlaying()" class="btn btn-primary"
 					id="start_play_button">Start Playing</button>
-				<button onclick="stopPlaying()" class="btn btn-info"
+				<button onclick="stopPlaying()" class="btn btn-primary"
 					id="stop_play_button">Stop Playing</button>
 
 			</p>
 		</div>
-		<footer class="footer">
+		<footer class="footer text-center">
 			<p>
-				<a href="http://antmedia.io">Ant Media Server Enterprise
-					Edition</a>
+				<a href="http://antmedia.io">Ant Media Server</a>
 			</p>
 		</footer>
 	</div>
+
+	<script src="https://code.jquery.com/jquery-3.4.1.min.js"  crossorigin="anonymous"></script>
+	<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" crossorigin="anonymous"></script>
+	<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"  crossorigin="anonymous"></script>	
 
 </body>
 <script>
@@ -152,6 +144,28 @@ body {
 		streamNameBox.value = name;
 	}
 	
+	function toggleOptions() {
+		$(".options").toggle();
+	}
+
+	function sendData() {
+		try {
+			var iceState = webRTCAdaptor.iceConnectionState(streamId);
+            if (iceState != null && iceState != "failed" && iceState != "disconnected") {
+            
+				webRTCAdaptor.sendData($("#streamName").val(), $("#dataTextbox").val());
+				$("#dataMessagesTextarea").append("Sent: " + $("#dataTextbox").val() + "\r\n");
+				$("#dataTextbox").val("");
+			}
+			else {
+				alert("WebRTC playing is not active. Please click Start Playing first")
+			}
+		}
+		catch (exception) {
+			console.error(exception);
+			alert("Message cannot be sent. Make sure you've enabled data channel and choose the correct player distribution on server web panel");
+		}
+	}
 	
 	function startPlaying() {
 		streamId = streamNameBox.value;
@@ -227,6 +241,13 @@ body {
 						+ " packetLost: " + obj.packetsLost 
 						+ " fractionLost: " + obj.fractionLost);
 				 
+			}
+			else if (info == "data_received") {
+				console.log("Data received: " + obj.event.data + " type: " + obj.event.type + " for stream: " + obj.streamId);
+				$("#dataMessagesTextarea").append("Received: " + obj.event.data + "\r\n");
+			}
+			else {
+				console.log( info + " notification received");
 			}
 		},
 		callbackError : function(error) {
