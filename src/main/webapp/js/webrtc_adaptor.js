@@ -132,7 +132,7 @@ function WebRTCAdaptor(initialValues)
 	thiz.localVideo = document.getElementById(thiz.localVideoId);
 	thiz.remoteVideo = document.getElementById(thiz.remoteVideoId);
 	
-	// it's should be compatibility previous version
+	// It should be compatible previous version
 	if(thiz.mediaConstraints.video == "camera") {
 		thiz.publishMode="camera";
 	}
@@ -613,10 +613,6 @@ function WebRTCAdaptor(initialValues)
 
 		thiz.publishMode = "screen+camera";
 		
-		thiz.camera_location = "top"
-		thiz.camera_margin = 15;	
-		thiz.camera_percent = 15;
-
 		var audioConstraint = false;
 		if (typeof mediaConstraints.audio != "undefined" && mediaConstraints.audio != false) {
 			audioConstraint = mediaConstraints.audio;
