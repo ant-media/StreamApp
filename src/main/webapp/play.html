@@ -58,7 +58,8 @@ pageEncoding="UTF-8"%>
     * 1. "id": the stream id to play.It is mandatory
     * 2. "token": the token to play stream. It's mandatory if token security is enabled on server side.
     * 3. "autoplay": To start playing automatically if streams is available. Optional. Default value is true
-    * 4. "playOrder": the order which technologies is used in playing. Optional. Default value is "webrtc,hls".
+    * 4. "fullscreen": the fullscreen to the stream. Optional. Default value is false. 
+    * 5. "playOrder": the order which technologies is used in playing. Optional. Default value is "webrtc,hls".
     *     possible values are "hls,webrtc","webrtc","hls"
     */
 
@@ -93,8 +94,20 @@ pageEncoding="UTF-8"%>
 		//check name variable for compatibility with older versions
 		streamId = request.getParameter("name");
 	}
+	
+	String isFullscreen = request.getParameter("fullscreen");
 		
 %>
+
+	var isFullscreen = "<%= isFullscreen %>";
+
+	if(isFullscreen == "true"){
+		document.getElementById("video_container").style.maxHeight="";
+		document.getElementById("video_container").style.maxWidth="";
+
+		document.getElementById("remoteVideo").style.maxHeight="";
+		document.getElementById("remoteVideo").style.maxWidth="";
+	}
 
 	var name = "<%= streamId %>";
 	var token = "<%= request.getParameter("token") %>";
