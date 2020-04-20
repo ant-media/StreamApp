@@ -766,8 +766,8 @@ function WebRTCAdaptor(initialValues)
 
 	}
 
-
-	this.initPeerConnection = function(streamId, forPublishing) {
+	// data channel mode can be "publish" , "play" or "peer" based on this it is decided which way data channel is created
+	this.initPeerConnection = function(streamId, dataChannelMode) {
 		if (thiz.remotePeerConnection[streamId] == null)
 		{
 			var closedStreamId = streamId;
@@ -788,28 +788,34 @@ function WebRTCAdaptor(initialValues)
 				thiz.onTrack(event, closedStreamId);
 			}
 
-			if (thiz.isPlayMode == false) {
-				//open data channel if it's not play mode,
+			if (dataChannelMode == "publish") {
+				//open data channel if it's publish mode peer connection 
 				const dataChannelOptions = {
 						ordered: true,
 				};
 
-				if(forPublishing) {
-					var dataChannel = thiz.remotePeerConnection[streamId].createDataChannel(streamId, dataChannelOptions);
-					thiz.initDataChannel(streamId, dataChannel);
-			  }
+				var dataChannel = thiz.remotePeerConnection[streamId].createDataChannel(streamId, dataChannelOptions);
+				thiz.initDataChannel(streamId, dataChannel);
 
+			} else if(dataChannelMode == "play") {
+				//in play mode, server opens the data channel 
 				thiz.remotePeerConnection[streamId].ondatachannel = function(ev) {
 					thiz.initDataChannel(streamId, ev.channel);
 				};
 			}
 			else {
-				//in play mode, server opens the datachannel
+				//for peer mode do both for now
+				const dataChannelOptions = {
+						ordered: true,
+				};
+
+				var dataChannelPeer = thiz.remotePeerConnection[streamId].createDataChannel(streamId, dataChannelOptions);
+				thiz.initDataChannel(streamId, dataChannelPeer);
+
 				thiz.remotePeerConnection[streamId].ondatachannel = function(ev) {
 					thiz.initDataChannel(streamId, ev.channel);
 				};
 			}
-
 
 			thiz.remotePeerConnection[streamId].oniceconnectionstatechange = function (event) {
 				var obj = {state:thiz.remotePeerConnection[streamId].iceConnectionState, streamId:streamId};
@@ -825,7 +831,6 @@ function WebRTCAdaptor(initialValues)
 					}
 				}
 			}
-
 
 		}
 	}
@@ -945,7 +950,12 @@ function WebRTCAdaptor(initialValues)
 		var conf = configuration;
 		var isTypeOffer = (type == "offer");
 
-		thiz.initPeerConnection(streamId, !isTypeOffer);
+		var dataChannelMode = "publish";
+		if(isTypeOffer) {
+			dataChannelMode = "play";
+		}
+
+		thiz.initPeerConnection(streamId, dataChannelMode);
 
 		thiz.remotePeerConnection[streamId].setRemoteDescription(new RTCSessionDescription({
 			sdp : conf,
@@ -1008,7 +1018,8 @@ function WebRTCAdaptor(initialValues)
 			candidate : candidateSdp
 		});
 
-		thiz.initPeerConnection(streamId, true);
+		var dataChannelMode = "peer";
+		thiz.initPeerConnection(streamId, dataChannelMode);
 
 		if (thiz.remoteDescriptionSet[streamId] == true) {
 			thiz.addIceCandidate(streamId, candidate);
@@ -1044,7 +1055,7 @@ function WebRTCAdaptor(initialValues)
 	this.startPublishing = function(idOfStream) {
 		var streamId = idOfStream;
 
-		thiz.initPeerConnection(streamId, true);
+		thiz.initPeerConnection(streamId, "publish");
 
 		thiz.remotePeerConnection[streamId].createOffer(thiz.sdp_constraints)
 		.then(function(configuration) {
