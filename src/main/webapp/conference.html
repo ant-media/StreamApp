@@ -122,7 +122,13 @@ body {
 							id="stop_publish_button">Leave Room</button>
 				</p>
 
+				<div style="padding:10px">
+					<button id="turn_off_camera_button" onclick="turnOffLocalCamera()" class="btn btn-default"  >Turn off Camera</button>
+					<button id="turn_on_camera_button" disabled onclick="turnOnLocalCamera()" class="btn btn-default"  >Turn on Camera</button>
 
+					<button id="mute_mic_button" onclick="muteLocalMic()" class="btn btn-default"  >Mute Local Mic</button>
+					<button id="unmute_mic_button" disabled onclick="unmuteLocalMic()" class="btn btn-default"  >Unmute Local Mic</button>
+				</div>
 				<span class="label label-success" id="broadcastingInfo"
 					  style="font-size: 14px; display: none" style="display: none">Publishing</span>
 			</div>
@@ -144,24 +150,112 @@ body {
 	var streamId = "<%= request.getParameter("streamId") %>";
 	var playOnly = "<%= request.getParameter("playOnly") %>";
 	if(playOnly == "null") {
-		playOnly = false;	
+		playOnly = false;
 	}
-	
+
 	var join_publish_button = document.getElementById("join_publish_button");
 	var stop_publish_button = document.getElementById("stop_publish_button");
+
+  var turn_off_camera_button = document.getElementById("turn_off_camera_button");
+  var turn_on_camera_button = document.getElementById("turn_on_camera_button");
+	var mute_mic_button = document.getElementById("mute_mic_button");
+  var unmute_mic_button = document.getElementById("unmute_mic_button");
 
 	var roomNameBox = document.getElementById("roomName");
 
 	var roomOfStream = new Array();
 
 	var publishStreamId;
+	var isDataChannelOpen = false;
+	var isMicMuted = false;
+	var isCameraOff = false;
+
+	function turnOffLocalCamera() {
+		webRTCAdaptor.turnOffLocalCamera();
+		isCameraOff = true;
+		handleCameraButtons();
+		sendNotificationEvent("CAM_TURNED_OFF");
+	}
+
+	function turnOnLocalCamera() {
+		webRTCAdaptor.turnOnLocalCamera();
+		isCameraOff = false;
+		handleCameraButtons();
+		sendNotificationEvent("CAM_TURNED_ON");
+	}
+
+	function muteLocalMic(){
+		webRTCAdaptor.muteLocalMic();
+		isMicMuted = true;
+		handleMicButtons();
+		sendNotificationEvent("MIC_MUTED");
+	}
+
+	function unmuteLocalMic() {
+		webRTCAdaptor.unmuteLocalMic();
+		isMicMuted = false;
+    handleMicButtons();
+		sendNotificationEvent("MIC_UNMUTED");
+	}
+
+	function sendNotificationEvent(eventType) {
+		if(isDataChannelOpen) {
+			var notEvent = { streamId: publishStreamId, eventType:eventType };
+
+			webRTCAdaptor.sendData(publishStreamId, JSON.stringify(notEvent));
+		}	else {
+			console.log("Could not send the notification because data channel is not open.");
+		}
+	}
+
+	function handleCameraButtons() {
+		if(isCameraOff) {
+			turn_off_camera_button.disabled = true;
+			turn_on_camera_button.disabled = false;
+		} else {
+			turn_off_camera_button.disabled = false;
+			turn_on_camera_button.disabled = true;
+		}
+	}
+
+	function handleMicButtons() {
+		if(isMicMuted) {
+			mute_mic_button.disabled = true;
+			unmute_mic_button.disabled = false;
+		} else {
+			mute_mic_button.disabled = false;
+			unmute_mic_button.disabled = true;
+		}
+	}
+
+	function handleNotificationEvent(obj) {
+		console.log("Received data : ", obj.event.data);
+		var notificationEvent = JSON.parse(obj.event.data);
+		if(notificationEvent != null && typeof(notificationEvent) == "object") {
+		  var eventStreamId = notificationEvent.streamId;
+		  var eventTyp = notificationEvent.eventType;
+
+			if(eventTyp == "CAM_TURNED_OFF") {
+					console.log("Camera turned off for : ", eventStreamId);
+			} else if (eventTyp == "CAM_TURNED_ON"){
+					console.log("Camera turned on for : ", eventStreamId);
+			} else if (eventTyp == "MIC_MUTED"){
+					console.log("Microphone muted for : ", eventStreamId);
+			} else if (eventTyp == "MIC_UNMUTED"){
+					console.log("Microphone unmuted for : ", eventStreamId);
+			}
+	  }
+	}
+
 	function joinRoom() {
-				
+
 		webRTCAdaptor.joinRoom(roomNameBox.value, streamId);
 	}
 
 	function leaveRoom() {
 		webRTCAdaptor.leaveFromRoom(roomNameBox.value);
+		unmuteLocalMic();
+		turnOnLocalCamera();
 
 		for (var node in document.getElementById("players").childNodes) {
 			if(node.tagName == 'DIV' && node.id != "localVideo") {
@@ -174,18 +268,18 @@ body {
 		publishStreamId = streamName;
 		webRTCAdaptor.publish(streamName, token);
 	}
-	
+
 	function streamInformation(obj) {
 		webRTCAdaptor.play(obj.streamId, token,	roomNameBox.value);
 	}
-	
+
 	function playVideo(obj) {
 		var room = roomOfStream[obj.streamId];
 		console.log("new stream available with id: "
 				+ obj.streamId + "on the room:" + room);
 
 		var video = document.getElementById("remoteVideo"+obj.streamId);
-		
+
 		if (video == null) {
 			createRemoteVideo(obj.streamId);
 			video = document.getElementById("remoteVideo"+obj.streamId);
@@ -193,9 +287,9 @@ body {
 
 		video.srcObject = obj.stream;
 	}
-	
+
 	function createRemoteVideo(streamId) {
-		var player = document.createElement("div"); 
+		var player = document.createElement("div");
 		player.className = "col-sm-3";
 		player.id = "player"+streamId;
 		player.innerHTML = '<video id="remoteVideo'+streamId+'"controls autoplay></video>';
@@ -282,7 +376,7 @@ body {
 						console.log(obj)
 						if(playOnly) {
 							join_publish_button.disabled = true;
-							stop_publish_button.disabled = false;	
+							stop_publish_button.disabled = false;
 						}
 						else {
 							publish(obj.streamId, token);
@@ -322,7 +416,7 @@ body {
 						console.debug("leaved from the room:" + room);
 						if(playOnly) {
 							join_publish_button.disabled = false;
-							stop_publish_button.disabled = true;	
+							stop_publish_button.disabled = true;
 						}
 
 					} else if (info == "closed") {
@@ -340,6 +434,14 @@ body {
 						}
 					} else if (info == "streamInformation") {
 						streamInformation(obj);
+					} else if (info == "data_channel_opened") {
+						console.log("Data Channel open for stream id", obj );
+						isDataChannelOpen = true;
+					} else if (info == "data_channel_closed") {
+						console.log("Data Channel closed for stream id", obj );
+						isDataChannelOpen = false;
+					} else if(info == "data_received") {
+						handleNotificationEvent(obj);
 					}
 				},
 				callbackError : function(error, message) {
@@ -370,6 +472,8 @@ body {
 						errorMessage = "Fatal Error: WebSocket not supported in this browser";
 					} else if (error.indexOf("no_stream_exist") != -1) {
 						//TODO: removeRemoteVideo(error.streamId);
+					} else if(error.indexOf("data_channel_error") != -1) {
+						errorMessage = "There was a error during data channel communication";
 					}
 
 					alert(errorMessage);
