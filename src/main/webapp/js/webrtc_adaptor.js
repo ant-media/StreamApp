@@ -757,12 +757,15 @@ function WebRTCAdaptor(initialValues)
 
 	this.initDataChannel = function(streamId, dataChannel) {
 		dataChannel.onerror = (error) => {
-			console.log("Data Channel Error:", error);
+			console.log("Data Channel Error:", error );
 			var obj = {
 				streamId: streamId,
 				error: error
 			};
-			thiz.callbackError("data_channel_error", obj);
+			console.log("channel status: ", dataChannel.readyState);
+			if (dataChannel.readyState != "closed") {
+				thiz.callbackError("data_channel_error", obj);
+			}
 		};
 
 		dataChannel.onmessage = (event) => {
@@ -856,16 +859,21 @@ function WebRTCAdaptor(initialValues)
 	}
 
 	this.closePeerConnection = function(streamId) {
-		if (thiz.remotePeerConnection[streamId] != null
-				&& thiz.remotePeerConnection[streamId].signalingState != "closed")
+		
+		if (thiz.remotePeerConnection[streamId] != null)
 		{
-			thiz.remotePeerConnection[streamId].close();
-			thiz.remotePeerConnection[streamId] = null;
-			delete thiz.remotePeerConnection[streamId];
-			var playStreamIndex = thiz.playStreamId.indexOf(streamId);
-			if (playStreamIndex != -1)
-			{
-				thiz.playStreamId.splice(playStreamIndex, 1);
+			if (thiz.remotePeerConnection[streamId].dataChannel != null) {
+				thiz.remotePeerConnection[streamId].dataChannel.close();
+			}
+			if (thiz.remotePeerConnection[streamId].signalingState != "closed") {
+				thiz.remotePeerConnection[streamId].close();
+				thiz.remotePeerConnection[streamId] = null;
+				delete thiz.remotePeerConnection[streamId];
+				var playStreamIndex = thiz.playStreamId.indexOf(streamId);
+				if (playStreamIndex != -1)
+				{
+					thiz.playStreamId.splice(playStreamIndex, 1);
+				}
 			}
 
 		}
@@ -875,6 +883,8 @@ function WebRTCAdaptor(initialValues)
 			clearInterval(thiz.remotePeerConnectionStats[streamId].timerId);
 			delete thiz.remotePeerConnectionStats[streamId];
 		}
+		
+		
 	}
 
 	this.signallingState = function(streamId) {
