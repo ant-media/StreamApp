@@ -709,7 +709,19 @@ function WebRTCAdaptor(initialValues)
 	this.iceCandidateReceived = function(event, streamId) {
 		if (event.candidate) {
 
-			if (thiz.candidateTypes.includes(event.candidate.protocol)) {
+			var protocolSupported = false;
+			if (typeof event.candidate.protocol == "undefined") {
+				thiz.candidateTypes.forEach(element => {
+					if (event.candidate.candidate.toLowerCase().includes(element)) {
+						protocolSupported = true;
+					}
+				});
+			}
+			else {
+				protocolSupported = thiz.candidateTypes.includes(event.candidate.protocol.toLowerCase());
+			}
+
+			if (protocolSupported) {
 
 				var jsCmd = {
 						command : "takeCandidate",
@@ -723,14 +735,22 @@ function WebRTCAdaptor(initialValues)
 					console.log("sending ice candiate for stream Id " + streamId );
 					console.log(JSON.stringify(event.candidate));
 				}
+				thiz.webSocketAdaptor.send(JSON.stringify(jsCmd));
 			}
 			else {
+				var jsCmd = {
+					command : "error",
+					definition : "client protocol "+ event.candidate.protocol +" is not supported and full candidate is: " + event.candidate.candidate,
+					streamId: streamId,
+				};
 				if (thiz.debug) {
 					console.log("Candidate's protocol("+event.candidate.protocol+") is not supported. Supported protocols: " + thiz.candidateTypes);
 				}
+				thiz.callbackError("protocol_not_supported", "Support protocols: " + thiz.candidateTypes.toString() + " candidate: " + event.candidate.candidate);
 			}
-
-			thiz.webSocketAdaptor.send(JSON.stringify(jsCmd));
+		}
+		else {
+			console.error("No event.candidate in the iceCandidate event");
 		}
 	}
 
