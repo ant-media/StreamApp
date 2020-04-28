@@ -187,12 +187,18 @@
   var imageSender = new BinaryDataSender();
   var imageReceiver = new BinaryDataReceiver();
 
+	var messageNumber = 0;
+	var idBody = "browser";
+
   function BinaryDataSender() {
     this.sending = false;
     this.endChunk = 0;
     this.lastOffset = 0;
     this.dataBytes = null;
     this.CHUNK_SIZE_IN_BYTES = 10000;
+		this.headerText = null;
+		this.headerLength =0;
+		this.textEncoder = new TextEncoder();
 
     var thiz = this;
 
@@ -205,25 +211,43 @@
       thiz.lastOffset = 0;
       thiz.endChunk = 0;
       thiz.dataBytes = null;
+			thiz.headerText = null;
+			thiz.headerLength =0;
     }
 
-    this.startSending = function(dataBytesTemp) {
+    this.startSending = function(dataBytesTemp, messageHeader) {
       thiz.sending = true;
       thiz.lastOffset = 0;
       thiz.dataBytes = dataBytesTemp;
-      thiz.sendFirstChunk();
+      thiz.sendFirstChunk(messageHeader);
     }
 
-    this.sendFirstChunk = function() {
-      thiz.endChunk = (thiz.lastOffset + thiz.CHUNK_SIZE_IN_BYTES) > thiz.dataBytes.byteLength ? thiz.dataBytes.byteLength : (thiz.lastOffset + thiz.CHUNK_SIZE_IN_BYTES);
+    this.sendFirstChunk = function(messageHeader) {
+			thiz.headerText = messageHeader;
+
+			var encodedText = thiz.textEncoder.encode(messageHeader);
+			var encodedTextBuffer = encodedText.buffer;
+
+			thiz.headerLength  = encodedTextBuffer.byteLength;
+			var totalMessageHeaderLength = thiz.headerLength +8;
+
+			var remainingChunkSize = thiz.CHUNK_SIZE_IN_BYTES -totalMessageHeaderLength;
+
+      thiz.endChunk = (thiz.lastOffset + remainingChunkSize) > thiz.dataBytes.byteLength ? thiz.dataBytes.byteLength : (thiz.lastOffset + remainingChunkSize);
 
       // put length how much data will be sent in total
-      var buffer = new ArrayBuffer(4 + thiz.endChunk);
+      var buffer = new ArrayBuffer(totalMessageHeaderLength + thiz.endChunk);
       var view = new Int32Array(buffer);
-      view[0] = thiz.dataBytes.byteLength
+      view[0] = thiz.dataBytes.byteLength;
+			view[1] = thiz.headerLength;
 
+			// copy encoded header text to buffer byte by byte
+			var bufferView = new Uint8Array(buffer, 0, buffer.byteLength);
+			bufferView.set(encodedText, 8);
+
+			// copy image slice
       var imageSlice = thiz.dataBytes.slice(0, thiz.endChunk);
-      new Uint8Array(buffer, 0, buffer.byteLength).set(new Uint8Array(imageSlice), 4);
+      bufferView.set(new Uint8Array(imageSlice), totalMessageHeaderLength);
 
       sendData(buffer);
       thiz.lastOffset = thiz.endChunk;
@@ -243,11 +267,17 @@
   function BinaryDataReceiver() {
     this.toBeReceivedTotalLength = 0;
     this.receivedData = null;
+		this.headerText = null;
+		this.headerLength =0;
+		this.textDecoder = new TextDecoder("utf-8");
+
     var thiz = this;
 
     this.clear = function() {
       thiz.toBeReceivedTotalLength = 0;
       thiz.receivedData = null;
+			thiz.headerText = null;
+			thiz.headerLength =0;
     }
 
     this.isFirstPart = function() {
@@ -272,12 +302,24 @@
       } else {
         var dataView = new DataView(dataChunk)
         thiz.toBeReceivedTotalLength = dataView.getInt32(0);
-        console.log("Total received Data length:", thiz.toBeReceivedTotalLength);
-        thiz.receivedData = dataChunk.slice(4);
+				thiz.headerLength = dataView.getInt32(4);
+				var totalHeaderLength = thiz.headerLength+8;
+
+				var headerSlice = dataChunk.slice(8,totalHeaderLength);
+				var headerSliceView = new Uint8Array(headerSlice);
+				thiz.headerText = thiz.textDecoder.decode(headerSliceView);
+
+				console.log("Total to be received data length:", thiz.toBeReceivedTotalLength);
+        thiz.receivedData = dataChunk.slice(totalHeaderLength);
       }
 
     }
   }
+
+	function createId() {
+
+		return idBody+messageNumber;
+	}
 
   function send_image() {
     var imageURL = file_input.files[0];
@@ -292,7 +334,11 @@
       var imageBlobUrl = urlCreator.createObjectURL(blob);
 
       createImageMessage(imageBlobUrl, true);
-      imageSender.startSending(arrayBuffer);
+
+			var dateTime = new Date().getTime();
+		  var messageHeader = { messageId:createId() , messageDate:dateTime };
+      imageSender.startSending(arrayBuffer, JSON.stringify(messageHeader));
+
 
       send_image_chunkwise();
     }
@@ -317,9 +363,14 @@
 
   function sendText() {
     var text = $("#dataTextbox").val();
-    sendData(text);
-    createNewMessage(text, "", true);
+		var dateObj = new Date();
+		var dateTime = dateObj.getTime();
 
+		var messageObject = { messageId:createId() , messageDate:dateTime, messageBody:text };
+
+		sendData(JSON.stringify(messageObject));
+
+		createNewMessage(text, dateObj.toLocaleTimeString(), true);
     $("#dataTextbox").val("");
   }
 
@@ -364,6 +415,11 @@
     imageReceiver.receiveDataChunk(data);
 
     if (imageReceiver.isAllDataReceived()) {
+			var jsonHeader = JSON.parse(imageReceiver.headerText);
+
+			// TODO create get date from jsonHeader
+			var date = new Date(jsonHeader.messageDate);
+
       var bytes = new Uint8Array(imageReceiver.receivedData);
       var blob = new Blob([bytes.buffer]);
       console.log("Creating Image");
@@ -392,7 +448,10 @@
   }
 
   function handleTextMessage(data) {
-    createNewMessage(data,  "", false);
+		var messageObj = JSON.parse(data);
+    var dateObj = new Date(messageObj.messageDate);
+		
+    createNewMessage(messageObj.messageBody,  dateObj.toLocaleTimeString(), false);
   }
 
   var pc_config = {
