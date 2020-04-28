@@ -738,15 +738,10 @@ function WebRTCAdaptor(initialValues)
 				thiz.webSocketAdaptor.send(JSON.stringify(jsCmd));
 			}
 			else {
-				var jsCmd = {
-					command : "error",
-					definition : "client protocol "+ event.candidate.protocol +" is not supported and full candidate is: " + event.candidate.candidate,
-					streamId: streamId,
-				};
-				if (thiz.debug) {
-					console.log("Candidate's protocol("+event.candidate.protocol+") is not supported. Supported protocols: " + thiz.candidateTypes);
+				console.log("Candidate's protocol(full sdp: "+ event.candidate.candidate +") is not supported. Supported protocols: " + thiz.candidateTypes);
+				if (event.candidate.candidate != "") { //
+					thiz.callbackError("protocol_not_supported", "Support protocols: " + thiz.candidateTypes.toString() + " candidate: " + event.candidate.candidate);
 				}
-				thiz.callbackError("protocol_not_supported", "Support protocols: " + thiz.candidateTypes.toString() + " candidate: " + event.candidate.candidate);
 			}
 		}
 		else {
