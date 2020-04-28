@@ -1,0 +1,472 @@
+<html>
+
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+  <script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
+  <script src="js/webrtc_adaptor.js"></script>
+  <style>
+    .inbox_chat {
+      height: 550px;
+      overflow-y: scroll;
+    }
+
+    .active_chat {
+      background: #ebebeb;
+    }
+
+    .received_img {
+			width: 80%;
+      float: left;
+      padding: 0 0 0 10px;
+    }
+
+    .sent_img {
+      padding: 10px 0 0 0;
+      float: right;
+			width: 80%;
+    }
+
+    .received_msg {
+      display: inline-block;
+      padding: 0 0 0 10px;
+      vertical-align: top;
+      width: 92%;
+    }
+
+    .received_withd_msg p {
+      background: #F0E68C none repeat scroll 0 0;
+      border-radius: 3px;
+      color: #646464;
+      font-size: 14px;
+      margin: 0;
+      padding: 5px 10px 5px 12px;
+      width: 100%;
+    }
+
+    .time_date {
+      color: #747474;
+      display: block;
+      font-size: 12px;
+      margin: 8px 0 0;
+    }
+
+    .received_withd_msg {
+			float: left;
+    }
+
+    .mesgs {
+      float: left;
+      padding: 30px 15px 0 25px;
+      width: 90%;
+      overflow-y: scroll;
+    }
+
+    .sent_msg p {
+      background: #05728f none repeat scroll 0 0;
+      border-radius: 3px;
+      font-size: 14px;
+      margin: 0;
+      color: #fff;
+      padding: 5px 10px 5px 12px;
+      width: 100%;
+    }
+
+    .outgoing_msg {
+      overflow: hidden;
+      margin: 26px 0 26px;
+    }
+
+    .sent_msg {
+      float: right;
+    }
+
+    .type_msg {
+      border-top: 1px solid #c4c4c4;
+      position: relative;
+    }
+
+    .messaging {
+      padding: 0 0 50px 0;
+    }
+
+    .msg_history {
+      height: 300px;
+      overflow-y: auto;
+    }
+		video {
+    	object-fit: cover;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container" style="padding: 40px 15px; text-align: center">
+    <div class="header clearfix">
+      <div class="row">
+        <ul class="nav float-right">
+          <h3 class="col text-muted">WebRTC Chat</h3>
+        </ul>
+        <nav class="col align-self-center">
+          <ul class="nav float-right">
+            <li><a href="http://antmedia.io">Contact</a></li>
+          </ul>
+        </nav>
+      </div>
+    </div>
+    <div class="jumbotron">
+      <div class="col-sm-12 form-group">
+        <div class="form-row">
+          <div class="form-group col-sm-6">
+            <video id="localVideo" autoplay muted width="480" height="480" ></video>
+          </div>
+          <div class="form-group col-sm-6">
+            <video id="remoteVideo" autoplay controls width="480" height="480"></video>
+          </div>
+        </div>
+      </div>
+      <br />
+      <br />
+      <div class="form-group col-sm-12 text-left">
+        <div class="form-row">
+          <div class="form-group col-sm-8 ">
+            <input type="text" class="form-control" value="stream1" id="streamName" placeholder="Type stream name">
+          </div>
+          <div class="form-group col-sm-2">
+            <button type="button" class="btn btn-outline-primary btn-block" onclick="join()" id="join_button">Join</button>
+          </div>
+          <div class="form-group col-sm-2">
+            <button type="button" class="btn btn-outline-primary btn-block" onclick="leave()" disabled id="leave_button">Leave</button>
+          </div>
+        </div>
+      </div>
+      <div class="form-group col-sm-12 text-center options">
+        <div class="row">
+          <div class="col-md-12 col-md-offset-3">
+            <h2 text-align:center>Chat Window</h2>
+          </div>
+        </div>
+      </div>
+      <div class="form-group col-sm-12 text-left options">
+        <div class="form-row">
+          <div class="form-group col-sm-12">
+            <div class="mesgs">
+              <div id="all_messages" class="msg_history">
+
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group col-sm-8">
+            <input type="text" class="form-control" id="dataTextbox" placeholder="Write your message to send players">
+          </div>
+          <div class="form-group col-sm-2">
+            <button type="button" class="btn btn-outline-primary btn-block" onclick="sendText()">Send</button>
+
+          </div>
+          <div class="form-group col-sm-2">
+            <button type="button" class="btn btn-outline-primary btn-block" onclick="document.getElementById('file-input').click();">Send Image</button>
+            <input id="file-input" type="file" name="name" onchange="send_image()" accept="image/x-png,image/gif,image/jpeg" style="display: none;" />
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="https://code.jquery.com/jquery-3.4.1.min.js" crossorigin="anonymous"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" crossorigin="anonymous"></script>
+</body>
+
+<script>
+  var file_input = document.getElementById('file-input')
+  var join_button = document.getElementById("join_button");
+  var leave_button = document.getElementById("leave_button");
+
+  var streamNameBox = document.getElementById("streamName");
+  var imageSender = new BinaryDataSender();
+  var imageReceiver = new BinaryDataReceiver();
+
+  function BinaryDataSender() {
+    this.sending = false;
+    this.endChunk = 0;
+    this.lastOffset = 0;
+    this.dataBytes = null;
+    this.CHUNK_SIZE_IN_BYTES = 10000;
+
+    var thiz = this;
+
+    this.isDataSendingComplete = function() {
+      return thiz.lastOffset >= thiz.dataBytes.byteLength;
+    }
+
+    this.clear = function() {
+      thiz.sending = false;
+      thiz.lastOffset = 0;
+      thiz.endChunk = 0;
+      thiz.dataBytes = null;
+    }
+
+    this.startSending = function(dataBytesTemp) {
+      thiz.sending = true;
+      thiz.lastOffset = 0;
+      thiz.dataBytes = dataBytesTemp;
+      thiz.sendFirstChunk();
+    }
+
+    this.sendFirstChunk = function() {
+      thiz.endChunk = (thiz.lastOffset + thiz.CHUNK_SIZE_IN_BYTES) > thiz.dataBytes.byteLength ? thiz.dataBytes.byteLength : (thiz.lastOffset + thiz.CHUNK_SIZE_IN_BYTES);
+
+      // put length how much data will be sent in total
+      var buffer = new ArrayBuffer(4 + thiz.endChunk);
+      var view = new Int32Array(buffer);
+      view[0] = thiz.dataBytes.byteLength
+
+      var imageSlice = thiz.dataBytes.slice(0, thiz.endChunk);
+      new Uint8Array(buffer, 0, buffer.byteLength).set(new Uint8Array(imageSlice), 4);
+
+      sendData(buffer);
+      thiz.lastOffset = thiz.endChunk;
+    }
+
+    this.sendLastChunk = function() {
+      thiz.endChunk = (thiz.lastOffset + thiz.CHUNK_SIZE_IN_BYTES) > thiz.dataBytes.byteLength ? thiz.dataBytes.byteLength : (thiz.lastOffset + thiz.CHUNK_SIZE_IN_BYTES);
+
+      var imageSlice = thiz.dataBytes.slice(thiz.lastOffset, thiz.endChunk);
+
+      sendData(imageSlice);
+      thiz.lastOffset = thiz.endChunk;
+    }
+  }
+
+
+  function BinaryDataReceiver() {
+    this.toBeReceivedTotalLength = 0;
+    this.receivedData = null;
+    var thiz = this;
+
+    this.clear = function() {
+      thiz.toBeReceivedTotalLength = 0;
+      thiz.receivedData = null;
+    }
+
+    this.isFirstPart = function() {
+      return thiz.receivedData === null;
+    }
+
+    this.isAllDataReceived = function() {
+      return thiz.receivedData.byteLength >= thiz.toBeReceivedTotalLength;
+    }
+
+    this.appendBuffer = function(buffer1, buffer2) {
+      var tmp = new Uint8Array(buffer1.byteLength + buffer2.byteLength);
+      tmp.set(new Uint8Array(buffer1), 0);
+      tmp.set(new Uint8Array(buffer2), buffer1.byteLength);
+      return tmp.buffer;
+    }
+
+    this.receiveDataChunk = function(dataChunk) {
+      // handle binary data
+      if (!thiz.isFirstPart()) {
+        thiz.receivedData = thiz.appendBuffer(thiz.receivedData, dataChunk);
+      } else {
+        var dataView = new DataView(dataChunk)
+        thiz.toBeReceivedTotalLength = dataView.getInt32(0);
+        console.log("Total received Data length:", thiz.toBeReceivedTotalLength);
+        thiz.receivedData = dataChunk.slice(4);
+      }
+
+    }
+  }
+
+  function send_image() {
+    var imageURL = file_input.files[0];
+
+    var reader = new FileReader();
+    reader.onload = function(e) {
+
+      var arrayBuffer = this.result;
+      var bytes = new Uint8Array(arrayBuffer);
+      var blob = new Blob([bytes.buffer]);
+      var urlCreator = window.URL || window.webkitURL;
+      var imageBlobUrl = urlCreator.createObjectURL(blob);
+
+      createImageMessage(imageBlobUrl, true);
+      imageSender.startSending(arrayBuffer);
+
+      send_image_chunkwise();
+    }
+
+    reader.readAsArrayBuffer(imageURL);
+
+  }
+
+  function send_image_chunkwise() {
+    while (!imageSender.isDataSendingComplete()) {
+      imageSender.sendLastChunk();
+    }
+  }
+
+  function createImageMessage(imageURL, sentByUs) {
+    if (sentByUs) {
+      $('<div class="outgoing_msg rounded float-left sent_img"><img class="img-fluid "  src =' + imageURL + '></div>').appendTo($('#all_messages'));
+    } else {
+      $('<div class="incoming_msg rounded float-right received_img"><img class="img-fluid"  src =' + imageURL + '></div>').appendTo($('#all_messages'));
+    }
+  }
+
+  function sendText() {
+    var text = $("#dataTextbox").val();
+    sendData(text);
+    createNewMessage(text, "", true);
+
+    $("#dataTextbox").val("");
+  }
+
+  function createNewMessage(message, date, sentByUs) {
+    if ($.trim(message) == '') {
+      return false;
+    }
+    if (sentByUs) {
+      $('<div class="outgoing_msg"><div class="sent_msg">	<p>' + message + '</p><span class="time_date">' + date + '</span></div></div>').appendTo($('#all_messages'));
+    } else {
+      $('<div class="incoming_msg"><div class="received_msg"><div class="received_withd_msg"><p>' + message + '</p><span class="time_date">' + date + '</span></div></div></div>').appendTo($('#all_messages'));
+    }
+  }
+
+  function join() {
+    webRTCAdaptor.join(streamNameBox.value);
+  }
+
+  function leave() {
+    webRTCAdaptor.leave(streamNameBox.value);
+  }
+
+  function turnOffLocalCamera() {
+    webRTCAdaptor.turnOffLocalCamera();
+  }
+
+  function turnOnLocalCamera() {
+    webRTCAdaptor.turnOnLocalCamera();
+  }
+
+  function muteLocalMic() {
+    webRTCAdaptor.muteLocalMic();
+  }
+
+  function unmuteLocalMic() {
+    webRTCAdaptor.unmuteLocalMic();
+  }
+
+
+  function handleImageData(data) {
+
+    imageReceiver.receiveDataChunk(data);
+
+    if (imageReceiver.isAllDataReceived()) {
+      var bytes = new Uint8Array(imageReceiver.receivedData);
+      var blob = new Blob([bytes.buffer]);
+      console.log("Creating Image");
+      var urlCreator = window.URL || window.webkitURL;
+      var imageUrl = urlCreator.createObjectURL(blob);
+
+      createImageMessage(imageUrl, false);
+      imageReceiver.clear();
+
+    }
+  }
+
+  function sendData(data) {
+    try {
+      var iceState = webRTCAdaptor.iceConnectionState(streamNameBox.value);
+      if (iceState != null && iceState != "failed" && iceState != "disconnected") {
+
+        webRTCAdaptor.sendData(streamNameBox.value, data);
+      } else {
+        alert("WebRTC publishing is not active. Please click Start Publishing first")
+      }
+    } catch (exception) {
+      console.error(exception);
+      alert("Message cannot be sent. Make sure you've enabled data channel on server web panel");
+    }
+  }
+
+  function handleTextMessage(data) {
+    createNewMessage(data,  "", false);
+  }
+
+  var pc_config = {
+    'iceServers': [{
+      'urls': 'stun:stun.l.google.com:19302'
+    }]
+  };
+
+
+  var sdpConstraints = {
+    OfferToReceiveAudio: true,
+    OfferToReceiveVideo: true
+
+  };
+  var mediaConstraints = {
+    video: true,
+    audio: true
+  };
+
+  var appName = location.pathname.substring(0, location.pathname.lastIndexOf("/") + 1);
+  var websocketURL = "ws://" + location.hostname + ":5080" + appName + "websocket";
+
+  if (location.protocol.startsWith("https")) {
+    websocketURL = "wss://" + location.hostname + ":5443" + appName + "websocket";
+  }
+
+
+
+  var webRTCAdaptor = new WebRTCAdaptor({
+    websocket_url: websocketURL,
+    mediaConstraints: mediaConstraints,
+    peerconnection_config: pc_config,
+    sdp_constraints: sdpConstraints,
+    localVideoId: "localVideo",
+    remoteVideoId: "remoteVideo",
+    callback: function(info, obj) {
+      if (info == "initialized") {
+        console.log("initialized");
+        join_button.disabled = false;
+        leave_button.disabled = true;
+      } else if (info == "joined") {
+        //joined the stream
+        console.log("joined");
+        join_button.disabled = true;
+        leave_button.disabled = false;
+      } else if (info == "leaved") {
+        //leaved the stream
+        console.log("leaved");
+        join_button.disabled = false;
+        leave_button.disabled = true;
+        imageSender.clear();
+        imageReceiver.clear();
+      } else if (info == "data_received") {
+        var data = obj.event.data;
+
+        if (data instanceof ArrayBuffer) {
+          handleImageData(data);
+        } else if (data instanceof Blob) {
+          data.arrayBuffer().then(buffer => handleImageData(buffer));
+        } else {
+          handleTextMessage(data);
+        }
+      }
+    },
+    callbackError: function(error) {
+      //some of the possible errors, NotFoundError, SecurityError,PermissionDeniedError
+      if ("data_channel_error" == error) {
+        console.log("received data channel error");
+      } else {
+        console.log("error callback: " + error);
+        alert(error);
+      }
+    }
+  });
+</script>
+
+</html>
