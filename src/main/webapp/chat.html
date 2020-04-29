@@ -152,7 +152,7 @@
         <div class="form-row">
           <div class="form-group col-sm-12">
             <div class="mesgs">
-              <div id="all_messages" class="msg_history">
+              <div id="all_messages" class="msg_history container">
 
               </div>
             </div>
@@ -333,14 +333,14 @@
       var urlCreator = window.URL || window.webkitURL;
       var imageBlobUrl = urlCreator.createObjectURL(blob);
 
-      createImageMessage(imageBlobUrl, true);
-
-			var dateTime = new Date().getTime();
+			var date = new Date();
+			var dateTime = date.getTime();
 		  var messageHeader = { messageId:createId() , messageDate:dateTime };
       imageSender.startSending(arrayBuffer, JSON.stringify(messageHeader));
 
-
       send_image_chunkwise();
+
+			createImageMessage(imageBlobUrl, true, date.toLocaleTimeString());
     }
 
     reader.readAsArrayBuffer(imageURL);
@@ -353,11 +353,11 @@
     }
   }
 
-  function createImageMessage(imageURL, sentByUs) {
+  function createImageMessage(imageURL, sentByUs, date) {
     if (sentByUs) {
-      $('<div class="outgoing_msg rounded float-left sent_img"><img class="img-fluid "  src =' + imageURL + '></div>').appendTo($('#all_messages'));
+      $('<div class="outgoing_msg row"><div class="col"> <div class="rounded float-right sent_img"><img class="img-fluid "  src =' + imageURL + '><span class="time_date">' + date + '</span></div></div></div>').appendTo($('#all_messages'));
     } else {
-      $('<div class="incoming_msg rounded float-right received_img"><img class="img-fluid"  src =' + imageURL + '></div>').appendTo($('#all_messages'));
+      $('<div class="incoming_msg row"><div class="col"><div class="rounded float-left received_img"><img class="img-fluid"  src =' + imageURL + '><span class="time_date">' + date + '</span></div></div></div>').appendTo($('#all_messages'));
     }
   }
 
@@ -379,9 +379,9 @@
       return false;
     }
     if (sentByUs) {
-      $('<div class="outgoing_msg"><div class="sent_msg">	<p>' + message + '</p><span class="time_date">' + date + '</span></div></div>').appendTo($('#all_messages'));
+      $('<div class="outgoing_msg row"><div class="col"><div class="sent_msg">	<p>' + message + '</p><span class="time_date">' + date + '</span></div></div></div>').appendTo($('#all_messages'));
     } else {
-      $('<div class="incoming_msg"><div class="received_msg"><div class="received_withd_msg"><p>' + message + '</p><span class="time_date">' + date + '</span></div></div></div>').appendTo($('#all_messages'));
+      $('<div class="incoming_msg row"><div class="col" ><div class="received_msg"><div class="received_withd_msg"><p>' + message + '</p><span class="time_date">' + date + '</span></div></div></div>').appendTo($('#all_messages'));
     }
   }
 
@@ -417,7 +417,6 @@
     if (imageReceiver.isAllDataReceived()) {
 			var jsonHeader = JSON.parse(imageReceiver.headerText);
 
-			// TODO create get date from jsonHeader
 			var date = new Date(jsonHeader.messageDate);
 
       var bytes = new Uint8Array(imageReceiver.receivedData);
@@ -426,7 +425,7 @@
       var urlCreator = window.URL || window.webkitURL;
       var imageUrl = urlCreator.createObjectURL(blob);
 
-      createImageMessage(imageUrl, false);
+      createImageMessage(imageUrl, false, date.toLocaleTimeString());
       imageReceiver.clear();
 
     }
@@ -450,7 +449,7 @@
   function handleTextMessage(data) {
 		var messageObj = JSON.parse(data);
     var dateObj = new Date(messageObj.messageDate);
-		
+
     createNewMessage(messageObj.messageBody,  dateObj.toLocaleTimeString(), false);
   }
 
