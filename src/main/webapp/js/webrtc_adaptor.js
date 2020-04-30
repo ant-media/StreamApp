@@ -267,7 +267,7 @@ function WebRTCAdaptor(initialValues)
 		// Check Media Constraint video value screen or screen + camera
 		if(thiz.publishMode == "screen+camera" || thiz.publishMode == "screen"){
 
-			navigator.mediaDevices.getDisplayMedia(mediaConstraints)
+			navigator.mediaDevices.getDisplayMedia({video : true, audio : true})
 			.then(function(stream){
 
 				thiz.getUserMediaDetail(mediaConstraints,audioConstraint,stream);
@@ -346,6 +346,18 @@ function WebRTCAdaptor(initialValues)
 
 		thiz.localStream.getAudioTracks().forEach(function(track) {
 			track.onended = null;
+			track.stop();
+		});
+
+	}
+
+	this.closeStreamy = function () {
+
+		thiz.localStream.getVideoTracks().forEach(function(track) {
+			track.stop();
+		});
+
+		thiz.localStream.getAudioTracks().forEach(function(track) {
 			track.stop();
 		});
 
