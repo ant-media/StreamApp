@@ -89,7 +89,7 @@ function WebRTCAdaptor(initialValues)
 	thiz.bandwidth = 900; //default bandwidth kbps
 	thiz.isMultiPeer = false; //used for multiple peer client
 	thiz.multiPeerStreamId = null;   //used for multiple peer client
-
+	thiz.called = false;
 	thiz.isPlayMode = false;
 	thiz.debug = false;
 
@@ -346,18 +346,6 @@ function WebRTCAdaptor(initialValues)
 
 		thiz.localStream.getAudioTracks().forEach(function(track) {
 			track.onended = null;
-			track.stop();
-		});
-
-	}
-
-	this.closeStreamy = function () {
-
-		thiz.localStream.getVideoTracks().forEach(function(track) {
-			track.stop();
-		});
-
-		thiz.localStream.getAudioTracks().forEach(function(track) {
 			track.stop();
 		});
 
@@ -695,6 +683,51 @@ function WebRTCAdaptor(initialValues)
 		else {
 			thiz.arrangeStreams(stream, onEndedCallback, stopDesktop);
 		}
+	}
+
+	this.handleError = function(error) {
+		console.log('navigator.MediaDevices.getUserMedia error: ', error.message, error.name);
+	}
+
+	this.changevideosource = function(value)
+	{
+		//returns a promise
+		if(thiz.called)
+		{
+			return;
+		}
+		thiz.called = true;
+		mediaConstraints = {audio: true, video: {deviceId: {exact: value}}};
+
+		thiz.closeStream();
+		var promisVal;
+		promisVal = navigator.mediaDevices.getUserMedia(mediaConstraints).then(thiz.gotStream);
+		promisVal.catch(thiz.handleError);
+		promisVal.then(function setCalled() {
+			thiz.called = false;
+		});
+		return promisVal;
+	}
+
+	this.flipCamera = function(front)
+	{
+		//Flips camera to front if called with front = true else changes to bacck camera,returns a promise
+		if(front)
+		{
+			mediaConstraints = { audio: true, video: { facingMode: "user" } };
+		}
+		else
+		{
+			mediaConstraints = { audio: true, video: { facingMode: "environment" } };
+		}
+		thiz.closeStream();
+		var promisVal;
+		promisVal = navigator.mediaDevices.getUserMedia(mediaConstraints).then(this.gotStream);
+		promisVal.catch(thiz.handleError);
+		promisVal.then(function setCalled() {
+			thiz.called = false;
+		});
+		return promisVal;
 	}
 
 

@@ -144,7 +144,6 @@ video {
 <script>
      
 	var token = "<%= request.getParameter("token") %>";
-	var called = false;
 	var camera_checkbox = document.getElementById("camera_checkbox");
 	var screen_share_checkbox = document.getElementById("screen_share_checkbox");
   	var screen_share_with_camera_checkbox = document.getElementById("screen_share_with_camera_checkbox");
@@ -203,7 +202,7 @@ video {
 	}
 	
   	function switchMode(chbx) {
-		webRTCAdaptor.switchVideoCapture(streamId);
+		// webRTCAdaptor.switchVideoCapture(streamId);
 		// if(camera_checkbox == chbx){
   		// 	webRTCAdaptor.switchVideoCapture(streamId);
   		// }
@@ -412,37 +411,25 @@ video {
 			});
 	}
 
-
-	function fss(mediaConstraints)
-	{
-		//returns a promise
-		return navigator.mediaDevices.getUserMedia(mediaConstraints).then(webRTCAdaptor.gotStream);
-	}
-
-	function handleError(error) {
-		console.log('navigator.MediaDevices.getUserMedia error: ', error.message, error.name);
-	}
-	function changesource(value) {
-		if (called) {
-			return;
-		}
-		called = true;
-		mediaConstraints = {audio: true, video: {deviceId: {exact: value}}};
-		document.getElementsByName("ListOfDevicesRadios").forEach(function (item, index) {
-			console.log(item);
-			item.disabled = true;
-		});
-		webRTCAdaptor.closeStreamy();
-
-		navigator.mediaDevices.getUserMedia(mediaConstraints).then(webRTCAdaptor.gotStream).then(function setCalled() {
-			called = false;
-
-		}).then(function enable() {
+	function disableButtons(disable) {
+		//true for disabling false for enabling
+		if(disable === true)
+		{
 			document.getElementsByName("ListOfDevicesRadios").forEach(function (item, index) {
-				console.log(item);
+				item.disabled = true;
+			});
+		}
+		else {
+			document.getElementsByName("ListOfDevicesRadios").forEach(function (item, index) {
 				item.disabled = false;
 			});
-		}).catch(handleError);
+		}
+	}
+
+	function changesource(value) {
+		//disables buttons to make sure that user don't try calling this function again
+		disableButtons(true);
+		webRTCAdaptor.changevideosource(value).then(disableButtons(false));
 	}
 
 	navigator.mediaDevices.getUserMedia(mediaConstraints).then(
