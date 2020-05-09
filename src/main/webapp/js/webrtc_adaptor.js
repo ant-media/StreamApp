@@ -24,6 +24,7 @@ function WebRTCAdaptor(initialValues)
 			this.timerId = 0;
 			this.firstByteSentCount = 0;
 			this.firstBytesReceivedCount = 0;
+			this.audioLevel = -1;
 		}
 
 		//kbits/sec
@@ -1214,8 +1215,9 @@ function WebRTCAdaptor(initialValues)
 			var fractionLost = 0;
 			var currentTime = 0;
 			var bytesSent = 0;
+			var audioLevel = -1;
 
-			stats.forEach(value => {
+            stats.forEach(value => {
 
 				if (value.type == "inbound-rtp")
 				{
@@ -1229,6 +1231,11 @@ function WebRTCAdaptor(initialValues)
 					bytesSent += value.bytesSent
 					currentTime = value.timestamp
 				}
+				else if (value.type == "track" && typeof value.kind != "undefined" && value.kind == "audio") {
+				    if (typeof value.audioLevel != "undefined") {
+				        audioLevel = value.audioLevel;
+				    }
+				}
 			});
 
 			thiz.remotePeerConnectionStats[streamId].totalBytesReceived = bytesReceived;
@@ -1236,6 +1243,7 @@ function WebRTCAdaptor(initialValues)
 			thiz.remotePeerConnectionStats[streamId].fractionLost = fractionLost;
 			thiz.remotePeerConnectionStats[streamId].currentTime = currentTime;
 			thiz.remotePeerConnectionStats[streamId].totalBytesSent = bytesSent;
+			thiz.remotePeerConnectionStats[streamId].audioLevel = audioLevel;
 
 			thiz.callback("updated_stats", thiz.remotePeerConnectionStats[streamId]);
 
