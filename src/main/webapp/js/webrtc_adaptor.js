@@ -686,6 +686,11 @@ function WebRTCAdaptor(initialValues)
 	}
 
 	this.handleError = function(error) {
+		if(error.name == "NotReadableError")
+		{
+			thiz.localStream.getTracks().forEach(track => track.stop());
+			thiz.called = false;
+		}
 		console.log('navigator.MediaDevices.getUserMedia error: ', error.message, error.name);
 	}
 
@@ -694,23 +699,31 @@ function WebRTCAdaptor(initialValues)
 		//returns a promise
 		if(thiz.called)
 		{
-			return;
+			return Promise.reject(	"Already called");
 		}
 		thiz.called = true;
 		mediaConstraints = {audio: true, video: {deviceId: {exact: value}}};
 
 		thiz.closeStream();
 		var promisVal;
-		promisVal = navigator.mediaDevices.getUserMedia(mediaConstraints).then(thiz.gotStream);
-		promisVal.catch(thiz.handleError);
+		promisVal = navigator.mediaDevices.getUserMedia(mediaConstraints).then(thiz.gotStream).catch(thiz.handleError);
 		promisVal.then(function setCalled() {
 			thiz.called = false;
 		});
 		return promisVal;
 	}
 
+	this.listDevices = function()
+	{
+		return navigator.mediaDevices.enumerateDevices();
+	}
+
 	this.flipCamera = function(front)
 	{
+		if(thiz.called)
+		{
+			return Promise.reject("Already called");
+		}
 		//Flips camera to front if called with front = true else changes to bacck camera,returns a promise
 		if(front)
 		{
@@ -722,8 +735,7 @@ function WebRTCAdaptor(initialValues)
 		}
 		thiz.closeStream();
 		var promisVal;
-		promisVal = navigator.mediaDevices.getUserMedia(mediaConstraints).then(this.gotStream);
-		promisVal.catch(thiz.handleError);
+		promisVal = navigator.mediaDevices.getUserMedia(mediaConstraints).then(this.gotStream).catch(thiz.handleError);
 		promisVal.then(function setCalled() {
 			thiz.called = false;
 		});

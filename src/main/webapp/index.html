@@ -411,30 +411,35 @@ video {
 			});
 	}
 
-	function disableButtons(disable) {
-		//true for disabling false for enabling
-		if(disable === true)
-		{
-			document.getElementsByName("ListOfDevicesRadios").forEach(function (item, index) {
-				item.disabled = true;
-			});
-		}
-		else {
-			document.getElementsByName("ListOfDevicesRadios").forEach(function (item, index) {
-				item.disabled = false;
-			});
-		}
-	}
+	// function disableButtons(disable) {
+	// 	//true for disabling false for enabling
+	// 	if(disable === true)
+	// 	{
+	// 		console.log("disabled");
+	// 		document.getElementsByName("ListOfDevicesRadios").forEach(function (item, index) {
+	// 			item.disabled = true;
+	// 		});
+	// 	}
+	// 	if(disable === false) {
+	// 		document.getElementsByName("ListOfDevicesRadios").forEach(function (item, index) {
+	// 			item.disabled = false;
+	// 		});
+	// 		console.log("enabled");
+	// 	}
+	// }
 
 	function changesource(value) {
 		//disables buttons to make sure that user don't try calling this function again
-		disableButtons(true);
-		webRTCAdaptor.changevideosource(value).then(disableButtons(false));
+		promisval = webRTCAdaptor.changevideosource(value).catch( (error) => {console.error(error);});
 	}
+
+
+	//initialize the WebRTCAdaptor
+	initWebRTCAdaptor(false, autoRepublishEnabled);
 
 	navigator.mediaDevices.getUserMedia(mediaConstraints).then(
 			function addradios(){
-				navigator.mediaDevices.enumerateDevices()
+				webRTCAdaptor.listDevices()
 						.then(function(devices) {
 							var second = false;
 							devices.forEach(function(device) {
@@ -446,10 +451,6 @@ video {
 									lel.setAttribute("type", "radio");
 									lel.setAttribute("name","ListOfDevicesRadios");
 									lel.setAttribute("value",device.deviceId);
-									if(second)
-									{
-										lel.disabled = true;
-									}
 									second = true;
 									label.appendChild(lel);
 									lel.onclick = function()
@@ -469,22 +470,6 @@ video {
 						});
 			}
 	);
-	function sleep(ms) {
-		return new Promise(resolve => setTimeout(resolve, ms));
-	}
-	//initialize the WebRTCAdaptor
-	initWebRTCAdaptor(false, autoRepublishEnabled);
-	document.getElementsByName("ListOfDevicesRadios").forEach(function (item, index) {
-		item.disabled = true;
-	});
-	async function enable() {
-		await sleep(15000);
-		document.getElementsByName("ListOfDevicesRadios").forEach(function (item, index) {
-			item.disabled = false;
-		});
-	}
-	enable();
-
 
 </script>
 </html>
