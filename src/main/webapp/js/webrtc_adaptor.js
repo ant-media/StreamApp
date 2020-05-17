@@ -358,7 +358,7 @@ function WebRTCAdaptor(initialValues)
 
 	this.checkBrowserScreenShareSupported = function() 
 	{
-		if (navigator.mediaDevices.getDisplayMedia || navigator.getDisplayMedia ) {
+		if ((typeof navigator.mediaDevices != "undefined"  && navigator.mediaDevices.getDisplayMedia) || navigator.getDisplayMedia ) {
 			thiz.callback("browser_screen_share_supported");
 		}
 	};
@@ -1057,8 +1057,21 @@ function WebRTCAdaptor(initialValues)
 		}
 	};
 
-	this.addIceCandidate = function(streamId, candidate) {
-		if (thiz.candidateTypes.includes(candidate.protocol))
+	this.addIceCandidate = function(streamId, candidate) 
+	{	
+		var protocolSupported = false;
+		if (typeof candidate.protocol == "undefined") {
+			thiz.candidateTypes.forEach(element => {
+				if (candidate.candidate.toLowerCase().includes(element)) {
+					protocolSupported = true;
+				}
+			});
+		}
+		else {
+			protocolSupported = thiz.candidateTypes.includes(event.candidate.protocol.toLowerCase());
+		}	
+		
+		if (protocolSupported)
 		{
 
 			thiz.remotePeerConnection[streamId].addIceCandidate(candidate)
@@ -1074,7 +1087,8 @@ function WebRTCAdaptor(initialValues)
 		}
 		else {
 			if (thiz.debug) {
-				console.log("Candidate's protocol("+candidate.protocol+") is not supported. Supported protocols:" + thiz.candidateTypes);
+				console.log("Candidate's protocol("+candidate.protocol+") is not supported." +
+						"Candidate: " + candidate.candidate +" Supported protocols:" + thiz.candidateTypes);
 			}
 		}
 	};
