@@ -598,7 +598,12 @@ function WebRTCAdaptor(initialValues)
 	this.switchVideoCameraCapture = function(streamId, deviceId) {
 		//stop the track because in some android devices need to close the current camera stream
 		var videoTrack = thiz.localStream.getVideoTracks()[0];
-		videoTrack.stop();
+		if (videoTrack) {
+			videoTrack.stop();
+		}
+		else {
+		   console.warn("There is no video track in local stream");
+		}
 		
 		thiz.publishMode = "camera";
 
@@ -675,12 +680,17 @@ function WebRTCAdaptor(initialValues)
 				return s.track.kind == "video";
 			});
 
-			videoTrackSender.replaceTrack(stream.getVideoTracks()[0]).then(function(result) {
-				thiz.updateLocalStream(stream, onEndedCallback, stopDesktop);
-
-			}).catch(function(error) {
-				console.log(error.name);
-			});
+			if (videoTrackSender) {
+				videoTrackSender.replaceTrack(stream.getVideoTracks()[0]).then(function(result) {
+					thiz.updateLocalStream(stream, onEndedCallback, stopDesktop);
+	
+				}).catch(function(error) {
+					console.log(error.name);
+				});
+			}
+			else {
+				console.error("VideoTrackSender is undefined or null");
+			}
 		}
 		else {
 			thiz.updateLocalStream(stream, onEndedCallback, stopDesktop);
@@ -813,9 +823,13 @@ function WebRTCAdaptor(initialValues)
 				const dataChannelOptions = {
 						ordered: true,
 				};
-
-				var dataChannel = thiz.remotePeerConnection[streamId].createDataChannel(streamId, dataChannelOptions);
-				thiz.initDataChannel(streamId, dataChannel);
+				if (thiz.remotePeerConnection[streamId].createDataChannel) {
+					var dataChannel = thiz.remotePeerConnection[streamId].createDataChannel(streamId, dataChannelOptions);
+					thiz.initDataChannel(streamId, dataChannel);
+				}
+				else {
+				    console.warn("CreateDataChannel is not supported");
+				}
 
 			} else if(dataChannelMode == "play") {
 				//in play mode, server opens the data channel 
@@ -829,12 +843,18 @@ function WebRTCAdaptor(initialValues)
 						ordered: true,
 				};
 
-				var dataChannelPeer = thiz.remotePeerConnection[streamId].createDataChannel(streamId, dataChannelOptions);
-				thiz.initDataChannel(streamId, dataChannelPeer);
-
-				thiz.remotePeerConnection[streamId].ondatachannel = function(ev) {
-					thiz.initDataChannel(streamId, ev.channel);
-				};
+				if (thiz.remotePeerConnection[streamId].createDataChannel) 
+				{
+					var dataChannelPeer = thiz.remotePeerConnection[streamId].createDataChannel(streamId, dataChannelOptions);
+					thiz.initDataChannel(streamId, dataChannelPeer);
+	
+					thiz.remotePeerConnection[streamId].ondatachannel = function(ev) {
+						thiz.initDataChannel(streamId, ev.channel);
+					};
+				}
+				else {
+				    console.warn("CreateDataChannel is not supported");
+				}
 			}
 
 			thiz.remotePeerConnection[streamId].oniceconnectionstatechange = function (event) {
