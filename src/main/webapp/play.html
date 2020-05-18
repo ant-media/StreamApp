@@ -96,6 +96,14 @@ pageEncoding="UTF-8"%>
 		
 %>
 
+	//Check HLS player is finished. If finished page should be reload
+	var video = videojs('video-player').ready(function(){
+		var player = this;
+		player.on('ended', function() {
+	  		location.reload();
+	  	});
+	});
+
 	var name = "<%= streamId %>";
 	var token = "<%= request.getParameter("token") %>";
 
