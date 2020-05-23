@@ -1,7 +1,7 @@
 
 body {
-	background-color:#eee;	
-	overflow:hidden;
+  	font-family: 'Poppins', sans-serif !important;
+  	background-color: black !important;
 }
 
 #video_container{
@@ -9,12 +9,32 @@ body {
 }
 
 #video_info {
-	color:#555;
+	color: white !important;
 	position:relative;
 	top:30%;
 	text-align:center;
-	font-size:36px;
-	font-family:sans-serif;
-	line-height:45px;
+	font-size: 27px !important;
+	font-family: inherit !important;
 	height:100%;
+	line-height: 1.4 !important;
+	padding: 0 20% !important;
+  	line-height: 1.4 !important;
+}
+
+#video-player{
+	position: absolute;
+    	top: 0;
+    	left: 0; 
+	overflow: hidden;
+	width: 100% !important;
+	height: 100% !important;
+}
+#remoteVideo{
+	position: absolute;
+	top: 0;
+    	left: 0;
+	height: 100% !important;
+	width: 100% !important; 
+	overflow: hidden;
+	display: none; 
 }
