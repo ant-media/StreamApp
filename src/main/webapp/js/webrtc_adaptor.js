@@ -722,7 +722,13 @@ function WebRTCAdaptor(initialValues)
 		if (event.candidate) {
 
 			var protocolSupported = false;
-			if (typeof event.candidate.protocol == "undefined") {
+			
+			if (event.candidate.candidate == "") {
+				//event candidate can be received and its value can be "".
+				//don't compare the protocols
+				protocolSupported = true;
+			}
+			else if (typeof event.candidate.protocol == "undefined") {
 				thiz.candidateTypes.forEach(element => {
 					if (event.candidate.candidate.toLowerCase().includes(element)) {
 						protocolSupported = true;
@@ -732,6 +738,7 @@ function WebRTCAdaptor(initialValues)
 			else {
 				protocolSupported = thiz.candidateTypes.includes(event.candidate.protocol.toLowerCase());
 			}
+			
 
 			if (protocolSupported) {
 
@@ -757,7 +764,7 @@ function WebRTCAdaptor(initialValues)
 			}
 		}
 		else {
-			console.error("No event.candidate in the iceCandidate event");
+			console.log("No event.candidate in the iceCandidate event");
 		}
 	}
 
@@ -1080,7 +1087,12 @@ function WebRTCAdaptor(initialValues)
 	this.addIceCandidate = function(streamId, candidate) 
 	{	
 		var protocolSupported = false;
-		if (typeof candidate.protocol == "undefined") {
+		if (candidate.candidate == "") {
+			//candidate can be received and its value can be "".
+			//don't compare the protocols
+			protocolSupported = true;
+		}
+		else if (typeof candidate.protocol == "undefined") {
 			thiz.candidateTypes.forEach(element => {
 				if (candidate.candidate.toLowerCase().includes(element)) {
 					protocolSupported = true;
