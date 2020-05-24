@@ -15,16 +15,14 @@ body {
 	text-align:center;
 	font-size: 27px !important;
 	font-family: inherit !important;
-	height:100%;
 	line-height: 1.4 !important;
 	padding: 0 20% !important;
-  	line-height: 1.4 !important;
 }
 
 #video-player{
 	position: absolute;
-    	top: 0;
-    	left: 0; 
+    top: 0;
+    left: 0; 
 	overflow: hidden;
 	width: 100% !important;
 	height: 100% !important;
@@ -32,9 +30,9 @@ body {
 #remoteVideo{
 	position: absolute;
 	top: 0;
-    	left: 0;
+    left: 0;
+    overflow: hidden;
 	height: 100% !important;
 	width: 100% !important; 
-	overflow: hidden;
 	display: none; 
 }
