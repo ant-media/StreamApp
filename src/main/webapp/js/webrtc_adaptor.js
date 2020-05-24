@@ -1088,7 +1088,7 @@ function WebRTCAdaptor(initialValues)
 			});
 		}
 		else {
-			protocolSupported = thiz.candidateTypes.includes(event.candidate.protocol.toLowerCase());
+			protocolSupported = thiz.candidateTypes.includes(candidate.protocol.toLowerCase());
 		}	
 		
 		if (protocolSupported)
