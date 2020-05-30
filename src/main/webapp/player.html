@@ -100,8 +100,8 @@ video {
 					<button onclick="stopPlaying()" class="btn btn-primary"
 						id="stop_play_button">Stop Playing</button>
 				</div>
-				<span class="badge badge-success" id="bitrateInfo" style="font-size:14px;display:none"
-							style="display: none">Weak Connection</span>
+				<span class="badge badge-warning" id="bitrateInfo" style="font-size:14px;display:none"
+							style="display: none">Weak Network Connection</span>
 
 		</div>
 		<footer class="footer text-center">
@@ -204,7 +204,7 @@ video {
 
         $("#bitrateInfo").fadeIn(800, function () {
           $("#bitrateInfo").fadeOut(800, function () {
-        	$("#bitrateInfo").html("Weak Connection");
+        	$("#bitrateInfo").html("Weak Network Connection");
           });
         });
       }
