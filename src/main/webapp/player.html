@@ -93,13 +93,16 @@ video {
 				</div>
 			</div>
 
-			<p>
-				<button onclick="startPlaying()" class="btn btn-primary"
-					id="start_play_button">Start Playing</button>
-				<button onclick="stopPlaying()" class="btn btn-primary"
-					id="stop_play_button">Stop Playing</button>
+			
+				<div class="form-group">
+					<button onclick="startPlaying()" class="btn btn-primary"
+						id="start_play_button">Start Playing</button>
+					<button onclick="stopPlaying()" class="btn btn-primary"
+						id="stop_play_button">Stop Playing</button>
+				</div>
+				<span class="badge badge-warning" id="bitrateInfo" style="font-size:14px;display:none"
+							style="display: none">Weak Network Connection</span>
 
-			</p>
 		</div>
 		<footer class="footer text-center">
 			<p>
@@ -196,6 +199,16 @@ video {
 		websocketURL = "wss://" + path;
 	}
 
+
+	function startAnimation() {
+
+        $("#bitrateInfo").fadeIn(800, function () {
+          $("#bitrateInfo").fadeOut(800, function () {
+        	$("#bitrateInfo").html("Weak Network Connection");
+          });
+        });
+      }
+
 	var webRTCAdaptor = new WebRTCAdaptor({
 		websocket_url : websocketURL,
 		mediaConstraints : mediaConstraints,
@@ -246,6 +259,14 @@ video {
 			else if (info == "data_received") {
 				console.log("Data received: " + obj.event.data + " type: " + obj.event.type + " for stream: " + obj.streamId);
 				$("#dataMessagesTextarea").append("Received: " + obj.event.data + "\r\n");
+			}
+			else if (info == "bitrateMeasurement") {
+				console.log( info + " notification received");
+
+				console.log(obj);	
+				if(obj.audioBitrate+obj.videoBitrate > obj.targetBitrate) {
+					startAnimation();
+				}
 			}
 			else {
 				console.log( info + " notification received");
