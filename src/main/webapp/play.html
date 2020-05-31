@@ -32,10 +32,10 @@ pageEncoding="UTF-8"%>
 	</div>
 
 	<!-- HLS Player -->
-	<div style="width: 100%; max-width: 640px; max-height: 480px;" id="video_container">
-		<video id="video-player"
-			class="video-js vjs-default-skin vjs-16-9 vjs-big-play-centered"
-			controls preload="auto" data-setup='{"fluid": true}'>
+	<div id="video_container">
+		<video id="video-player" 
+			class="video-js vjs-default-skin vjs-big-play-centered"
+			controls preload="auto" muted>
 			<p class="vjs-no-js">
 				To view this video please enable JavaScript, and consider upgrading
 				to a web browser that <a
@@ -47,8 +47,7 @@ pageEncoding="UTF-8"%>
 
 
 	<!-- WebRTC Player -->
-	<video id="remoteVideo" autoplay controls playsinline
-		style="display: none; width: 100%; max-width: 640px; max-height: 480px;"></video>
+	<video id="remoteVideo" autoplay controls playsinline muted></video>
 	<img id="play_button" src="images/play.png" onclick="playWebRTCVideo()"
 		style="position: absolute; top: 30px; left: 30px; display: none;" />
 
@@ -230,13 +229,12 @@ pageEncoding="UTF-8"%>
 
 		hideHLSElements();
 
-		document.getElementById("remoteVideo").style.display="block";
-
 		var pc_config = {
 				'iceServers' : [ {
 					'urls' : 'stun:stun.l.google.com:19302'
 				} ]
 			};
+
 
 		var sdpConstraints = {
 			OfferToReceiveAudio : true,
