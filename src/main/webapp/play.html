@@ -232,7 +232,11 @@ pageEncoding="UTF-8"%>
 
 		document.getElementById("remoteVideo").style.display="block";
 
-		var pc_config = null;
+		var pc_config = {
+				'iceServers' : [ {
+					'urls' : 'stun:stun.l.google.com:19302'
+				} ]
+			};
 
 		var sdpConstraints = {
 			OfferToReceiveAudio : true,
