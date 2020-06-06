@@ -219,7 +219,7 @@ function WebRTCAdaptor(initialValues)
 		});
 	}
 
-	this.prepareStreamTracks = function (mediaConstraints,audioConstraint,stream) {
+	this.prepareStreamTracks = function (mediaConstraints,audioConstraint,stream,streamId) {
 
 		//this trick, getting audio and video separately, make us add or remove tracks on the fly
 		var audioTrack = stream.getAudioTracks();
@@ -263,14 +263,14 @@ function WebRTCAdaptor(initialValues)
 	/**
 	 * Get user media
 	 */
-	this.getUserMedia = function (mediaConstraints, audioConstraint) {
+	this.getUserMedia = function (mediaConstraints, audioConstraint, streamId) {
 
 		// Check Media Constraint video value screen or screen + camera
 		if(thiz.publishMode == "screen+camera" || thiz.publishMode == "screen"){
 
 			navigator.mediaDevices.getDisplayMedia(mediaConstraints)
 			.then(function(stream){
-				thiz.prepareStreamTracks(mediaConstraints,audioConstraint,stream);
+				thiz.prepareStreamTracks(mediaConstraints,audioConstraint,stream, streamId);
 
 			})
 			.catch(function(error) {
@@ -304,7 +304,7 @@ function WebRTCAdaptor(initialValues)
 			navigator.mediaDevices.getUserMedia(mediaConstraints)
 			.then(function(stream){
 
-				thiz.prepareStreamTracks(mediaConstraints,audioConstraint,stream);
+				thiz.prepareStreamTracks(mediaConstraints,audioConstraint,stream, streamId);
 
 			})
 			.catch(function(error) {
@@ -622,7 +622,7 @@ function WebRTCAdaptor(initialValues)
 			audioConstraint = mediaConstraints.audio;
 		}
 
-		thiz.getUserMedia(thiz.mediaConstraints, audioConstraint);
+		thiz.getUserMedia(thiz.mediaConstraints, audioConstraint, streamId);
 	}
 
 	this.switchDesktopCaptureWithCamera = function(streamId) {
@@ -633,7 +633,7 @@ function WebRTCAdaptor(initialValues)
 		if (typeof mediaConstraints.audio != "undefined" && mediaConstraints.audio != false) {
 			audioConstraint = mediaConstraints.audio;
 		}
-		thiz.getUserMedia(mediaConstraints, audioConstraint);
+		thiz.getUserMedia(mediaConstraints, audioConstraint, streamId);
 	}
 
 	/**
