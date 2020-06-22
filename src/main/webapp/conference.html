@@ -386,15 +386,6 @@ body {
 						else {
 							publish(obj.streamId, token);
 						}
-						var streams = obj.streams;
-
-						if (obj.streams != null) {
-							obj.streams.forEach(function(item) {
-								console.log(item);
-								webRTCAdaptor.play(item, token,
-										roomNameBox.value);
-							});
-						}
 						webRTCAdaptor.getRoomInfo(roomNameBox.value, obj.streamId);
 					} else if (info == "newStreamAvailable") {
 						playVideo(obj);
