@@ -1274,9 +1274,9 @@ function WebRTCAdaptor(initialValues)
 		thiz.webSocketAdaptor.send(JSON.stringify(jsCmd));
 	}
 	
-	this.setStreamResolution = function (streamId, resolution) {
+	this.forceStreamQuality = function (streamId, resolution) {
 		var jsCmd = {
-				command : "setStreamResolution",
+				command : "forceStreamQuality",
 				streamId : streamId,
 				streamHeight : resolution
 		};

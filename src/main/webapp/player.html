@@ -286,7 +286,7 @@ video {
  					dropdownSelectedItem = dropdownSelectedItem.replace('p', '');
 
  					// Call set stream resolution
-    				webRTCAdaptor.setStreamResolution('stream1',dropdownSelectedItem);
+    				webRTCAdaptor.forceStreamQuality('stream1',dropdownSelectedItem);
 					// Remove current active item
 					$('a.dropdown-item.active').removeClass("active"); 
 					// Add active in new item
