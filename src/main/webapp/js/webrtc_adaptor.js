@@ -1397,6 +1397,9 @@ function WebRTCAdaptor(initialValues)
 			else if (obj.command == "streamInformation") {
 				thiz.callback(obj.command, obj);
 			}
+			else if (obj.command == "roomInformation") {
+				thiz.callback(obj.command, obj);
+			}
 			else if (obj.command == "pong") {
 				thiz.callback(obj.command);
 			}
