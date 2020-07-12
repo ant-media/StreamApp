@@ -611,6 +611,22 @@ function WebRTCAdaptor(initialValues)
 			console.error("Cannot get devices -> error name: " + err.name + ": " + err.message);
 		});
 	};
+	
+	this.switchAudioInputSource = function(streamId, deviceId) {
+		//stop the track because in some android devices need to close the current camera stream
+		var audioTrack = thiz.localStream.getAudioTracks()[0];
+		if (audioTrack) {
+			audioTrack.stop();
+		}
+		else {
+		   console.warn("There is no audio track in local stream");
+		}
+
+		if (typeof deviceId != "undefined" ) {
+			thiz.mediaConstraints.audio = { "deviceId": deviceId };
+		}
+		thiz.setAudioInputSource(streamId, thiz.mediaConstraints, null, true, deviceId);
+	}
 
 	this.switchVideoCameraCapture = function(streamId, deviceId) {
 		//stop the track because in some android devices need to close the current camera stream
@@ -652,12 +668,31 @@ function WebRTCAdaptor(initialValues)
 		}
 		thiz.getUserMedia(mediaConstraints, audioConstraint, streamId);
 	}
+	
+	/**
+	 * This method updates the local stream. It removes existant audio track from the local stream
+	 * and add the audio track in `stream` parameter to the local stream
+	 */
+	thiz.updateLocalAudioStream = function(stream, onEndedCallback) {
+
+		var audioTrack = thiz.localStream.getAudioTracks()[0];
+		thiz.localStream.removeTrack(audioTrack);
+		audioTrack.stop();
+		thiz.localStream.addTrack(stream.getAudioTracks()[0]);
+		thiz.localVideo.srcObject = thiz.localStream;
+
+		if (onEndedCallback != null) {
+			stream.getAudioTracks()[0].onended = function(event) {
+				onEndedCallback(event);
+			}
+		}
+	}
 
 	/**
 	 * This method updates the local stream. It removes existant video track from the local stream
 	 * and add the video track in `stream` parameter to the local stream
 	 */
-	thiz.updateLocalStream = function(stream, onEndedCallback, stopDesktop) {
+	thiz.updateLocalVideoStream = function(stream, onEndedCallback, stopDesktop) {
 
 		if (stopDesktop && thiz.desktopStream != null) {
 			thiz.desktopStream.getVideoTracks()[0].stop();
@@ -675,9 +710,25 @@ function WebRTCAdaptor(initialValues)
 			}
 		}
 	}
-
+	
 	/**
-	 * 
+	 * This method sets Audio Input Source. 
+	 * It calls updateAudioTrack function for the update local audio stream.
+	 */
+	this.setAudioInputSource = function (streamId, mediaConstraints, onEndedCallback) {
+
+		navigator.mediaDevices.getUserMedia(mediaConstraints)
+		.then(function(stream) {
+			thiz.updateAudioTrack(stream, streamId, mediaConstraints, onEndedCallback);
+		})
+		.catch(function(error) {
+			thiz.callbackError(error.name);
+		});
+	}
+	
+	/**
+	 * This method sets Video Input Source. 
+	 * It calls updateVideoTrack function for the update local video stream.
 	 */
 	this.setVideoCameraSource = function (streamId, mediaConstraints, onEndedCallback, stopDesktop) {
 
@@ -689,6 +740,30 @@ function WebRTCAdaptor(initialValues)
 			thiz.callbackError(error.name);
 		});
 	}
+	
+	this.updateAudioTrack = function (stream, streamId, mediaConstraints, onEndedCallback) {
+
+		if (thiz.remotePeerConnection[streamId] != null) {
+			var audioTrackSender = thiz.remotePeerConnection[streamId].getSenders().find(function(s) {
+				return s.track.kind == "audio";
+			});
+
+			if (audioTrackSender) {
+				audioTrackSender.replaceTrack(stream.getAudioTracks()[0]).then(function(result) {
+					thiz.updateLocalAudioStream(stream, onEndedCallback);
+	
+				}).catch(function(error) {
+					console.log(error.name);
+				});
+			}
+			else {
+				console.error("AudioTrackSender is undefined or null");
+			}
+		}
+		else {
+			thiz.updateLocalAudioStream(stream, onEndedCallback);
+		}
+	}
 
 	this.updateVideoTrack = function (stream, streamId, mediaConstraints, onEndedCallback, stopDesktop) {
 
@@ -699,7 +774,7 @@ function WebRTCAdaptor(initialValues)
 
 			if (videoTrackSender) {
 				videoTrackSender.replaceTrack(stream.getVideoTracks()[0]).then(function(result) {
-					thiz.updateLocalStream(stream, onEndedCallback, stopDesktop);
+					thiz.updateLocalVideoStream(stream, onEndedCallback, stopDesktop);
 	
 				}).catch(function(error) {
 					console.log(error.name);
@@ -710,7 +785,7 @@ function WebRTCAdaptor(initialValues)
 			}
 		}
 		else {
-			thiz.updateLocalStream(stream, onEndedCallback, stopDesktop);
+			thiz.updateLocalVideoStream(stream, onEndedCallback, stopDesktop);
 		}
 	}
 
