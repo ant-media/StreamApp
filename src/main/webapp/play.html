@@ -60,6 +60,8 @@ pageEncoding="UTF-8"%>
     * 3. "autoplay": To start playing automatically if streams is available. Optional. Default value is true
     * 4. "playOrder": the order which technologies is used in playing. Optional. Default value is "webrtc,hls".
     *     possible values are "hls,webrtc","webrtc","hls"
+    * 5. "playType": the order which play type is used in playing. Optional. Default value is "live".
+    *     possible values are "live","vod"
     */
 
 
@@ -86,7 +88,19 @@ pageEncoding="UTF-8"%>
 	   %>
 	   var  playOrder = ["webrtc"];
 	   <%
-	}	
+	}
+	
+	 String playType = request.getParameter("playType") ;
+	 if (playType == null || playType.equals("live")) {
+	   %>
+	   var  playType = ["live"];
+	   <%
+	}
+	else if(playType.equals("vod")) {
+	   %>
+	   var  playType = ["vod"];
+	   <%
+	}
 	
 	String streamId = request.getParameter("id");
 	if (streamId == null) {
@@ -117,7 +131,7 @@ pageEncoding="UTF-8"%>
 	   setTimeout(function(){
 		 if (playOrder.includes("hls"))
 		 {
-		   tryToHLSPlay(name, token, hlsNoStreamCallback);	
+		   tryToHLSPlay(name, token, hlsNoStreamCallback, playType);	
 		 } 
 		 else
 		 {
@@ -143,7 +157,7 @@ pageEncoding="UTF-8"%>
 			}
 			else 
 			{
-				tryToHLSPlay(name, token, hlsNoStreamCallback);	
+				tryToHLSPlay(name, token, hlsNoStreamCallback, playType);	
 			}
 		}, 3000);
 	    	
@@ -308,7 +322,7 @@ pageEncoding="UTF-8"%>
 					/*
 					* If getting codec incompatible or remote description error, it will redirect HLS player.
 					*/
-					tryToHLSPlay(name, token, hlsNoStreamCallback);
+					tryToHLSPlay(name, token, hlsNoStreamCallback, playType);
 					
 				}
 			}
@@ -340,7 +354,7 @@ pageEncoding="UTF-8"%>
 			} 
 			else if (playOrder[0] == "hls" )
 			{
-				tryToHLSPlay(name, token, hlsNoStreamCallback);
+				tryToHLSPlay(name, token, hlsNoStreamCallback, playType);
 			}
 			else {
 				alert("Unsupported play order requested. Supported formats are webrtc and hls. Use something like playOrder=webrtc,hls");

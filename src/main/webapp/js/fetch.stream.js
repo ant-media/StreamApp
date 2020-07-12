@@ -14,7 +14,7 @@ if (!String.prototype.endsWith)
 }
 
 
-function tryToHLSPlay(name, token, noStreamCallback) {
+function tryToHLSPlay(name, token, noStreamCallback, playType) {
 	fetch("streams/"+ name +"_adaptive.m3u8", {method:'HEAD'})
 	.then(function(response) {
 		if (response.status == 200) {
@@ -32,7 +32,7 @@ function tryToHLSPlay(name, token, noStreamCallback) {
 					initializeHLSPlayer(name, "m3u8", token);
 
 				}
-				else {
+				else if(playType == "vod") {
 					//no m3u8 exists, try vod file
 					fetch("streams/"+ name +".mp4", {method:'HEAD'})
 					.then(function(response) {
