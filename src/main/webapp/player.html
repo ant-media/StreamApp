@@ -91,6 +91,15 @@ video {
 					<button type="button" class="btn btn-outline-primary btn-block" onclick="sendData()">Send</button>
 					</div>
 				</div>
+				<div class="dropdown">
+  					<button class="btn btn-primary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+    					Stream Resolutions
+  					</button>
+  					<div id="dropdownMenu" class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+
+    					<a class="dropdown-item active" href="#" >Automatic</a>
+  					</div>
+				</div>
 			</div>
 
 			
@@ -238,13 +247,53 @@ video {
 				console.log("play finished");
 				start_play_button.disabled = false;
 				stop_play_button.disabled = true;
+				// Reset stream resolutions in dropdown
+				document.getElementById("dropdownMenu").innerHTML = '<a class="dropdown-item active" href="#">Automatic</a>'; 
 			} else if (info == "closed") {
 				//console.log("Connection closed");
 				if (typeof obj != "undefined") {
 					console.log("Connecton closed: "
 							+ JSON.stringify(obj));
 				}
-			}else if (info == "ice_connection_state_changed") {
+			} else if (info == "streamInformation") {
+
+				var streamResolutions = new Array();
+
+				obj["streamInfo"].forEach(function(entry) {
+					//It's needs to both of VP8 and H264. So it can be dublicate
+					if(!streamResolutions.includes(entry["streamHeight"])){
+						streamResolutions.push(entry["streamHeight"]);	
+					}	
+				});
+				// Sort stream resolutions for good UI :)
+				streamResolutions = streamResolutions.sort(function(a, b){return a-b});
+
+				// Add stream resolutions in dropdown menu
+				const dropdownMenu = document.querySelector('.dropdown-menu');
+
+				streamResolutions.forEach(streamResolution => {
+    				dropdownMenu.innerHTML += '<a class="dropdown-item" href="#">'+streamResolution+'p</a>';
+				});
+
+				$('.dropdown-menu a').click(function(){
+					var dropdownSelectedItem = $(this).text();
+ 					
+ 					if(dropdownSelectedItem == "Automatic"){
+ 						dropdownSelectedItem = "0";
+ 					}
+
+ 					// Remove p character in stream resolution
+ 					dropdownSelectedItem = dropdownSelectedItem.replace('p', '');
+
+ 					// Call set stream resolution
+    				webRTCAdaptor.forceStreamQuality('stream1',dropdownSelectedItem);
+					// Remove current active item
+					$('a.dropdown-item.active').removeClass("active"); 
+					// Add active in new item
+					$(this).addClass("active"); 
+				});
+			}		
+			else if (info == "ice_connection_state_changed") {
 				console.log("iceConnectionState Changed: ",JSON.stringify(obj));
 			}
 			else if (info == "updated_stats") {

@@ -1365,6 +1365,16 @@ function WebRTCAdaptor(initialValues)
 
 		thiz.webSocketAdaptor.send(JSON.stringify(jsCmd));
 	}
+	
+	this.forceStreamQuality = function (streamId, resolution) {
+		var jsCmd = {
+				command : "forceStreamQuality",
+				streamId : streamId,
+				streamHeight : resolution
+		};
+		thiz.webSocketAdaptor.send(JSON.stringify(jsCmd));
+	}
+
 
 	this.sendData = function(streamId, message) {
 		var dataChannel = thiz.remotePeerConnection[streamId].dataChannel;
