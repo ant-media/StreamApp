@@ -393,24 +393,19 @@ video {
 					}
 					else if (info == "available_devices") {
 						var videoHtmlContent = "";
+						var audioHtmlContent = "";
 						obj.forEach(function(device) {
 							if (device.kind == "videoinput") {
 								videoHtmlContent += getCameraRadioButton(device.label, device.deviceId);
 							}
-						}); 
-						$(videoHtmlContent).insertAfter(".video-source-legend");
-
-						$(".video-source").first().prop("checked", true);	
-						
-						var audioHtmlContent = "";
-						obj.forEach(function(device) {
-							if (device.kind == "audioinput") {
+							else if (device.kind == "audioinput"){
 								audioHtmlContent += getAudioRadioButton(device.label, device.deviceId);
 							}
 						}); 
+						$(videoHtmlContent).insertAfter(".video-source-legend");
+						$(".video-source").first().prop("checked", true);	
 						
 						$(audioHtmlContent).insertAfter(".audio-source-legend");
-
 						$(".audio-source").first().prop("checked", true);	
 					}
 					else {
