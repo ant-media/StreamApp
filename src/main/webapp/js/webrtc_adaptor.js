@@ -90,6 +90,7 @@ function WebRTCAdaptor(initialValues)
 	thiz.bandwidth = 900; //default bandwidth kbps
 	thiz.isMultiPeer = false; //used for multiple peer client
 	thiz.multiPeerStreamId = null;   //used for multiple peer client
+	thiz.roomTimerId = -1;
 
 	thiz.isPlayMode = false;
 	thiz.debug = false;
@@ -525,6 +526,11 @@ function WebRTCAdaptor(initialValues)
 				room: roomName,
 		};
 		console.log ("leave request is sent for "+ roomName);
+		
+		if ( thiz.roomTimerId != null)
+		{
+			clearInterval(thiz.roomTimerId);
+		}
 
 		thiz.webSocketAdaptor.send(JSON.stringify(jsCmd));
 	}
@@ -547,6 +553,17 @@ function WebRTCAdaptor(initialValues)
 				streamId: streamId,
 		};
 		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
+	}
+	
+	this.getRoomInfo = function(roomName,streamId) {
+		thiz.roomTimerId = setInterval(() => {
+			var jsCmd = {
+				command : "getRoomInfo",
+				streamId : streamId,
+				room: roomName,
+		};
+		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
+		}, 5000);
 	}
 
 	this.enableTrack = function(mainTrackId, trackId, enabled) {
@@ -1273,6 +1290,16 @@ function WebRTCAdaptor(initialValues)
 
 		thiz.webSocketAdaptor.send(JSON.stringify(jsCmd));
 	}
+	
+	this.forceStreamQuality = function (streamId, resolution) {
+		var jsCmd = {
+				command : "forceStreamQuality",
+				streamId : streamId,
+				streamHeight : resolution
+		};
+		thiz.webSocketAdaptor.send(JSON.stringify(jsCmd));
+	}
+
 
 	this.sendData = function(streamId, message) {
 		var dataChannel = thiz.remotePeerConnection[streamId].dataChannel;
@@ -1378,6 +1405,9 @@ function WebRTCAdaptor(initialValues)
 				}
 			}
 			else if (obj.command == "streamInformation") {
+				thiz.callback(obj.command, obj);
+			}
+			else if (obj.command == "roomInformation") {
 				thiz.callback(obj.command, obj);
 			}
 			else if (obj.command == "pong") {

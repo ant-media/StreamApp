@@ -164,6 +164,7 @@ body {
 	var roomNameBox = document.getElementById("roomName");
 
 	var roomOfStream = new Array();
+	var streamsList = new Array();
 
 	var publishStreamId;
 	var isDataChannelOpen = false;
@@ -385,24 +386,9 @@ body {
 						else {
 							publish(obj.streamId, token);
 						}
-						var streams = obj.streams;
-
-						if (obj.streams != null) {
-							obj.streams.forEach(function(item) {
-								console.log(item);
-								webRTCAdaptor.play(item, token,
-										roomNameBox.value);
-							});
-						}
-					} else if (info == "streamJoined") {
-						console.debug("stream joined with id " + obj.streamId);
-						webRTCAdaptor.play(obj.streamId, token,
-								roomNameBox.value);
+						webRTCAdaptor.getRoomInfo(roomNameBox.value, obj.streamId);
 					} else if (info == "newStreamAvailable") {
 						playVideo(obj);
-					} else if (info == "streamLeaved") {
-						console.debug(" stream leaved with id " + obj.streamId);
-						removeRemoteVideo(obj.streamId);
 					} else if (info == "publish_started") {
 						//stream is being published
 						console.debug("publish started to room: "
@@ -415,6 +401,15 @@ body {
 						console.debug("publish finished");
 						join_publish_button.disabled = false;
 						stop_publish_button.disabled = true;
+						
+						if (streamsList != null) {
+							streamsList.forEach(function(item) {
+								removeRemoteVideo(item);
+							});
+						}
+
+						// we need to reset streams list
+						streamsList = new Array();
 					} else if (info == "leavedFromRoom") {
 						var room = obj.ATTR_ROOM_NAME;
 						console.debug("leaved from the room:" + room);
@@ -438,7 +433,42 @@ body {
 						}
 					} else if (info == "streamInformation") {
 						streamInformation(obj);
-					} else if (info == "data_channel_opened") {
+					} else if (info == "roomInformation") {
+						var tempRoomStreamList = Array();
+						// Check stream is in room
+						// PS: Old room list mean streams doesn't have own stream ID
+						if (streamsList != null) {
+							for (i = 0; i < streamsList.length; i++) {
+								var oldStreamListItem = streamsList[i];
+
+								var oldRoomItemIndex = streamsList.indexOf(oldStreamListItem);
+								var newRoomItemIndex = obj.streams.indexOf(oldStreamListItem);
+
+								// If streams item is in obj.streams, it's 
+								if(obj.streams.includes(oldStreamListItem)){
+									if (newRoomItemIndex > -1) {
+  										obj.streams.splice(newRoomItemIndex, 1);
+									}
+									tempRoomStreamList.push(oldStreamListItem);
+								}
+								else{
+									removeRemoteVideo(oldStreamListItem);
+								}
+							}
+						}
+
+						//Play new streams in list
+						if (obj.streams != null) {
+							obj.streams.forEach(function(item) {
+								tempRoomStreamList.push(item);
+								console.log("Stream joined with ID: "+item);
+								webRTCAdaptor.play(item, token,
+										roomNameBox.value);
+							});
+						}
+						streamsList = tempRoomStreamList;
+					}
+					else if (info == "data_channel_opened") {
 						console.log("Data Channel open for stream id", obj );
 						isDataChannelOpen = true;
 					} else if (info == "data_channel_closed") {
