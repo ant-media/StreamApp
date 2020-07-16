@@ -59,9 +59,9 @@ pageEncoding="UTF-8"%>
     * 2. "token": the token to play stream. It's mandatory if token security is enabled on server side.
     * 3. "autoplay": To start playing automatically if streams is available. Optional. Default value is true
     * 4. "playOrder": the order which technologies is used in playing. Optional. Default value is "webrtc,hls".
-    *     possible values are "hls,webrtc","webrtc","hls"
-    * 5. "playType": the order which play type is used in playing. Optional. Default value is "live".
-    *     possible values are "live","vod"
+    *     possible values are "hls,webrtc","webrtc","hls","vod" 
+    * 5. "playType": the order which play type is used in playing. Optional. Default value is "mp4,webm".
+    *     possible values are "mp4","webm"
     */
 
 
@@ -88,26 +88,40 @@ pageEncoding="UTF-8"%>
 	   %>
 	   var  playOrder = ["webrtc"];
 	   <%
-	}
-	
-	 String playType = request.getParameter("playType") ;
-	 if (playType == null || playType.equals("live")) {
+	}	
+	else if(playOrder.equals("vod")) {
 	   %>
-	   var  playType = ["live"];
+	   var  playOrder = ["vod"];
 	   <%
-	}
-	else if(playType.equals("vod")) {
-	   %>
-	   var  playType = ["vod"];
-	   <%
-	}
+	}	
 	
 	String streamId = request.getParameter("id");
 	if (streamId == null) {
 		//check name variable for compatibility with older versions
 		streamId = request.getParameter("name");
 	}
-		
+
+	 String playType = request.getParameter("playType") ;
+	 if (playType == null || playType.equals("mp4,webm")) {
+	   %>
+	   var  playType = ["mp4", "webm"];
+	   <%
+	}
+	else if(playType.equals("webm,mp4")) {
+	   %>
+	   var  playType = ["webm", "mp4"];
+	   <%
+	}
+	else if(playType.equals("mp4")) {
+	   %>
+	   var  playType = ["mp4"];
+	   <%
+	}
+	else if(playType.equals("webm")) {
+	   %>
+	   var  playType = ["webm"];
+	   <%
+	}
 %>
 
 	var name = "<%= streamId %>";
@@ -128,7 +142,7 @@ pageEncoding="UTF-8"%>
 		 * In some cases user may want to remove HLS from the order and force to play WebRTC only
 		 * in these cases player only waits for WebRTC streams
 		 */
-	   setTimeout(function(){
+	     setTimeout(function(){
 		 if (playOrder.includes("hls"))
 		 {
 		   tryToHLSPlay(name, token, hlsNoStreamCallback, playType);	
@@ -142,7 +156,7 @@ pageEncoding="UTF-8"%>
     
     function hlsNoStreamCallback() 
     {
-	    	document.getElementById("video_info").innerHTML="Stream will start playing automatically<br/>when it is live";
+	    document.getElementById("video_info").innerHTML="Stream will start playing automatically<br/>when it is live";
 		setTimeout(function() 
 		{
 			if (playOrder.includes("webrtc")) 
@@ -158,6 +172,18 @@ pageEncoding="UTF-8"%>
 			else 
 			{
 				tryToHLSPlay(name, token, hlsNoStreamCallback, playType);	
+			}
+		}, 3000);
+	    	
+    }
+    
+    function vodNoStreamCallback() 
+    {
+	    document.getElementById("video_info").innerHTML="Stream will start playing automatically<br/>when it is live";
+		setTimeout(function() 
+		{
+			if(playOrder.includes("vod")){
+				initializeVoDPlayer(name, token, vodNoStreamCallback);	
 			}
 		}, 3000);
 	    	
@@ -195,12 +221,57 @@ pageEncoding="UTF-8"%>
 
 	}
 	
+	function initializeVoDPlayer(name, token, noStreamCallback){
+
+		hideWebRTCElements();
+		
+		//no m3u8 exists, try vod file
+		if(playType[0] == "mp4" || playType[0] == "mp4,webm"){
+			fetch("streams/"+ name +".mp4", {method:'HEAD'})
+			.then(function(response) {
+				if (response.status == 200) {
+					//mp4 exists, play it
+					startHLSPlayer(name, "mp4", token)
+				}
+				else {
+					console.log("No stream found");
+					if (typeof noStreamCallback != "undefined") {
+						noStreamCallback();
+					}	
+				}
+			}).catch(function(err) {
+			console.log("Error: " + err);
+			});
+		}
+		else if(playType.includes("webm")) {
+			fetch("streams/"+ name +".webm", {method:'HEAD'})
+			.then(function(response) {
+				if (response.status == 200) {
+					//webm exists, play it
+					startHLSPlayer(name, "webm", token)
+				}
+				else {
+					console.log("No stream found");
+					if (typeof noStreamCallback != "undefined") {
+						noStreamCallback();
+					}	
+				}
+			}).catch(function(err) {
+			console.log("Error: " + err);
+			});
+		}
+	}
+	
 	
 	function startHLSPlayer(name, extension, token) {
 		var type;
 		var liveStream = false;
 		if (extension == "mp4") {
 			type = "video/mp4";
+			liveStream = false;
+		}
+		else if (extension == "webm") {
+			type = "video/webm";
 			liveStream = false;
 		}
 		else if (extension == "m3u8") {
@@ -355,6 +426,10 @@ pageEncoding="UTF-8"%>
 			else if (playOrder[0] == "hls" )
 			{
 				tryToHLSPlay(name, token, hlsNoStreamCallback, playType);
+			}
+			else if (playOrder[0] == "vod" )
+			{
+				initializeVoDPlayer(name, token, vodNoStreamCallback);	
 			}
 			else {
 				alert("Unsupported play order requested. Supported formats are webrtc and hls. Use something like playOrder=webrtc,hls");

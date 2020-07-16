@@ -13,8 +13,7 @@ if (!String.prototype.endsWith)
 	};
 }
 
-
-function tryToHLSPlay(name, token, noStreamCallback, playType) {
+function tryToHLSPlay(name, token, noStreamCallback) {
 	fetch("streams/"+ name +"_adaptive.m3u8", {method:'HEAD'})
 	.then(function(response) {
 		if (response.status == 200) {
@@ -30,38 +29,19 @@ function tryToHLSPlay(name, token, noStreamCallback, playType) {
 				if (response.status == 200) {
 					//m3u8 exists, play it
 					initializeHLSPlayer(name, "m3u8", token);
-
 				}
-				else if(playType == "vod") {
-					//no m3u8 exists, try vod file
-					fetch("streams/"+ name +".mp4", {method:'HEAD'})
-					.then(function(response) {
-						if (response.status == 200) {
-							//mp4 exists, play it
-							initializeHLSPlayer(name, "mp4", token);
-
+				else {
+					console.log("No stream found");
+					if (typeof noStreamCallback != "undefined") {
+							noStreamCallback();
 						}
-						else {
-							console.log("No stream found");
-							if (typeof noStreamCallback != "undefined") {
-								noStreamCallback();
-							}
-
-						}
-					}).catch(function(err) {
-						console.log("Error: " + err);
-
-					});
-
-				}
+					}
 			}).catch(function(err) {
 				console.log("Error: " + err);
-
 			});
 		}
 	}).catch(function(err) {
 		console.log("Error: " + err);
-
 	});
 
 }
