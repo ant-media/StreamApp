@@ -145,7 +145,7 @@ pageEncoding="UTF-8"%>
 	     setTimeout(function(){
 		 if (playOrder.includes("hls"))
 		 {
-		   tryToHLSPlay(name, token, hlsNoStreamCallback, playType);	
+		   tryToHLSPlay(name, token, hlsNoStreamCallback);	
 		 } 
 		 else
 		 {
@@ -171,7 +171,7 @@ pageEncoding="UTF-8"%>
 			}
 			else 
 			{
-				tryToHLSPlay(name, token, hlsNoStreamCallback, playType);	
+				tryToHLSPlay(name, token, hlsNoStreamCallback);	
 			}
 		}, 3000);
 	    	
@@ -393,7 +393,7 @@ pageEncoding="UTF-8"%>
 					/*
 					* If getting codec incompatible or remote description error, it will redirect HLS player.
 					*/
-					tryToHLSPlay(name, token, hlsNoStreamCallback, playType);
+					tryToHLSPlay(name, token, hlsNoStreamCallback);
 					
 				}
 			}
@@ -425,7 +425,7 @@ pageEncoding="UTF-8"%>
 			} 
 			else if (playOrder[0] == "hls" )
 			{
-				tryToHLSPlay(name, token, hlsNoStreamCallback, playType);
+				tryToHLSPlay(name, token, hlsNoStreamCallback);
 			}
 			else if (playOrder[0] == "vod" )
 			{
