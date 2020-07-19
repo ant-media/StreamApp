@@ -183,7 +183,7 @@ pageEncoding="UTF-8"%>
 		setTimeout(function() 
 		{
 			if(playOrder.includes("vod")){
-				initializeVoDPlayer(name, token, vodNoStreamCallback);	
+				tryToVODPlay(name, token, vodNoStreamCallback);	
 			}
 		}, 3000);
 	    	
@@ -213,57 +213,15 @@ pageEncoding="UTF-8"%>
 
 	}
 
-	function initializeHLSPlayer(name, extension, token) {
+	function initializePlayer(name, extension, token) {
 
 		hideWebRTCElements();
 
-		startHLSPlayer(name, extension, token)
+		startPlayer(name, extension, token)
 
-	}
+	}	
 	
-	function initializeVoDPlayer(name, token, noStreamCallback){
-
-		hideWebRTCElements();
-		
-		//no m3u8 exists, try vod file
-		if(playType[0] == "mp4" || playType[0] == "mp4,webm"){
-			fetch("streams/"+ name +".mp4", {method:'HEAD'})
-			.then(function(response) {
-				if (response.status == 200) {
-					//mp4 exists, play it
-					startHLSPlayer(name, "mp4", token)
-				}
-				else {
-					console.log("No stream found");
-					if (typeof noStreamCallback != "undefined") {
-						noStreamCallback();
-					}	
-				}
-			}).catch(function(err) {
-			console.log("Error: " + err);
-			});
-		}
-		else if(playType.includes("webm")) {
-			fetch("streams/"+ name +".webm", {method:'HEAD'})
-			.then(function(response) {
-				if (response.status == 200) {
-					//webm exists, play it
-					startHLSPlayer(name, "webm", token)
-				}
-				else {
-					console.log("No stream found");
-					if (typeof noStreamCallback != "undefined") {
-						noStreamCallback();
-					}	
-				}
-			}).catch(function(err) {
-			console.log("Error: " + err);
-			});
-		}
-	}
-	
-	
-	function startHLSPlayer(name, extension, token) {
+	function startPlayer(name, extension, token) {
 		var type;
 		var liveStream = false;
 		if (extension == "mp4") {
@@ -413,7 +371,7 @@ pageEncoding="UTF-8"%>
 			var lastIndexOfDot = name.lastIndexOf(".")
 			streamPath = name.substring(streamsFolder.length+1, lastIndexOfDot);
 			var extension = name.substring(lastIndexOfDot+1);
-			initializeHLSPlayer(streamPath, extension, token);
+			initializePlayer(streamPath, extension, token);
 		}
 		else {
 			/*
@@ -429,7 +387,7 @@ pageEncoding="UTF-8"%>
 			}
 			else if (playOrder[0] == "vod" )
 			{
-				initializeVoDPlayer(name, token, vodNoStreamCallback);	
+				tryToVODPlay(name, token, vodNoStreamCallback);	
 			}
 			else {
 				alert("Unsupported play order requested. Supported formats are webrtc and hls. Use something like playOrder=webrtc,hls");

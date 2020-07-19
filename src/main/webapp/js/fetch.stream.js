@@ -18,8 +18,7 @@ function tryToHLSPlay(name, token, noStreamCallback) {
 	.then(function(response) {
 		if (response.status == 200) {
 			// adaptive m3u8 exists,play it
-			initializeHLSPlayer(name+"_adaptive", "m3u8", token);
-
+			initializePlayer(name+"_adaptive", "m3u8", token);
 		}
 		else 
 		{
@@ -28,7 +27,7 @@ function tryToHLSPlay(name, token, noStreamCallback) {
 			.then(function(response) {
 				if (response.status == 200) {
 					//m3u8 exists, play it
-					initializeHLSPlayer(name, "m3u8", token);
+					initializePlayer(name, "m3u8", token);
 				}
 				else {
 					console.log("No stream found");
@@ -44,6 +43,80 @@ function tryToHLSPlay(name, token, noStreamCallback) {
 		console.log("Error: " + err);
 	});
 
+}
+
+function tryToVODPlay(name, token, noStreamCallback){
+	//It's necessary, if playType is mp4 or mp4,webm
+	if(playType[0] == "mp4" || playType[0] == "mp4,webm"){
+	fetch("streams/"+ name +".mp4", {method:'HEAD'})
+		.then(function(response) {
+			if (response.status == 200) {
+				//mp4 exists, play it
+				initializePlayer(name, "mp4", token)
+			}
+			else if(playType.includes("webm")){
+				fetch("streams/"+ name +".webm", {method:'HEAD'})
+				.then(function(response) {
+				if (response.status == 200) {
+					//webm exists, play it
+					initializePlayer(name, "webm", token)
+				}
+				else {
+					console.log("No stream found");
+					if (typeof noStreamCallback != "undefined") {
+						noStreamCallback();
+					}
+				}
+				}).catch(function(err) {
+					console.log("Error: " + err);
+				});
+			}
+			else{
+				console.log("No stream found");
+				if (typeof noStreamCallback != "undefined") {
+					noStreamCallback();
+				}
+			}
+		}).catch(function(err) {
+			console.log("Error: " + err);
+		});
+	}
+	
+	//It's necessary, if playType is webn or webn,mp4
+	if(playType[0] == "webm" || playType[0] == "webm,mp4"){
+	fetch("streams/"+ name +".webm", {method:'HEAD'})
+		.then(function(response) {
+			if (response.status == 200) {
+				//webm exists, play it
+				initializePlayer(name, "webm", token)
+			}
+			else if(playType.includes("mp4")){
+				fetch("streams/"+ name +".mp4", {method:'HEAD'})
+				.then(function(response) {
+				if (response.status == 200) {
+					//mp4 exists, play it
+					initializePlayer(name, "mp4", token)
+				}
+				else {
+					console.log("No stream found");
+					if (typeof noStreamCallback != "undefined") {
+						noStreamCallback();
+					}
+				}
+				}).catch(function(err) {
+					console.log("Error: " + err);
+				});
+			}
+			else{
+				console.log("No stream found");
+				if (typeof noStreamCallback != "undefined") {
+					noStreamCallback();
+				}
+			}
+		}).catch(function(err) {
+			console.log("Error: " + err);
+		});
+	}
 }
 
 function isMobile() { 
