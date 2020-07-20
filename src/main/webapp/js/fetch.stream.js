@@ -47,7 +47,7 @@ function tryToHLSPlay(name, token, noStreamCallback) {
 
 function tryToVODPlay(name, token, noStreamCallback){
 	//It's necessary, if playType is mp4 or mp4,webm
-	if(playType[0] == "mp4" || playType[0] == "mp4,webm"){
+	if(playType[0] == "mp4"){
 	fetch("streams/"+ name +".mp4", {method:'HEAD'})
 		.then(function(response) {
 			if (response.status == 200) {
@@ -82,8 +82,8 @@ function tryToVODPlay(name, token, noStreamCallback){
 		});
 	}
 	
-	//It's necessary, if playType is webn or webn,mp4
-	if(playType[0] == "webm" || playType[0] == "webm,mp4"){
+	//It's necessary, if playType is webm or webm,mp4
+	if(playType[0] == "webm"){
 	fetch("streams/"+ name +".webm", {method:'HEAD'})
 		.then(function(response) {
 			if (response.status == 200) {
