@@ -46,20 +46,22 @@ function tryToHLSPlay(name, token, noStreamCallback) {
 }
 
 function tryToVODPlay(name, token, noStreamCallback){
-	//It's necessary, if playType is mp4 or mp4,webm
-	if(playType[0] == "mp4"){
-	fetch("streams/"+ name +".mp4", {method:'HEAD'})
+
+	var firstPlayType = playType[0];
+	var secondPlayType = playType[1];
+
+	fetch("streams/"+ name +"."+firstPlayType, {method:'HEAD'})
 		.then(function(response) {
 			if (response.status == 200) {
-				//mp4 exists, play it
-				initializePlayer(name, "mp4", token)
+				//firstPlayType exists, play it
+				initializePlayer(name, firstPlayType, token)
 			}
-			else if(playType.includes("webm")){
-				fetch("streams/"+ name +".webm", {method:'HEAD'})
+			else if(secondPlayType  != null){
+				fetch("streams/"+ name +"."+secondPlayType, {method:'HEAD'})
 				.then(function(response) {
 				if (response.status == 200) {
-					//webm exists, play it
-					initializePlayer(name, "webm", token)
+					//secondPlayType exists, play it
+					initializePlayer(name, secondPlayType, token)
 				}
 				else {
 					console.log("No stream found");
@@ -80,43 +82,6 @@ function tryToVODPlay(name, token, noStreamCallback){
 		}).catch(function(err) {
 			console.log("Error: " + err);
 		});
-	}
-	
-	//It's necessary, if playType is webm or webm,mp4
-	if(playType[0] == "webm"){
-	fetch("streams/"+ name +".webm", {method:'HEAD'})
-		.then(function(response) {
-			if (response.status == 200) {
-				//webm exists, play it
-				initializePlayer(name, "webm", token)
-			}
-			else if(playType.includes("mp4")){
-				fetch("streams/"+ name +".mp4", {method:'HEAD'})
-				.then(function(response) {
-				if (response.status == 200) {
-					//mp4 exists, play it
-					initializePlayer(name, "mp4", token)
-				}
-				else {
-					console.log("No stream found");
-					if (typeof noStreamCallback != "undefined") {
-						noStreamCallback();
-					}
-				}
-				}).catch(function(err) {
-					console.log("Error: " + err);
-				});
-			}
-			else{
-				console.log("No stream found");
-				if (typeof noStreamCallback != "undefined") {
-					noStreamCallback();
-				}
-			}
-		}).catch(function(err) {
-			console.log("Error: " + err);
-		});
-	}
 }
 
 function isMobile() { 
