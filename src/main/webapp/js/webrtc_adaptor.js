@@ -19,12 +19,18 @@ function WebRTCAdaptor(initialValues)
 			this.startTime = 0;
 			this.lastBytesReceived = 0;
 			this.lastBytesSent = 0;
+			this.lastFramesEncoded = 0;
+			this.totalFramesEncodedCount = 0;
 			this.currentTimestamp = 0;
 			this.lastTime = 0;
 			this.timerId = 0;
 			this.firstByteSentCount = 0;
 			this.firstBytesReceivedCount = 0;
 			this.audioLevel = -1;
+			this.qualityLimitationReason = "";
+			this.resWidth = 0;
+			this.resHeight = 0;
+			this.srcFps = 0;
 		}
 
 		//kbits/sec
@@ -45,6 +51,11 @@ function WebRTCAdaptor(initialValues)
 		//kbits/sec
 		get currentIncomingBitrate() {
 			return Math.floor(8 * (this.totalBytesReceivedCount - this.lastBytesReceived) / (this.currentTimestamp - this.lastTime));
+		}
+		
+		//frames per second
+		get currentFPS() {
+			return (((this.totalFramesEncodedCount - this.lastFramesEncoded) / (this.currentTimestamp - this.lastTime))*1000).toFixed(1);
 		}
 
 		set currentTime(timestamp) {
@@ -68,6 +79,14 @@ function WebRTCAdaptor(initialValues)
 			this.totalBytesSentCount = bytesSent;
 			if (this.firstByteSentCount == 0) {
 				this.firstByteSentCount = bytesSent;
+			}
+		}
+		
+		set totalFramesEncoded(framesEncoded) {
+			this.lastFramesEncoded = this.totalFramesEncodedCount;
+			this.totalFramesEncodedCount = framesEncoded;
+			if (this.lastFramesEncoded == 0) {
+				this.lastFramesEncoded = framesEncoded;
 			}
 		}
 
@@ -1298,6 +1317,11 @@ function WebRTCAdaptor(initialValues)
 			var currentTime = 0;
 			var bytesSent = 0;
 			var audioLevel = -1;
+			var qlr = "";
+			var framesEncoded = 0;
+			var width = 0;
+			var height = 0;
+			var fps = 0;
 
 			stats.forEach(value => {
 
@@ -1309,13 +1333,25 @@ function WebRTCAdaptor(initialValues)
 					currentTime = value.timestamp;
 				}
 				else if (value.type == "outbound-rtp")
-				{
-					bytesSent += value.bytesSent
-					currentTime = value.timestamp
+				{ //todo: split audio and video bitrates here
+					bytesSent += value.bytesSent;
+					currentTime = value.timestamp;
+					qlr = value.qualityLimitationReason;
+					if(value.framesEncoded != null) { //audio tracks are undefined here
+						framesEncoded += value.framesEncoded;
+					}
 				}
 				else if (value.type == "track" && typeof value.kind != "undefined" && value.kind == "audio") {
 					if (typeof value.audioLevel != "undefined") {
 						audioLevel = value.audioLevel;
+					}
+				}
+				else if (value.type == "media-source")
+				{
+					if(value.kind == "video") { //returns video source dimensions, not necessarily dimensions being encoded by browser
+						width = value.width;
+						height = value.height;
+						fps = value.framesPerSecond;
 					}
 				}
 			});
@@ -1326,6 +1362,11 @@ function WebRTCAdaptor(initialValues)
 			thiz.remotePeerConnectionStats[streamId].currentTime = currentTime;
 			thiz.remotePeerConnectionStats[streamId].totalBytesSent = bytesSent;
 			thiz.remotePeerConnectionStats[streamId].audioLevel = audioLevel;
+			thiz.remotePeerConnectionStats[streamId].qualityLimitationReason = qlr;
+			thiz.remotePeerConnectionStats[streamId].totalFramesEncoded = framesEncoded;
+			thiz.remotePeerConnectionStats[streamId].resWidth = width;
+			thiz.remotePeerConnectionStats[streamId].resHeight = height;
+			thiz.remotePeerConnectionStats[streamId].srcFps = fps;
 
 			thiz.callback("updated_stats", thiz.remotePeerConnectionStats[streamId]);
 
@@ -1340,6 +1381,10 @@ function WebRTCAdaptor(initialValues)
 			thiz.getStats(streamId);
 
 		}, 5000);
+	}
+	
+	this.disableStats = function(streamId) {
+		clearInterval(thiz.remotePeerConnectionStats[streamId].timerId);
 	}
 
 	/**
