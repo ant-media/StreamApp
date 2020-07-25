@@ -3,6 +3,7 @@ pageEncoding="UTF-8"%>
 <!DOCTYPE html>
 <html>
 <head>
+<title>Ant Media Server WebRTC Publish</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta charset="UTF-8">
 <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
@@ -84,20 +85,23 @@ video {
 				<legend class="col-form-label video-source-legend">Video Source</legend>
 	
 				<div class="form-check form-check-inline">	
-					<input class="form-check-input video-source" disabled name="videoSource" onchange="switchMode(event.target)" type="radio" value="screen" 
+					<input class="form-check-input video-source" disabled name="videoSource" onchange="switchVideoMode(event.target)" type="radio" value="screen" 
 					id="screen_share_checkbox">
 					<label class="form-check-label" for="screen_share_checkbox" style="font-weight:normal">
 							Screen
 					</label>
 				</div>
 				<div class="form-check form-check-inline">
-					<input class="form-check-input video-source" disabled name="videoSource" onchange="switchMode(event.target)" type="radio" value="screen+camera" 
+					<input class="form-check-input video-source" disabled name="videoSource" onchange="switchVideoMode(event.target)" type="radio" value="screen+camera" 
 						id="screen_share_with_camera_checkbox">
 					<label class="form-check-label" for="screen_share_with_camera_checkbox" style="font-weight:normal">
 							Screen with Camera
 					</label>
 						<a id="browser_screen_share_doesnt_support" href="https://caniuse.com/#search=getDisplayMedia">Your browser doesn't support screen share. You can see supported browsers in this link </a>
 				</div>
+				
+				<legend class="col-form-label audio-source-legend">Audio Source</legend>
+				
 			</div>	
 			<div class="form-group col-sm-12 text-left options">
 				<label>Data Channel Messages</label>
@@ -189,7 +193,7 @@ video {
 		webRTCAdaptor.stop(streamId);
 	}
 	
-  	function switchMode(chbx) {
+  	function switchVideoMode(chbx) {
   		if(chbx.value == "screen") {
   			webRTCAdaptor.switchDesktopCapture(streamId);
   		}
@@ -200,16 +204,28 @@ video {
   			webRTCAdaptor.switchVideoCameraCapture(streamId, chbx.value);
   		}
 	}
+  	
+	function switchAudioMode(chbx) {
+		webRTCAdaptor.switchAudioInputSource(streamId, chbx.value);
+	}
 
 	function getCameraRadioButton(deviceName, deviceId) {
 		return "<div class=\"form-check form-check-inline\">" + 	
-							"<input class=\"form-check-input video-source\" name=\"videoSource\" onchange=\"switchMode(event.target)\" type=\"radio\" value=\"" + deviceId + "\" id=\"" + deviceId + "\">" +
+							"<input class=\"form-check-input video-source\" name=\"videoSource\" onchange=\"switchVideoMode(event.target)\" type=\"radio\" value=\"" + deviceId + "\" id=\"" + deviceId + "\">" +
 							"<label class=\"form-check-label\" for=\"" + deviceId + "\" style=\"font-weight:normal\">" +
 								deviceName +
 							"</label>" +		
 						   "</div>";
 	}
 
+	function getAudioRadioButton(deviceName, deviceId) {
+		return "<div class=\"form-check form-check-inline\">" + 	
+							"<input class=\"form-check-input audio-source\" name=\"audioSource\" onchange=\"switchAudioMode(event.target)\"  type=\"radio\" value=\"" + deviceId + "\" id=\"" + deviceId + "\">" +
+							"<label class=\"form-check-label\" for=\"" + deviceId + "\" style=\"font-weight:normal\">" +
+								deviceName +
+							"</label>" +		
+						   "</div>";
+	}
 
 	function toggleOptions() {
 		$(".options").toggle();
@@ -377,15 +393,21 @@ video {
 						$("#dataMessagesTextarea").append("Received: " + obj.event.data + "\r\n");
 					}
 					else if (info == "available_devices") {
-						var htmlContent = "";
+						var videoHtmlContent = "";
+						var audioHtmlContent = "";
 						obj.forEach(function(device) {
 							if (device.kind == "videoinput") {
-								htmlContent += getCameraRadioButton(device.label, device.deviceId);
+								videoHtmlContent += getCameraRadioButton(device.label, device.deviceId);
+							}
+							else if (device.kind == "audioinput"){
+								audioHtmlContent += getAudioRadioButton(device.label, device.deviceId);
 							}
 						}); 
-						$(htmlContent).insertAfter(".video-source-legend");
-
+						$(videoHtmlContent).insertAfter(".video-source-legend");
 						$(".video-source").first().prop("checked", true);	
+						
+						$(audioHtmlContent).insertAfter(".audio-source-legend");
+						$(".audio-source").first().prop("checked", true);	
 					}
 					else {
 						console.log( info + " notification received");
