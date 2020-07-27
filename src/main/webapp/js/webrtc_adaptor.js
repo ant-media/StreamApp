@@ -256,7 +256,7 @@ function WebRTCAdaptor(initialValues)
 			});
 		}
 		else {
-			if(typeof audioStream != "undefined"){
+			if(typeof audioStream != "undefined" && audioStream.getAudioTracks()[0] != null){
 				stream.addTrack(audioStream.getAudioTracks()[0]);
 			}
 			thiz.gotStream(stream);
