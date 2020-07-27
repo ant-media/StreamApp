@@ -294,7 +294,7 @@ body {
 		var player = document.createElement("div");
 		player.className = "col-sm-3";
 		player.id = "player"+streamId;
-		player.innerHTML = '<video id="remoteVideo'+streamId+'"controls autoplay></video>';
+		player.innerHTML = '<video id="remoteVideo'+streamId+'"controls autoplay playsinline></video>';
 		document.getElementById("players").appendChild(player);
 	}
 
