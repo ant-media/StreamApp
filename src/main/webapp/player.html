@@ -242,7 +242,7 @@ video {
 				console.log("play started");
 				start_play_button.disabled = true;
 				stop_play_button.disabled = false;
-
+				webRTCAdaptor.getStreamInfo(streamId); 
 			} else if (info == "play_finished") {
 				//leaved the stream
 				console.log("play finished");
