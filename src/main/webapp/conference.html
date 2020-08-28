@@ -387,6 +387,18 @@ body {
 						else {
 							publish(obj.streamId, token);
 						}
+						
+						if (obj.streams != null) {
+							obj.streams.forEach(function(item) {
+								console.log("Stream joined with ID: "+item);
+								webRTCAdaptor.play(item, token,
+										roomNameBox.value);
+							});
+							streamsList = obj.streams;
+						}
+						
+						
+						
 						webRTCAdaptor.getRoomInfo(roomNameBox.value, obj.streamId);
 					} else if (info == "newStreamAvailable") {
 						playVideo(obj);
