@@ -199,7 +199,6 @@ pageEncoding="UTF-8"%>
 		document.getElementById("remoteVideo").play().then(function(value){
 
 		}).catch(function(error) {
-
 			console.log("User interaction needed to start playing");
 		});
 
@@ -210,11 +209,8 @@ pageEncoding="UTF-8"%>
 	}	
 	
 	function startPlayer(name, extension, token) {
-		var type;
-		var liveStream = false;
-
-   		if(Hls.isSupported()) {
-
+		
+		if(Hls.isSupported() && extension == "m3u8") {
         	var hls = new Hls({
          	   debug: true
         	});
@@ -233,20 +229,10 @@ pageEncoding="UTF-8"%>
         	});
     	}
 
-    	let box = document.getElementById("play");
-    	box.addEventListener("mouseenter",function(){
-        	box.setAttribute("scale",{
-            	x:3,
-            	y:3,
-            	z:3
-        	})
-    	});
-
-    	box.addEventListener("click",function(){
-        	box.setAttribute("color","blue");
-        	video.pause();
-    	});
-
+    	else if (extension == "webm" || extension == "mp4") {
+	    	video.src = 'streams/' + name + "." + extension + '?token=' + token;
+        	video.play();
+    	}
 	}
 
 	function initializeWebRTCPlayer(name, token, noStreamCallback) {
@@ -298,19 +284,9 @@ pageEncoding="UTF-8"%>
 					//joined the stream
 					console.log("play started");
 
-    				let box = document.getElementById("play");
-    				box.addEventListener("mouseenter",function(){
-        			box.setAttribute("scale",{
-            			x:3,
-            			y:3,
-            			z:3
-        			})
-    				});
-
-    				box.addEventListener("click",function(){
-        				box.setAttribute("color","blue");
-        				video.pause();
-    				});
+		        	video.addEventListener('canplay',function() {
+		            	video.play();
+		        	});
 
 				} else if (info == "play_finished") {
 					//leaved the stream
