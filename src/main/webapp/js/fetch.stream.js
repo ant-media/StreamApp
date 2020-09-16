@@ -13,21 +13,20 @@ if (!String.prototype.endsWith)
 	};
 }
 
-function tryToHLSPlay(name, token, noStreamCallback) {
-	fetch("streams/"+ name +"_adaptive.m3u8", {method:'HEAD'})
+function tryToPlay(name, token, type, noStreamCallback) {
+	fetch("streams/"+ name +"_adaptive."+type, {method:'HEAD'})
 	.then(function(response) {
 		if (response.status == 200) {
-			// adaptive m3u8 exists,play it
-			initializePlayer(name+"_adaptive", "m3u8", token);
+			// adaptive m3u8 & mpd exists,play it
+			initializePlayer(name+"_adaptive", type , token);
 		}
 		else 
 		{
-			//adaptive m3u8 not exists, try m3u8 exists.
-			fetch("streams/"+ name +".m3u8", {method:'HEAD'})
+			//adaptive not exists, try mpd or m3u8 exists.
+			fetch("streams/"+ name +"."+type, {method:'HEAD'})
 			.then(function(response) {
 				if (response.status == 200) {
-					//m3u8 exists, play it
-					initializePlayer(name, "m3u8", token);
+					initializePlayer(name, type, token);
 				}
 				else {
 					console.log("No stream found");
@@ -42,7 +41,6 @@ function tryToHLSPlay(name, token, noStreamCallback) {
 	}).catch(function(err) {
 		console.log("Error: " + err);
 	});
-
 }
 
 function tryToVODPlay(name, token, noStreamCallback){

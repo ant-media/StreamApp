@@ -20,6 +20,7 @@ pageEncoding="UTF-8"%>
 <script src="js/fetch.stream.js"></script>
 <script src="js/webrtc_adaptor.js"></script>
 <script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
+<script src="https://cdn.dashjs.org/v3.1.3/dash.all.min.js"></script>
 
 <link href="css/player.css" rel="stylesheet">
 
@@ -59,9 +60,10 @@ pageEncoding="UTF-8"%>
     * 2. "token": the token to play stream. It's mandatory if token security is enabled on server side.
     * 3. "autoplay": To start playing automatically if streams is available. Optional. Default value is true
     * 4. "playOrder": the order which technologies is used in playing. Optional. Default value is "webrtc,hls".
-    *     possible values are "hls,webrtc","webrtc","hls","vod" 
+    *     possible values are "hls,webrtc","webrtc","hls","vod","dash"
     * 5. "playType": the order which play type is used in playing. Optional. Default value is "mp4,webm".
     *     possible values are "webm,mp4"","mp4","webm"
+    * 6. "targetLatency": To define target latency for the DASH player. Optional. Default value is 3.
     */
 
 
@@ -94,6 +96,11 @@ pageEncoding="UTF-8"%>
 	   var  playOrder = ["vod"];
 	   <%
 	}	
+	else if(playOrder.equals("dash")) {
+	   %>
+	   var  playOrder = ["dash"];
+	   <%
+	}
 	
 	String streamId = request.getParameter("id");
 	if (streamId == null) {
@@ -126,6 +133,11 @@ pageEncoding="UTF-8"%>
 
 	var name = "<%= streamId %>";
 	var token = "<%= request.getParameter("token") %>";
+	var targetLatency = "<%= request.getParameter("targetLatency") %>";
+	
+	if(targetLatency == "null"){
+		targetLatency = 3;
+	}
 
 	var pAutoplay = "<%= request.getParameter("autoplay") %>";
 	var autoPlay = true;
@@ -145,7 +157,7 @@ pageEncoding="UTF-8"%>
 	     setTimeout(function(){
 		 if (playOrder.includes("hls"))
 		 {
-		   tryToHLSPlay(name, token, hlsNoStreamCallback);	
+			tryToPlay(name, token, "m3u8", hlsNoStreamCallback);	
 		 } 
 		 else
 		 {
@@ -171,7 +183,7 @@ pageEncoding="UTF-8"%>
 			}
 			else 
 			{
-				tryToHLSPlay(name, token, hlsNoStreamCallback);	
+				tryToPlay(name, token, "m3u8", hlsNoStreamCallback);
 			}
 		}, 3000);
 	    	
@@ -184,6 +196,19 @@ pageEncoding="UTF-8"%>
 		{
 			if(playOrder.includes("vod")){
 				tryToVODPlay(name, token, vodNoStreamCallback);	
+			}
+		}, 3000);
+	    	
+    }
+    
+    function dashNoStreamCallback() 
+    {
+	    document.getElementById("video_info").innerHTML="Stream will start playing automatically<br/>when it is live";
+		setTimeout(function() 
+		{
+			if (playOrder.includes("dash")) 
+			{
+				tryToPlay(name, token, "mpd", dashNoStreamCallback);	
 			}
 		}, 3000);
 	    	
@@ -216,7 +241,6 @@ pageEncoding="UTF-8"%>
 	function initializePlayer(name, extension, token) {
 
 		hideWebRTCElements();
-
 		startPlayer(name, extension, token)
 
 	}	
@@ -236,6 +260,10 @@ pageEncoding="UTF-8"%>
 			type = "application/x-mpegURL";
 			liveStream = true;
 		}
+		else if (extension == "mpd") {
+			type = "application/dash+xml";
+			liveStream = true;
+		}
 		else {
 			console.log("Unknown extension: " + extension);
 			return;
@@ -246,22 +274,40 @@ pageEncoding="UTF-8"%>
 			preview = name.substring(0, name.indexOf("_adaptive"));
 		}
 
-		var player = videojs('video-player', {
-					poster: "previews/"+preview+".png"
-		});
+		// If it's not dash, play with videojs
+		if(extension != "mpd"){
 
-		player.src({
-  			src: "streams/" + name + "." + extension + "?token=" + token,
-  			type: type,
-		});
-		
-		player.poster("previews/"+preview+".png");
-
-		if (autoPlay) {
-			player.ready(function() {
-				player.play();
+			var player = videojs('video-player', {
+				poster: "previews/"+preview+".png"
 			});
+
+			player.src({
+  				src: "streams/" + name + "." + extension + "?token=" + token,
+  				type: type,
+			});
+		
+			player.poster("previews/"+preview+".png");
+
+			if (autoPlay) {
+				player.ready(function() {
+					player.play();
+			});
+			}
+		}else{
+            var player = dashjs.MediaPlayer().create();
+
+			player.updateSettings({'streaming': {'lowLatencyEnabled': true}});
+
+			player.updateSettings({
+                'streaming': {
+                    'liveDelay': targetLatency,
+                    'liveCatchUpMinDrift': 0.05,
+                    'liveCatchUpPlaybackRate': 0.5,
+                    "liveCatchupLatencyThreshold": 30,
+                }
+            });
 			
+			player.initialize(document.querySelector("#video-player"), "streams/" + name + "." + extension + "?token=" + token, true);
 		}
 		document.getElementById("video_container").style.display = "block";
 		document.getElementById("video_info").hidden = true;
@@ -351,7 +397,7 @@ pageEncoding="UTF-8"%>
 					/*
 					* If getting codec incompatible or remote description error, it will redirect HLS player.
 					*/
-					tryToHLSPlay(name, token, hlsNoStreamCallback);
+					tryToPlay(name, token, "m3u8" hlsNoStreamCallback);
 					
 				}
 			}
@@ -383,11 +429,15 @@ pageEncoding="UTF-8"%>
 			} 
 			else if (playOrder[0] == "hls" )
 			{
-				tryToHLSPlay(name, token, hlsNoStreamCallback);
+				tryToPlay(name, token, "m3u8", hlsNoStreamCallback);
 			}
 			else if (playOrder[0] == "vod" )
 			{
 				tryToVODPlay(name, token, vodNoStreamCallback);	
+			}
+			else if (playOrder[0] == "dash" )
+			{
+				tryToPlay(name, token, "mpd", dashNoStreamCallback);	
 			}
 			else {
 				alert("Unsupported play order requested. Supported formats are webrtc and hls. Use something like playOrder=webrtc,hls");
