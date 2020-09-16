@@ -66,7 +66,6 @@ pageEncoding="UTF-8"%>
     * 6. "targetLatency": To define target latency for the DASH player. Optional. Default value is 3.
     */
 
-
 	//The play order, player tries to play according to this order, if it can not play then tries following format
    
 <% 
@@ -138,6 +137,9 @@ pageEncoding="UTF-8"%>
 	if(targetLatency == "null"){
 		targetLatency = 3;
 	}
+	
+	var hlsExtension = "m3u8";
+	var dashExtension = "mpd";
 
 	var pAutoplay = "<%= request.getParameter("autoplay") %>";
 	var autoPlay = true;
@@ -157,7 +159,7 @@ pageEncoding="UTF-8"%>
 	     setTimeout(function(){
 		 if (playOrder.includes("hls"))
 		 {
-			tryToPlay(name, token, "m3u8", hlsNoStreamCallback);	
+			tryToPlay(name, token, hlsExtension, hlsNoStreamCallback);	
 		 } 
 		 else
 		 {
@@ -183,7 +185,7 @@ pageEncoding="UTF-8"%>
 			}
 			else 
 			{
-				tryToPlay(name, token, "m3u8", hlsNoStreamCallback);
+				tryToPlay(name, token, hlsExtension, hlsNoStreamCallback);
 			}
 		}, 3000);
 	    	
@@ -208,7 +210,7 @@ pageEncoding="UTF-8"%>
 		{
 			if (playOrder.includes("dash")) 
 			{
-				tryToPlay(name, token, "mpd", dashNoStreamCallback);	
+				tryToPlay(name, token, dashExtension, dashNoStreamCallback);	
 			}
 		}, 3000);
 	    	
@@ -275,7 +277,7 @@ pageEncoding="UTF-8"%>
 		}
 
 		// If it's not dash, play with videojs
-		if(extension != "mpd"){
+		if(extension != dashExtension){
 
 			var player = videojs('video-player', {
 				poster: "previews/"+preview+".png"
@@ -320,7 +322,7 @@ pageEncoding="UTF-8"%>
 
 		var pc_config = {
 				'iceServers' : [ {
-					'urls' : 'stun:stun.l.google.com:19302'
+					'urls' : 'stun:stun1.l.google.com:19302'
 				} ]
 			};
 
@@ -397,7 +399,7 @@ pageEncoding="UTF-8"%>
 					/*
 					* If getting codec incompatible or remote description error, it will redirect HLS player.
 					*/
-					tryToPlay(name, token, "m3u8" hlsNoStreamCallback);
+					tryToPlay(name, token, hlsExtension, hlsNoStreamCallback);
 					
 				}
 			}
@@ -429,7 +431,7 @@ pageEncoding="UTF-8"%>
 			} 
 			else if (playOrder[0] == "hls" )
 			{
-				tryToPlay(name, token, "m3u8", hlsNoStreamCallback);
+				tryToPlay(name, token, hlsExtension, hlsNoStreamCallback);
 			}
 			else if (playOrder[0] == "vod" )
 			{
@@ -437,7 +439,7 @@ pageEncoding="UTF-8"%>
 			}
 			else if (playOrder[0] == "dash" )
 			{
-				tryToPlay(name, token, "mpd", dashNoStreamCallback);	
+				tryToPlay(name, token, dashExtension, dashNoStreamCallback);	
 			}
 			else {
 				alert("Unsupported play order requested. Supported formats are webrtc and hls. Use something like playOrder=webrtc,hls");
