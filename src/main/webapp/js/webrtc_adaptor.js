@@ -516,7 +516,7 @@ function WebRTCAdaptor(initialValues)
 	}
 
 	this.stop = function(streamId) {
-		thiz.closePeerConnection();
+		thiz.closePeerConnection(streamId);
 		var jsCmd = {
 				command : "stop",
 				streamId: streamId,
