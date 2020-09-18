@@ -74,6 +74,7 @@ function WebRTCAdaptor(initialValues)
 	}
 
 	var thiz = this;
+
 	thiz.peerconnection_config = null;
 	thiz.sdp_constraints = null;
 	thiz.remotePeerConnection = new Array();
@@ -277,6 +278,7 @@ function WebRTCAdaptor(initialValues)
 			.catch(function(error) {
 				if (error.name === "NotAllowedError") {
 					console.debug("Permission denied error");
+					thiz.callback("screen_share_denied");
 					thiz.callbackError("ScreenSharePermissionDenied");
 
 					// Redirect Default Stream Camera
@@ -458,14 +460,30 @@ function WebRTCAdaptor(initialValues)
 	}
 
 	this.publish = function (streamId, token) {
-		var jsCmd = {
-				command : "publish",
-				streamId : streamId,
-				token : token,
-				video: thiz.localStream.getVideoTracks().length > 0 ? true : false,
-						audio: thiz.localStream.getAudioTracks().length > 0 ? true : false,
-		};
-
+		//If it started with playOnly mode and wants to publish now
+		if(thiz.localStream == null){
+			navigator.mediaDevices.getUserMedia({audio:true, video:true}).then(function(stream){
+				thiz.gotStream(stream);
+				var jsCmd = {
+					command : "publish",
+					streamId : streamId,
+					token : token,
+					video: thiz.localStream.getVideoTracks().length > 0 ? true : false,
+							audio: thiz.localStream.getAudioTracks().length > 0 ? true : false,
+				};
+				thiz.webSocketAdaptor.send(JSON.stringify(jsCmd));
+			});
+		}else{
+			thiz.turnOnLocalCamera();
+			console.debug("getvideotrack = " + thiz.localStream.getVideoTracks()[0])
+			var jsCmd = {
+					command : "publish",
+					streamId : streamId,
+					token : token,
+					video: thiz.localStream.getVideoTracks().length > 0 ? true : false,
+							audio: thiz.localStream.getAudioTracks().length > 0 ? true : false,
+			};
+		}
 		thiz.webSocketAdaptor.send(JSON.stringify(jsCmd));
 	}
 
@@ -498,8 +516,7 @@ function WebRTCAdaptor(initialValues)
 	}
 
 	this.stop = function(streamId) {
-		thiz.closePeerConnection(streamId);
-
+		thiz.closePeerConnection();
 		var jsCmd = {
 				command : "stop",
 				streamId: streamId,
@@ -843,7 +860,7 @@ function WebRTCAdaptor(initialValues)
 				};
 
 				if (thiz.debug) {
-					console.log("sending ice candiate for stream Id " + streamId );
+					console.log("sending ice candidate for stream Id " + streamId );
 					console.log(JSON.stringify(event.candidate));
 				}
 				thiz.webSocketAdaptor.send(JSON.stringify(jsCmd));
@@ -999,7 +1016,7 @@ function WebRTCAdaptor(initialValues)
 			clearInterval(thiz.remotePeerConnectionStats[streamId].timerId);
 			delete thiz.remotePeerConnectionStats[streamId];
 		}
-		
+		console.debug('CLOSED PEER CONNECTION')
 		
 	}
 
@@ -1047,7 +1064,7 @@ function WebRTCAdaptor(initialValues)
 
 	this.turnOffLocalCamera = function() {
 		if (thiz.remotePeerConnection != null) {
-
+	
 			var track = thiz.localStream.getVideoTracks()[0];
 			track.enabled = false;
 		}
@@ -1057,7 +1074,13 @@ function WebRTCAdaptor(initialValues)
 	}
 
 	this.turnOnLocalCamera = function() {
-		if (thiz.remotePeerConnection != null) {
+		//If it started in playOnly mode and wants to turn on the camera
+		if(thiz.localStream == null){
+			navigator.mediaDevices.getUserMedia({audio:true, video:true}).then(function(stream){
+				thiz.gotStream(stream);
+			});
+		}
+		else if (thiz.remotePeerConnection != null) {
 			var track = thiz.localStream.getVideoTracks()[0];
 			track.enabled = true;
 		}
@@ -1218,6 +1241,7 @@ function WebRTCAdaptor(initialValues)
 	};
 
 	this.startPublishing = function(idOfStream) {
+
 		var streamId = idOfStream;
 
 		thiz.initPeerConnection(streamId, "publish");
@@ -1514,3 +1538,4 @@ function WebRTCAdaptor(initialValues)
 		}
 	}
 }
+
