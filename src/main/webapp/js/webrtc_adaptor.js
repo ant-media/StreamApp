@@ -221,8 +221,6 @@ function WebRTCAdaptor(initialValues)
 	}
 
 	this.prepareStreamTracks = function (mediaConstraints,audioConstraint,stream,streamId) {
-
-		thiz.gotStream(stream);
 		
 		//this trick, getting audio and video separately, make us add or remove tracks on the fly
 		var audioTrack = stream.getAudioTracks();
