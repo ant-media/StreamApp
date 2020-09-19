@@ -358,7 +358,7 @@ function WebRTCAdaptor(initialValues)
 	}
 
 	/**
-	 * Checks broenwser supports screen share feature
+	 * Checks browser supports screen share feature
 	 * if exist it calls callback with "browser_screen_share_supported"
 	 */
 
