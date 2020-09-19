@@ -221,10 +221,11 @@ function WebRTCAdaptor(initialValues)
 	}
 
 	this.prepareStreamTracks = function (mediaConstraints,audioConstraint,stream,streamId) {
-
+		
 		//this trick, getting audio and video separately, make us add or remove tracks on the fly
 		var audioTrack = stream.getAudioTracks();
 		if (audioTrack.length > 0) {
+			audioTrack[0].stop();
 			stream.removeTrack(audioTrack[0]);
 		}
 
@@ -256,9 +257,11 @@ function WebRTCAdaptor(initialValues)
 			});
 		}
 		else {
+			//TODO: there is no audioStream 
 			stream.addTrack(audioStream.getAudioTracks()[0]);
 			thiz.gotStream(stream);
 		}
+		
 	}
 
 	/**
@@ -349,6 +352,8 @@ function WebRTCAdaptor(initialValues)
 			track.onended = null;
 			track.stop();
 		});
+		
+		
 
 	}
 
