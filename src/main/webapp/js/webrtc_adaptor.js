@@ -463,14 +463,29 @@ function WebRTCAdaptor(initialValues)
 	}
 
 	this.publish = function (streamId, token) {
-		var jsCmd = {
-				command : "publish",
-				streamId : streamId,
-				token : token,
-				video: thiz.localStream.getVideoTracks().length > 0 ? true : false,
-						audio: thiz.localStream.getAudioTracks().length > 0 ? true : false,
-		};
-
+		//If it started with playOnly mode and wants to publish now
+		if(thiz.localStream == null){
+			navigator.mediaDevices.getUserMedia(mediaConstraints).then(function(stream){
+				thiz.gotStream(stream);
+				var jsCmd = {
+					command : "publish",
+					streamId : streamId,
+					token : token,
+					video: thiz.localStream.getVideoTracks().length > 0 ? true : false,
+							audio: thiz.localStream.getAudioTracks().length > 0 ? true : false,
+				};
+				thiz.webSocketAdaptor.send(JSON.stringify(jsCmd));
+			});
+		}else{
+			console.debug("getvideotrack = " + thiz.localStream.getVideoTracks()[0])
+			var jsCmd = {
+					command : "publish",
+					streamId : streamId,
+					token : token,
+					video: thiz.localStream.getVideoTracks().length > 0 ? true : false,
+							audio: thiz.localStream.getAudioTracks().length > 0 ? true : false,
+			};
+		}
 		thiz.webSocketAdaptor.send(JSON.stringify(jsCmd));
 	}
 
@@ -1062,7 +1077,13 @@ function WebRTCAdaptor(initialValues)
 	}
 
 	this.turnOnLocalCamera = function() {
-		if (thiz.remotePeerConnection != null) {
+		//If it started in playOnly mode and wants to turn on the camera
+		if(thiz.localStream == null){
+			navigator.mediaDevices.getUserMedia(mediaConstraints).then(function(stream){
+				thiz.gotStream(stream);
+			});
+		}
+		else if (thiz.remotePeerConnection != null) {
 			var track = thiz.localStream.getVideoTracks()[0];
 			track.enabled = true;
 		}
