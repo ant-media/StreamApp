@@ -197,7 +197,7 @@ video {
 
 	var pc_config = {
 			'iceServers' : [ {
-				'urls' : 'stun:stun.l.google.com:19302'
+				'urls' : 'stun:stun1.l.google.com:19302'
 			} ]
 		};
 
@@ -248,6 +248,7 @@ video {
 				console.log("play started");
 				start_play_button.disabled = true;
 				stop_play_button.disabled = false;
+				webRTCAdaptor.getStreamInfo(streamId); 
 
 			} else if (info == "play_finished") {
 				//leaved the stream
@@ -286,14 +287,14 @@ video {
 					var dropdownSelectedItem = $(this).text();
  					
  					if(dropdownSelectedItem == "Automatic"){
- 						dropdownSelectedItem = "0";
+ 						dropdownSelectedItem = 0;
  					}
 
  					// Remove p character in stream resolution
  					dropdownSelectedItem = dropdownSelectedItem.replace('p', '');
 
  					// Call set stream resolution
-    				webRTCAdaptor.forceStreamQuality('stream1',dropdownSelectedItem);
+    				webRTCAdaptor.forceStreamQuality(streamId, Number(dropdownSelectedItem));
 					// Remove current active item
 					$('a.dropdown-item.active').removeClass("active"); 
 					// Add active in new item
