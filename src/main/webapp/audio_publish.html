@@ -124,9 +124,13 @@ body {
 
 	</div>
 </body>
-<script>
+<script type="module">
+	import {WebRTCAdaptor} from "./js/webrtc_adaptor.js"
+
 	var start_publish_button = document.getElementById("start_publish_button");
+	start_publish_button.addEventListener("click", startPublishing, false);
 	var stop_publish_button = document.getElementById("stop_publish_button");
+	stop_publish_button.addEventListener("click", stopPublishing, false);
 
 	var streamNameBox = document.getElementById("streamName");
 	

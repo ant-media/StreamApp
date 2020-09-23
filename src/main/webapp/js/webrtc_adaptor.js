@@ -3,8 +3,8 @@
  * @returns
  */
 
-"use strict";
 import {PeerStats} from "./PeerStats.js"
+import {WebSocketAdaptor} from "./WebSocketAdaptor.js"
 
 export class WebRTCAdaptor
 {
@@ -26,6 +26,7 @@ export class WebRTCAdaptor
 		this.multiPeerStreamId = null;   //used for multiple peer client
 		this.roomTimerId = -1;
 		this.isWebSocketTriggered = false;
+		this.webSocketAdaptor = null;
 
 		this.isPlayMode = false;
 		this.debug = false;
@@ -167,13 +168,13 @@ export class WebRTCAdaptor
 		else {
 
 			//just playing, it does not open any stream
-			if (this.isWebSocketTriggered == false || this.isConnected() == false) {
-				this.WebSocketAdaptor();
+			if (this.webSocketAdaptor == null || this.isConnected() == false) {
+				this.webSocketAdaptor = new WebSocketAdaptor({websocket_url : this.websocket_url, webrtcadaptor : this, callback : this.callback, callbackError : this.callbackError});
 			}
 		}
 	}
 
-	setDesktopwithCameraSource = function(stream, streamId, audioStream, onEndedCallback) {
+	setDesktopwithCameraSource(stream, streamId, audioStream, onEndedCallback) {
 
 		this.desktopStream = stream;
 
@@ -249,8 +250,8 @@ export class WebRTCAdaptor
 			var media_audio_constraint = { audio: audioConstraint};
 			navigator.mediaDevices.getUserMedia(media_audio_constraint)
 			.then(audioStream => {
-				//add callback if desktop is sharing
 
+				//add callback if desktop is sharing
 				var onended = event => {
 					this.callback("screen_share_stopped");
 					this.setVideoCameraSource(streamId, mediaConstraints, null, true);
@@ -313,11 +314,11 @@ export class WebRTCAdaptor
 				}
 			});
 		}
-
 		// If mediaConstraints only user camera
 		else {
 			navigator.mediaDevices.getUserMedia(mediaConstraints)
 			.then(stream =>{
+
 				this.prepareStreamTracks(mediaConstraints,audioConstraint,stream, streamId);
 
 			})
@@ -331,7 +332,7 @@ export class WebRTCAdaptor
 	/**
 	 * Open media stream, it may be screen, camera or audio
 	 */
-	openStream = (mediaConstraints) => {
+	openStream(mediaConstraints){
 
 		this.mediaConstraints = mediaConstraints;
 		var audioConstraint = false;
@@ -351,7 +352,7 @@ export class WebRTCAdaptor
 	/**
 	 * Closes stream, if you want to stop peer connection, call stop(streamId)
 	 */
-	closeStream = function () {
+	closeStream() {
 
 		this.localStream.getVideoTracks().forEach(function(track) {
 			track.onended = null;
@@ -362,9 +363,6 @@ export class WebRTCAdaptor
 			track.onended = null;
 			track.stop();
 		});
-		
-		
-
 	}
 
 	/**
@@ -372,16 +370,14 @@ export class WebRTCAdaptor
 	 * if exist it calls callback with "browser_screen_share_supported"
 	 */
 
-	checkBrowserScreenShareSupported = function() 
+	checkBrowserScreenShareSupported() 
 	{
 		if ((typeof navigator.mediaDevices != "undefined"  && navigator.mediaDevices.getDisplayMedia) || navigator.getDisplayMedia ) {
 			this.callback("browser_screen_share_supported");
 		}
 	};
 
-	
-
-	enableMicInMixedAudio = function(enable) {
+	enableMicInMixedAudio(enable) {
 		if (this.micGainNode != null) {
 			if (enable) {
 				this.micGainNode.gain.value = 1;
@@ -392,7 +388,7 @@ export class WebRTCAdaptor
 		}
 	}
 
-	publish = function (streamId, token) {
+	publish(streamId, token) {
 		//If it started with playOnly mode and wants to publish now
 		if(this.localStream == null){
 			navigator.mediaDevices.getUserMedia(this.mediaConstraints).then(stream => {
@@ -404,7 +400,7 @@ export class WebRTCAdaptor
 					video: this.localStream.getVideoTracks().length > 0 ? true : false,
 							audio: this.localStream.getAudioTracks().length > 0 ? true : false,
 				};
-				this.send(JSON.stringify(jsCmd));
+				this.webSocketAdaptor.send(JSON.stringify(jsCmd));
 			});
 		}else{
 			console.debug("getvideotrack = " + this.localStream.getVideoTracks()[0])
@@ -416,11 +412,11 @@ export class WebRTCAdaptor
 							audio: this.localStream.getAudioTracks().length > 0 ? true : false,
 			};
 		}
-		this.send(JSON.stringify(jsCmd));
+		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
 	}
 
 
-	joinRoom = function (roomName, streamId) {
+	joinRoom(roomName, streamId) {
 		this.roomName = roomName;
 
 		var jsCmd = {
@@ -428,10 +424,10 @@ export class WebRTCAdaptor
 				room: roomName,
 				streamId: streamId,
 		}
-		this.send(JSON.stringify(jsCmd));
+		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
 	}
 
-	play = function (streamId, token, roomId, enableTracks) {
+	play(streamId, token, roomId, enableTracks) {
 		this.playStreamId.push(streamId);
 		var jsCmd =
 		{
@@ -442,10 +438,10 @@ export class WebRTCAdaptor
 				trackList : enableTracks,
 		}
 
-		this.send(JSON.stringify(jsCmd));
+		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
 	}
 
-	stop = function(streamId) {
+	stop(streamId) {
 		this.closePeerConnection(streamId);
 
 		var jsCmd = {
@@ -453,10 +449,10 @@ export class WebRTCAdaptor
 				streamId: streamId,
 		};
 
-		this.send(JSON.stringify(jsCmd));
+		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
 	}
 
-	join = function(streamId) {
+	join(streamId) {
 		var jsCmd = {
 				command : "join",
 				streamId : streamId,
@@ -464,10 +460,10 @@ export class WebRTCAdaptor
 				mode : this.isPlayMode ? "play" : "both",
 		};
 
-		this.send(JSON.stringify(jsCmd));
+		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
 	}
 
-	leaveFromRoom = function(roomName) {
+	leaveFromRoom(roomName) {
 		this.roomName = roomName;
 		var jsCmd = {
 				command : "leaveFromRoom",
@@ -480,51 +476,51 @@ export class WebRTCAdaptor
 			clearInterval(this.roomTimerId);
 		}
 
-		this.send(JSON.stringify(jsCmd));
+		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
 	}
 
-	leave = function (streamId) {
+	leave(streamId) {
 
 		var jsCmd = {
 				command : "leave",
 				streamId: this.isMultiPeer && this.multiPeerStreamId != null ? this.multiPeerStreamId : streamId,
 		};
 
-		this.send(JSON.stringify(jsCmd));
+		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
 		this.closePeerConnection(streamId);
 		this.multiPeerStreamId = null;
 	}
 
-	getStreamInfo = function(streamId) {
+	getStreamInfo(streamId) {
 		var jsCmd = {
 				command : "getStreamInfo",
 				streamId: streamId,
 		};
-		this.send(JSON.stringify(jsCmd));
+		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
 	}
 	
-	getRoomInfo = function(roomName,streamId) {
+	getRoomInfo(roomName,streamId) {
 		this.roomTimerId = setInterval(() => {
 			var jsCmd = {
 				command : "getRoomInfo",
 				streamId : streamId,
 				room: roomName,
 		};
-		this.send(JSON.stringify(jsCmd));
+		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
 		}, 5000);
 	}
 
-	enableTrack = function(mainTrackId, trackId, enabled) {
+	enableTrack(mainTrackId, trackId, enabled) {
 		var jsCmd = {
 				command : "enableTrack",
 				streamId : mainTrackId,
 				trackId : trackId,
 				enabled : enabled,
 		};
-		this.send(JSON.stringify(jsCmd));
+		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
 	}
 
-	getTracks = function(streamId, token) {
+	getTracks(streamId, token) {
 		this.playStreamId.push(streamId);
 		var jsCmd =
 		{
@@ -533,16 +529,16 @@ export class WebRTCAdaptor
 				token : token,
 		}
 
-		this.send(JSON.stringify(jsCmd));
+		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
 	}
 
-	gotStream = (stream) =>
+	gotStream(stream)
 	{
 		this.localStream = stream;
 		this.localVideo.srcObject = stream;
 		
-		if (this.isWebSocketTriggered == false || this.isConnected() == false) {
-			this.WebSocketAdaptor();
+		if (this.webSocketAdaptor == null || this.isConnected() == false) {
+			this.webSocketAdaptor = new WebSocketAdaptor({websocket_url : this.websocket_url, webrtcadaptor : this, callback : this.callback, callbackError : this.callbackError})
 		}
 
 		navigator.mediaDevices.enumerateDevices().then(devices => {
@@ -561,7 +557,7 @@ export class WebRTCAdaptor
 		});
 	};
 	
-	switchAudioInputSource = function(streamId, deviceId) {
+	switchAudioInputSource(streamId, deviceId) {
 		//stop the track because in some android devices need to close the current camera stream
 		var audioTrack = this.localStream.getAudioTracks()[0];
 		if (audioTrack) {
@@ -577,7 +573,7 @@ export class WebRTCAdaptor
 		this.setAudioInputSource(streamId, this.mediaConstraints, null, true, deviceId);
 	}
 
-	switchVideoCameraCapture = function(streamId, deviceId) {
+	switchVideoCameraCapture(streamId, deviceId) {
 		//stop the track because in some android devices need to close the current camera stream
 		var videoTrack = this.localStream.getVideoTracks()[0];
 		if (videoTrack) {
@@ -595,7 +591,7 @@ export class WebRTCAdaptor
 		this.setVideoCameraSource(streamId, this.mediaConstraints, null, true, deviceId);
 	}
 
-	switchDesktopCapture = function(streamId) {
+	switchDesktopCapture(streamId) {
 
 		this.publishMode = "screen";
 
@@ -607,7 +603,7 @@ export class WebRTCAdaptor
 		this.getUserMedia(this.mediaConstraints, audioConstraint, streamId);
 	}
 
-	switchDesktopCaptureWithCamera = function(streamId) {
+	switchDesktopCaptureWithCamera(streamId) {
 
 		this.publishMode = "screen+camera";
 
@@ -622,7 +618,7 @@ export class WebRTCAdaptor
 	 * This method updates the local stream. It removes existant audio track from the local stream
 	 * and add the audio track in `stream` parameter to the local stream
 	 */
-	updateLocalAudioStream = function(stream, onEndedCallback) {
+	updateLocalAudioStream(stream, onEndedCallback) {
 
 		var audioTrack = this.localStream.getAudioTracks()[0];
 		this.localStream.removeTrack(audioTrack);
@@ -664,7 +660,7 @@ export class WebRTCAdaptor
 	 * This method sets Audio Input Source. 
 	 * It calls updateAudioTrack function for the update local audio stream.
 	 */
-	setAudioInputSource = function (streamId, mediaConstraints, onEndedCallback) {
+	setAudioInputSource(streamId, mediaConstraints, onEndedCallback) {
 
 		navigator.mediaDevices.getUserMedia(mediaConstraints)
 		.then(stream => {
@@ -679,7 +675,7 @@ export class WebRTCAdaptor
 	 * This method sets Video Input Source. 
 	 * It calls updateVideoTrack function for the update local video stream.
 	 */
-	setVideoCameraSource = function (streamId, mediaConstraints, onEndedCallback, stopDesktop) {
+	setVideoCameraSource(streamId, mediaConstraints, onEndedCallback, stopDesktop) {
 
 		navigator.mediaDevices.getUserMedia(mediaConstraints)
 		.then(stream => {
@@ -690,7 +686,7 @@ export class WebRTCAdaptor
 		});
 	}
 	
-	updateAudioTrack = function (stream, streamId, mediaConstraints, onEndedCallback) {
+	updateAudioTrack (stream, streamId, mediaConstraints, onEndedCallback) {
 
 		if (this.remotePeerConnection[streamId] != null) {
 			var audioTrackSender = this.remotePeerConnection[streamId].getSenders().find(function(s) {
@@ -714,7 +710,7 @@ export class WebRTCAdaptor
 		}
 	}
 
-	updateVideoTrack = function (stream, streamId, mediaConstraints, onEndedCallback, stopDesktop) {
+	updateVideoTrack(stream, streamId, mediaConstraints, onEndedCallback, stopDesktop) {
 
 		if (this.remotePeerConnection[streamId] != null) {
 			var videoTrackSender = this.remotePeerConnection[streamId].getSenders().find(function(s) {
@@ -739,7 +735,8 @@ export class WebRTCAdaptor
 	}
 
 
-	onTrack = function(event, streamId) {
+	onTrack(event, streamId){
+
 		console.log("onTrack");
 		if (this.remoteVideo != null) {
 			//this.remoteVideo.srcObject = event.streams[0];
@@ -759,7 +756,8 @@ export class WebRTCAdaptor
 
 	}
 
-	iceCandidateReceived = function(event, streamId) {
+	iceCandidateReceived(event, streamId){
+
 		if (event.candidate) {
 
 			var protocolSupported = false;
@@ -795,7 +793,7 @@ export class WebRTCAdaptor
 					console.log("sending ice candiate for stream Id " + streamId );
 					console.log(JSON.stringify(event.candidate));
 				}
-				this.send(JSON.stringify(jsCmd));
+				this.webSocketAdaptor.send(JSON.stringify(jsCmd));
 			}
 			else {
 				console.log("Candidate's protocol(full sdp: "+ event.candidate.candidate +") is not supported. Supported protocols: " + this.candidateTypes);
@@ -810,7 +808,8 @@ export class WebRTCAdaptor
 	}
 
 
-	initDataChannel = function(streamId, dataChannel) {
+	initDataChannel(streamId, dataChannel) {
+
 		dataChannel.onerror = (error) => {
 			console.log("Data Channel Error:", error );
 			var obj = {
@@ -845,7 +844,8 @@ export class WebRTCAdaptor
 	}
 
 	// data channel mode can be "publish" , "play" or "peer" based on this it is decided which way data channel is created
-	initPeerConnection = function(streamId, dataChannelMode) {
+	initPeerConnection(streamId, dataChannelMode) {
+
 		if (this.remotePeerConnection[streamId] == null)
 		{
 			var closedStreamId = streamId;
@@ -923,7 +923,7 @@ export class WebRTCAdaptor
 		}
 	}
 
-	closePeerConnection = function(streamId) {
+	closePeerConnection(streamId) {
 		
 		if (this.remotePeerConnection[streamId] != null)
 		{
@@ -952,21 +952,21 @@ export class WebRTCAdaptor
 		
 	}
 
-	signallingState = function(streamId) {
+	signallingState(streamId) {
 		if (this.remotePeerConnection[streamId] != null) {
 			return this.remotePeerConnection[streamId].signalingState;
 		}
 		return null;
 	}
 
-	iceConnectionState = function(streamId) {
+	iceConnectionState(streamId) {
 		if (this.remotePeerConnection[streamId] != null) {
 			return this.remotePeerConnection[streamId].iceConnectionState;
 		}
 		return null;
 	}
 
-	gotDescription = function(configuration, streamId)
+	gotDescription(configuration, streamId)
 	{
 		this.remotePeerConnection[streamId]
 		.setLocalDescription(configuration)
@@ -986,15 +986,15 @@ export class WebRTCAdaptor
 				console.debug(configuration.sdp);
 			}
 
-			this.send(JSON.stringify(jsCmd));
+			this.webSocketAdaptor.send(JSON.stringify(jsCmd));
 
-		}).catch(function(error){
+		}).catch((error) =>{
 			console.error("Cannot set local description. Error is: " + error);
 		});
 	}
 
 
-	turnOffLocalCamera = function() {
+	turnOffLocalCamera() {
 		if (this.remotePeerConnection != null) {
 
 			var track = this.localStream.getVideoTracks()[0];
@@ -1005,7 +1005,7 @@ export class WebRTCAdaptor
 		}
 	}
 
-	turnOnLocalCamera = function() {
+	turnOnLocalCamera() {
 		//If it started in playOnly mode and wants to turn on the camera
 		if(this.localStream == null){
 			navigator.mediaDevices.getUserMedia(this.mediaConstraints).then(stream =>{
@@ -1021,7 +1021,7 @@ export class WebRTCAdaptor
 		}
 	}
 
-	muteLocalMic = function() {
+	muteLocalMic() {
 		if (this.remotePeerConnection != null) {
 			var track = this.localStream.getAudioTracks()[0];
 			track.enabled = false;
@@ -1034,7 +1034,7 @@ export class WebRTCAdaptor
 	/**
 	 * if there is audio it calls callbackError with "AudioAlreadyActive" parameter
 	 */
-	unmuteLocalMic = function() {
+	unmuteLocalMic() {
 		if (this.remotePeerConnection != null) {
 			var track = this.localStream.getAudioTracks()[0];
 			track.enabled = true;
@@ -1044,7 +1044,7 @@ export class WebRTCAdaptor
 		}
 	}
 
-	takeConfiguration = function (idOfStream, configuration, typeOfConfiguration)
+	takeConfiguration(idOfStream, configuration, typeOfConfiguration)
 	{
 		var streamId = idOfStream
 		var type = typeOfConfiguration;
@@ -1087,13 +1087,13 @@ export class WebRTCAdaptor
 					console.log("created answer for stream id: " + streamId);
 					this.gotDescription(configuration, streamId);
 						})
-						.catch(function(error)
+						.catch((error) =>
 								{
 							console.error("create answer error :" + error);
 								});
 			}
 
-		}).catch(function(error){
+		}).catch((error) => {
 			if (this.debug) {
 				console.error("set remote description is failed with error: " + error);
 			}
@@ -1108,8 +1108,7 @@ export class WebRTCAdaptor
 
 	}
 
-
-	takeCandidate = function(idOfTheStream, tmpLabel, tmpCandidate) {
+	takeCandidate(idOfTheStream, tmpLabel, tmpCandidate) {
 		var streamId = idOfTheStream;
 		var label = tmpLabel;
 		var candidateSdp = tmpCandidate;
@@ -1131,7 +1130,7 @@ export class WebRTCAdaptor
 		}
 	};
 
-	addIceCandidate = function(streamId, candidate) 
+	addIceCandidate(streamId, candidate) 
 	{	
 		var protocolSupported = false;
 		if (candidate.candidate == "") {
@@ -1159,7 +1158,7 @@ export class WebRTCAdaptor
 					console.log("Candidate is added for stream " + streamId);
 				}
 			})
-			.catch(function (error) {
+			.catch((error) => {
 				console.error("ice candiate cannot be added for stream id: " + streamId + " error is: " + error  );
 				console.error(candidate);
 			});
@@ -1172,7 +1171,7 @@ export class WebRTCAdaptor
 		}
 	};
 
-	startPublishing = function(idOfStream) {
+	startPublishing(idOfStream) {
 		var streamId = idOfStream;
 
 		this.initPeerConnection(streamId, "publish");
@@ -1181,7 +1180,7 @@ export class WebRTCAdaptor
 		.then(configuration => {
 			this.gotDescription(configuration, streamId);
 		})
-		.catch(function (error) {
+		.catch((error) => {
 			console.error("create offer error for stream id: " + streamId + " error: " + error);
 		});
 	};
@@ -1189,7 +1188,7 @@ export class WebRTCAdaptor
 	/**
 	 * If we have multiple video tracks in coming versions, this method may cause some issues
 	 */
-	getVideoSender = function(streamId) {
+	getVideoSender(streamId) {
 
 		var videoSender = null;
 		if ((adapter.browserDetails.browser === 'chrome' ||
@@ -1214,7 +1213,7 @@ export class WebRTCAdaptor
 	/**
 	 * bandwidth is in kbps
 	 */
-	changeBandwidth = function(bandwidth, streamId) {
+	changeBandwidth(bandwidth, streamId) {
 
 		var errorDefinition = "";
 
@@ -1243,7 +1242,7 @@ export class WebRTCAdaptor
 		return Promise.reject(errorDefinition);
 	};
 
-	getStats = function(streamId)
+	getStats(streamId)
 	{
 		this.remotePeerConnection[streamId].getStats(null).then(stats =>
 		{
@@ -1288,7 +1287,7 @@ export class WebRTCAdaptor
 	}
 
 
-	enableStats = function(streamId) {
+	enableStats(streamId) {
 		this.remotePeerConnectionStats[streamId] = new PeerStats(streamId);
 		this.remotePeerConnectionStats[streamId].timerId = setInterval(() =>
 		{
@@ -1301,7 +1300,7 @@ export class WebRTCAdaptor
 	 * After calling this function, create new WebRTCAdaptor instance, don't use the the same objectone
 	 * Because all streams are closed on server side as well when websocket connection is closed.
 	 */
-	closeWebSocket = function() {
+	closeWebSocket() {
 		for (var key in this.remotePeerConnection) {
 			this.remotePeerConnection[key].close();
 		}
@@ -1310,7 +1309,7 @@ export class WebRTCAdaptor
 		this.close();
 	}
 
-	peerMessage = function (streamId, definition, data) {
+	peerMessage(streamId, definition, data) {
 		var jsCmd = {
 				command : "peerMessageCommand",
 				streamId : streamId,
@@ -1318,156 +1317,20 @@ export class WebRTCAdaptor
 				data: data,
 		};
 
-		this.send(JSON.stringify(jsCmd));
+		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
 	}
 	
-	forceStreamQuality = function (streamId, resolution) {
+	forceStreamQuality(streamId, resolution) {
 		var jsCmd = {
 				command : "forceStreamQuality",
 				streamId : streamId,
 				streamHeight : resolution
 		};
-		this.send(JSON.stringify(jsCmd));
+		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
 	}
 
-
-	sendData = function(streamId, message) {
+	sendData(streamId, message) {
 		var dataChannel = this.remotePeerConnection[streamId].dataChannel;
 		dataChannel.send(message);
-	}
-
-	WebSocketAdaptor = () => {
-		const wsConn = new WebSocket(this.websocket_url);
-
-		this.isWebSocketTriggered = true;
-
-		var connected = false;
-
-		var pingTimerId = -1;
-
-		var clearPingTimer = () => {
-			if (pingTimerId != -1) {
-				if (this.debug) {
-					console.debug("Clearing ping message timer");
-				}
-				clearInterval(pingTimerId);
-				pingTimerId = -1;
-			}
-		}
-
-		let sendPing = function() {
-			var jsCmd = {
-					command : "ping"
-			};
-			wsConn.send(JSON.stringify(jsCmd));
-		}
-
-		close = () => {
-			wsConn.close();
-		}
-
-		wsConn.onopen = () => {
-			if (this.debug) {
-				console.log("websocket connected");
-			}
-
-			pingTimerId = setInterval(() => {
-				sendPing();
-			}, 3000);
-
-			connected = true;
-			this.callback("initialized");
-		}
-
-		this.send = (text) => {
-
-			if (wsConn.readyState == 0 || wsConn.readyState == 2 || wsConn.readyState == 3) {
-				this.callbackError("WebSocketNotConnected");
-				return;
-			}
-			wsConn.send(text);
-			console.log("sent message:" +text);
-		}
-
-		this.isConnected = () => {
-			return connected;
-		}
-
-		wsConn.onmessage = (event) => {
-			var obj = JSON.parse(event.data);
-
-			if (obj.command == "start")
-			{
-				//this command is received first, when publishing so playmode is false
-
-				if (this.debug) {
-					console.debug("received start command");
-				}
-
-				this.startPublishing(obj.streamId);
-			}
-			else if (obj.command == "takeCandidate") {
-
-				if (this.debug) {
-					console.debug("received ice candidate for stream id " + obj.streamId);
-					console.debug(obj.candidate);
-				}
-
-				this.takeCandidate(obj.streamId, obj.label, obj.candidate);
-
-			} else if (obj.command == "takeConfiguration") {
-
-				if (this.debug) {
-					console.log("received remote description type for stream id: " + obj.streamId + " type: " + obj.type );
-				}
-				this.takeConfiguration(obj.streamId, obj.sdp, obj.type);
-
-			}
-			else if (obj.command == "stop") {
-				console.debug("Stop command received");
-				this.closePeerConnection(obj.streamId);
-			}
-			else if (obj.command == "error") {
-				this.callbackError(obj.definition);
-			}
-			else if (obj.command == "notification") {
-				this.callback(obj.definition, obj);
-				if (obj.definition == "play_finished" || obj.definition == "publish_finished") {
-					this.closePeerConnection(obj.streamId);
-				}
-			}
-			else if (obj.command == "streamInformation") {
-				this.callback(obj.command, obj);
-			}
-			else if (obj.command == "roomInformation") {
-				this.callback(obj.command, obj);
-			}
-			else if (obj.command == "pong") {
-				this.callback(obj.command);
-			}
-			else if (obj.command == "trackList") {
-				this.callback(obj.command, obj);
-			}
-			else if (obj.command == "connectWithNewId") {
-				this.multiPeerStreamId = obj.streamId;
-				this.join(obj.streamId);
-			}
-			else if (obj.command == "peerMessageCommand") {
-				this.callback(obj.command, obj);
-			}
-		}
-
-		wsConn.onerror = (error) => {
-			console.log(" error occured: " + JSON.stringify(error));
-			clearPingTimer();
-			this.callbackError(error)
-		}
-
-		wsConn.onclose = (event) => {
-			connected = false;
-			console.log("connection closed.");
-			clearPingTimer();
-			this.callback("closed", event);
-		}
 	}
 }
