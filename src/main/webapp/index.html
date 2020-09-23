@@ -9,7 +9,6 @@ pageEncoding="UTF-8"%>
 <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
 
 <script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
-<script src="js/webrtc_adaptor.js"></script>
 
 <style>
 video {
@@ -78,21 +77,21 @@ video {
 						id="streamName" name="streamIdTextBox" placeholder="Type stream name">
 			</div>
 			<div class="col-sm-12 text-right">
-				<button type="button" class="btn btn-outline-primary btn-sm" onclick="toggleOptions()">Options</button>
+				<button type="button" id="options" class="btn btn-outline-primary btn-sm" >Options</button>
 			</div>
 			<div class="form-group col-sm-12 text-left options">
 				
 				<legend class="col-form-label video-source-legend">Video Source</legend>
 	
 				<div class="form-check form-check-inline">	
-					<input class="form-check-input video-source" disabled name="videoSource" onchange="switchVideoMode(event.target)" type="radio" value="screen" 
+					<input class="form-check-input video-source" disabled name="videoSource" type="radio" value="screen" 
 					id="screen_share_checkbox">
 					<label class="form-check-label" for="screen_share_checkbox" style="font-weight:normal">
 							Screen
 					</label>
 				</div>
 				<div class="form-check form-check-inline">
-					<input class="form-check-input video-source" disabled name="videoSource" onchange="switchVideoMode(event.target)" type="radio" value="screen+camera" 
+					<input class="form-check-input video-source" disabled name="videoSource" type="radio" value="screen+camera" 
 						id="screen_share_with_camera_checkbox">
 					<label class="form-check-label" for="screen_share_with_camera_checkbox" style="font-weight:normal">
 							Screen with Camera
@@ -111,16 +110,16 @@ video {
 						<input type="text" class="form-control" id="dataTextbox" placeholder="Write your message to send players">
 					</div>
 					<div class="form-group col-sm-2">
-					<button type="button" class="btn btn-outline-primary btn-block" onclick="sendData()">Send</button>
+					<button type="button" id="send" class="btn btn-outline-primary btn-block">Send</button>
 					</div>
 				</div>
 			</div>
 					
 
 				<div class="form-group">	
-					<button onclick="startPublishing()" class="btn btn-primary" disabled
+					<button class="btn btn-primary" disabled
 					id="start_publish_button">Start Publishing</button>
-					<button onclick="stopPublishing()" class="btn btn-primary" disabled
+					<button class="btn btn-primary" disabled
 					id="stop_publish_button">Stop Publishing</button>
 				</div>			
 
@@ -136,12 +135,19 @@ video {
 	<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" crossorigin="anonymous"></script>
 	<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"  crossorigin="anonymous"></script>	
 </body>
-<script>
+<script type="module">
+	import {WebRTCAdaptor} from "./js/webrtc_adaptor.js"
      
 	var token = "<%= request.getParameter("token") %>";
 
 	var start_publish_button = document.getElementById("start_publish_button");
+	start_publish_button.addEventListener("click", startPublishing, false);
 	var stop_publish_button = document.getElementById("stop_publish_button");
+	stop_publish_button.addEventListener("click", stopPublishing, false);
+	var options = document.getElementById("options");
+	options.addEventListener("click", toggleOptions, false);
+	var send = document.getElementById("send");
+	send.addEventListener("click", sendData, false);
 	
 	var streamNameBox = document.getElementById("streamName");
 	
@@ -211,7 +217,7 @@ video {
 
 	function getCameraRadioButton(deviceName, deviceId) {
 		return "<div class=\"form-check form-check-inline\">" + 	
-							"<input class=\"form-check-input video-source\" name=\"videoSource\" onchange=\"switchVideoMode(event.target)\" type=\"radio\" value=\"" + deviceId + "\" id=\"" + deviceId + "\">" +
+							"<input class=\"form-check-input video-source\" name=\"videoSource\" type=\"radio\" value=\"" + deviceId + "\" id=\"" + deviceId + "\">" +
 							"<label class=\"form-check-label\" for=\"" + deviceId + "\" style=\"font-weight:normal\">" +
 								deviceName +
 							"</label>" +		
@@ -220,7 +226,7 @@ video {
 
 	function getAudioRadioButton(deviceName, deviceId) {
 		return "<div class=\"form-check form-check-inline\">" + 	
-							"<input class=\"form-check-input audio-source\" name=\"audioSource\" onchange=\"switchAudioMode(event.target)\"  type=\"radio\" value=\"" + deviceId + "\" id=\"" + deviceId + "\">" +
+							"<input class=\"form-check-input audio-source\" name=\"audioSource\" type=\"radio\" value=\"" + deviceId + "\" id=\"" + deviceId + "\">" +
 							"<label class=\"form-check-label\" for=\"" + deviceId + "\" style=\"font-weight:normal\">" +
 								deviceName +
 							"</label>" +		
@@ -280,7 +286,7 @@ video {
 
 	var pc_config = {
 			'iceServers' : [ {
-				'urls' : 'stun:stun1.l.google.com:19302'
+				'urls' : 'stun:stun.l.google.com:19302'
 			} ]
 		};
 	/* 
@@ -325,7 +331,7 @@ video {
 				localVideoId : "localVideo",
 				debug:true,
 				bandwidth:900,
-				callback : function(info, obj) {
+				callback : (info, obj) => {
 					if (info == "initialized") {
 						console.log("initialized");
 						start_publish_button.disabled = false;
@@ -408,6 +414,23 @@ video {
 						
 						$(audioHtmlContent).insertAfter(".audio-source-legend");
 						$(".audio-source").first().prop("checked", true);	
+
+						if (document.querySelector('input[name="videoSource"]')) {
+							document.querySelectorAll('input[name="videoSource"]').forEach((elem) => {
+								elem.addEventListener("change", function(event) {
+								var item = event.target;
+								switchVideoMode(item)
+								});
+  							});
+						}
+						if (document.querySelector('input[name="audioSource"]')) {
+							document.querySelectorAll('input[name="audioSource"]').forEach((elem) => {
+								elem.addEventListener("change", function(event) {
+								var item = event.target;
+								switchAudioMode(item)
+								});
+  							});
+						}
 					}
 					else {
 						console.log( info + " notification received");
