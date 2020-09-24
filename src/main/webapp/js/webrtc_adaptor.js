@@ -106,52 +106,55 @@ export class WebRTCAdaptor
 		{
 			if (typeof this.mediaConstraints.video != "undefined" && this.mediaConstraints.video != false)
 			{
-				// if it is not play mode and media constraint is defined, try to get user media
 				if (this.mediaConstraints.audio.mandatory)
-				{
-					//this case captures mic and video(audio(screen audio) + video(screen)) and then provide mute/unmute mic with
-					//enableMicInMixedAudio
-					navigator.mediaDevices.getUserMedia({audio:true, video:false}).then((micStream) =>{
-						navigator.mediaDevices.getUserMedia(this.mediaConstraints)
-						.then((stream) =>
-								{
-							//console.debug("audio stream track count: " + audioStream.getAudioTracks().length);
+			{
+				//this case captures mic and video(audio(screen audio) + video(screen)) and then provide mute/unmute mic with
+				//enableMicInMixedAudio
+				navigator.mediaDevices.getUserMedia({audio:true, video:false}).then((micStream)=>{
+					navigator.mediaDevices.getUserMedia(this.mediaConstraints)
+					.then(stream =>
+							{
+						//console.debug("audio stream track count: " + audioStream.getAudioTracks().length);
 
-							var audioContext = new AudioContext();
-							var desktopSoundGainNode = audioContext.createGain();
+						var audioContext = new AudioContext();
+						var desktopSoundGainNode = audioContext.createGain();
 
-							desktopSoundGainNode.gain.value = 1;
+						desktopSoundGainNode.gain.value = 1;
 
-							var audioDestionation = audioContext.createMediaStreamDestination();
-							var audioSource = audioContext.createMediaStreamSource(stream);
+						var audioDestionation = audioContext.createMediaStreamDestination();
+						var audioSource = audioContext.createMediaStreamSource(stream);
 
-							audioSource.connect(desktopSoundGainNode);
+						audioSource.connect(desktopSoundGainNode);
 
-							this.micGainNode = audioContext.createGain();
-							this.micGainNode.gain.value = 1;
-							var audioSource2 = audioContext.createMediaStreamSource(micStream);
-							audioSource2.connect(this.micGainNode);
+						this.micGainNode = audioContext.createGain();
+						this.micGainNode.gain.value = 1;
+						var audioSource2 = audioContext.createMediaStreamSource(micStream);
+						audioSource2.connect(this.micGainNode);
 
-							desktopSoundGainNode.connect(audioDestionation);
-							this.micGainNode.connect(audioDestionation);
+						desktopSoundGainNode.connect(audioDestionation);
+						this.micGainNode.connect(audioDestionation);
 
-							stream.removeTrack(stream.getAudioTracks()[0]);
-							audioDestionation.stream.getAudioTracks().forEach(function(track) {
-								stream.addTrack(track);
-							});
-							this.gotStream(stream);
-
-						}).catch((error) => {
-							this.callbackError(error.name, error.message);
+						stream.removeTrack(stream.getAudioTracks()[0]);
+						audioDestionation.stream.getAudioTracks().forEach(function(track) {
+							stream.addTrack(track);
 						});
-					}).catch((error)=> {
-						thiz.callbackError(error.name, error.message);
+
+						console.debug("Running gotStream");
+						this.gotStream(stream);
+
+					}).catch((error) => {
+						this.callbackError(error.name, error.message);
 					});
-				}
-				else {
-					//most of the times, this statement runs
-					this.openStream(this.mediaConstraints, this.mode);
-				}
+				}).catch((error) => {
+					this.callbackError(error.name, error.message);
+				});
+			}
+			else {
+				//most of the times, this statement runs
+				this.openStream(this.mediaConstraints, this.mode);
+			}
+		}
+				
 			}
 			else {
 				// get only audio
@@ -237,7 +240,7 @@ export class WebRTCAdaptor
 		});
 	}
 
-	prepareStreamTracks = function (mediaConstraints,audioConstraint,stream,streamId) {
+	prepareStreamTracks(mediaConstraints,audioConstraint,stream,streamId) {
 		//this trick, getting audio and video separately, make us add or remove tracks on the fly
 		var audioTrack = stream.getAudioTracks();
 		if (audioTrack.length > 0) {
@@ -273,8 +276,9 @@ export class WebRTCAdaptor
 			});
 		}
 		else {
-			//TODO: there is no audioStream 
-			stream.addTrack(audioStream.getAudioTracks()[0]);
+			if(typeof audioStream != "undefined" && audioStream.getAudioTracks()[0] != null){
+				stream.addTrack(audioStream.getAudioTracks()[0]);
+			}
 			this.gotStream(stream);
 		}
 		
@@ -283,7 +287,7 @@ export class WebRTCAdaptor
 	/**
 	 * Get user media
 	 */
-	getUserMedia = function (mediaConstraints, audioConstraint, streamId) {
+	getUserMedia(mediaConstraints, audioConstraint, streamId) {
 		// Check Media Constraint video value screen or screen + camera
 		if(this.publishMode == "screen+camera" || this.publishMode == "screen"){
 
@@ -637,7 +641,7 @@ export class WebRTCAdaptor
 	 * This method updates the local stream. It removes existant video track from the local stream
 	 * and add the video track in `stream` parameter to the local stream
 	 */
-	updateLocalVideoStream = function(stream, onEndedCallback, stopDesktop) {
+	updateLocalVideoStream(stream, onEndedCallback, stopDesktop) {
 
 		if (stopDesktop && this.desktopStream != null) {
 			this.desktopStream.getVideoTracks()[0].stop();
@@ -1192,7 +1196,8 @@ export class WebRTCAdaptor
 
 		var videoSender = null;
 		if ((adapter.browserDetails.browser === 'chrome' ||
-				(adapter.browserDetails.browser === 'firefox' &&
+				(adapter.browserDetails.browser === 'firefox' ||
+					adapter.browserDetails.browser === 'safari' &&
 						adapter.browserDetails.version >= 64)) &&
 						'RTCRtpSender' in window &&
 						'setParameters' in window.RTCRtpSender.prototype)
@@ -1244,6 +1249,8 @@ export class WebRTCAdaptor
 
 	getStats(streamId)
 	{
+		console.log("peerstatsgetstats = " + this.remotePeerConnectionStats[streamId]);
+
 		this.remotePeerConnection[streamId].getStats(null).then(stats =>
 		{
 			var bytesReceived = 0;
@@ -1252,6 +1259,11 @@ export class WebRTCAdaptor
 			var currentTime = 0;
 			var bytesSent = 0;
 			var audioLevel = -1;
+			var qlr = "";
+			var framesEncoded = 0;
+			var width = 0;
+			var height = 0;
+			var fps = 0;
 
 			stats.forEach(value => {
 
@@ -1263,13 +1275,25 @@ export class WebRTCAdaptor
 					currentTime = value.timestamp;
 				}
 				else if (value.type == "outbound-rtp")
-				{
+				{//TODO: SPLIT AUDIO AND VIDEO BITRATES
 					bytesSent += value.bytesSent
 					currentTime = value.timestamp
+					qlr = value.qualityLimitationReason;
+					if(value.framesEncoded != null) { //audio tracks are undefined here
+						framesEncoded += value.framesEncoded;
+					}
 				}
 				else if (value.type == "track" && typeof value.kind != "undefined" && value.kind == "audio") {
 					if (typeof value.audioLevel != "undefined") {
 						audioLevel = value.audioLevel;
+					}
+				}
+				else if (value.type == "media-source")
+				{
+					if(value.kind == "video") { //returns video source dimensions, not necessarily dimensions being encoded by browser
+						width = value.width;
+						height = value.height;
+						fps = value.framesPerSecond;
 					}
 				}
 			});
@@ -1280,12 +1304,22 @@ export class WebRTCAdaptor
 			this.remotePeerConnectionStats[streamId].currentTime = currentTime;
 			this.remotePeerConnectionStats[streamId].totalBytesSent = bytesSent;
 			this.remotePeerConnectionStats[streamId].audioLevel = audioLevel;
+			this.remotePeerConnectionStats[streamId].qualityLimitationReason = qlr;
+			this.remotePeerConnectionStats[streamId].totalFramesEncoded = framesEncoded;
+			this.remotePeerConnectionStats[streamId].resWidth = width;
+			this.remotePeerConnectionStats[streamId].resHeight = height;
+			this.remotePeerConnectionStats[streamId].srcFps = fps;
+
+
+
 
 			this.callback("updated_stats", this.remotePeerConnectionStats[streamId]);
 
 		});
 	}
-
+	disableStats(streamId) {
+		clearInterval(this.remotePeerConnectionStats[streamId].timerId);
+	}
 
 	enableStats(streamId) {
 		this.remotePeerConnectionStats[streamId] = new PeerStats(streamId);

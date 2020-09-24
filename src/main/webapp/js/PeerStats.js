@@ -7,6 +7,8 @@ export class PeerStats {
         this.packetsLost = 0;
         this.fractionLost = 0;
         this.startTime = 0;
+        this.lastFramesEncoded = 0;
+		this.totalFramesEncodedCount = 0;
         this.lastBytesReceived = 0;
         this.lastBytesSent = 0;
         this.currentTimestamp = 0;
@@ -15,6 +17,10 @@ export class PeerStats {
         this.firstByteSentCount = 0;
         this.firstBytesReceivedCount = 0;
         this.audioLevel = -1;
+        this.qualityLimitationReason = "";
+        this.resWidth = 0;
+        this.resHeight = 0;
+        this.srcFps = 0;
     }
 
     //kbits/sec
@@ -22,6 +28,10 @@ export class PeerStats {
         return Math.floor(8 * (this.totalBytesSentCount - this.firstByteSentCount) / (this.currentTimestamp - this.startTime));
     }
 
+    //frames per second
+    get currentFPS() {
+        return (((this.totalFramesEncodedCount - this.lastFramesEncoded) / (this.currentTimestamp - this.lastTime))*1000).toFixed(1);
+    }
     //kbits/sec
     get averageIncomingBitrate() {
         return Math.floor(8 * (this.totalBytesReceivedCount - this.firstBytesReceivedCount) / (this.currentTimestamp - this.startTime));
@@ -58,6 +68,13 @@ export class PeerStats {
         this.totalBytesSentCount = bytesSent;
         if (this.firstByteSentCount == 0) {
             this.firstByteSentCount = bytesSent;
+        }
+    }
+    set totalFramesEncoded(framesEncoded) {
+        this.lastFramesEncoded = this.totalFramesEncodedCount;
+        this.totalFramesEncodedCount = framesEncoded;
+        if (this.lastFramesEncoded == 0) {
+            this.lastFramesEncoded = framesEncoded;
         }
     }
 
