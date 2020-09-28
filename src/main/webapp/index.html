@@ -73,7 +73,7 @@ video {
 				<video id="localVideo"  autoplay muted controls playsinline></video>
 			</div>
 			<div class="form-group col-sm-12 text-left">
-				<input type="text" class="form-control" value="stream1"
+				<input type="text" class="form-control"
 						id="streamName" name="streamIdTextBox" placeholder="Type stream name">
 			</div>
 			<div class="col-sm-12 text-right">
@@ -140,6 +140,12 @@ video {
      
 	var token = "<%= request.getParameter("token") %>";
 
+    function init () {
+      document.getElementById("streamName").value = "stream1"
+    }
+    window.onload = init;
+
+
 	var start_publish_button = document.getElementById("start_publish_button");
 	start_publish_button.addEventListener("click", startPublishing, false);
 	var stop_publish_button = document.getElementById("stop_publish_button");
@@ -149,7 +155,9 @@ video {
 	var send = document.getElementById("send");
 	send.addEventListener("click", sendData, false);
 	
+	document.getElementById("streamName").defaultValue = "Goofy"
 	var streamNameBox = document.getElementById("streamName");
+	streamNameBox.value = "stream1";
 	
 	/**
 	 * If publishing stops for any reason, it tries to republish again.
@@ -175,10 +183,9 @@ video {
 	            return sParameterName[1] === undefined ? true : sParameterName[1];
 	        }
 	    }
-	};
-	
+	};	
 	var name = getUrlParameter("name");
-	if(name !== "undefined")
+	if(name != "undefined")
 	{
 		streamNameBox.value = name;
 	}
@@ -201,10 +208,12 @@ video {
 	
   	function switchVideoMode(chbx) {
   		if(chbx.value == "screen") {
-  			webRTCAdaptor.switchDesktopCapture(streamId);
+			  //webRTCAdaptor.switchDesktopWithMicAudio(streamId);
+			  webRTCAdaptor.switchDesktopCapture(streamId);
   		}
   		else if(chbx.value == "screen+camera"){
-  			webRTCAdaptor.switchDesktopCaptureWithCamera(streamId);
+			webRTCAdaptor.switchDesktopCaptureWithCamera(streamId);
+			
 		}
 		else {
   			webRTCAdaptor.switchVideoCameraCapture(streamId, chbx.value);
@@ -259,14 +268,13 @@ video {
 	
 	function checkAndRepublishIfRequired() {
 	 	var iceState = webRTCAdaptor.signallingState(streamId);
+		console.log("Ice state checked = " + iceState);
 	  	if (iceState == null || iceState == "failed" || iceState == "disconnected"){
-	  		console.log("Publish has stopped and will try to re-publish");
 	  		webRTCAdaptor.stop(streamId);
 	  		webRTCAdaptor.closePeerConnection(streamId);
 	  		webRTCAdaptor.closeWebSocket();
 	  		initWebRTCAdaptor(true, autoRepublishEnabled);
-	  	}
-	 	
+		  }	
 	}
 
     function startAnimation() {
@@ -476,3 +484,4 @@ video {
 	initWebRTCAdaptor(false, autoRepublishEnabled);
 </script>
 </html>
+

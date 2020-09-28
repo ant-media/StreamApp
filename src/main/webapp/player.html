@@ -74,7 +74,7 @@ video {
 				<video id="remoteVideo" autoplay controls playsinline ></video>
 			</div>
 			<div class="form-group col-sm-12 text-left">
-				<input type="text" class="form-control" value="stream1"
+				<input type="text" class="form-control"
 					id="streamName" placeholder="Type stream name">
 			</div>
 			<div class="col-sm-12 text-right">
@@ -127,6 +127,12 @@ video {
 </body>
 <script type="module">
 	import {WebRTCAdaptor} from "./js/webrtc_adaptor.js"
+
+    function init () {
+      document.getElementById("streamName").value = "stream1"
+    }
+    window.onload = init;
+
 	
 	var token = "<%= request.getParameter("token") %>";
 	var start_play_button = document.getElementById("start_play_button");
@@ -138,7 +144,8 @@ video {
 	var send = document.getElementById("send");
 	send.addEventListener("click", sendData, false);
 
-	var streamNameBox = document.getElementById("streamName");
+	var streamNameBox = document.getElementById("streamName")
+	streamNameBox.defaultValue = "stream1";
 
 	var streamId;
 	
@@ -342,4 +349,5 @@ video {
 	});
 </script>
 </html>
+
 
