@@ -42,13 +42,9 @@ pageEncoding="UTF-8"%>
 <body>
 
 <a-scene inspector="https://cdn.jsdelivr.net/npm/aframe-inspector@1.0.0/dist/aframe-inspector.min.js">
-    <a-box position="-10 -3 -6" rotation="45 45 45" color="red" id="play" vr-mode-on
-    >
-    </a-box>
-    <video id="remoteVideo" autoplay muted controls playsinline></video>
-    <a-text position="-8 3 -8" value="Hello, World!" color="red" scale="3 3 3"></a-text>
 
-    <a-plane position="0 0 -4" rotation="-90 0 0" width="4" height="4" color="#7BC8A4"></a-plane>
+    <video id="remoteVideo" autoplay muted playsinline></video>
+
     <a-entity distance="0.0" video-controls="src:#video"></a-entity>
     <a-camera>
         <a-cursor color="#FF0000"></a-cursor>
@@ -58,7 +54,7 @@ pageEncoding="UTF-8"%>
     <a-videosphere src="#remoteVideo" rotation="0 180 0" style="background-color: antiquewhite"></a-videosphere>
 </a-scene>
 
-	<script>
+	<script type = "module">
     /**
     * This page accepts 4 arguments. 
     * 1. "id": the stream id to play.It is mandatory
@@ -130,6 +126,7 @@ pageEncoding="UTF-8"%>
 	}
 %>
 
+	import {WebRTCAdaptor} from "./js/webrtc_adaptor.js"
 	var name = "<%= streamId %>";
 	var token = "<%= request.getParameter("token") %>";
 
@@ -209,10 +206,10 @@ pageEncoding="UTF-8"%>
 	}	
 	
 	function startPlayer(name, extension, token) {
-		
-		if(Hls.isSupported() && extension == "m3u8") {
+
+  		if(Hls.isSupported() && extension == "m3u8") {
         	var hls = new Hls({
-         	   debug: true
+         	   debug: false
         	});
 
        	 	hls.loadSource('streams/' + name + "." + extension + '?token=' + token);
@@ -233,13 +230,14 @@ pageEncoding="UTF-8"%>
 	    	video.src = 'streams/' + name + "." + extension + '?token=' + token;
         	video.play();
     	}
+
 	}
 
 	function initializeWebRTCPlayer(name, token, noStreamCallback) {
 
 		var pc_config = {
 				'iceServers' : [ {
-					'urls' : 'stun:stun.l.google.com:19302'
+					'urls' : 'stun:stun1.l.google.com:19302'
 				} ]
 			};
 
@@ -284,10 +282,9 @@ pageEncoding="UTF-8"%>
 					//joined the stream
 					console.log("play started");
 
-		        	video.addEventListener('canplay',function() {
-		            	video.play();
-		        	});
-
+					video.addEventListener('canplay',function() {
+            			video.play();
+        			});
 				} else if (info == "play_finished") {
 					//leaved the stream
 					console.log("play finished");

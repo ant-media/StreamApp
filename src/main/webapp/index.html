@@ -145,7 +145,6 @@ video {
     }
     window.onload = init;
 
-
 	var start_publish_button = document.getElementById("start_publish_button");
 	start_publish_button.addEventListener("click", startPublishing, false);
 	var stop_publish_button = document.getElementById("stop_publish_button");
@@ -213,7 +212,6 @@ video {
   		}
   		else if(chbx.value == "screen+camera"){
 			webRTCAdaptor.switchDesktopCaptureWithCamera(streamId);
-			
 		}
 		else {
   			webRTCAdaptor.switchVideoCameraCapture(streamId, chbx.value);

@@ -201,8 +201,7 @@ body {
     			});
   		});
 	}
-	
-	
+
 	var roomNameBox = document.getElementById("roomName");
 
 	var roomOfStream = new Array();
@@ -213,13 +212,13 @@ body {
 	var isMicMuted = false;
 	var isCameraOff = false;
 
-
 	function switchVideoMode(chbx){
 		if(chbx.value == "screen") {
-  			webRTCAdaptor.switchDesktopCapture(publishStreamId);
+			  webRTCAdaptor.switchDesktopCapture(publishStreamId);
+			  webRTCAdaptor.switchDesktopWithMicAudio(publishStreamId);
   		}
   		else if(chbx.value == "screen+camera"){
-  			webRTCAdaptor.switchDesktopCaptureWithCamera(publishStreamId);
+			  webRTCAdaptor.switchDesktopCaptureWithCamera(publishStreamId);
 		}
 		else {
   			webRTCAdaptor.switchVideoCameraCapture(publishStreamId, chbx.value);
@@ -425,6 +424,10 @@ body {
 						console.log("initialized");
 						join_publish_button.disabled = false;
 						stop_publish_button.disabled = true;
+						if(playOnly){
+							isCameraOff = true;
+							handleCameraButtons();
+						}
 					} 
 					else if (info == "joinedTheRoom") {
 						var room = obj.ATTR_ROOM_NAME;
@@ -452,10 +455,7 @@ body {
 										roomNameBox.value);
 							});
 							streamsList = obj.streams;
-						}
-						
-						
-						
+						}			
 						webRTCAdaptor.getRoomInfo(roomNameBox.value, obj.streamId);
 					}
 					else if (info == "newStreamAvailable") {

@@ -91,17 +91,12 @@ export class WebRTCAdaptor
 			console.log("Cannot open camera and mic because of unsecure context. Please Install SSL(https)");
 			this.callbackError("UnsecureContext");
 			return;
-		}
-			
+		}		
 		/*
-		* Call check browser support. Below function is called when this class is created
+		* Check browser support for screen share feature.
 		*/
-
 		this.checkBrowserScreenShareSupported();
 
-		/*
-		* Below lines are executed as well when this class is created
-		*/
 		if (!this.isPlayMode && typeof this.mediaConstraints != "undefined" && this.localStream == null)
 		{
 			if (typeof this.mediaConstraints.video != "undefined" && this.mediaConstraints.video != false)
@@ -123,7 +118,8 @@ export class WebRTCAdaptor
 			}
 		}
 	}
-	setDesktopwithCameraSource(stream, streamId, audioStream, onEndedCallback) {
+	setDesktopwithCameraSource(stream, streamId, audioStream, onEndedCallback) 
+	{
 		this.desktopStream = stream;
 		this.navigatorUserMedia({video: true, audio: false},cameraStream => {
 
@@ -134,12 +130,12 @@ export class WebRTCAdaptor
 			//create video element for screen
 			//var screenVideo = document.getElementById('sourceVideo');
 			var screenVideo = document.createElement('video');
-			//TODO: check audio track
+
 			screenVideo.srcObject = stream;
 			screenVideo.play();
 			//create video element for camera
 			var cameraVideo = document.createElement('video');
-			//TODO: check audio track
+
 			cameraVideo.srcObject = cameraStream;
 			cameraVideo.play();
 			var canvasStream = canvas.captureStream(15);
@@ -173,10 +169,11 @@ export class WebRTCAdaptor
 				}
 				canvasContext.drawImage(cameraVideo, positionX, positionY, cameraWidth, cameraHeight);
 			}, 66);
-		}, false)
+		}, true)
 	}
 
-	prepareStreamTracks(mediaConstraints,audioConstraint,stream,streamId) {
+	prepareStreamTracks(mediaConstraints,audioConstraint,stream,streamId) 
+	{
 		//this trick, getting audio and video separately, make us add or remove tracks on the fly
 		var audioTrack = stream.getAudioTracks()
 		if (audioTrack.length > 0 && this.publishMode == "camera") {
@@ -199,6 +196,9 @@ export class WebRTCAdaptor
 					if(audioTrack.length > 0 ){
 						this.captureScreenSound(stream, audioStream, streamId);
 						this.updateAudioTrack(this.composedStream,streamId,null);
+					}
+					else{
+						this.updateAudioTrack(audioStream,streamId,null);
 					}
 				}
 				else if(this.publishMode == "screen+camera" ){
@@ -226,7 +226,8 @@ export class WebRTCAdaptor
 		}
 	}
 
-	navigatorUserMedia(mediaConstraints, func ,catch_error){
+	navigatorUserMedia(mediaConstraints, func ,catch_error)
+	{
 		if( catch_error == true){
 		navigator.mediaDevices.getUserMedia(mediaConstraints).then(func).catch(error => {
 			this.callbackError(error.name, error.message);
@@ -239,7 +240,8 @@ export class WebRTCAdaptor
 	/**
 	 * Get user media
 	 */
-	getUserMedia(mediaConstraints, audioConstraint, streamId) {
+	getUserMedia(mediaConstraints, audioConstraint, streamId) 
+	{
 		// Check Media Constraint video value screen or screen + camera
 		if(this.publishMode == "screen+camera" || this.publishMode == "screen"){
 			navigator.mediaDevices.getDisplayMedia(mediaConstraints)
@@ -273,15 +275,15 @@ export class WebRTCAdaptor
 		else {
 			this.navigatorUserMedia(mediaConstraints, (stream =>{
 				this.prepareStreamTracks(mediaConstraints,audioConstraint,stream, streamId);
-			}))
+			}),true);
 		}
 	}
 
 	/**
 	 * Open media stream, it may be screen, camera or audio
 	 */
-	openStream(mediaConstraints){
-
+	openStream(mediaConstraints)
+	{
 		this.mediaConstraints = mediaConstraints;
 		var audioConstraint = false;
 		if (typeof mediaConstraints.audio != "undefined" && mediaConstraints.audio != false) {
@@ -300,8 +302,8 @@ export class WebRTCAdaptor
 	/**
 	 * Closes stream, if you want to stop peer connection, call stop(streamId)
 	 */
-	closeStream() {
-
+	closeStream() 
+	{
 		this.localStream.getVideoTracks().forEach(function(track) {
 			track.onended = null;
 			track.stop();
@@ -325,7 +327,8 @@ export class WebRTCAdaptor
 		}
 	};
 
-	enableMicInMixedAudio(enable) {
+	enableMicInMixedAudio(enable) 
+	{
 		if (this.micGainNode != null) {
 			if (enable) {
 				this.micGainNode.gain.value = 1;
@@ -336,7 +339,8 @@ export class WebRTCAdaptor
 		}
 	}
 
-	publish(streamId, token) {
+	publish(streamId, token) 
+	{
 		//If it started with playOnly mode and wants to publish now
 		if(this.localStream == null){
 			this.navigatorUserMedia(this.mediaConstraints, (stream => {
@@ -362,8 +366,8 @@ export class WebRTCAdaptor
 		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
 	}
 
-
-	joinRoom(roomName, streamId) {
+	joinRoom(roomName, streamId) 
+	{
 		this.roomName = roomName;
 
 		var jsCmd = {
@@ -374,7 +378,8 @@ export class WebRTCAdaptor
 		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
 	}
 
-	play(streamId, token, roomId, enableTracks) {
+	play(streamId, token, roomId, enableTracks) 
+	{
 		this.playStreamId.push(streamId);
 		var jsCmd =
 		{
@@ -388,7 +393,8 @@ export class WebRTCAdaptor
 		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
 	}
 
-	stop(streamId) {
+	stop(streamId) 
+	{
 		this.closePeerConnection(streamId);
 
 		var jsCmd = {
@@ -399,7 +405,8 @@ export class WebRTCAdaptor
 		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
 	}
 
-	join(streamId) {
+	join(streamId) 
+	{
 		var jsCmd = {
 				command : "join",
 				streamId : streamId,
@@ -410,7 +417,8 @@ export class WebRTCAdaptor
 		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
 	}
 
-	leaveFromRoom(roomName) {
+	leaveFromRoom(roomName) 
+	{
 		this.roomName = roomName;
 		var jsCmd = {
 				command : "leaveFromRoom",
@@ -426,8 +434,8 @@ export class WebRTCAdaptor
 		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
 	}
 
-	leave(streamId) {
-
+	leave(streamId) 
+	{
 		var jsCmd = {
 				command : "leave",
 				streamId: this.isMultiPeer && this.multiPeerStreamId != null ? this.multiPeerStreamId : streamId,
@@ -438,7 +446,8 @@ export class WebRTCAdaptor
 		this.multiPeerStreamId = null;
 	}
 
-	getStreamInfo(streamId) {
+	getStreamInfo(streamId) 
+	{
 		var jsCmd = {
 				command : "getStreamInfo",
 				streamId: streamId,
@@ -446,7 +455,8 @@ export class WebRTCAdaptor
 		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
 	}
 	
-	getRoomInfo(roomName,streamId) {
+	getRoomInfo(roomName,streamId) 
+	{
 		this.roomTimerId = setInterval(() => {
 			var jsCmd = {
 				command : "getRoomInfo",
@@ -457,7 +467,8 @@ export class WebRTCAdaptor
 		}, 5000);
 	}
 
-	enableTrack(mainTrackId, trackId, enabled) {
+	enableTrack(mainTrackId, trackId, enabled) 
+	{
 		var jsCmd = {
 				command : "enableTrack",
 				streamId : mainTrackId,
@@ -467,7 +478,8 @@ export class WebRTCAdaptor
 		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
 	}
 
-	getTracks(streamId, token) {
+	getTracks(streamId, token) 
+	{
 		this.playStreamId.push(streamId);
 		var jsCmd =
 		{
@@ -513,8 +525,12 @@ export class WebRTCAdaptor
 
 		this.getUserMedia(this.mediaConstraints, audioConstraint, streamId);
 	}
-
-	captureScreenSound(stream, micStream,streamId){
+	/*
+	* This method captures the sound of desktop and merge it with the sound of microphone. 
+	* Gain values can be adjusted in the merged sound. composedStream is the merged sound stream.
+	*/
+	captureScreenSound(stream, micStream,streamId)
+	{
 		//console.debug("audio stream track count: " + audioStream.getAudioTracks().length);
 		var composedStream = new MediaStream();
 		//added the video stream from the screen
@@ -547,7 +563,8 @@ export class WebRTCAdaptor
 		this.composedStream = composedStream;
 	}
 
-	switchAudioInputSource(streamId, deviceId) {
+	switchAudioInputSource(streamId, deviceId) 
+	{
 		//stop the track because in some android devices need to close the current camera stream
 		var audioTrack = this.localStream.getAudioTracks()[0];
 		if (audioTrack) {
@@ -563,7 +580,8 @@ export class WebRTCAdaptor
 		this.setAudioInputSource(streamId, this.mediaConstraints, null, true, deviceId);
 	}
 
-	switchVideoCameraCapture(streamId, deviceId) {
+	switchVideoCameraCapture(streamId, deviceId) 
+	{
 		//stop the track because in some android devices need to close the current camera stream
 		var videoTrack = this.localStream.getVideoTracks()[0];
 		if (videoTrack) {
@@ -581,8 +599,8 @@ export class WebRTCAdaptor
 		this.setVideoCameraSource(streamId, this.mediaConstraints, null, true, deviceId);
 	}
 
-	switchDesktopCaptureWithCamera(streamId) {
-		
+	switchDesktopCaptureWithCamera(streamId) 
+	{
 		this.publishMode = "screen+camera";
 
 		var audioConstraint = false;
@@ -596,8 +614,8 @@ export class WebRTCAdaptor
 	 * This method updates the local stream. It removes existant audio track from the local stream
 	 * and add the audio track in `stream` parameter to the local stream
 	 */
-	updateLocalAudioStream(stream, onEndedCallback) {
-
+	updateLocalAudioStream(stream, onEndedCallback) 
+	{
 		var audioTrack = this.localStream.getAudioTracks()[0];
 		this.localStream.removeTrack(audioTrack);
 		audioTrack.stop();
@@ -615,8 +633,8 @@ export class WebRTCAdaptor
 	 * This method updates the local stream. It removes existant video track from the local stream
 	 * and add the video track in `stream` parameter to the local stream
 	 */
-	updateLocalVideoStream(stream, onEndedCallback, stopDesktop) {
-
+	updateLocalVideoStream(stream, onEndedCallback, stopDesktop) 
+	{
 		if (stopDesktop && this.desktopStream != null) {
 			this.desktopStream.getVideoTracks()[0].stop();
 		}
@@ -638,26 +656,27 @@ export class WebRTCAdaptor
 	 * This method sets Audio Input Source. 
 	 * It calls updateAudioTrack function for the update local audio stream.
 	 */
-	setAudioInputSource(streamId, mediaConstraints, onEndedCallback) {
+	setAudioInputSource(streamId, mediaConstraints, onEndedCallback) 
+	{
 		this.navigatorUserMedia(mediaConstraints,stream => {
 			this.updateAudioTrack(stream, streamId, mediaConstraints, onEndedCallback);
-		});
+		}, true);
 	}
 	
 	/**
 	 * This method sets Video Input Source. 
 	 * It calls updateVideoTrack function for the update local video stream.
 	 */
-	setVideoCameraSource(streamId, mediaConstraints, onEndedCallback, stopDesktop) {
-
+	setVideoCameraSource(streamId, mediaConstraints, onEndedCallback, stopDesktop) 
+	{
 		this.navigatorUserMedia(mediaConstraints, stream => {
 			this.updateVideoTrack(stream, streamId, mediaConstraints, onEndedCallback, stopDesktop);
 			this.updateAudioTrack(stream, streamId, mediaConstraints, onEndedCallback);
-		});
+		}, true);
 	}
 	
-	updateAudioTrack (stream, streamId, onEndedCallback) {
-
+	updateAudioTrack (stream, streamId, onEndedCallback) 
+	{
 		if (this.remotePeerConnection[streamId] != null) {
 			var audioTrackSender = this.remotePeerConnection[streamId].getSenders().find(function(s) {
 				return s.track.kind == "audio";
@@ -680,8 +699,8 @@ export class WebRTCAdaptor
 		}
 	}
 
-	updateVideoTrack(stream, streamId, mediaConstraints, onEndedCallback, stopDesktop) {
-
+	updateVideoTrack(stream, streamId, mediaConstraints, onEndedCallback, stopDesktop) 
+	{
 		if (this.remotePeerConnection[streamId] != null) {
 			var videoTrackSender = this.remotePeerConnection[streamId].getSenders().find(function(s) {
 				return s.track.kind == "video";
@@ -704,8 +723,8 @@ export class WebRTCAdaptor
 		}
 	}
 
-	onTrack(event, streamId){
-
+	onTrack(event, streamId)
+	{
 		console.log("onTrack");
 		if (this.remoteVideo != null) {
 			//this.remoteVideo.srcObject = event.streams[0];
@@ -725,8 +744,8 @@ export class WebRTCAdaptor
 
 	}
 
-	iceCandidateReceived(event, streamId){
-
+	iceCandidateReceived(event, streamId)
+	{
 		if (event.candidate) {
 
 			var protocolSupported = false;
@@ -776,8 +795,8 @@ export class WebRTCAdaptor
 		}
 	}
 
-	initDataChannel(streamId, dataChannel) {
-
+	initDataChannel(streamId, dataChannel) 
+	{
 		dataChannel.onerror = (error) => {
 			console.log("Data Channel Error:", error );
 			var obj = {
@@ -808,12 +827,11 @@ export class WebRTCAdaptor
 			console.log("Data channel is closed");
 			this.callback("data_channel_closed", streamId);
 		};
-
 	}
 
 	// data channel mode can be "publish" , "play" or "peer" based on this it is decided which way data channel is created
-	initPeerConnection(streamId, dataChannelMode) {
-
+	initPeerConnection(streamId, dataChannelMode) 
+	{
 		if (this.remotePeerConnection[streamId] == null)
 		{
 			var closedStreamId = streamId;
@@ -891,8 +909,8 @@ export class WebRTCAdaptor
 		}
 	}
 
-	closePeerConnection(streamId) {
-		
+	closePeerConnection(streamId) 
+	{	
 		if (this.remotePeerConnection[streamId] != null)
 		{
 			if (this.remotePeerConnection[streamId].dataChannel != null) {
@@ -908,26 +926,25 @@ export class WebRTCAdaptor
 					this.playStreamId.splice(playStreamIndex, 1);
 				}
 			}
-
 		}
 
 		if (this.remotePeerConnectionStats[streamId] != null)
 		{
 			clearInterval(this.remotePeerConnectionStats[streamId].timerId);
 			delete this.remotePeerConnectionStats[streamId];
-		}
-		
-		
+		}			
 	}
 
-	signallingState(streamId) {
+	signallingState(streamId) 
+	{
 		if (this.remotePeerConnection[streamId] != null) {
 			return this.remotePeerConnection[streamId].signalingState;
 		}
 		return null;
 	}
 
-	iceConnectionState(streamId) {
+	iceConnectionState(streamId) 
+	{
 		if (this.remotePeerConnection[streamId] != null) {
 			return this.remotePeerConnection[streamId].iceConnectionState;
 		}
@@ -962,7 +979,8 @@ export class WebRTCAdaptor
 	}
 
 
-	turnOffLocalCamera() {
+	turnOffLocalCamera() 
+	{
 		if (this.remotePeerConnection != null) {
 
 			var track = this.localStream.getVideoTracks()[0];
@@ -973,7 +991,8 @@ export class WebRTCAdaptor
 		}
 	}
 
-	turnOnLocalCamera() {
+	turnOnLocalCamera() 
+	{
 		//If it started in playOnly mode and wants to turn on the camera
 		if(this.localStream == null){
 			this.navigatorUserMedia(this.mediaConstraints, stream =>{
@@ -986,7 +1005,8 @@ export class WebRTCAdaptor
 		}
 	}
 
-	muteLocalMic() {
+	muteLocalMic() 
+	{
 		if (this.remotePeerConnection != null) {
 			var track = this.localStream.getAudioTracks()[0];
 			track.enabled = false;
@@ -999,7 +1019,8 @@ export class WebRTCAdaptor
 	/**
 	 * if there is audio it calls callbackError with "AudioAlreadyActive" parameter
 	 */
-	unmuteLocalMic() {
+	unmuteLocalMic() 
+	{
 		if (this.remotePeerConnection != null) {
 			var track = this.localStream.getAudioTracks()[0];
 			track.enabled = true;
@@ -1073,7 +1094,8 @@ export class WebRTCAdaptor
 
 	}
 
-	takeCandidate(idOfTheStream, tmpLabel, tmpCandidate) {
+	takeCandidate(idOfTheStream, tmpLabel, tmpCandidate) 
+	{
 		var streamId = idOfTheStream;
 		var label = tmpLabel;
 		var candidateSdp = tmpCandidate;
@@ -1136,7 +1158,8 @@ export class WebRTCAdaptor
 		}
 	};
 
-	startPublishing(idOfStream) {
+	startPublishing(idOfStream) 
+	{
 		var streamId = idOfStream;
 
 		this.initPeerConnection(streamId, "publish");
@@ -1153,8 +1176,8 @@ export class WebRTCAdaptor
 	/**
 	 * If we have multiple video tracks in coming versions, this method may cause some issues
 	 */
-	getVideoSender(streamId) {
-
+	getVideoSender(streamId) 
+	{
 		var videoSender = null;
 		if ((adapter.browserDetails.browser === 'chrome' ||
 				(adapter.browserDetails.browser === 'firefox' ||
@@ -1179,8 +1202,8 @@ export class WebRTCAdaptor
 	/**
 	 * bandwidth is in kbps
 	 */
-	changeBandwidth(bandwidth, streamId) {
-
+	changeBandwidth(bandwidth, streamId) 
+	{
 		var errorDefinition = "";
 
 		var videoSender = this.getVideoSender(streamId);
@@ -1275,11 +1298,13 @@ export class WebRTCAdaptor
 
 		});
 	}
-	disableStats(streamId) {
+	disableStats(streamId) 
+	{
 		clearInterval(this.remotePeerConnectionStats[streamId].timerId);
 	}
 
-	enableStats(streamId) {
+	enableStats(streamId) 
+	{
 		this.remotePeerConnectionStats[streamId] = new PeerStats(streamId);
 		this.remotePeerConnectionStats[streamId].timerId = setInterval(() =>
 		{
@@ -1292,7 +1317,8 @@ export class WebRTCAdaptor
 	 * After calling this function, create new WebRTCAdaptor instance, don't use the the same objectone
 	 * Because all streams are closed on server side as well when websocket connection is closed.
 	 */
-	closeWebSocket() {
+	closeWebSocket() 
+	{
 		for (var key in this.remotePeerConnection) {
 			this.remotePeerConnection[key].close();
 		}
@@ -1301,7 +1327,8 @@ export class WebRTCAdaptor
 		this.webSocketAdaptor.close();
 	}
 
-	peerMessage(streamId, definition, data) {
+	peerMessage(streamId, definition, data) 
+	{
 		var jsCmd = {
 				command : "peerMessageCommand",
 				streamId : streamId,
@@ -1312,7 +1339,8 @@ export class WebRTCAdaptor
 		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
 	}
 	
-	forceStreamQuality(streamId, resolution) {
+	forceStreamQuality(streamId, resolution) 
+	{
 		var jsCmd = {
 				command : "forceStreamQuality",
 				streamId : streamId,
@@ -1321,7 +1349,8 @@ export class WebRTCAdaptor
 		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
 	}
 
-	sendData(streamId, message) {
+	sendData(streamId, message) 
+	{
 		var dataChannel = this.remotePeerConnection[streamId].dataChannel;
 		dataChannel.send(message);
 	}
