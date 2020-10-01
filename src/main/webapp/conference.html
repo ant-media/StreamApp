@@ -1,5 +1,3 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8"
-pageEncoding="UTF-8"%>
 <html>
 <head>
 <title>Ant Media Server WebRTC Conference Room</title>
@@ -11,6 +9,7 @@ pageEncoding="UTF-8"%>
 		  crossorigin="anonymous">
 	<script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
 	<script src="js/webrtc_adaptor.js"></script>
+	<script src="js/fetch.stream.js"></script>
 	<script
 			src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
 
@@ -171,9 +170,9 @@ body {
 </div>
 </body>
 <script>
-	var token = "<%= request.getParameter("token") %>";
-	var streamId = "<%= request.getParameter("streamId") %>";
-	var playOnly = "<%= request.getParameter("playOnly") %>";
+	var token = getUrlParameter("token");
+	var streamId = getUrlParameter("streamId");
+	var playOnly = getUrlParameter("playOnly");
 	if(playOnly == "null") {
 		playOnly = false;
 	}
