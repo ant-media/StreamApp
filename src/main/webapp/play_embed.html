@@ -31,7 +31,7 @@ video {
 
     var streamId = getUrlParameter("name");
 
-    if (streamId == "null") {
+    if (streamId == undefined) {
     		alert("No stream specified. Please add ?name={STREAM_ID}  to the url");
     }
     var token = getUrlParameter("token");

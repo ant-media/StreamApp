@@ -173,7 +173,7 @@ body {
 	var token = getUrlParameter("token");
 	var streamId = getUrlParameter("streamId");
 	var playOnly = getUrlParameter("playOnly");
-	if(playOnly == "null") {
+	if(playOnly == null) {
 		playOnly = false;
 	}
 
