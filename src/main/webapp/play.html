@@ -64,12 +64,23 @@
 
 
 	//The play order, player tries to play according to this order, if it can not play then tries following format
-   
 
-    var playOrder = getUrlParameter("playOrder");
-	if (playOrder == null) {
-	    playOrder = ["webrtc", "hls"];
-	}	
+	var playOrder = getUrlParameter("playOrder");
+	if (playOrder == null || playOrder=="webrtc,hls") {
+		playOrder = ["webrtc", "hls"];
+	}
+	else if(playOrder == "hls,webrtc") {
+		playOrder=["hls", "webrtc"];
+	}
+	else if(playOrder == "hls") {
+		playOrder=["hls"];
+	}
+	else if(playOrder == "webrtc") {
+		playOrder=["webrtc"];
+	}
+	else if(playOrder == "vod") {
+		playOrder=["vod"];
+	}
 	
 	var streamId = getUrlParameter("id");
 	if (streamId == null) {
@@ -78,8 +89,17 @@
 	}
 
 	 var playType = getUrlParameter("playType") ;
-	 if (playType == null){ 
+	 if (playType == null || playType=="mp4,webm"){
 		playType = ["mp4", "webm"];
+	 }
+	 else if(playType=="webm,mp4") {
+	 	playType=["webm", "mp4"];
+	 }
+	 else if(playType="mp4"){
+	 	playType=["mp4"];
+	 }
+	 else if(playType="webm"){
+	 	playType=["webm"];
 	 }
 	   
 

@@ -66,23 +66,24 @@
 
 
 	//The play order, player tries to play according to this order, if it can not play then tries following format
-   
+
 
     var playOrder = getUrlParameter("playOrder");
-	if (playOrder == null) {
-	    playOrder = ["webrtc", "hls"];
-	}	
-	
-	var streamId = getUrlParameter("id");
-	if (streamId == null) {
-		//check name variable for compatibility with older versions
-		streamId = getUrlParameter("name");
-	}
-
-	var playType = getUrlParameter("playType") ;
-	 if (playType == null){ 
-		playType = ["mp4", "webm"];
-	 }
+    if (playOrder == null || playOrder=="webrtc,hls") {
+        playOrder = ["webrtc", "hls"];
+    }
+    else if(playOrder == "hls,webrtc") {
+        playOrder=["hls", "webrtc"];
+    }
+    else if(playOrder == "hls") {
+        playOrder=["hls"];
+    }
+    else if(playOrder == "webrtc") {
+        playOrder=["webrtc"];
+    }
+    else if(playOrder == "vod") {
+        playOrder=["vod"];
+    }
 
 
 	var name = streamId;
