@@ -462,32 +462,38 @@ function WebRTCAdaptor(initialValues)
 		}
 	}
 
-	this.publish = function (streamId, token) {
+	this.publish = function (streamId, token, subscriberId, subscriberCode) {
+		var jsCmd = null;
+		if(subscriberId !== undefined && subscriberCode !== undefined) {
+			jsCmd = {
+					command : "publish",
+					streamId : streamId,
+					token : token,
+					subscriberId: subscriberId,
+					subscriberCode: subscriberCode,
+					video: thiz.localStream.getVideoTracks().length > 0 ? true : false,
+							audio: thiz.localStream.getAudioTracks().length > 0 ? true : false,
+				};
+		} else {
+			jsCmd = {
+					command : "publish",
+					streamId : streamId,
+					token : token,
+					video: thiz.localStream.getVideoTracks().length > 0 ? true : false,
+							audio: thiz.localStream.getAudioTracks().length > 0 ? true : false,
+				};			
+		}
 		//If it started with playOnly mode and wants to publish now
 		if(thiz.localStream == null){
 			navigator.mediaDevices.getUserMedia(mediaConstraints).then(function(stream){
 				thiz.gotStream(stream);
-				var jsCmd = {
-					command : "publish",
-					streamId : streamId,
-					token : token,
-					video: thiz.localStream.getVideoTracks().length > 0 ? true : false,
-							audio: thiz.localStream.getAudioTracks().length > 0 ? true : false,
-				};
 				thiz.webSocketAdaptor.send(JSON.stringify(jsCmd));
 			});
 		}else{
 			console.debug("getvideotrack = " + thiz.localStream.getVideoTracks()[0])
-			var jsCmd = {
-					command : "publish",
-					streamId : streamId,
-					token : token,
-					video: thiz.localStream.getVideoTracks().length > 0 ? true : false,
-							audio: thiz.localStream.getAudioTracks().length > 0 ? true : false,
-			};
 		}
 		thiz.webSocketAdaptor.send(JSON.stringify(jsCmd));
-	}
+	}	
 
 
 	this.joinRoom = function (roomName, streamId) {
@@ -502,20 +508,34 @@ function WebRTCAdaptor(initialValues)
 		thiz.webSocketAdaptor.send(JSON.stringify(jsCmd));
 
 	}
-
-	this.play = function (streamId, token, roomId, enableTracks) {
+	
+	this.play = function (streamId, token, roomId, enableTracks, subscriberId, subscriberCode) {
 		thiz.playStreamId.push(streamId);
-		var jsCmd =
-		{
+		var jsCmd = null;
+		if(subscriberId !== undefined && subscriberCode !== undefined) {
+		  jsCmd =
+		    {
+				command : "play",
+				streamId : streamId,
+				token : token,
+				subscriberId: subscriberId,
+				subscriberCode: subscriberCode,
+				room : roomId,
+				trackList : enableTracks,
+		    }
+		} else {
+			jsCmd =
+			  {
 				command : "play",
 				streamId : streamId,
 				token : token,
 				room : roomId,
 				trackList : enableTracks,
+			  }			
 		}
 
 		thiz.webSocketAdaptor.send(JSON.stringify(jsCmd));
-	}
+	}	
 
 	this.stop = function(streamId) {
 		thiz.closePeerConnection(streamId);

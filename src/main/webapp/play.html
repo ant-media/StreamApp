@@ -126,7 +126,9 @@ pageEncoding="UTF-8"%>
 
 	var name = "<%= streamId %>";
 	var token = "<%= request.getParameter("token") %>";
-
+	var subscriberId = "<%= request.getParameter("subscriberId") %>";
+	var subscriberCode = "<%= request.getParameter("subscriberCode") %>";
+	
 	var pAutoplay = "<%= request.getParameter("autoplay") %>";
 	var autoPlay = true;
 	if (pAutoplay == "false" || isMobile()) {
@@ -313,7 +315,7 @@ pageEncoding="UTF-8"%>
 				}
 				else if (info == "streamInformation") {
 					console.log("stream information");
-					webRTCAdaptor.play(name, token);
+					webRTCAdaptor.play(name, token, subscriberId, subscriberCode);
 				}
 				else if (info == "play_started") {
 					//joined the stream

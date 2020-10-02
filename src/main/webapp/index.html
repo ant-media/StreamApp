@@ -8,6 +8,7 @@ pageEncoding="UTF-8"%>
 <meta charset="UTF-8">
 <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
 
+
 <script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
 <script src="js/webrtc_adaptor.js"></script>
 
@@ -139,7 +140,9 @@ video {
 <script>
      
 	var token = "<%= request.getParameter("token") %>";
-
+	var subscriberId = "<%= request.getParameter("subscriberId") %>";
+	var subscriberCode = "<%= request.getParameter("subscriberCode") %>";
+	
 	var start_publish_button = document.getElementById("start_publish_button");
 	var stop_publish_button = document.getElementById("stop_publish_button");
 	
@@ -182,7 +185,7 @@ video {
 
 	function startPublishing() {
 		streamId = streamNameBox.value;
-		webRTCAdaptor.publish(streamId, token);
+		webRTCAdaptor.publish(streamId, token, subscriberId, subscriberCode);
 	}
 
 	function stopPublishing() {
