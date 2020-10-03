@@ -13,12 +13,12 @@ if (!String.prototype.endsWith)
 	};
 }
 
-function tryToHLSPlay(name, token, noStreamCallback) {
+function tryToHLSPlay(name, token, subscriberId, subscriberCode, noStreamCallback) {
 	fetch("streams/"+ name +"_adaptive.m3u8", {method:'HEAD'})
 	.then(function(response) {
 		if (response.status == 200) {
 			// adaptive m3u8 exists,play it
-			initializePlayer(name+"_adaptive", "m3u8", token);
+			initializePlayer(name+"_adaptive", "m3u8", token, subscriberId, subscriberCode);
 		}
 		else 
 		{
@@ -27,7 +27,7 @@ function tryToHLSPlay(name, token, noStreamCallback) {
 			.then(function(response) {
 				if (response.status == 200) {
 					//m3u8 exists, play it
-					initializePlayer(name, "m3u8", token);
+					initializePlayer(name, "m3u8", token, subscriberId, subscriberCode);
 				}
 				else {
 					console.log("No stream found");
@@ -45,7 +45,7 @@ function tryToHLSPlay(name, token, noStreamCallback) {
 
 }
 
-function tryToVODPlay(name, token, noStreamCallback){
+function tryToVODPlay(name, token, subscriberId, subscriberCode, noStreamCallback){
 
 	var firstPlayType = playType[0];
 	var secondPlayType = playType[1];
@@ -54,14 +54,14 @@ function tryToVODPlay(name, token, noStreamCallback){
 		.then(function(response) {
 			if (response.status == 200) {
 				//firstPlayType exists, play it
-				initializePlayer(name, firstPlayType, token)
+				initializePlayer(name, firstPlayType, token, subscriberId, subscriberCode)
 			}
 			else if(secondPlayType  != null){
 				fetch("streams/"+ name +"."+secondPlayType, {method:'HEAD'})
 				.then(function(response) {
 				if (response.status == 200) {
 					//secondPlayType exists, play it
-					initializePlayer(name, secondPlayType, token)
+					initializePlayer(name, secondPlayType, token, subscriberId, subscriberCode)
 				}
 				else {
 					console.log("No stream found");

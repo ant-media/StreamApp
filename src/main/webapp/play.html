@@ -147,7 +147,7 @@ pageEncoding="UTF-8"%>
 	     setTimeout(function(){
 		 if (playOrder.includes("hls"))
 		 {
-		   tryToHLSPlay(name, token, hlsNoStreamCallback);	
+		   tryToHLSPlay(name, token, subscriberId, subscriberCode, hlsNoStreamCallback);	
 		 } 
 		 else
 		 {
@@ -165,7 +165,7 @@ pageEncoding="UTF-8"%>
 			{
 				// It means there is no HLS stream, so try to play WebRTC stream
 				if (webRTCAdaptor == null) {
-					initializeWebRTCPlayer(name, token, webrtcNoStreamCallback);
+					initializeWebRTCPlayer(name, token, subscriberId, subscriberCode, webrtcNoStreamCallback);
 				}
 				else {
 					webRTCAdaptor.getStreamInfo(name);
@@ -173,7 +173,7 @@ pageEncoding="UTF-8"%>
 			}
 			else 
 			{
-				tryToHLSPlay(name, token, hlsNoStreamCallback);	
+				tryToHLSPlay(name, token, subscriberId, subscriberCode, hlsNoStreamCallback);	
 			}
 		}, 3000);
 	    	
@@ -185,7 +185,7 @@ pageEncoding="UTF-8"%>
 		setTimeout(function() 
 		{
 			if(playOrder.includes("vod")){
-				tryToVODPlay(name, token, vodNoStreamCallback);	
+				tryToVODPlay(name, token, subscriberId, subscriberCode, vodNoStreamCallback);	
 			}
 		}, 3000);
 	    	
@@ -215,15 +215,15 @@ pageEncoding="UTF-8"%>
 
 	}
 
-	function initializePlayer(name, extension, token) {
+	function initializePlayer(name, extension, token, subscriberId, subscriberCode) {
 
 		hideWebRTCElements();
 
-		startPlayer(name, extension, token)
+		startPlayer(name, extension, token, subscriberId, subscriberCode)
 
 	}	
 	
-	function startPlayer(name, extension, token) {
+	function startPlayer(name, extension, token, subscriberId, subscriberCode) {
 		var type;
 		var liveStream = false;
 		if (extension == "mp4") {
@@ -253,7 +253,7 @@ pageEncoding="UTF-8"%>
 		});
 
 		player.src({
-  			src: "streams/" + name + "." + extension + "?token=" + token,
+  			src: "streams/" + name + "." + extension + "?token=" + token + "&subscriberId="+subscriberId +"&subscriberCode="+subscriberCode,
   			type: type,
 		});
 		
@@ -270,7 +270,7 @@ pageEncoding="UTF-8"%>
 	}
 
 
-	function initializeWebRTCPlayer(name, token, noStreamCallback) {
+	function initializeWebRTCPlayer(name, token, subscriberId, subscriberCode, noStreamCallback) {
 
 		hideHLSElements();
 
@@ -381,15 +381,15 @@ pageEncoding="UTF-8"%>
 		    */
 			if (playOrder[0] == "webrtc" )
 			{
-				initializeWebRTCPlayer(name, token, webrtcNoStreamCallback);
+				initializeWebRTCPlayer(name, token, subscriberId, subscriberCode, webrtcNoStreamCallback);
 			} 
 			else if (playOrder[0] == "hls" )
 			{
-				tryToHLSPlay(name, token, hlsNoStreamCallback);
+				tryToHLSPlay(name, token, subscriberId, subscriberCode, hlsNoStreamCallback);
 			}
 			else if (playOrder[0] == "vod" )
 			{
-				tryToVODPlay(name, token, vodNoStreamCallback);	
+				tryToVODPlay(name, token, subscriberId, subscriberCode, vodNoStreamCallback);	
 			}
 			else {
 				alert("Unsupported play order requested. Supported formats are webrtc and hls. Use something like playOrder=webrtc,hls");
