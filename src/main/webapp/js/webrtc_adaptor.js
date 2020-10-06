@@ -257,11 +257,12 @@ function WebRTCAdaptor(initialValues)
 			});
 		}
 		else {
-			//TODO: there is no audioStream 
-			stream.addTrack(audioStream.getAudioTracks()[0]);
-			thiz.gotStream(stream);
+			if(audioConstraint != false && audioConstraint != undefined){
+				stream.addTrack(audioStream.getAudioTracks()[0]);
+			}else{
+				thiz.gotStream(stream);
+			}	
 		}
-		
 	}
 
 	/**
@@ -416,7 +417,6 @@ function WebRTCAdaptor(initialValues)
 							stream.addTrack(track);
 						});
 
-						console.debug("Running gotStream");
 						thiz.gotStream(stream);
 
 					}).catch(function (error) {
@@ -427,6 +427,29 @@ function WebRTCAdaptor(initialValues)
 				});
 			}
 			else {
+				var isMicExist = false;
+				navigator.mediaDevices.enumerateDevices().then(function(devices) {
+					let deviceArray = new Array();
+		
+					devices.forEach(function(device) {	
+						if (device.kind == "audioinput" || device.kind == "videoinput") {
+							deviceArray.push(device);
+							if (device.kind == "audioinput"){
+								isMicExist = true;
+							}
+						}
+					});
+		
+					thiz.callback("available_devices", deviceArray);
+		
+				}).catch(function(err) {
+					console.error("Cannot get devices -> error name: " + err.name + ": " + err.message);
+				});
+				if(isMicExist == false){
+					console.log("Microphone is not found, openning without audio input")
+					thiz.mediaConstraints.audio = false;
+				}
+
 				//most of the times, this statement runs
 				thiz.openStream(thiz.mediaConstraints, thiz.mode);
 			}
@@ -615,21 +638,6 @@ function WebRTCAdaptor(initialValues)
 		if (thiz.webSocketAdaptor == null || thiz.webSocketAdaptor.isConnected() == false) {
 			thiz.webSocketAdaptor = new WebSocketAdaptor();
 		}
-
-		navigator.mediaDevices.enumerateDevices().then(function(devices) {
-			let deviceArray = new Array();
-
-			devices.forEach(function(device) {	
-				if (device.kind == "audioinput" || device.kind == "videoinput") {
-					deviceArray.push(device);
-				}
-			});
-
-			thiz.callback("available_devices", deviceArray);
-
-		}).catch(function(err) {
-			console.error("Cannot get devices -> error name: " + err.name + ": " + err.message);
-		});
 	};
 	
 	this.switchAudioInputSource = function(streamId, deviceId) {
