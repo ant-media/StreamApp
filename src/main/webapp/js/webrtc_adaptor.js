@@ -189,7 +189,11 @@ function WebRTCAdaptor(initialValues)
 			else{
 				thiz.updateVideoTrack(canvasStream,streamId,thiz.mediaConstraints,onended,null);
 			}
-
+			if (onEndedCallback != null) {
+				stream.getVideoTracks()[0].onended = function(event) {
+					onEndedCallback(event);
+				}
+			}
 			//update the canvas
 			setInterval(function(){
 				//draw screen to canvas
