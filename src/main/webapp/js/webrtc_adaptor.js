@@ -298,6 +298,9 @@ function WebRTCAdaptor(initialValues)
 					}
 
 				}
+				else if (error.name == "NotFoundError"){
+					thiz.getDevices();
+				}
 				else{
 					thiz.callbackError(error.name, error.message);
 				}
@@ -313,7 +316,11 @@ function WebRTCAdaptor(initialValues)
 
 			})
 			.catch(function(error) {
+				if (error.name == "NotFoundError"){
+					thiz.getDevices();
+				}else{
 				thiz.callbackError(error.name, error.message);
+				}
 			});
 
 		}
@@ -356,6 +363,28 @@ function WebRTCAdaptor(initialValues)
 		
 		
 
+	}
+	thiz.getDevices = function(){
+		navigator.mediaDevices.enumerateDevices().then(devices => {
+			let deviceArray = new Array();
+			let checkAudio = false
+			devices.forEach(device => {	
+				if (device.kind == "audioinput" || device.kind == "videoinput") {
+					deviceArray.push(device);
+					if(device.kind=="audioinput"){
+						checkAudio = true;
+					}
+				}
+			});
+			thiz.callback("available_devices", deviceArray);
+			if(checkAudio == false && thiz.localStream == null){
+				console.log("Audio input not found")
+				console.log("Retrying without audio input")
+				thiz.openStream({video : true, audio : false}, this.mode)
+			}
+		}).catch(err => {
+			console.error("Cannot get devices -> error name: " + err.name + ": " + err.message);
+		});
 	}
 
 	/**
@@ -427,29 +456,6 @@ function WebRTCAdaptor(initialValues)
 				});
 			}
 			else {
-				var isMicExist = false;
-				navigator.mediaDevices.enumerateDevices().then(function(devices) {
-					let deviceArray = new Array();
-		
-					devices.forEach(function(device) {	
-						if (device.kind == "audioinput" || device.kind == "videoinput") {
-							deviceArray.push(device);
-							if (device.kind == "audioinput"){
-								isMicExist = true;
-							}
-						}
-					});
-		
-					thiz.callback("available_devices", deviceArray);
-		
-				}).catch(function(err) {
-					console.error("Cannot get devices -> error name: " + err.name + ": " + err.message);
-				});
-				if(isMicExist == false){
-					console.log("Microphone is not found, openning without audio input")
-					thiz.mediaConstraints.audio = false;
-				}
-
 				//most of the times, this statement runs
 				thiz.openStream(thiz.mediaConstraints, thiz.mode);
 			}
@@ -638,6 +644,7 @@ function WebRTCAdaptor(initialValues)
 		if (thiz.webSocketAdaptor == null || thiz.webSocketAdaptor.isConnected() == false) {
 			thiz.webSocketAdaptor = new WebSocketAdaptor();
 		}
+		thiz.getDevices()
 	};
 	
 	this.switchAudioInputSource = function(streamId, deviceId) {
