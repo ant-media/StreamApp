@@ -237,7 +237,7 @@ video {
 	  
 	
 	function checkAndRepublishIfRequired() {
-	 	var iceState = webRTCAdaptor.signallingState(streamId);
+	 	var iceState = webRTCAdaptor.iceConnectionState(streamId);
 	  	if (iceState == null || iceState == "failed" || iceState == "disconnected"){
 	  		console.log("Publish has stopped and will try to re-publish");
 	  		webRTCAdaptor.stop(streamId);
