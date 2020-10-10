@@ -18,7 +18,6 @@ pageEncoding="UTF-8"%>
 <script src="js/fetch.js"></script>
 <script src="js/promise.min.js"></script>
 <script src="js/fetch.stream.js"></script>
-<script src="js/webrtc_adaptor.js"></script>
 <script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
 
 <link href="css/player.css" rel="stylesheet">
@@ -52,7 +51,7 @@ pageEncoding="UTF-8"%>
 		style="position: absolute; top: 30px; left: 30px; display: none;" />
 
 
-	<script>
+	<script type="module">
     /**
     * This page accepts 4 arguments. 
     * 1. "id": the stream id to play.It is mandatory
@@ -123,9 +122,12 @@ pageEncoding="UTF-8"%>
 	   <%
 	}
 %>
+	
+	import {WebRTCAdaptor} from "./js/webrtc_adaptor.js"
 
 	var name = "<%= streamId %>";
 	var token = "<%= request.getParameter("token") %>";
+
 
 	var pAutoplay = "<%= request.getParameter("autoplay") %>";
 	var autoPlay = true;
@@ -219,7 +221,8 @@ pageEncoding="UTF-8"%>
 
 		startPlayer(name, extension, token)
 
-	}	
+	}
+	window.initializePlayer = initializePlayer	
 	
 	function startPlayer(name, extension, token) {
 		var type;
@@ -401,3 +404,4 @@ pageEncoding="UTF-8"%>
 
 </body>
 </html>
+

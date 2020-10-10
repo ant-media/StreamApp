@@ -8,7 +8,6 @@ pageEncoding="UTF-8"%>
 <meta charset="UTF-8">
 <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
 <script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
-<script src="js/webrtc_adaptor.js"></script>
 <style>
 video {
 	width: 100%;
@@ -75,11 +74,11 @@ video {
 				<video id="remoteVideo" autoplay controls playsinline ></video>
 			</div>
 			<div class="form-group col-sm-12 text-left">
-				<input type="text" class="form-control" value="stream1"
+				<input type="text" class="form-control"
 					id="streamName" placeholder="Type stream name">
 			</div>
 			<div class="col-sm-12 text-right">
-				<button type="button" class="btn btn-outline-primary btn-sm" onclick="toggleOptions()">Options</button>
+				<button type="button" id="options" class="btn btn-outline-primary btn-sm">Options</button>
 			</div>
 			<div class="form-group col-sm-12 text-left options">
 				<label>Data Channel Messages</label>
@@ -89,7 +88,7 @@ video {
 						<input type="text" class="form-control" id="dataTextbox" placeholder="Write your message to send publisher/players">
 					</div>
 					<div class="form-group col-sm-2">
-					<button type="button" class="btn btn-outline-primary btn-block" onclick="sendData()">Send</button>
+					<button type="button" id="send" class="btn btn-outline-primary btn-block">Send</button>
 					</div>
 				</div>
 				<div class="dropdown">
@@ -105,9 +104,9 @@ video {
 
 			
 				<div class="form-group">
-					<button onclick="startPlaying()" class="btn btn-primary"
+					<button class="btn btn-primary"
 						id="start_play_button">Start Playing</button>
-					<button onclick="stopPlaying()" class="btn btn-primary"
+					<button class="btn btn-primary"
 						id="stop_play_button">Stop Playing</button>
 				</div>
 				<span class="badge badge-warning" id="bitrateInfo" style="font-size:14px;display:none"
@@ -126,13 +125,27 @@ video {
 	<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"  crossorigin="anonymous"></script>	
 
 </body>
-<script>
+<script type="module">
+	import {WebRTCAdaptor} from "./js/webrtc_adaptor.js"
 
+    function init () {
+      document.getElementById("streamName").value = "stream1"
+    }
+    window.onload = init;
+
+	
 	var token = "<%= request.getParameter("token") %>";
 	var start_play_button = document.getElementById("start_play_button");
+	start_play_button.addEventListener("click", startPlaying, false)
 	var stop_play_button = document.getElementById("stop_play_button");
+	stop_play_button.addEventListener("click",stopPlaying,false);
+	var options = document.getElementById("options");
+	options.addEventListener("click", toggleOptions, false);
+	var send = document.getElementById("send");
+	send.addEventListener("click", sendData, false);
 
-	var streamNameBox = document.getElementById("streamName");
+	var streamNameBox = document.getElementById("streamName")
+	streamNameBox.defaultValue = "stream1";
 
 	var streamId;
 	
@@ -243,6 +256,7 @@ video {
 				start_play_button.disabled = true;
 				stop_play_button.disabled = false;
 				webRTCAdaptor.getStreamInfo(streamId); 
+
 			} else if (info == "play_finished") {
 				//leaved the stream
 				console.log("play finished");
@@ -335,3 +349,5 @@ video {
 	});
 </script>
 </html>
+
+

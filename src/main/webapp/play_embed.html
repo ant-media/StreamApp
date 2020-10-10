@@ -6,7 +6,6 @@ pageEncoding="UTF-8"%>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta charset="UTF-8">
 <script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
-<script src="js/webrtc_adaptor.js"></script>
 <link href="css/player.css" rel="stylesheet">
 <style>
 video {
@@ -26,7 +25,8 @@ video {
 		
 
 </body>
-<script>
+<script type="module">
+	import {WebRTCAdaptor} from "./js/webrtc_adaptor.js"
 	
     // document.getElementById("video_info").innerHTML="Stream will start playing automatically<br/>when it is live";
 
@@ -134,3 +134,4 @@ video {
 
 </script>
 </html>
+

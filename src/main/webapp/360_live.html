@@ -54,7 +54,7 @@ pageEncoding="UTF-8"%>
     <a-videosphere src="#remoteVideo" rotation="0 180 0" style="background-color: antiquewhite"></a-videosphere>
 </a-scene>
 
-	<script>
+	<script type = "module">
     /**
     * This page accepts 4 arguments. 
     * 1. "id": the stream id to play.It is mandatory
@@ -126,6 +126,7 @@ pageEncoding="UTF-8"%>
 	}
 %>
 
+	import {WebRTCAdaptor} from "./js/webrtc_adaptor.js"
 	var name = "<%= streamId %>";
 	var token = "<%= request.getParameter("token") %>";
 
