@@ -14,34 +14,59 @@ if (!String.prototype.endsWith)
 }
 
 function tryToHLSPlay(name, token, noStreamCallback) {
-	fetch("streams/"+ name +"_adaptive.m3u8", {method:'HEAD'})
-	.then(function(response) {
-		if (response.status == 200) {
-			// adaptive m3u8 exists,play it
-			initializePlayer(name+"_adaptive", "m3u8", token);
-		}
-		else 
-		{
-			//adaptive m3u8 not exists, try m3u8 exists.
-			fetch("streams/"+ name +".m3u8", {method:'HEAD'})
-			.then(function(response) {
-				if (response.status == 200) {
-					//m3u8 exists, play it
-					initializePlayer(name, "m3u8", token);
-				}
-				else {
-					console.log("No stream found");
-					if (typeof noStreamCallback != "undefined") {
-							noStreamCallback();
-						}
+	
+	fetch(loadDistributer+"/edge.php", { mode: "cors" })
+	.then(function (response){
+	     if (response.status == 200) {
+	         //make serverAddr global
+	         return response.text();
+	     }
+	     else {
+	    	 if (typeof noStreamCallback != "undefined") {
+					noStreamCallback();
+			 } 
+	     }
+	 }).then(function (data) {
+		serverAddr = data;
+		fetch("http://"+serverAddr+":5080/"+appName+"/streams/"+ name +"_adaptive.m3u8", {method:'HEAD'})
+		.then(function(response) {
+			if (response.status == 200) {
+				// adaptive m3u8 exists,play it
+				initializePlayer(name+"_adaptive", "m3u8", token);
+			}
+			else 
+			{
+				//adaptive m3u8 not exists, try m3u8 exists.
+				fetch("http://"+serverAddr+":5080/"+appName+"/streams/"+ name +".m3u8", {method:'HEAD'})
+				.then(function(response) {
+					if (response.status == 200) {
+						//m3u8 exists, play it
+						initializePlayer(name, "m3u8", token);
 					}
-			}).catch(function(err) {
-				console.log("Error: " + err);
-			});
-		}
-	}).catch(function(err) {
-		console.log("Error: " + err);
-	});
+					else {
+						console.log("No stream found");
+						if (typeof noStreamCallback != "undefined") {
+								noStreamCallback();
+							}
+						}
+				}).catch(function(err) {
+					console.log("Error: " + err);
+				});
+			}
+		}).catch(function(err) {
+			console.log("Error: " + err);
+			if (typeof noStreamCallback != "undefined") {
+				noStreamCallback();
+		    } 
+		});   
+	 })
+	 .catch(function(err){
+	   console.log("Error: " + err);
+	   if (typeof noStreamCallback != "undefined") {
+			noStreamCallback();
+	   } 
+	 });
+	
 
 }
 

@@ -81,27 +81,37 @@ video {
 			</div>
 			<div class="form-group col-sm-12 text-left options">
 				
+				<label class=" mr-2" for="inlineFormCustomSelectPref">Max Video Bitrate(Kbps):</label>
+				<div class="form-inline">
+					<input type="text" class="form-control  mr-sm-2"
+							id="maxBandwidthTextBox" name="maxBandwidthTextBox" >
+				  
+					<button type="button" class="btn btn-outline-primary btn-sm" id="max_bandwidth_apply" >Apply</button>
+				</div>
+				<div class="dropdown-divider"></div>
 				<legend class="col-form-label video-source-legend">Video Source</legend>
 	
 				<div class="form-check form-check-inline">	
 					<input class="form-check-input video-source" disabled name="videoSource" type="radio" value="screen" 
 					id="screen_share_checkbox">
-					<label class="form-check-label" for="screen_share_checkbox" style="font-weight:normal">
+					<label class="form-check-label font-weight-light" for="screen_share_checkbox" style="font-weight:normal">
 							Screen
 					</label>
 				</div>
+				
 				<div class="form-check form-check-inline">
 					<input class="form-check-input video-source" disabled name="videoSource" type="radio" value="screen+camera" 
 						id="screen_share_with_camera_checkbox">
-					<label class="form-check-label" for="screen_share_with_camera_checkbox" style="font-weight:normal">
+					<label class="form-check-label font-weight-light" for="screen_share_with_camera_checkbox" style="font-weight:normal">
 							Screen with Camera
 					</label>
 						<a id="browser_screen_share_doesnt_support" href="https://caniuse.com/#search=getDisplayMedia">Your browser doesn't support screen share. You can see supported browsers in this link </a>
 				</div>
-				
+				<div class="dropdown-divider"></div>
 				<legend class="col-form-label audio-source-legend">Audio Source</legend>
 				
 			</div>	
+			<div class="dropdown-divider"></div>
 			<div class="form-group col-sm-12 text-left options">
 				<label>Data Channel Messages</label>
 				<textarea class="form-control" id="dataMessagesTextarea" style="font-size:10px" rows="8"></textarea>
@@ -125,6 +135,27 @@ video {
 
 				<span class="badge badge-success" id="broadcastingInfo" style="font-size:14px;display:none"
 							style="display: none">Publishing</span>
+				<div class="dropdown-divider"></div>			
+				<div class="col-sm-10 offset-sm-1" id="stats_panel" style="display: none;">
+					<div class="row text-muted text-left">
+					  <div class="col-sm-6">
+						<small>
+						 <div>Average Bitrate(Kbps): <span id="average_bit_rate"></span></div>
+						 <div>Latest Bitrate(Kbps): <span id="latest_bit_rate"></span></div>
+						 <div>PacketsLost: <span id="packet_lost_text"></span></div>
+						 <div>Jitter(Secs): <span id="jitter_text"></span></div>
+						</small>
+					  </div>
+					  <div class="col-sm-6">
+						<small>
+						<div>Round Trip Time(Secs): <span id="round_trip_time"></span></div>
+						<div>Source WidthxHeight: <span id="source_width"></span> x <span id="source_height"></span></div>
+						<div>On-going WidthxHeight: <span id="ongoing_width"></span> x <span id="ongoing_height"></span></div>
+						</small>
+					  </div>
+					</div>
+				  </div>
+				
 
 		</div>
 		<footer class="footer text-center">
@@ -135,16 +166,37 @@ video {
 	<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" crossorigin="anonymous"></script>
 	<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"  crossorigin="anonymous"></script>	
 </body>
-<script type="module">
+<script type="module" lang="javascript">
 	import {WebRTCAdaptor} from "./js/webrtc_adaptor.js"
      
 	var token = "<%= request.getParameter("token") %>";
 
     function init () {
-      document.getElementById("streamName").value = "stream1"
+	  $("#streamName").val("stream1");
+	  $("#maxBandwidthTextBox").val(maxVideoBitrateKbps);
+	  $("#max_bandwidth_apply").click(function() {
+		var bitrate = parseInt($("#maxBandwidthTextBox").val());
+		if (bitrate == NaN || bitrate < 100 || bitrate > 2500) {
+			maxVideoBitrateKbps = 900;
+		}
+		else {
+			maxVideoBitrateKbps = bitrate;
+		}
+		console.log("input bitrate: " + maxVideoBitrateKbps);
+		$("#maxBandwidthTextBox").val(maxVideoBitrateKbps)
+		if (webRTCAdaptor != null) {
+			webRTCAdaptor.changeBandwidth(maxVideoBitrateKbps,  $("#streamName").val());
+		}
+	  })
     }
-    window.onload = init;
+	$(function() {
+		init();
 
+	});
+
+	var maxVideoBitrateKbps = 900;
+
+	//TODO: Migrate these methods to Jquery
 	var start_publish_button = document.getElementById("start_publish_button");
 	start_publish_button.addEventListener("click", startPublishing, false);
 	var stop_publish_button = document.getElementById("stop_publish_button");
@@ -225,7 +277,7 @@ video {
 	function getCameraRadioButton(deviceName, deviceId) {
 		return "<div class=\"form-check form-check-inline\">" + 	
 							"<input class=\"form-check-input video-source\" name=\"videoSource\" type=\"radio\" value=\"" + deviceId + "\" id=\"" + deviceId + "\">" +
-							"<label class=\"form-check-label\" for=\"" + deviceId + "\" style=\"font-weight:normal\">" +
+							"<label class=\"form-check-label font-weight-light\" for=\"" + deviceId + "\" style=\"font-weight:normal\">" +
 								deviceName +
 							"</label>" +		
 						   "</div>";
@@ -234,7 +286,7 @@ video {
 	function getAudioRadioButton(deviceName, deviceId) {
 		return "<div class=\"form-check form-check-inline\">" + 	
 							"<input class=\"form-check-input audio-source\" name=\"audioSource\" type=\"radio\" value=\"" + deviceId + "\" id=\"" + deviceId + "\">" +
-							"<label class=\"form-check-label\" for=\"" + deviceId + "\" style=\"font-weight:normal\">" +
+							"<label class=\"form-check-label font-weight-light\" for=\"" + deviceId + "\" style=\"font-weight:normal\">" +
 								deviceName +
 							"</label>" +		
 						   "</div>";
@@ -336,7 +388,7 @@ video {
 				sdp_constraints : sdpConstraints,
 				localVideoId : "localVideo",
 				debug:true,
-				bandwidth:900,
+				bandwidth:maxVideoBitrateKbps,
 				callback : (info, obj) => {
 					if (info == "initialized") {
 						console.log("initialized");
@@ -357,13 +409,14 @@ video {
 							autoRepublishIntervalJob = setInterval(() => {
 								checkAndRepublishIfRequired();
 							}, 3000);
-							
 						}
+						webRTCAdaptor.enableStats(obj.streamId);
 					} else if (info == "publish_finished") {
 						//stream is being finished
 						console.log("publish finished");
 						start_publish_button.disabled = false;
 						stop_publish_button.disabled = true;
+						$("#stats_panel").hide();
 					}
 					else if (info == "browser_screen_share_supported") {
 						$(".video-source").prop("disabled", false);
@@ -397,7 +450,25 @@ video {
 						 //averageOutgoingBitrate - kbits/sec
 						//currentOutgoingBitrate - kbits/sec
 						console.log("Average outgoing bitrate " + obj.averageOutgoingBitrate + " kbits/sec"
-								+ " Current outgoing bitrate: " + obj.currentOutgoingBitrate + " kbits/sec");
+								+ " Current outgoing bitrate: " + obj.currentOutgoingBitrate + " kbits/sec"
+								+ " video source width: " + obj.resWidth + " video source height: " + obj.resHeight
+								+ "frame width: " + obj.frameWidth + " frame height: " + obj.frameHeight
+								+ " video packetLost: "  + obj.videoPacketsLost + " audio packetsLost: " + obj.audioPacketsLost
+								+ " video RTT: " + obj.videoRoundTripTime + " audio RTT: " + obj.audioRoundTripTime 
+								+ " video jitter: " + obj.videoJitter + " audio jitter: " + obj.audioJitter);
+
+						$("#average_bit_rate").text(obj.averageOutgoingBitrate);
+						$("#latest_bit_rate").text(obj.currentOutgoingBitrate);		
+						$("#packet_lost_text").text(parseInt(obj.videoPacketsLost) + parseInt(obj.audioPacketsLost));		
+						$("#jitter_text").text(((parseFloat(obj.videoJitter) + parseInt(obj.audioJitter)) / 2).toPrecision(3));
+
+						$("#round_trip_time").text(((parseFloat(obj.videoRoundTripTime) + parseInt(obj.audioRoundTripTime)) / 2).toPrecision(3));
+						$("#source_width").text(obj.resWidth);
+						$("#source_height").text(obj.resHeight);
+						$("#ongoing_width").text(obj.frameWidth);
+						$("#ongoing_height").text(obj.frameHeight);	
+
+						$("#stats_panel").show();
 	
 					}
 					else if (info == "data_received") {
