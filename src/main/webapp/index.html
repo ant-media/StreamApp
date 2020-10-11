@@ -151,6 +151,8 @@ video {
 						<div>Round Trip Time(Secs): <span id="round_trip_time"></span></div>
 						<div>Source WidthxHeight: <span id="source_width"></span> x <span id="source_height"></span></div>
 						<div>On-going WidthxHeight: <span id="ongoing_width"></span> x <span id="ongoing_height"></span></div>
+						<div>On-going FPS: <span id="on_going_fps"></span></div>
+						
 						</small>
 					  </div>
 					</div>
@@ -461,12 +463,13 @@ video {
 						$("#latest_bit_rate").text(obj.currentOutgoingBitrate);		
 						$("#packet_lost_text").text(parseInt(obj.videoPacketsLost) + parseInt(obj.audioPacketsLost));		
 						$("#jitter_text").text(((parseFloat(obj.videoJitter) + parseInt(obj.audioJitter)) / 2).toPrecision(3));
-
 						$("#round_trip_time").text(((parseFloat(obj.videoRoundTripTime) + parseInt(obj.audioRoundTripTime)) / 2).toPrecision(3));
+						
 						$("#source_width").text(obj.resWidth);
 						$("#source_height").text(obj.resHeight);
 						$("#ongoing_width").text(obj.frameWidth);
 						$("#ongoing_height").text(obj.frameHeight);	
+						$("#on_going_fps").text(obj.currentFPS);
 
 						$("#stats_panel").show();
 	
