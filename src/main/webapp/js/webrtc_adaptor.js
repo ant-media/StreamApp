@@ -146,6 +146,11 @@ export class WebRTCAdaptor
 			else{
 				this.updateVideoTrack(canvasStream,streamId,this.mediaConstraints,onended,null);
 			}
+			if (onEndedCallback != null) {
+				stream.getVideoTracks()[0].onended = function(event) {
+					onEndedCallback(event);
+				}
+			}
 
 			//update the canvas
 			setInterval(() => {
@@ -170,6 +175,28 @@ export class WebRTCAdaptor
 				canvasContext.drawImage(cameraVideo, positionX, positionY, cameraWidth, cameraHeight);
 			}, 66);
 		}, true)
+	}
+	getDevices(){
+		navigator.mediaDevices.enumerateDevices().then(devices => {
+			let deviceArray = new Array();
+			let checkAudio = false
+			devices.forEach(device => {	
+				if (device.kind == "audioinput" || device.kind == "videoinput") {
+					deviceArray.push(device);
+					if(device.kind=="audioinput"){
+						checkAudio = true;
+					}
+				}
+			});
+			this.callback("available_devices", deviceArray);
+			if(checkAudio == false && this.localStream == null){
+				console.log("Audio input not found")
+				console.log("Retrying to get user media without audio")
+				this.openStream({video : true, audio : false}, this.mode)
+			}
+		}).catch(err => {
+			console.error("Cannot get devices -> error name: " + err.name + ": " + err.message);
+		});
 	}
 
 	prepareStreamTracks(mediaConstraints,audioConstraint,stream,streamId) 
@@ -213,7 +240,9 @@ export class WebRTCAdaptor
 					}
 				}
 				else{
-					stream.addTrack(audioStream.getAudioTracks()[0]);
+					if(audioConstraint != false && audioConstraint != undefined){
+						stream.addTrack(audioStream.getAudioTracks()[0]);
+					}
 					this.gotStream(stream);
 				}
 			}, true)
@@ -230,7 +259,11 @@ export class WebRTCAdaptor
 	{
 		if( catch_error == true){
 		navigator.mediaDevices.getUserMedia(mediaConstraints).then(func).catch(error => {
-			this.callbackError(error.name, error.message);
+			if (error.name == "NotFoundError"){
+				this.getDevices()
+			}else{
+				this.callbackError(error.name, error.message);
+			}
 			});
 		}else {
 			navigator.mediaDevices.getUserMedia(mediaConstraints).then(func)
@@ -499,21 +532,7 @@ export class WebRTCAdaptor
 		if (this.webSocketAdaptor == null || this.webSocketAdaptor.isConnected() == false) {
 			this.webSocketAdaptor = new WebSocketAdaptor({websocket_url : this.websocket_url, webrtcadaptor : this, callback : this.callback, callbackError : this.callbackError})
 		}
-
-		navigator.mediaDevices.enumerateDevices().then(devices => {
-			let deviceArray = new Array();
-
-			devices.forEach(function(device) {	
-				if (device.kind == "audioinput" || device.kind == "videoinput") {
-					deviceArray.push(device);
-				}
-			});
-
-			this.callback("available_devices", deviceArray);
-
-		}).catch(err => {
-			console.error("Cannot get devices -> error name: " + err.name + ": " + err.message);
-		});
+		this.getDevices()
 	};
 	switchDesktopCapture(streamId){
 		this.publishMode = "screen";
