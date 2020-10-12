@@ -1258,18 +1258,33 @@ export class WebRTCAdaptor
 
 			var audioRoundTripTime = 0;
 			var audioJitter = 0;
+			
+			var framesDecoded = 0;
+			var framesDropped = 0;
+			var framesReceived = 0;
+			
+			var audioJitterAverageDelay = 0;
+	        var videoJitterAverageDelay = 0;
 
 
 			stats.forEach(value => {
 
 				//console.log(value);
 
-				if (value.type == "inbound-rtp")
+				if (value.type == "inbound-rtp" && typeof value.kind != "undefined")
 				{
 					bytesReceived += value.bytesReceived;
-					packetsLost += value.packetsLost;
+					if (value.kind == "audio") {
+						audioPacketsLost = value.packetsLost;
+					}
+					else if (value.kind == "video") {
+						videoPacketsLost = value.packetsLost;
+					}
+
 					fractionLost += value.fractionLost;
 					currentTime = value.timestamp;
+					
+					
 				}
 				else if (value.type == "outbound-rtp")
 				{//TODO: SPLIT AUDIO AND VIDEO BITRATES
@@ -1284,6 +1299,10 @@ export class WebRTCAdaptor
 					if (typeof value.audioLevel != "undefined") {
 						audioLevel = value.audioLevel;
 					}
+					
+					if (typeof value.jitterBufferDelay != "undefined" && typeof value.jitterBufferEmittedCount != "undefined") {
+						audioJitterAverageDelay = value.jitterBufferDelay/value.jitterBufferEmittedCount;
+					}
 				}
 				else if (value.type == "track" && typeof value.kind != "undefined" && value.kind == "video") 
 				{
@@ -1292,6 +1311,22 @@ export class WebRTCAdaptor
 					}
 					if (typeof value.frameHeight != "undefined") {
 						frameHeight = value.frameHeight;
+					}
+					
+					if (typeof value.framesDecoded != "undefined") {
+						framesDecoded = value.framesDecoded ;
+					}
+					
+					if (typeof value.framesDropped != "undefined") {
+						framesDropped = value.framesDropped;
+					}
+					
+					if (typeof value.framesReceived != "undefined") {
+						framesReceived = value.framesReceived;
+					}
+					
+					if (typeof value.jitterBufferDelay != "undefined" && typeof value.jitterBufferEmittedCount != "undefined") {
+						videoJitterAverageDelay = value.jitterBufferDelay/value.jitterBufferEmittedCount;
 					}
 				}
 				else if (value.type == "remote-inbound-rtp" && typeof value.kind != "undefined") {
@@ -1353,6 +1388,12 @@ export class WebRTCAdaptor
 			this.remotePeerConnectionStats[streamId].videoJitter = videoJitter;
 			this.remotePeerConnectionStats[streamId].audioRoundTripTime = audioRoundTripTime;
 			this.remotePeerConnectionStats[streamId].audioJitter = audioJitter;
+			this.remotePeerConnectionStats[streamId].framesDecoded = framesDecoded;
+			this.remotePeerConnectionStats[streamId].framesDropped = framesDropped;
+			this.remotePeerConnectionStats[streamId].framesReceived = framesReceived;
+			
+			this.remotePeerConnectionStats[streamId].videoJitterAverageDelay = videoJitterAverageDelay;
+			this.remotePeerConnectionStats[streamId].audioJitterAverageDelay = audioJitterAverageDelay;
 
 
 			this.callback("updated_stats", this.remotePeerConnectionStats[streamId]);
