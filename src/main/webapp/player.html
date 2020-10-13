@@ -115,20 +115,20 @@ video {
 					<div class="row text-muted text-left">
 						<div class="col-sm-6">
 						<small>
-							<div>Average Bitrate(Kbps): <span id="average_bit_rate"></span></div>
-							<div>Latest Bitrate(Kbps): <span id="latest_bit_rate"></span></div>
-							<div>PacketsLost: <span id="packet_lost_text"></span></div>
-							<div>Jitter Average Delay(Secs): <span id="jitter_text"></span></div>
-							<div>Audio Level: <span id="audio_level"></span></div>
+							<div id="average_bit_rate_container">Average Bitrate(Kbps): <span id="average_bit_rate"></span></div>
+							<div id="latest_bit_rate_container">Latest Bitrate(Kbps): <span id="latest_bit_rate"></span></div>
+							<div id="packet_lost_container">PacketsLost: <span id="packet_lost_text"></span></div>
+							<div id="jitter_container">Jitter Average Delay(Secs): <span id="jitter_text"></span></div>
+							<div id="audio_level_container">Audio Level: <span id="audio_level"></span></div>
 							
 						</small>
 						</div>
 						<div class="col-sm-6">
 						<small>
-						<div>Frame WidthxHeight: <span id="frame_width"></span>x<span id="frame_height"></span></div>
-						<div>Frames Decoded: <span id="frame_decoded"></span></div>
-						<div>Frames Dropped: <span id="frame_dropped"></span></div>
-						<div>Frames Received: <span id="frame_received"></span></div>
+						<div id="incoming_resolution_container">Frame WidthxHeight: <span id="frame_width"></span>x<span id="frame_height"></span></div>
+						<div id="frame_decoded_container">Frames Decoded: <span id="frame_decoded"></span></div>
+						<div id="frame_dropped_container">Frames Dropped: <span id="frame_dropped"></span></div>
+						<div id="frame_received_container">Frames Received: <span id="frame_received"></span></div>
 						</small>
 						</div>
 					</div>
@@ -345,16 +345,77 @@ video {
 				//fractionLost - fraction of packet lost
 
 				$("#average_bit_rate").text(obj.averageIncomingBitrate);
-				$("#latest_bit_rate").text(obj.currentIncomingBitrate);		
-				$("#packet_lost_text").text(parseInt(obj.videoPacketsLost) + parseInt(obj.audioPacketsLost));		
-				$("#jitter_text").text(((parseFloat(obj.videoJitterAverageDelay) + parseFloat(obj.audioJitterAverageDelay)) / 2).toPrecision(3));
-				$("#audio_level").text(obj.audioLevel.toPrecision(3));
+				if (obj.averageIncomingBitrate > 0)  {
+					$("#average_bit_rate_container").show();
+				}
+				else {
+					$("#average_bit_rate_container").hide();
+				}
+				$("#latest_bit_rate").text(obj.currentIncomingBitrate);	
+				if (obj.currentIncomingBitrate > 0) {
+					$("#latest_bit_rate_container").show();
+				}
+				else {
+					$("#latest_bit_rate_container").hide();
+				}
 
+				var packetLost = parseInt(obj.videoPacketsLost) + parseInt(obj.audioPacketsLost);	
+				$("#packet_lost_text").text(packetLost);
+				if (packetLost > -1) {
+					$("#packet_lost_container").show();
+				}
+				else {
+					$("#packet_lost_container").hide();
+				}
+
+				var jitterAverageDelay = ((parseFloat(obj.videoJitterAverageDelay) + parseFloat(obj.audioJitterAverageDelay)) / 2).toPrecision(3);
+				$("#jitter_text").text(jitterAverageDelay);
+				if (jitterAverageDelay > 0) {
+					$("#jitter_container").show();
+				}
+				else {
+					$("#jitter_container").hide();
+				}
+
+				$("#audio_level").text(obj.audioLevel.toPrecision(3));
+				if (obj.audioLevel > -1) {
+					$("#audio_level_container").show();
+				}
+				else {
+					$("#audio_level_container").hide();
+				}
+
+				
 				$("#frame_width").text(obj.frameWidth);
 				$("#frame_height").text(obj.frameHeight);
+				if (obj.frameWidth > 0 && obj.frameHeight > 0) {
+					$("#incoming_resolution_container").show();
+				}
+				else {
+					$("#incoming_resolution_container").hide();
+				}
 				$("#frame_received").text(obj.framesReceived);	
+				if (obj.framesReceived > -1) {
+					$("#frame_received_container").show();	
+				}
+				else {
+					$("#frame_received_container").hide();
+				}
+
 				$("#frame_decoded").text(obj.framesDecoded);
+				if (obj.framesDecoded > -1) {
+					$("#frame_decoded_container").show();	
+				}
+				else {
+					$("#frame_decoded_container").hide();
+				}
 				$("#frame_dropped").text(obj.framesDropped);
+				if (obj.framesDropped > -1) {
+					$("#frame_dropped_container").show();	
+				}
+				else {
+					$("#frame_dropped_container").hide();
+				}
 
 				$("#stats_panel").show();
 				

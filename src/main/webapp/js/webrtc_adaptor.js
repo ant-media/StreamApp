@@ -1258,32 +1258,32 @@ export class WebRTCAdaptor
 
 		this.remotePeerConnection[streamId].getStats(null).then(stats =>
 		{
-			var bytesReceived = 0;
-			var videoPacketsLost = 0;
-			var audioPacketsLost = 0;
-			var fractionLost = 0;
-			var currentTime = 0;
-			var bytesSent = 0;
+			var bytesReceived = -1;
+			var videoPacketsLost = -1;
+			var audioPacketsLost = -1;
+			var fractionLost = -1;
+			var currentTime = -1;
+			var bytesSent = -1;
 			var audioLevel = -1;
 			var qlr = "";
-			var framesEncoded = 0;
-			var width = 0;
-			var height = 0;
-			var fps = 0;
-			var frameWidth = 0;
-			var frameHeight = 0;
-			var videoRoundTripTime = 0;
-			var videoJitter = 0;
+			var framesEncoded = -1;
+			var width = -1;
+			var height = -1;
+			var fps = -1;
+			var frameWidth = -1;
+			var frameHeight = -1;
+			var videoRoundTripTime = -1;
+			var videoJitter = -1;
 
-			var audioRoundTripTime = 0;
-			var audioJitter = 0;
+			var audioRoundTripTime = -1;
+			var audioJitter = -1;
 			
-			var framesDecoded = 0;
-			var framesDropped = 0;
-			var framesReceived = 0;
+			var framesDecoded = -1;
+			var framesDropped = -1;
+			var framesReceived = -1;
 			
-			var audioJitterAverageDelay = 0;
-	        var videoJitterAverageDelay = 0;
+			var audioJitterAverageDelay = -1;
+	        var videoJitterAverageDelay = -1;
 
 
 			stats.forEach(value => {
