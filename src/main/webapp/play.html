@@ -47,6 +47,7 @@ pageEncoding="UTF-8"%>
 
 	<!-- WebRTC Player -->
 	<video id="remoteVideo" autoplay controls playsinline muted></video>
+	<div id="networkWarning">Your connection isn't fast enough to play this stream!</div>
 	<img id="play_button" src="images/play.png" onclick="playWebRTCVideo()"
 		style="position: absolute; top: 30px; left: 30px; display: none;" />
 
@@ -336,6 +337,21 @@ pageEncoding="UTF-8"%>
 					if (typeof description != "undefined") {
 						console.log("Connecton closed: " + JSON.stringify(description));
 					}
+				}
+				else if (info == "bitrateMeasurement") {
+
+					console.debug(description);	
+					if(description.audioBitrate + description.videoBitrate > description.targetBitrate) 
+					{
+						document.getElementById("networkWarning").style.display = "block";
+						setTimeout(function() {
+							document.getElementById("networkWarning").style.display = "none";
+						}, 3000);
+					}
+					
+
+					
+					
 				}
 
 			},

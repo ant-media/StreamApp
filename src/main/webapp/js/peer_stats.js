@@ -4,7 +4,7 @@ export class PeerStats {
         this.streamId = streamId;
         this.totalBytesReceivedCount = 0;
         this.totalBytesSent = 0;
-        this.packetsLost = 0;
+        this.videoPacketsLost = 0;
         this.fractionLost = 0;
         this.startTime = 0;
         this.lastFramesEncoded = 0;
@@ -18,9 +18,28 @@ export class PeerStats {
         this.firstBytesReceivedCount = 0;
         this.audioLevel = -1;
         this.qualityLimitationReason = "";
+        //res width and res height are video source resolutions
         this.resWidth = 0;
         this.resHeight = 0;
         this.srcFps = 0;
+        //frameWidth and frameHeight are the resolutions of the sent video
+        this.frameWidth = 0;
+        this.frameHeight = 0;
+
+        this.videoRoundTripTime = 0;
+        this.videoJitter = 0;
+
+        this.audioRoundTripTime = 0;
+        this.audioJitter = 0;
+
+        this.audioPacketsLost = 0;
+
+        this.framesReceived = 0;
+        this.framesDropped = 0;
+        this.framesDecoded = 0;
+
+        this.audioJitterAverageDelay = 0;
+        this.videoJitterAverageDelay = 0;
     }
 
     //kbits/sec

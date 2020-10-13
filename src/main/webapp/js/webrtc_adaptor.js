@@ -3,8 +3,8 @@
  * @returns
  */
 
-import {PeerStats} from "./PeerStats.js"
-import {WebSocketAdaptor} from "./WebSocketAdaptor.js"
+import {PeerStats} from "./peer_stats.js"
+import {WebSocketAdaptor} from "./websocket_adaptor.js"
 
 export class WebRTCAdaptor
 {
@@ -146,6 +146,11 @@ export class WebRTCAdaptor
 			else{
 				this.updateVideoTrack(canvasStream,streamId,this.mediaConstraints,onended,null);
 			}
+			if (onEndedCallback != null) {
+				stream.getVideoTracks()[0].onended = function(event) {
+					onEndedCallback(event);
+				}
+			}
 
 			//update the canvas
 			setInterval(() => {
@@ -170,6 +175,28 @@ export class WebRTCAdaptor
 				canvasContext.drawImage(cameraVideo, positionX, positionY, cameraWidth, cameraHeight);
 			}, 66);
 		}, true)
+	}
+	getDevices(){
+		navigator.mediaDevices.enumerateDevices().then(devices => {
+			let deviceArray = new Array();
+			let checkAudio = false
+			devices.forEach(device => {	
+				if (device.kind == "audioinput" || device.kind == "videoinput") {
+					deviceArray.push(device);
+					if(device.kind=="audioinput"){
+						checkAudio = true;
+					}
+				}
+			});
+			this.callback("available_devices", deviceArray);
+			if(checkAudio == false && this.localStream == null){
+				console.log("Audio input not found")
+				console.log("Retrying to get user media without audio")
+				this.openStream({video : true, audio : false}, this.mode)
+			}
+		}).catch(err => {
+			console.error("Cannot get devices -> error name: " + err.name + ": " + err.message);
+		});
 	}
 
 	prepareStreamTracks(mediaConstraints,audioConstraint,stream,streamId) 
@@ -213,7 +240,9 @@ export class WebRTCAdaptor
 					}
 				}
 				else{
-					stream.addTrack(audioStream.getAudioTracks()[0]);
+					if(audioConstraint != false && audioConstraint != undefined){
+						stream.addTrack(audioStream.getAudioTracks()[0]);
+					}
 					this.gotStream(stream);
 				}
 			}, true)
@@ -230,7 +259,11 @@ export class WebRTCAdaptor
 	{
 		if( catch_error == true){
 		navigator.mediaDevices.getUserMedia(mediaConstraints).then(func).catch(error => {
-			this.callbackError(error.name, error.message);
+			if (error.name == "NotFoundError"){
+				this.getDevices()
+			}else{
+				this.callbackError(error.name, error.message);
+			}
 			});
 		}else {
 			navigator.mediaDevices.getUserMedia(mediaConstraints).then(func)
@@ -499,21 +532,7 @@ export class WebRTCAdaptor
 		if (this.webSocketAdaptor == null || this.webSocketAdaptor.isConnected() == false) {
 			this.webSocketAdaptor = new WebSocketAdaptor({websocket_url : this.websocket_url, webrtcadaptor : this, callback : this.callback, callbackError : this.callbackError})
 		}
-
-		navigator.mediaDevices.enumerateDevices().then(devices => {
-			let deviceArray = new Array();
-
-			devices.forEach(function(device) {	
-				if (device.kind == "audioinput" || device.kind == "videoinput") {
-					deviceArray.push(device);
-				}
-			});
-
-			this.callback("available_devices", deviceArray);
-
-		}).catch(err => {
-			console.error("Cannot get devices -> error name: " + err.name + ": " + err.message);
-		});
+		this.getDevices()
 	};
 	switchDesktopCapture(streamId){
 		this.publishMode = "screen";
@@ -1186,12 +1205,14 @@ export class WebRTCAdaptor
 						'RTCRtpSender' in window &&
 						'setParameters' in window.RTCRtpSender.prototype)
 		{
-			const senders = this.remotePeerConnection[streamId].getSenders();
+			if (this.remotePeerConnection[streamId] != null) {
+				const senders = this.remotePeerConnection[streamId].getSenders();
 
-			for (let i = 0; i < senders.length; i++) {
-				if (senders[i].track != null && senders[i].track.kind == "video") {
-					videoSender = senders[i];
-					break;
+				for (let i = 0; i < senders.length; i++) {
+					if (senders[i].track != null && senders[i].track.kind == "video") {
+						videoSender = senders[i];
+						break;
+					}
 				}
 			}
 
@@ -1225,7 +1246,7 @@ export class WebRTCAdaptor
 			return videoSender.setParameters(parameters)
 		}
 		else {
-			errorDefinition = "Video sender not found to change bandwidth";
+			errorDefinition = "Video sender not found to change bandwidth. Streaming may not be active";
 		}
 
 		return Promise.reject(errorDefinition);
@@ -1237,26 +1258,52 @@ export class WebRTCAdaptor
 
 		this.remotePeerConnection[streamId].getStats(null).then(stats =>
 		{
-			var bytesReceived = 0;
-			var packetsLost = 0;
-			var fractionLost = 0;
-			var currentTime = 0;
-			var bytesSent = 0;
+			var bytesReceived = -1;
+			var videoPacketsLost = -1;
+			var audioPacketsLost = -1;
+			var fractionLost = -1;
+			var currentTime = -1;
+			var bytesSent = -1;
 			var audioLevel = -1;
 			var qlr = "";
-			var framesEncoded = 0;
-			var width = 0;
-			var height = 0;
-			var fps = 0;
+			var framesEncoded = -1;
+			var width = -1;
+			var height = -1;
+			var fps = -1;
+			var frameWidth = -1;
+			var frameHeight = -1;
+			var videoRoundTripTime = -1;
+			var videoJitter = -1;
+
+			var audioRoundTripTime = -1;
+			var audioJitter = -1;
+			
+			var framesDecoded = -1;
+			var framesDropped = -1;
+			var framesReceived = -1;
+			
+			var audioJitterAverageDelay = -1;
+	        var videoJitterAverageDelay = -1;
+
 
 			stats.forEach(value => {
 
-				if (value.type == "inbound-rtp")
+				//console.log(value);
+
+				if (value.type == "inbound-rtp" && typeof value.kind != "undefined")
 				{
 					bytesReceived += value.bytesReceived;
-					packetsLost += value.packetsLost;
+					if (value.kind == "audio") {
+						audioPacketsLost = value.packetsLost;
+					}
+					else if (value.kind == "video") {
+						videoPacketsLost = value.packetsLost;
+					}
+
 					fractionLost += value.fractionLost;
 					currentTime = value.timestamp;
+					
+					
 				}
 				else if (value.type == "outbound-rtp")
 				{//TODO: SPLIT AUDIO AND VIDEO BITRATES
@@ -1271,6 +1318,66 @@ export class WebRTCAdaptor
 					if (typeof value.audioLevel != "undefined") {
 						audioLevel = value.audioLevel;
 					}
+					
+					if (typeof value.jitterBufferDelay != "undefined" && typeof value.jitterBufferEmittedCount != "undefined") {
+						audioJitterAverageDelay = value.jitterBufferDelay/value.jitterBufferEmittedCount;
+					}
+				}
+				else if (value.type == "track" && typeof value.kind != "undefined" && value.kind == "video") 
+				{
+					if (typeof value.frameWidth != "undefined") {
+						frameWidth = value.frameWidth;
+					}
+					if (typeof value.frameHeight != "undefined") {
+						frameHeight = value.frameHeight;
+					}
+					
+					if (typeof value.framesDecoded != "undefined") {
+						framesDecoded = value.framesDecoded ;
+					}
+					
+					if (typeof value.framesDropped != "undefined") {
+						framesDropped = value.framesDropped;
+					}
+					
+					if (typeof value.framesReceived != "undefined") {
+						framesReceived = value.framesReceived;
+					}
+					
+					if (typeof value.jitterBufferDelay != "undefined" && typeof value.jitterBufferEmittedCount != "undefined") {
+						videoJitterAverageDelay = value.jitterBufferDelay/value.jitterBufferEmittedCount;
+					}
+				}
+				else if (value.type == "remote-inbound-rtp" && typeof value.kind != "undefined") {
+
+					if (typeof value.packetsLost != "undefined") {
+						if (value.kind == "video") {
+							//this is the packetsLost for publishing
+							videoPacketsLost = value.packetsLost;
+						}
+						else if (value.kind == "audio") {
+							//this is the packetsLost for publishing
+							audioPacketsLost = value.packetsLost;
+						}
+					}
+
+					if (typeof value.roundTripTime != "undefined") {
+						if (value.kind == "video") {
+							videoRoundTripTime = value.roundTripTime;
+						}
+						else if (value.kind == "audio") {
+							audioRoundTripTime = value.roundTripTime;
+						}
+					}
+
+					if (typeof value.jitter != "undefined") {
+						if (value.kind == "video") {
+							videoJitter = value.jitter;
+						}
+						else if (value.kind == "audio") {
+							audioJitter = value.jitter;
+						}
+					}
 				}
 				else if (value.type == "media-source")
 				{
@@ -1283,7 +1390,8 @@ export class WebRTCAdaptor
 			});
 
 			this.remotePeerConnectionStats[streamId].totalBytesReceived = bytesReceived;
-			this.remotePeerConnectionStats[streamId].packetsLost = packetsLost;
+			this.remotePeerConnectionStats[streamId].videoPacketsLost = videoPacketsLost;
+			this.remotePeerConnectionStats[streamId].audioPacketsLost = audioPacketsLost;
 			this.remotePeerConnectionStats[streamId].fractionLost = fractionLost;
 			this.remotePeerConnectionStats[streamId].currentTime = currentTime;
 			this.remotePeerConnectionStats[streamId].totalBytesSent = bytesSent;
@@ -1293,6 +1401,19 @@ export class WebRTCAdaptor
 			this.remotePeerConnectionStats[streamId].resWidth = width;
 			this.remotePeerConnectionStats[streamId].resHeight = height;
 			this.remotePeerConnectionStats[streamId].srcFps = fps;
+			this.remotePeerConnectionStats[streamId].frameWidth = frameWidth;
+			this.remotePeerConnectionStats[streamId].frameHeight = frameHeight;
+			this.remotePeerConnectionStats[streamId].videoRoundTripTime = videoRoundTripTime;
+			this.remotePeerConnectionStats[streamId].videoJitter = videoJitter;
+			this.remotePeerConnectionStats[streamId].audioRoundTripTime = audioRoundTripTime;
+			this.remotePeerConnectionStats[streamId].audioJitter = audioJitter;
+			this.remotePeerConnectionStats[streamId].framesDecoded = framesDecoded;
+			this.remotePeerConnectionStats[streamId].framesDropped = framesDropped;
+			this.remotePeerConnectionStats[streamId].framesReceived = framesReceived;
+			
+			this.remotePeerConnectionStats[streamId].videoJitterAverageDelay = videoJitterAverageDelay;
+			this.remotePeerConnectionStats[streamId].audioJitterAverageDelay = audioJitterAverageDelay;
+
 
 			this.callback("updated_stats", this.remotePeerConnectionStats[streamId]);
 
@@ -1305,12 +1426,14 @@ export class WebRTCAdaptor
 
 	enableStats(streamId) 
 	{
-		this.remotePeerConnectionStats[streamId] = new PeerStats(streamId);
-		this.remotePeerConnectionStats[streamId].timerId = setInterval(() =>
-		{
-			this.getStats(streamId);
+		if (this.remotePeerConnectionStats[streamId] == null) {
+			this.remotePeerConnectionStats[streamId] = new PeerStats(streamId);
+			this.remotePeerConnectionStats[streamId].timerId = setInterval(() =>
+			{
+				this.getStats(streamId);
 
-		}, 5000);
+			}, 5000);
+		}
 	}
 
 	/**
