@@ -8,7 +8,6 @@
 	integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u"
 	crossorigin="anonymous">
 <script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
-<script src="js/webrtc_adaptor.js"></script>
 <script
 		src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
 		
@@ -107,9 +106,9 @@ body {
 					id="streamName" placeholder="Type stream name">
 			</p>
 			<p>
-				<button onclick="startPublishing()" class="btn btn-info" disabled
+				<button class="btn btn-info" disabled
 					id="start_publish_button">Start Publishing</button>
-				<button onclick="stopPublishing()" class="btn btn-info" disabled
+				<button class="btn btn-info" disabled
 					id="stop_publish_button">Stop Publishing</button>
 			</p>
 
@@ -123,9 +122,13 @@ body {
 
 	</div>
 </body>
-<script>
+<script type="module">
+	import {WebRTCAdaptor} from "./js/webrtc_adaptor.js"
+
 	var start_publish_button = document.getElementById("start_publish_button");
+	start_publish_button.addEventListener("click", startPublishing, false);
 	var stop_publish_button = document.getElementById("stop_publish_button");
+	stop_publish_button.addEventListener("click", stopPublishing, false);
 
 	var streamNameBox = document.getElementById("streamName");
 	

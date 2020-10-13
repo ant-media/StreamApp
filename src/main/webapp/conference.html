@@ -8,8 +8,6 @@
 		  integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u"
 		  crossorigin="anonymous">
 	<script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
-	<script src="js/webrtc_adaptor.js"></script>
-	<script src="js/fetch.stream.js"></script>
 	<script
 			src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
 
@@ -116,36 +114,36 @@ body {
 						   id="roomName" placeholder="Type room name">
 				</p>
 				<p>
-					<button onclick="joinRoom()" class="btn btn-info" disabled
+					<button class="btn btn-info" disabled
 							id="join_publish_button">Join Room</button>
-					<button onclick="leaveRoom()" class="btn btn-info" disabled
+					<button class="btn btn-info" disabled
 							id="stop_publish_button">Leave Room</button>
 				</p>
 
 				<div style="padding:10px">
-					<button id="turn_off_camera_button" onclick="turnOffLocalCamera()" class="btn btn-default"  >Turn off Camera</button>
-					<button id="turn_on_camera_button" disabled onclick="turnOnLocalCamera()" class="btn btn-default"  >Turn on Camera</button>
+					<button id="turn_off_camera_button" class="btn btn-default"  >Turn off Camera</button>
+					<button id="turn_on_camera_button" disabled class="btn btn-default"  >Turn on Camera</button>
 
-					<button id="mute_mic_button" onclick="muteLocalMic()" class="btn btn-default"  >Mute Local Mic</button>
-					<button id="unmute_mic_button" disabled onclick="unmuteLocalMic()" class="btn btn-default"  >Unmute Local Mic</button>
+					<button id="mute_mic_button" class="btn btn-default"  >Mute Local Mic</button>
+					<button id="unmute_mic_button" disabled  class="btn btn-default"  >Unmute Local Mic</button>
 				</div>
 
-				<div class="form-check form-check-inline">
+				<div class="form-check form-check-inline" >
 
-					<input class="form-check-input video-source" disabled name="videoSource" onchange="switchVideoMode(event.target)" type="radio" value="camera" 
+					<input class="form-check-input video-source" disabled name="videoSource" type="radio" value="camera" 
 					id="camera_checkbox" checked>
 					<label class="form-check-label" for="camera_checkbox" style="font-weight:normal">
 							Camera
 					</label>
 	
-					<input class="form-check-input video-source" disabled name="videoSource" onchange="switchVideoMode(event.target)" type="radio" value="screen" 
+					<input class="form-check-input video-source" disabled name="videoSource"  type="radio" value="screen" 
 					id="screen_share_checkbox">
 					<label class="form-check-label" for="screen_share_checkbox" style="font-weight:normal">
 							Screen
 					</label>
 			
 				
-					<input class="form-check-input video-source" disabled name="videoSource" onchange="switchVideoMode(event.target)" type="radio" value="screen+camera" 
+					<input class="form-check-input video-source" disabled name="videoSource" type="radio" value="screen+camera" 
 						id="screen_share_with_camera_checkbox">
 					<label class="form-check-label" for="screen_share_with_camera_checkbox" style="font-weight:normal">
 							Screen with Camera
@@ -169,7 +167,10 @@ body {
 
 </div>
 </body>
-<script>
+<script type="module">
+	import {WebRTCAdaptor} from "./js/webrtc_adaptor.js"
+    import {getUrlParameter} from "./js/fetch.stream.js" 
+
 	var token = getUrlParameter("token");
 	var streamId = getUrlParameter("streamId");
 	var playOnly = getUrlParameter("playOnly");
@@ -178,15 +179,27 @@ body {
 	}
 
 	var join_publish_button = document.getElementById("join_publish_button");
+	join_publish_button.addEventListener("click", joinRoom, false);
 	var stop_publish_button = document.getElementById("stop_publish_button");
-
-	var screen_share_checkbox = document.getElementById("screen_share_checkbox");
-	var camera_checkbox = document.getElementById("camera_checkbox");
-	var screen_share_with_camera_checkbox = document.getElementById("screen_share_with_camera_checkbox");
+	stop_publish_button.addEventListener("click", leaveRoom, false);
 	var turn_off_camera_button = document.getElementById("turn_off_camera_button");
+	turn_off_camera_button.addEventListener("click", turnOffLocalCamera,false)
 	var turn_on_camera_button = document.getElementById("turn_on_camera_button");
+	turn_on_camera_button.addEventListener("click", turnOnLocalCamera,false)
 	var mute_mic_button = document.getElementById("mute_mic_button");
+	mute_mic_button.addEventListener("click", muteLocalMic,false)
 	var unmute_mic_button = document.getElementById("unmute_mic_button");
+	unmute_mic_button.addEventListener("click", unmuteLocalMic,false)
+
+	//Handles radio buttons for screen share feature
+	if (document.querySelector('input[name="videoSource"]')) {
+  		document.querySelectorAll('input[name="videoSource"]').forEach((elem) => {
+    		elem.addEventListener("change", function(event) {
+      			var item = event.target;
+      			switchVideoMode(item)
+    			});
+  		});
+	}
 
 	var roomNameBox = document.getElementById("roomName");
 
@@ -200,10 +213,10 @@ body {
 
 	function switchVideoMode(chbx){
 		if(chbx.value == "screen") {
-  			webRTCAdaptor.switchDesktopCapture(publishStreamId);
+			  webRTCAdaptor.switchDesktopCapture(publishStreamId);
   		}
   		else if(chbx.value == "screen+camera"){
-  			webRTCAdaptor.switchDesktopCaptureWithCamera(publishStreamId);
+			  webRTCAdaptor.switchDesktopCaptureWithCamera(publishStreamId);
 		}
 		else {
   			webRTCAdaptor.switchVideoCameraCapture(publishStreamId, chbx.value);
@@ -294,8 +307,6 @@ body {
 
 	function leaveRoom() {
 		webRTCAdaptor.leaveFromRoom(roomNameBox.value);
-		unmuteLocalMic();
-		turnOnLocalCamera();
 
 		for (var node in document.getElementById("players").childNodes) {
 			if(node.tagName == 'DIV' && node.id != "localVideo") {
@@ -371,7 +382,6 @@ body {
 						});
 
 	}
-
 	var pc_config = {
 			'iceServers' : [ {
 				'urls' : 'stun:stun1.l.google.com:19302'
@@ -398,7 +408,7 @@ body {
 		websocketURL = "wss://" + path;
 	}
 
-	var webRTCAdaptor = new WebRTCAdaptor(
+	var webRTCAdaptor = new WebRTCAdaptor(	
 			{
 				websocket_url : websocketURL,
 				mediaConstraints : mediaConstraints,
@@ -407,11 +417,15 @@ body {
 				localVideoId : "localVideo",
 				isPlayMode : playOnly,
 				debug : true,
-				callback : function(info, obj) {
+				callback : (info, obj) => {
 					if (info == "initialized") {
 						console.log("initialized");
 						join_publish_button.disabled = false;
 						stop_publish_button.disabled = true;
+						if(playOnly){
+							isCameraOff = true;
+							handleCameraButtons();
+						}
 					} 
 					else if (info == "joinedTheRoom") {
 						var room = obj.ATTR_ROOM_NAME;
@@ -439,10 +453,7 @@ body {
 										roomNameBox.value);
 							});
 							streamsList = obj.streams;
-						}
-						
-						
-						
+						}			
 						webRTCAdaptor.getRoomInfo(roomNameBox.value, obj.streamId);
 					}
 					else if (info == "newStreamAvailable") {
@@ -513,7 +524,7 @@ body {
 						// Check stream is in room
 						// PS: Old room list mean streams doesn't have own stream ID
 						if (streamsList != null) {
-							for (i = 0; i < streamsList.length; i++) {
+							for (var i = 0; i < streamsList.length; i++) {
 								var oldStreamListItem = streamsList[i];
 
 								var oldRoomItemIndex = streamsList.indexOf(oldStreamListItem);
@@ -596,5 +607,8 @@ body {
 					alert(errorMessage);
 				}
 			});
+
+	
 </script>
 </html>
+

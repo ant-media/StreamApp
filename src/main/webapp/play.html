@@ -15,8 +15,6 @@
 
 <script src="js/fetch.js"></script>
 <script src="js/promise.min.js"></script>
-<script src="js/fetch.stream.js"></script>
-<script src="js/webrtc_adaptor.js"></script>
 <script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
 
 <link href="css/player.css" rel="stylesheet">
@@ -46,11 +44,12 @@
 
 	<!-- WebRTC Player -->
 	<video id="remoteVideo" autoplay controls playsinline muted></video>
+	<div id="networkWarning">Your connection isn't fast enough to play this stream!</div>
 	<img id="play_button" src="images/play.png" onclick="playWebRTCVideo()"
 		style="position: absolute; top: 30px; left: 30px; display: none;" />
 
 
-	<script>
+	<script type="module">
     /**
     * This page accepts 4 arguments. 
     * 1. "id": the stream id to play.It is mandatory
@@ -62,7 +61,8 @@
     *     possible values are "webm,mp4"","mp4","webm"
     */
 
-
+	import {WebRTCAdaptor} from "./js/webrtc_adaptor.js"
+    import {getUrlParameter, isMobile, tryToHLSPlay} from "./js/fetch.stream.js"
 	//The play order, player tries to play according to this order, if it can not play then tries following format
 
 	var playOrder = getUrlParameter("playOrder");
@@ -103,10 +103,10 @@
 	 }
 	   
 
-
-	var name = streamId;
+	var name = getUrlParameter("id");
 	var token = getUrlParameter("token");
 	var pAutoplay = getUrlParameter("autoplay");
+
 	var autoPlay = true;
 	if (pAutoplay == "false" || isMobile()) {
 		autoPlay = false;
@@ -198,7 +198,8 @@
 
 		startPlayer(name, extension, token)
 
-	}	
+	}
+	window.initializePlayer = initializePlayer	
 	
 	function startPlayer(name, extension, token) {
 		var type;
@@ -313,6 +314,21 @@
 						console.log("Connecton closed: " + JSON.stringify(description));
 					}
 				}
+				else if (info == "bitrateMeasurement") {
+
+					console.debug(description);	
+					if(description.audioBitrate + description.videoBitrate > description.targetBitrate) 
+					{
+						document.getElementById("networkWarning").style.display = "block";
+						setTimeout(function() {
+							document.getElementById("networkWarning").style.display = "none";
+						}, 3000);
+					}
+					
+
+					
+					
+				}
 
 			},
 			callbackError : function(error) {
@@ -380,3 +396,4 @@
 
 </body>
 </html>
+

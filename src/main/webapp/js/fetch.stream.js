@@ -13,39 +13,39 @@ if (!String.prototype.endsWith)
 	};
 }
 
-function tryToHLSPlay(name, token, noStreamCallback) {
+export function tryToHLSPlay(name, token, noStreamCallback) {
 	fetch("streams/"+ name +"_adaptive.m3u8", {method:'HEAD'})
-	.then(function(response) {
-		if (response.status == 200) {
-			// adaptive m3u8 exists,play it
-			initializePlayer(name+"_adaptive", "m3u8", token);
-		}
-		else 
-		{
-			//adaptive m3u8 not exists, try m3u8 exists.
-			fetch("streams/"+ name +".m3u8", {method:'HEAD'})
-			.then(function(response) {
-				if (response.status == 200) {
-					//m3u8 exists, play it
-					initializePlayer(name, "m3u8", token);
-				}
-				else {
-					console.log("No stream found");
-					if (typeof noStreamCallback != "undefined") {
-							noStreamCallback();
-						}
+		.then(function(response) {
+			if (response.status == 200) {
+				// adaptive m3u8 exists,play it
+				initializePlayer(name+"_adaptive", "m3u8", token);
+			}
+			else 
+			{
+				//adaptive m3u8 not exists, try m3u8 exists.
+				fetch("streams/"+ name +".m3u8", {method:'HEAD'})
+				.then(function(response) {
+					if (response.status == 200) {
+						//m3u8 exists, play it
+						initializePlayer(name, "m3u8", token);
 					}
-			}).catch(function(err) {
-				console.log("Error: " + err);
-			});
-		}
-	}).catch(function(err) {
-		console.log("Error: " + err);
-	});
+					else {
+						console.log("No stream found");
+						if (typeof noStreamCallback != "undefined") {
+								noStreamCallback();
+							}
 
+	 					}
+				}).catch(function(err) {
+					console.log("Error: " + err);
+				});
+			}
+		}).catch(function(err) {
+			console.log("Error: " + err);
+		});
 }
 
-function tryToVODPlay(name, token, noStreamCallback){
+export function tryToVODPlay(name, token, noStreamCallback){
 
 	var firstPlayType = playType[0];
 	var secondPlayType = playType[1];
@@ -84,7 +84,7 @@ function tryToVODPlay(name, token, noStreamCallback){
 		});
 }
 
-function isMobile() { 
+export function isMobile() { 
 	if( navigator.userAgent.match(/Android/i)
 			|| navigator.userAgent.match(/webOS/i)
 			|| navigator.userAgent.match(/iPhone/i)
@@ -101,7 +101,7 @@ function isMobile() {
 	}
 }
 
-function getUrlParameter(sParam) {
+export function getUrlParameter(sParam) {
 	var sPageURL = decodeURIComponent(window.location.search.substring(1)),
 		sURLVariables = sPageURL.split('&'),
 		sParameterName,

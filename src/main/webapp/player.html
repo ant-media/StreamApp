@@ -6,8 +6,7 @@
 <meta charset="UTF-8">
 <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
 <script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
-<script src="js/webrtc_adaptor.js"></script>
-<script src="js/fetch.stream.js"></script>
+
 <style>
 video {
 	width: 100%;
@@ -74,13 +73,22 @@ video {
 				<video id="remoteVideo" autoplay controls playsinline ></video>
 			</div>
 			<div class="form-group col-sm-12 text-left">
-				<input type="text" class="form-control" value="stream1"
+				<input type="text" class="form-control"
 					id="streamName" placeholder="Type stream name">
 			</div>
 			<div class="col-sm-12 text-right">
-				<button type="button" class="btn btn-outline-primary btn-sm" onclick="toggleOptions()">Options</button>
+				<button type="button" id="options" class="btn btn-outline-primary btn-sm">Options</button>
 			</div>
 			<div class="form-group col-sm-12 text-left options">
+				<div class="dropdown">
+  					<button class="btn btn-outline-primary btn-sm dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+    					Force Stream Resolution
+  					</button>
+  					<div id="dropdownMenu" class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+    					<a class="dropdown-item active" href="#" >Automatic</a>
+  					</div>
+				</div>
+				<div class="dropdown-divider"></div>
 				<label>Data Channel Messages</label>
 				<textarea class="form-control" id="dataMessagesTextarea" style="font-size:10px" rows="8"></textarea>
 				<div class="form-row">
@@ -88,26 +96,41 @@ video {
 						<input type="text" class="form-control" id="dataTextbox" placeholder="Write your message to send publisher/players">
 					</div>
 					<div class="form-group col-sm-2">
-					<button type="button" class="btn btn-outline-primary btn-block" onclick="sendData()">Send</button>
+					<button type="button" id="send" class="btn btn-outline-primary btn-block">Send</button>
 					</div>
 				</div>
-				<div class="dropdown">
-  					<button class="btn btn-primary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-    					Stream Resolutions
-  					</button>
-  					<div id="dropdownMenu" class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-
-    					<a class="dropdown-item active" href="#" >Automatic</a>
-  					</div>
-				</div>
+				
 			</div>
 
 			
 				<div class="form-group">
-					<button onclick="startPlaying()" class="btn btn-primary"
+					<button class="btn btn-primary"
 						id="start_play_button">Start Playing</button>
-					<button onclick="stopPlaying()" class="btn btn-primary"
+					<button class="btn btn-primary"
 						id="stop_play_button">Stop Playing</button>
+				</div>
+				
+				<div class="col-sm-10 offset-sm-1" id="stats_panel" style="display: none;">
+					<div class="row text-muted text-left">
+						<div class="col-sm-6">
+						<small>
+							<div id="average_bit_rate_container">Average Bitrate(Kbps): <span id="average_bit_rate"></span></div>
+							<div id="latest_bit_rate_container">Latest Bitrate(Kbps): <span id="latest_bit_rate"></span></div>
+							<div id="packet_lost_container">PacketsLost: <span id="packet_lost_text"></span></div>
+							<div id="jitter_container">Jitter Average Delay(Secs): <span id="jitter_text"></span></div>
+							<div id="audio_level_container">Audio Level: <span id="audio_level"></span></div>
+							
+						</small>
+						</div>
+						<div class="col-sm-6">
+						<small>
+						<div id="incoming_resolution_container">Frame WidthxHeight: <span id="frame_width"></span>x<span id="frame_height"></span></div>
+						<div id="frame_decoded_container">Frames Decoded: <span id="frame_decoded"></span></div>
+						<div id="frame_dropped_container">Frames Dropped: <span id="frame_dropped"></span></div>
+						<div id="frame_received_container">Frames Received: <span id="frame_received"></span></div>
+						</small>
+						</div>
+					</div>
 				</div>
 				<span class="badge badge-warning" id="bitrateInfo" style="font-size:14px;display:none"
 							style="display: none">Weak Network Connection</span>
@@ -125,23 +148,44 @@ video {
 	<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"  crossorigin="anonymous"></script>	
 
 </body>
-<script>
+<script type="module">
+	import {WebRTCAdaptor} from "./js/webrtc_adaptor.js"
+	import {getUrlParameter} from "./js/fetch.stream.js"
+
 
 	var token = getUrlParameter("token");
-	var start_play_button = document.getElementById("start_play_button");
-	var stop_play_button = document.getElementById("stop_play_button");
+    
 
-	var streamNameBox = document.getElementById("streamName");
+	$(function() {
+	  var id = getUrlParameter("id");
+	  if(typeof id != "undefined") {
+		$("#streamName").val(id);
+	  }
+	  else {
+		id = getUrlParameter("name");
+		if (typeof id != "undefined") {
+			$("#streamName").val(id);
+		} 
+		else {
+			$("#streamName").val("stream1");
+		}
+	  }
+	});
+
+
+	var start_play_button = document.getElementById("start_play_button");
+	start_play_button.addEventListener("click", startPlaying, false)
+	var stop_play_button = document.getElementById("stop_play_button");
+	stop_play_button.addEventListener("click",stopPlaying,false);
+	var options = document.getElementById("options");
+	options.addEventListener("click", toggleOptions, false);
+	var send = document.getElementById("send");
+	send.addEventListener("click", sendData, false);
+
+	var streamNameBox = document.getElementById("streamName")
+	streamNameBox.defaultValue = "stream1";
 
 	var streamId;
-	
-
-	
-	var name = getUrlParameter("name");
-	if(name !== "undefined")
-	{
-		streamNameBox.value = name;
-	}
 	
 	function toggleOptions() {
 		$(".options").toggle();
@@ -229,11 +273,14 @@ video {
 				start_play_button.disabled = true;
 				stop_play_button.disabled = false;
 				webRTCAdaptor.getStreamInfo(streamId); 
+				webRTCAdaptor.enableStats(obj.streamId);
+
 			} else if (info == "play_finished") {
 				//leaved the stream
 				console.log("play finished");
 				start_play_button.disabled = false;
 				stop_play_button.disabled = true;
+				$("#stats_panel").hide();
 				// Reset stream resolutions in dropdown
 				document.getElementById("dropdownMenu").innerHTML = '<a class="dropdown-item active" href="#">Automatic</a>'; 
 			} else if (info == "closed") {
@@ -289,10 +336,95 @@ video {
 				//currentIncomingBitrate - kbits/sec
 				//packetsLost - total number of packet lost
 				//fractionLost - fraction of packet lost
-				console.log("Average incoming kbits/sec: " + obj.averageIncomingBitrate 
+
+				$("#average_bit_rate").text(obj.averageIncomingBitrate);
+				if (obj.averageIncomingBitrate > 0)  {
+					$("#average_bit_rate_container").show();
+				}
+				else {
+					$("#average_bit_rate_container").hide();
+				}
+				$("#latest_bit_rate").text(obj.currentIncomingBitrate);	
+				if (obj.currentIncomingBitrate > 0) {
+					$("#latest_bit_rate_container").show();
+				}
+				else {
+					$("#latest_bit_rate_container").hide();
+				}
+
+				var packetLost = parseInt(obj.videoPacketsLost) + parseInt(obj.audioPacketsLost);	
+				$("#packet_lost_text").text(packetLost);
+				if (packetLost > -1) {
+					$("#packet_lost_container").show();
+				}
+				else {
+					$("#packet_lost_container").hide();
+				}
+
+				var jitterAverageDelay = ((parseFloat(obj.videoJitterAverageDelay) + parseFloat(obj.audioJitterAverageDelay)) / 2).toPrecision(3);
+				$("#jitter_text").text(jitterAverageDelay);
+				if (jitterAverageDelay > 0) {
+					$("#jitter_container").show();
+				}
+				else {
+					$("#jitter_container").hide();
+				}
+
+				$("#audio_level").text(obj.audioLevel.toPrecision(3));
+				if (obj.audioLevel > -1) {
+					$("#audio_level_container").show();
+				}
+				else {
+					$("#audio_level_container").hide();
+				}
+
+				
+				$("#frame_width").text(obj.frameWidth);
+				$("#frame_height").text(obj.frameHeight);
+				if (obj.frameWidth > 0 && obj.frameHeight > 0) {
+					$("#incoming_resolution_container").show();
+				}
+				else {
+					$("#incoming_resolution_container").hide();
+				}
+				$("#frame_received").text(obj.framesReceived);	
+				if (obj.framesReceived > -1) {
+					$("#frame_received_container").show();	
+				}
+				else {
+					$("#frame_received_container").hide();
+				}
+
+				$("#frame_decoded").text(obj.framesDecoded);
+				if (obj.framesDecoded > -1) {
+					$("#frame_decoded_container").show();	
+				}
+				else {
+					$("#frame_decoded_container").hide();
+				}
+				$("#frame_dropped").text(obj.framesDropped);
+				if (obj.framesDropped > -1) {
+					$("#frame_dropped_container").show();	
+				}
+				else {
+					$("#frame_dropped_container").hide();
+				}
+
+				$("#stats_panel").show();
+				
+				
+
+				console.debug("Average incoming kbits/sec: " + obj.averageIncomingBitrate 
 						+ " Current incoming kbits/sec: " + obj.currentIncomingBitrate
-						+ " packetLost: " + obj.packetsLost 
-						+ " fractionLost: " + obj.fractionLost
+						+ " video packetLost: " + obj.videoPacketsLost 
+						+ " audio packetLost: " + obj.audioPacketsLost 
+						+ " frame width: " + obj.frameWidth
+						+ " frame height: " + obj.frameHeight
+						+ " frame received: " + obj.framesReceived
+						+ " frame decoded: " + obj.framesDecoded
+						+ " frame dropped: " + obj.framesDropped
+						+ " video jitter average delay: " + obj.videoJitterAverageDelay
+						+ " audio jitter average delay: " + obj.audioJitterAverageDelay
 						+ " audio level: " + obj.audioLevel);
 				 
 			}
@@ -301,12 +433,12 @@ video {
 				$("#dataMessagesTextarea").append("Received: " + obj.event.data + "\r\n");
 			}
 			else if (info == "bitrateMeasurement") {
-				console.log( info + " notification received");
 
-				console.log(obj);	
+				console.debug(obj);	
 				if(obj.audioBitrate+obj.videoBitrate > obj.targetBitrate) {
 					startAnimation();
 				}
+				$("#video_bit_rate").text(parseInt(obj.audioBitrate) + parseInt(obj.videoBitrate));
 			}
 			else {
 				console.log( info + " notification received");
@@ -319,5 +451,9 @@ video {
 			alert(JSON.stringify(error));
 		}
 	});
+
+	window.webRTCAdaptor = webRTCAdaptor;
 </script>
 </html>
+
+
