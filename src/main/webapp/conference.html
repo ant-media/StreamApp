@@ -1,5 +1,3 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8"
-pageEncoding="UTF-8"%>
 <html>
 <head>
 <title>Ant Media Server WebRTC Conference Room</title>
@@ -171,11 +169,12 @@ body {
 </body>
 <script type="module">
 	import {WebRTCAdaptor} from "./js/webrtc_adaptor.js"
+    import {getUrlParameter} from "./js/fetch.stream.js" 
 
-	var token = "<%= request.getParameter("token") %>";
-	var streamId = "<%= request.getParameter("streamId") %>";
-	var playOnly = "<%= request.getParameter("playOnly") %>";
-	if(playOnly == "null") {
+	var token = getUrlParameter("token");
+	var streamId = getUrlParameter("streamId");
+	var playOnly = getUrlParameter("playOnly");
+	if(playOnly == null) {
 		playOnly = false;
 	}
 
@@ -215,7 +214,6 @@ body {
 	function switchVideoMode(chbx){
 		if(chbx.value == "screen") {
 			  webRTCAdaptor.switchDesktopCapture(publishStreamId);
-			  webRTCAdaptor.switchDesktopWithMicAudio(publishStreamId);
   		}
   		else if(chbx.value == "screen+camera"){
 			  webRTCAdaptor.switchDesktopCaptureWithCamera(publishStreamId);

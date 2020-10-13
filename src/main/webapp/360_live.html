@@ -1,21 +1,16 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8"
-pageEncoding="UTF-8"%>
 <!DOCTYPE html>
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>Ant Media Server WebRTC/HLS 360 Live Player</title>
 
- <script src="https://aframe.io/releases/1.0.4/aframe.min.js"></script>
+<script src="https://aframe.io/releases/1.0.4/aframe.min.js"></script>
 
- <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
- <script src="https://rawgit.com/oscarmarinmiro/aframe-video-controls/master/dist/aframe-video-controls.min.js"></script>
- 
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+<script src="https://rawgit.com/oscarmarinmiro/aframe-video-controls/master/dist/aframe-video-controls.min.js"></script>
 
 <script src="js/fetch.js"></script>
 <script src="js/promise.min.js"></script>
-<script src="js/fetch.stream.js"></script>
-<script src="js/webrtc_adaptor.js"></script>
 <script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
 
 <link href="css/player.css" rel="stylesheet">
@@ -66,71 +61,37 @@ pageEncoding="UTF-8"%>
     *     possible values are "webm,mp4"","mp4","webm"
     */
 
-
-	//The play order, player tries to play according to this order, if it can not play then tries following format
-   
-<% 
-    String playOrder = request.getParameter("playOrder") ;
-	if (playOrder == null || playOrder.equals("webrtc,hls")) {
-	   %>
-	   var  playOrder = ["webrtc", "hls"];
-	   <%
-	}
-	else if(playOrder.equals("hls,webrtc")) {
-	   %>
-	   var  playOrder = ["hls", "webrtc"];
-	   <%
-	}
-	else if(playOrder.equals("hls")) {
-	   %>
-	   var  playOrder = ["hls"];
-	   <%
-	}
-	else if(playOrder.equals("webrtc")) {
-	   %>
-	   var  playOrder = ["webrtc"];
-	   <%
-	}	
-	else if(playOrder.equals("vod")) {
-	   %>
-	   var  playOrder = ["vod"];
-	   <%
-	}	
-	
-	String streamId = request.getParameter("id");
-	if (streamId == null) {
-		//check name variable for compatibility with older versions
-		streamId = request.getParameter("name");
-	}
-
-	 String playType = request.getParameter("playType") ;
-	 if (playType == null || playType.equals("mp4,webm")) {
-	   %>
-	   var  playType = ["mp4", "webm"];
-	   <%
-	}
-	else if(playType.equals("webm,mp4")) {
-	   %>
-	   var  playType = ["webm", "mp4"];
-	   <%
-	}
-	else if(playType.equals("mp4")) {
-	   %>
-	   var  playType = ["mp4"];
-	   <%
-	}
-	else if(playType.equals("webm")) {
-	   %>
-	   var  playType = ["webm"];
-	   <%
-	}
-%>
-
 	import {WebRTCAdaptor} from "./js/webrtc_adaptor.js"
-	var name = "<%= streamId %>";
-	var token = "<%= request.getParameter("token") %>";
+    import {getUrlParameter, isMobile, tryToHLSPlay} from "./js/fetch.stream.js"
+	//The play order, player tries to play according to this order, if it can not play then tries following format
+	
 
-	var pAutoplay = "<%= request.getParameter("autoplay") %>";
+    var playOrder = getUrlParameter("playOrder");
+    if (playOrder == null || playOrder=="webrtc,hls") {
+        playOrder = ["webrtc", "hls"];
+    }
+    else if(playOrder == "hls,webrtc") {
+        playOrder=["hls", "webrtc"];
+    }
+    else if(playOrder == "hls") {
+        playOrder=["hls"];
+    }
+    else if(playOrder == "webrtc") {
+        playOrder=["webrtc"];
+    }
+    else if(playOrder == "vod") {
+        playOrder=["vod"];
+    }
+
+
+
+	var name = getUrlParameter("id");
+	if (name == null) {
+		name = getUrlParameter("name");
+	}
+	var token = getUrlParameter("token");
+
+	var pAutoplay = getUrlParameter("autoplay");
 	var autoPlay = true;
 	if (pAutoplay == "false" || isMobile()) {
 		autoPlay = false;
@@ -204,6 +165,8 @@ pageEncoding="UTF-8"%>
 	function initializePlayer(name, extension, token) {
 		startPlayer(name, extension, token)
 	}	
+
+	window.initializePlayer = initializePlayer;
 	
 	function startPlayer(name, extension, token) {
 
@@ -325,7 +288,7 @@ pageEncoding="UTF-8"%>
 	
 	
 	
-	 if (name != "null") 
+	 if (name != "undefined")
 	 {
 		
 		if (name.startsWith(streamsFolder)) 

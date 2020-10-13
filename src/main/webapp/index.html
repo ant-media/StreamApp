@@ -1,5 +1,3 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8"
-pageEncoding="UTF-8"%>
 <!DOCTYPE html>
 <html>
 <head>
@@ -171,11 +169,24 @@ video {
 </body>
 <script type="module" lang="javascript">
 	import {WebRTCAdaptor} from "./js/webrtc_adaptor.js"
-     
-	var token = "<%= request.getParameter("token") %>";
+    import {getUrlParameter} from "./js/fetch.stream.js" 
+	
 
     function init () {
-	  $("#streamName").val("stream1");
+	  var id = getUrlParameter("id");
+	  if(typeof id != "undefined") {
+		$("#streamName").val(id);
+	  }
+	  else {
+		id = getUrlParameter("name");
+		if (typeof id != "undefined") {
+			$("#streamName").val(id);
+		} 
+		else {
+			$("#streamName").val("stream1");
+		}
+	  }
+	  
 	  $("#maxBandwidthTextBox").val(maxVideoBitrateKbps);
 	  $("#max_bandwidth_apply").click(function() {
 		var bitrate = parseInt($("#maxBandwidthTextBox").val());
@@ -224,25 +235,7 @@ video {
 	
 	var streamId;
 	
-	function getUrlParameter(sParam) {
-	    var sPageURL = decodeURIComponent(window.location.search.substring(1)),
-	        sURLVariables = sPageURL.split('&'),
-	        sParameterName,
-	        i;
-
-	    for (i = 0; i < sURLVariables.length; i++) {
-	        sParameterName = sURLVariables[i].split('=');
-
-	        if (sParameterName[0] === sParam) {
-	            return sParameterName[1] === undefined ? true : sParameterName[1];
-	        }
-	    }
-	};	
-	var name = getUrlParameter("name");
-	if(name != "undefined")
-	{
-		streamNameBox.value = name;
-	}
+	var token = getUrlParameter("token");
 	
 	// It should be true
 	var rtmpForward = getUrlParameter("rtmpForward");
@@ -320,8 +313,9 @@ video {
 	  
 	
 	function checkAndRepublishIfRequired() {
-	 	var iceState = webRTCAdaptor.signallingState(streamId);
+	 	var iceState = webRTCAdaptor.iceConnectionState(streamId);
 		console.log("Ice state checked = " + iceState);
+
 	  	if (iceState == null || iceState == "failed" || iceState == "disconnected"){
 	  		webRTCAdaptor.stop(streamId);
 	  		webRTCAdaptor.closePeerConnection(streamId);

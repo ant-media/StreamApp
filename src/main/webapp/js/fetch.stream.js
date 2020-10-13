@@ -13,22 +13,8 @@ if (!String.prototype.endsWith)
 	};
 }
 
-function tryToHLSPlay(name, token, noStreamCallback) {
-	
-	fetch(loadDistributer+"/edge.php", { mode: "cors" })
-	.then(function (response){
-	     if (response.status == 200) {
-	         //make serverAddr global
-	         return response.text();
-	     }
-	     else {
-	    	 if (typeof noStreamCallback != "undefined") {
-					noStreamCallback();
-			 } 
-	     }
-	 }).then(function (data) {
-		serverAddr = data;
-		fetch("http://"+serverAddr+":5080/"+appName+"/streams/"+ name +"_adaptive.m3u8", {method:'HEAD'})
+export function tryToHLSPlay(name, token, noStreamCallback) {
+	fetch("streams/"+ name +"_adaptive.m3u8", {method:'HEAD'})
 		.then(function(response) {
 			if (response.status == 200) {
 				// adaptive m3u8 exists,play it
@@ -37,7 +23,7 @@ function tryToHLSPlay(name, token, noStreamCallback) {
 			else 
 			{
 				//adaptive m3u8 not exists, try m3u8 exists.
-				fetch("http://"+serverAddr+":5080/"+appName+"/streams/"+ name +".m3u8", {method:'HEAD'})
+				fetch("streams/"+ name +".m3u8", {method:'HEAD'})
 				.then(function(response) {
 					if (response.status == 200) {
 						//m3u8 exists, play it
@@ -48,29 +34,18 @@ function tryToHLSPlay(name, token, noStreamCallback) {
 						if (typeof noStreamCallback != "undefined") {
 								noStreamCallback();
 							}
-						}
+
+	 					}
 				}).catch(function(err) {
 					console.log("Error: " + err);
 				});
 			}
 		}).catch(function(err) {
 			console.log("Error: " + err);
-			if (typeof noStreamCallback != "undefined") {
-				noStreamCallback();
-		    } 
-		});   
-	 })
-	 .catch(function(err){
-	   console.log("Error: " + err);
-	   if (typeof noStreamCallback != "undefined") {
-			noStreamCallback();
-	   } 
-	 });
-	
-
+		});
 }
 
-function tryToVODPlay(name, token, noStreamCallback){
+export function tryToVODPlay(name, token, noStreamCallback){
 
 	var firstPlayType = playType[0];
 	var secondPlayType = playType[1];
@@ -109,7 +84,7 @@ function tryToVODPlay(name, token, noStreamCallback){
 		});
 }
 
-function isMobile() { 
+export function isMobile() { 
 	if( navigator.userAgent.match(/Android/i)
 			|| navigator.userAgent.match(/webOS/i)
 			|| navigator.userAgent.match(/iPhone/i)
@@ -123,5 +98,20 @@ function isMobile() {
 	}
 	else {
 		return false;
+	}
+}
+
+export function getUrlParameter(sParam) {
+	var sPageURL = decodeURIComponent(window.location.search.substring(1)),
+		sURLVariables = sPageURL.split('&'),
+		sParameterName,
+		i;
+
+	for (i = 0; i < sURLVariables.length; i++) {
+		sParameterName = sURLVariables[i].split('=');
+
+		if (sParameterName[0] === sParam) {
+			return sParameterName[1] === undefined ? true : sParameterName[1];
+		}
 	}
 }
