@@ -168,7 +168,7 @@ public class StreamApplication extends MultiThreadedApplicationAdapter implement
 	}
 
 	@Override
-	public boolean isValidStreamParameters(AVFormatContext inputFormatContext, AVPacket pkt) {
-		return appAdaptor.isValidStreamParameters(inputFormatContext,pkt);
+	public boolean isValidStreamParameters(AVFormatContext inputFormatContext, AVPacket pkt, String streamId) {
+		return appAdaptor.isValidStreamParameters(inputFormatContext,pkt, streamId);
 	}
 }

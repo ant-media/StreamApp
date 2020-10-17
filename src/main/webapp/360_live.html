@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Ant Media Server WebRTC/HLS 360 Live Player</title>
+
+<script src="https://aframe.io/releases/1.0.4/aframe.min.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+<script src="https://rawgit.com/oscarmarinmiro/aframe-video-controls/master/dist/aframe-video-controls.min.js"></script>
+
+<script src="js/fetch.js"></script>
+<script src="js/promise.min.js"></script>
+<script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
+
+<link href="css/player.css" rel="stylesheet">
+
+ <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+ <script>
+        setTimeout(function(){
+            $(".a-enter-vr-button").click();
+        },3000);
+        AFRAME.registerComponent('vr-mode-on',{
+            schema:{
+                tagName:{type:'string',default:"video"}
+            },
+            init:function(){
+                this.el.addEventListener("click",function() {
+                    $(".a-enter-vr-button").click();
+                });
+            }
+        });
+
+ </script>
+
+</head>
+<body>
+
+<a-scene inspector="https://cdn.jsdelivr.net/npm/aframe-inspector@1.0.0/dist/aframe-inspector.min.js">
+
+    <video id="remoteVideo" autoplay muted playsinline></video>
+
+    <a-entity distance="0.0" video-controls="src:#video"></a-entity>
+    <a-camera>
+        <a-cursor color="#FF0000"></a-cursor>
+    </a-camera>
+
+
+    <a-videosphere src="#remoteVideo" rotation="0 180 0" style="background-color: antiquewhite"></a-videosphere>
+</a-scene>
+
+	<script type = "module">
+    /**
+    * This page accepts 4 arguments. 
+    * 1. "id": the stream id to play.It is mandatory
+    * 2. "token": the token to play stream. It's mandatory if token security is enabled on server side.
+    * 3. "autoplay": To start playing automatically if streams is available. Optional. Default value is true
+    * 4. "playOrder": the order which technologies is used in playing. Optional. Default value is "webrtc,hls".
+    *     possible values are "hls,webrtc","webrtc","hls","vod" 
+    * 5. "playType": the order which play type is used in playing. Optional. Default value is "mp4,webm".
+    *     possible values are "webm,mp4"","mp4","webm"
+    */
+
+	import {WebRTCAdaptor} from "./js/webrtc_adaptor.js"
+    import {getUrlParameter, isMobile, tryToHLSPlay} from "./js/fetch.stream.js"
+	//The play order, player tries to play according to this order, if it can not play then tries following format
+	
+
+    var playOrder = getUrlParameter("playOrder");
+    if (playOrder == null || playOrder=="webrtc,hls") {
+        playOrder = ["webrtc", "hls"];
+    }
+    else if(playOrder == "hls,webrtc") {
+        playOrder=["hls", "webrtc"];
+    }
+    else if(playOrder == "hls") {
+        playOrder=["hls"];
+    }
+    else if(playOrder == "webrtc") {
+        playOrder=["webrtc"];
+    }
+    else if(playOrder == "vod") {
+        playOrder=["vod"];
+    }
+
+
+
+	var name = getUrlParameter("id");
+	if (name == null) {
+		name = getUrlParameter("name");
+	}
+	var token = getUrlParameter("token");
+
+	var pAutoplay = getUrlParameter("autoplay");
+	var autoPlay = true;
+	if (pAutoplay == "false" || isMobile()) {
+		autoPlay = false;
+	}
+
+	var webRTCAdaptor = null;
+	var streamsFolder = "streams";
+
+	let video = document.getElementById('remoteVideo');
+	
+    function webrtcNoStreamCallback() {
+      	/**
+		 * If HLS is in the play order then try to play HLS, if not wait for WebRTC stream
+		 * In some cases user may want to remove HLS from the order and force to play WebRTC only
+		 * in these cases player only waits for WebRTC streams
+		 */
+	     setTimeout(function(){
+		 if (playOrder.includes("hls"))
+		 {
+		   tryToHLSPlay(name, token, hlsNoStreamCallback);	
+		 } 
+		 else
+		 {
+			webRTCAdaptor.getStreamInfo(name);		
+		 }
+		}, 3000);
+	}
+    
+    function hlsNoStreamCallback() 
+    {
+		setTimeout(function() 
+		{
+			if (playOrder.includes("webrtc")) 
+			{
+				// It means there is no HLS stream, so try to play WebRTC stream
+				if (webRTCAdaptor == null) {
+					initializeWebRTCPlayer(name, token, webrtcNoStreamCallback);
+				}
+				else {
+					webRTCAdaptor.getStreamInfo(name);
+				}
+			}
+			else 
+			{
+				tryToHLSPlay(name, token, hlsNoStreamCallback);	
+			}
+		}, 3000);
+	    	
+    }
+    
+    function vodNoStreamCallback() 
+    {
+		setTimeout(function() 
+		{
+			if(playOrder.includes("vod")){
+				tryToVODPlay(name, token, vodNoStreamCallback);	
+			}
+		}, 3000);
+	    	
+    }
+
+	function playWebRTCVideo() {
+		document.getElementById("remoteVideo").play().then(function(value){
+
+		}).catch(function(error) {
+			console.log("User interaction needed to start playing");
+		});
+
+	}
+
+	function initializePlayer(name, extension, token) {
+		startPlayer(name, extension, token)
+	}	
+
+	window.initializePlayer = initializePlayer;
+	
+	function startPlayer(name, extension, token) {
+
+  		if(Hls.isSupported() && extension == "m3u8") {
+        	var hls = new Hls({
+         	   debug: false
+        	});
+
+       	 	hls.loadSource('streams/' + name + "." + extension + '?token=' + token);
+        	hls.attachMedia(video);
+        	hls.on(Hls.Events.MEDIA_ATTACHED, function() {
+            	video.muted = true;
+            	video.play();
+        	});
+    	}
+    	else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+        	video.src = 'streams/' + name + "." + extension + '?token=' + token;
+        	video.addEventListener('canplay',function() {
+            	video.play();
+        	});
+    	}
+
+    	else if (extension == "webm" || extension == "mp4") {
+	    	video.src = 'streams/' + name + "." + extension + '?token=' + token;
+        	video.play();
+    	}
+
+	}
+
+	function initializeWebRTCPlayer(name, token, noStreamCallback) {
+
+		var pc_config = {
+				'iceServers' : [ {
+					'urls' : 'stun:stun1.l.google.com:19302'
+				} ]
+			};
+
+
+		var sdpConstraints = {
+			OfferToReceiveAudio : true,
+			OfferToReceiveVideo : true
+
+		};
+		var mediaConstraints = {
+			video : false,
+			audio : false
+		};
+
+		var appName = location.pathname.substring(0, location.pathname.lastIndexOf("/")+1);
+		var path =  location.hostname + ":" + location.port + appName + "websocket";
+		var websocketURL =  "ws://" + path;
+
+		if (location.protocol.startsWith("https")) {
+			websocketURL = "wss://" + path;
+		}
+
+		//webRTCAdaptor is a global variable
+		webRTCAdaptor = new WebRTCAdaptor({
+			websocket_url : websocketURL,
+			mediaConstraints : mediaConstraints,
+			peerconnection_config : pc_config,
+			sdp_constraints : sdpConstraints,
+			remoteVideoId : "remoteVideo",
+			isPlayMode: true,
+			debug: true,
+			callback : function(info, description) {
+				if (info == "initialized") {
+					console.log("initialized");
+					webRTCAdaptor.getStreamInfo(name);
+				}
+				else if (info == "streamInformation") {
+					console.log("stream information");
+					webRTCAdaptor.play(name, token);
+				}
+				else if (info == "play_started") {
+					//joined the stream
+					console.log("play started");
+
+					video.addEventListener('canplay',function() {
+            			video.play();
+        			});
+				} else if (info == "play_finished") {
+					//leaved the stream
+					console.log("play finished");
+					//check that publish may start again
+					setTimeout(function(){
+						webRTCAdaptor.getStreamInfo(name);
+					}, 3000);
+				}
+				else if (info == "closed") {
+					//console.log("Connection closed");
+					if (typeof description != "undefined") {
+						console.log("Connecton closed: " + JSON.stringify(description));
+					}
+				}
+
+			},
+			callbackError : function(error) {
+				//some of the possible errors, NotFoundError, SecurityError,PermissionDeniedError
+
+				console.log("error callback: " + JSON.stringify(error));
+
+				if (error == "no_stream_exist" ) {
+
+					if (typeof noStreamCallback != "undefined") {
+						noStreamCallback();
+					}
+				}
+				if (error == "notSetRemoteDescription" ) {
+					/*
+					* If getting codec incompatible or remote description error, it will redirect HLS player.
+					*/
+					tryToHLSPlay(name, token, hlsNoStreamCallback);
+					
+				}
+			}
+		});
+	}
+	
+	
+	
+	 if (name != "undefined")
+	 {
+		
+		if (name.startsWith(streamsFolder)) 
+		{
+			/*
+			* If name starts with streams, it's hls or mp4 file to be played
+			*/
+			var lastIndexOfDot = name.lastIndexOf(".")
+			streamPath = name.substring(streamsFolder.length+1, lastIndexOfDot);
+			var extension = name.substring(lastIndexOfDot+1);
+			initializePlayer(streamPath, extension, token);
+		}
+		else {
+			/*
+			 * Check that which one is in the first order
+		    */
+			if (playOrder[0] == "webrtc" )
+			{
+				initializeWebRTCPlayer(name, token, webrtcNoStreamCallback);
+			} 
+			else if (playOrder[0] == "hls" )
+			{
+				tryToHLSPlay(name, token, hlsNoStreamCallback);
+			}
+			else if (playOrder[0] == "vod" )
+			{
+				tryToVODPlay(name, token, vodNoStreamCallback);	
+			}
+			else {
+				alert("Unsupported play order requested. Supported formats are webrtc and hls. Use something like playOrder=webrtc,hls");
+			}
+		}
+	 }
+	 else {
+		 alert("No stream specified. Please add ?id={STREAM_ID}  to the url");
+	 }
+</script>
+
+</body>
+</html>

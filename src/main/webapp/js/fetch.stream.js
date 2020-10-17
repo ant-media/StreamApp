@@ -13,7 +13,7 @@ if (!String.prototype.endsWith)
 	};
 }
 
-function tryToPlay(name, token, type, noStreamCallback) {
+export function tryToPlay(name, token, type, noStreamCallback) {
 	fetch("streams/"+ name +"_adaptive."+type, {method:'HEAD'})
 	.then(function(response) {
 		if (response.status == 200) {
@@ -33,6 +33,7 @@ function tryToPlay(name, token, type, noStreamCallback) {
 					if (typeof noStreamCallback != "undefined") {
 							noStreamCallback();
 						}
+
 					}
 			}).catch(function(err) {
 				console.log("Error: " + err);
@@ -41,9 +42,10 @@ function tryToPlay(name, token, type, noStreamCallback) {
 	}).catch(function(err) {
 		console.log("Error: " + err);
 	});
+
 }
 
-function tryToVODPlay(name, token, noStreamCallback){
+export function tryToVODPlay(name, token, noStreamCallback){
 
 	var firstPlayType = playType[0];
 	var secondPlayType = playType[1];
@@ -82,7 +84,7 @@ function tryToVODPlay(name, token, noStreamCallback){
 		});
 }
 
-function isMobile() { 
+export function isMobile() { 
 	if( navigator.userAgent.match(/Android/i)
 			|| navigator.userAgent.match(/webOS/i)
 			|| navigator.userAgent.match(/iPhone/i)
@@ -96,5 +98,20 @@ function isMobile() {
 	}
 	else {
 		return false;
+	}
+}
+
+export function getUrlParameter(sParam) {
+	var sPageURL = decodeURIComponent(window.location.search.substring(1)),
+		sURLVariables = sPageURL.split('&'),
+		sParameterName,
+		i;
+
+	for (i = 0; i < sURLVariables.length; i++) {
+		sParameterName = sURLVariables[i].split('=');
+
+		if (sParameterName[0] === sParam) {
+			return sParameterName[1] === undefined ? true : sParameterName[1];
+		}
 	}
 }
