@@ -30,6 +30,8 @@ export class WebRTCAdaptor
 		this.isPlayMode = false;
 		this.debug = false;
 		this.composedStream = new MediaStream();
+		this.reqId = null;
+		this.stopBlur = false;
 
 		this.publishMode="camera"; //screen, screen+camera
 
@@ -268,6 +270,72 @@ export class WebRTCAdaptor
 		}else {
 			navigator.mediaDevices.getUserMedia(mediaConstraints).then(func)
 		}
+	}
+	/*
+	* Load pre-trained network of Tensorflow
+	*/
+	enableBackgroundBlur(streamId) {
+		const options = {
+			architecture: "MobileNetV1",
+			outputStride: 16,
+			multiplier: 0.75,
+			quantBytes: 2
+		}
+		bodyPix.load(options)
+		  .then(net => this.perform(net, streamId))
+		  .catch(err => console.log(err))
+	}
+	stopBackgroundBlur(){ 
+		this.stopBlur = true;
+	}  
+
+	/*
+	*This function performs person segmentation for background blur,
+	*Then updates the video element
+	*/
+	perform(net, streamId) {
+		this.stopBlur = false;
+		this.navigatorUserMedia({video: true, audio: false},cameraStream => {
+			//create a canvas element
+			var canvas = document.createElement("canvas");
+			var canvasContext = canvas.getContext("2d");
+			var cameraVideo = document.createElement('video');
+
+			cameraVideo.srcObject = cameraStream;
+			cameraVideo.play();
+			var canvasStream = canvas.captureStream(15);
+		
+			if(this.localStream == null){
+				this.gotStream(canvasStream);
+			}
+			else{
+				this.updateVideoTrack(canvasStream,streamId,this.mediaConstraints,null,null);
+			}
+			var ckbx = document.getElementById("blur")
+			var draw = async () => {
+				const segmentation = await net.segmentPerson(cameraVideo);
+
+				const backgroundBlurAmount = 6;
+				const edgeBlurAmount = 2;
+				const flipHorizontal = false;
+				
+				bodyPix.drawBokehEffect(
+					canvas, cameraVideo, segmentation, backgroundBlurAmount,
+					edgeBlurAmount, flipHorizontal);
+				if (this.stopBlur == false){
+					requestAnimationFrame(draw)
+				}
+			}
+
+			cameraVideo.addEventListener("loadeddata", event =>{
+				canvas.width = cameraVideo.videoWidth;
+				canvas.height = cameraVideo.videoHeight;
+				cameraVideo.height = canvas.height;
+				cameraVideo.width =  canvas.width;
+				this.reqId = requestAnimationFrame(draw)
+				console.log("reqId " + this.reqId);
+		},false)
+	})
 	}
 
 	/**

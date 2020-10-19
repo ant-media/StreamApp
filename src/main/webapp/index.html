@@ -106,6 +106,10 @@ video {
 					</label>
 						<a id="browser_screen_share_doesnt_support" href="https://caniuse.com/#search=getDisplayMedia">Your browser doesn't support screen share. You can see supported browsers in this link </a>
 				</div>
+				<div class="form-check form-check-inline">
+					<input class="form-check-input video-source" input type="checkbox" id="blur" name="blur">	
+					<label for="blur"> Blur Background</label>
+				</div>
 				<div class="dropdown-divider"></div>
 				<legend class="col-form-label audio-source-legend">Audio Source</legend>
 				
@@ -166,6 +170,8 @@ video {
 	<script src="https://code.jquery.com/jquery-3.4.1.min.js"  crossorigin="anonymous"></script>
 	<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" crossorigin="anonymous"></script>
 	<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"  crossorigin="anonymous"></script>	
+	<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/body-pix@2.0"></script>
 </body>
 <script type="module" lang="javascript">
 	import {WebRTCAdaptor} from "./js/webrtc_adaptor.js"
@@ -207,7 +213,7 @@ video {
 		init();
 
 	});
-
+	var publishMode = "camera";
 	var maxVideoBitrateKbps = 900;
 
 	//TODO: Migrate these methods to Jquery
@@ -219,6 +225,8 @@ video {
 	options.addEventListener("click", toggleOptions, false);
 	var send = document.getElementById("send");
 	send.addEventListener("click", sendData, false);
+	var blur = document.getElementById("blur");
+	blur.addEventListener("change", blurBackground, false);
 	
 	document.getElementById("streamName").defaultValue = "Goofy"
 	var streamNameBox = document.getElementById("streamName");
@@ -252,18 +260,30 @@ video {
 		}
 		webRTCAdaptor.stop(streamId);
 	}
+	function blurBackground(){
+		console.log(publishMode)
+		if(publishMode == "camera" && blur.checked == true){
+			webRTCAdaptor.enableBackgroundBlur();
+		}else if(publishMode == "camera" && blur.checked == false){
+			webRTCAdaptor.stopBackgroundBlur();
+			webRTCAdaptor.switchVideoCameraCapture(streamId);
+		}
+	}
 	
   	function switchVideoMode(chbx) {
   		if(chbx.value == "screen") {
-			  //webRTCAdaptor.switchDesktopWithMicAudio(streamId);
-			  webRTCAdaptor.switchDesktopCapture(streamId);
+			webRTCAdaptor.switchDesktopCapture(streamId);
+			publishMode = "screen"
   		}
   		else if(chbx.value == "screen+camera"){
 			webRTCAdaptor.switchDesktopCaptureWithCamera(streamId);
+			publishMode = "screen+camera"
+			
 		}
 		else {
-  			webRTCAdaptor.switchVideoCameraCapture(streamId, chbx.value);
-  		}
+			webRTCAdaptor.switchVideoCameraCapture(streamId);
+			publishMode = "camera"
+		  }
 	}
   	
 	function switchAudioMode(chbx) {
@@ -394,7 +414,6 @@ video {
 						if (publishImmediately) {
 							webRTCAdaptor.publish(streamId, token)
 						}
-						
 					} else if (info == "publish_started") {
 						//stream is being published
 						console.log("publish started");
@@ -594,7 +613,8 @@ video {
 					}
 					else if (error.indexOf("ScreenSharePermissionDenied") != -1) {
 						errorMessage = "You are not allowed to access screen share";
-						$(".video-source").first().prop("checked", true);						
+						$(".video-source").first().prop("checked", true);
+						publishMode = "camera";						
 					}
 					else if (error.indexOf("WebSocketNotConnected") != -1) {
 						errorMessage = "WebSocket Connection is disconnected.";
