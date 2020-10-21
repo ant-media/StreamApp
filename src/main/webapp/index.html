@@ -538,17 +538,19 @@ video {
 						var i = 0;
 						obj.forEach(function(device) {
 							var label = device.label;
+							var deviceId = device.deviceId;
 							devices.forEach(function(same){
 								if (same == device.label){
 									i += 1;
 									label = device.label + " - " + i
+									deviceId = device.deviceId + i
 								}
 							})
 							if (device.kind == "videoinput") {
-								videoHtmlContent += getCameraRadioButton(label, device.deviceId);
+								videoHtmlContent += getCameraRadioButton(label, deviceId);
 							}
 							else if (device.kind == "audioinput"){
-								audioHtmlContent += getAudioRadioButton(device.label, device.deviceId);
+								audioHtmlContent += getAudioRadioButton(label, deviceId);
 							}
 							devices.push(device.label)
 						}); 
