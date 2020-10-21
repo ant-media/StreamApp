@@ -533,13 +533,24 @@ video {
 					else if (info == "available_devices") {
 						var videoHtmlContent = "";
 						var audioHtmlContent = "";
+						var devices = new Array();
+				
+						var i = 0;
 						obj.forEach(function(device) {
+							var label = device.label;
+							devices.forEach(function(same){
+								if (same == device.label){
+									i += 1;
+									label = device.label + " - " + i
+								}
+							})
 							if (device.kind == "videoinput") {
-								videoHtmlContent += getCameraRadioButton(device.label, device.deviceId);
+								videoHtmlContent += getCameraRadioButton(label, device.deviceId);
 							}
 							else if (device.kind == "audioinput"){
 								audioHtmlContent += getAudioRadioButton(device.label, device.deviceId);
 							}
+							devices.push(device.label)
 						}); 
 						$(videoHtmlContent).insertAfter(".video-source-legend");
 						$(".video-source").first().prop("checked", true);	
