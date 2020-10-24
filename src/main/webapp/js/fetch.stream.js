@@ -13,21 +13,20 @@ if (!String.prototype.endsWith)
 	};
 }
 
-function tryToHLSPlay(name, token, subscriberId, subscriberCode, noStreamCallback) {
-	fetch("streams/"+ name +"_adaptive.m3u8", {method:'HEAD'})
+export function tryToHLSPlay(name, token, type, subscriberId, subscriberCode, noStreamCallback) {
+	fetch("streams/"+ name +"_adaptive."+type, {method:'HEAD'})
 	.then(function(response) {
 		if (response.status == 200) {
-			// adaptive m3u8 exists,play it
-			initializePlayer(name+"_adaptive", "m3u8", token, subscriberId, subscriberCode);
+			// adaptive m3u8 & mpd exists,play it
+			initializePlayer(name+"_adaptive", type, token, subscriberId, subscriberCode);
 		}
 		else 
 		{
-			//adaptive m3u8 not exists, try m3u8 exists.
-			fetch("streams/"+ name +".m3u8", {method:'HEAD'})
+			//adaptive not exists, try mpd or m3u8 exists.
+			fetch("streams/"+ name +"."+type, {method:'HEAD'})
 			.then(function(response) {
 				if (response.status == 200) {
-					//m3u8 exists, play it
-					initializePlayer(name, "m3u8", token, subscriberId, subscriberCode);
+					initializePlayer(name, type, token, subscriberId, subscriberCode);
 				}
 				else {
 					console.log("No stream found");
@@ -45,7 +44,7 @@ function tryToHLSPlay(name, token, subscriberId, subscriberCode, noStreamCallbac
 
 }
 
-function tryToVODPlay(name, token, subscriberId, subscriberCode, noStreamCallback){
+export function tryToVODPlay(name, token, subscriberId, subscriberCode, noStreamCallback){
 
 	var firstPlayType = playType[0];
 	var secondPlayType = playType[1];
@@ -84,7 +83,7 @@ function tryToVODPlay(name, token, subscriberId, subscriberCode, noStreamCallbac
 		});
 }
 
-function isMobile() { 
+export function isMobile() { 
 	if( navigator.userAgent.match(/Android/i)
 			|| navigator.userAgent.match(/webOS/i)
 			|| navigator.userAgent.match(/iPhone/i)
@@ -98,5 +97,20 @@ function isMobile() {
 	}
 	else {
 		return false;
+	}
+}
+
+export function getUrlParameter(sParam) {
+	var sPageURL = decodeURIComponent(window.location.search.substring(1)),
+		sURLVariables = sPageURL.split('&'),
+		sParameterName,
+		i;
+
+	for (i = 0; i < sURLVariables.length; i++) {
+		sParameterName = sURLVariables[i].split('=');
+
+		if (sParameterName[0] === sParam) {
+			return sParameterName[1] === undefined ? true : sParameterName[1];
+		}
 	}
 }
