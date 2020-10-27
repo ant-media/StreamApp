@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Ant Media Server WebRTC Publish</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta charset="UTF-8">
+	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+
+	<script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
+
+	<style>
+		video {
+			width: 100%;
+			max-width: 640px;
+		}
+
+		/* Everything but the jumbotron gets side spacing for mobile first views */
+		.header, .marketing, .footer {
+			padding: 15px;
+		}
+
+		/* Custom page header */
+		.header {
+			padding-bottom: 20px;
+		}
+
+/* Customize container 
+@media ( min-width : 768px) {
+	.container {
+		max-width: 730px;
+	}
+}
+*/
+.container-narrow>hr {
+	margin: 30px 0;
+}
+
+/* Main marketing message and sign up button */
+.jumbotron {
+	text-align: center;
+}
+
+/* Responsive: Portrait tablets and up */
+@media screen and (min-width: 768px) {
+	/* Remove the padding we set earlier */
+	.header, .marketing, .footer {
+		padding-right: 0;
+		padding-left: 0;
+	}
+}
+.options {
+	display:none;
+}
+
+</style>
+</head>
+<body>
+
+
+	<div class="container">
+
+		<header class="blog-header header py-3">
+
+			<div class="row justify-content-between align-items-center">
+				<div class="col-12 col-md-12 footer-center">
+					<h3 class="text-muted">WebRTC Test Tool</h3>
+				</div>
+			</div>
+
+
+		</header>
+	</div>
+
+	<div class="container">
+
+		<video style="display:none" id="localVideo" autoplay="" muted="" playsinline=""></video>
+
+		<div class="form-group">	
+			<button class="btn btn-primary" disabled
+			id="start_publish_button">Start WebRTC Publish Test</button>
+			<button class="btn btn-primary"
+			id="start_play_button">Start WebRTC Play Test</button>
+		</div>	
+
+		<div class="form-group">	
+			<div id="test_result" style="display:none">Test Started</div>
+		</div>
+
+		<div class="form-group">	
+			<div id="progress" class="progress" style="display:none">
+				<div id="progress-bar" class="progress-bar progress-bar-striped" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+			</div>
+		</div>
+
+		<section id="publish_statistics" style="display:none">
+			<div class="form-group">	
+				<h5 class="text-muted">These are your WebRTC Publish Statistics:</h5>
+			</div>
+
+			<div class="form-group">	
+				<div id="stats_panel" style="margin-top: 10px" >
+					<div class="row">
+						<div class="col-sm-4">
+
+							<div id="min_bit_rate_container">Min Bitrate(Kbps): <span id="publish_min_bit_rate"></span></div>
+							<div id="average_bit_rate_container">Average Bitrate(Kbps): <span id="publish_average_bit_rate"></span></div>
+							<div id="max_bit_rate_container">Max Bitrate(Kbps): <span id="publish_max_bit_rate"></span></div>
+							<div id="packet_lost_container">PacketsLost: <span id="publish_packet_lost_text"></span></div>
+							<div id="jitter_text_container">Jitter(Secs): <span id="publish_jitter_text"></span></div>
+
+						</div>
+						<div class="col-sm-4">
+
+							<div id="round_trip_time_container">Round Trip Time(Secs): <span id="publish_round_trip_time"></span></div>
+							<div id="source_resolution_container">Source WidthxHeight: <span id="publish_source_width"></span> x <span id="publish_source_height"></span></div>
+							<div id="ongoing_resolution_container">On-going WidthxHeight: <span id="publish_ongoing_width"></span> x <span id="publish_ongoing_height"></span></div>
+							<div id="on_going_fps_container">On-going FPS: <span id="publish_on_going_fps"></span></div>
+
+
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+
+		<section id="play_statistics" style="display:none "> <!-- --> 
+			<div class="form-group">	
+				<h5 class="text-muted">These are your WebRTC Play Statistics:</h5>
+			</div>
+
+			<div class="form-group">
+				<div class="row">
+					<div class="col-sm-4">
+						<div id="min_bit_rate_container">Min Bitrate(Kbps): <span id="play_min_bit_rate"></span></div>
+						<div id="average_bit_rate_container">Average Bitrate(Kbps): <span id="play_average_bit_rate"></span></div>
+						<div id="max_bit_rate_container">Max Bitrate(Kbps): <span id="play_max_bit_rate"></span></div>
+						<div id="packet_lost_container">PacketsLost: <span id="play_packet_lost_text"></span></div>
+						<div id="jitter_container">Jitter Average Delay(Secs): <span id="play_jitter_text"></span></div>
+						<div id="audio_level_container">Audio Level: <span id="play_audio_level"></span></div>
+					</div>
+					<div class="col-sm-4">
+						<div id="incoming_resolution_container">Frame WidthxHeight: <span id="play_frame_width"></span>x<span id="play_frame_height"></span></div>
+						<div id="frame_decoded_container">Frames Decoded: <span id="play_frame_decoded"></span></div>
+						<div id="frame_dropped_container">Frames Dropped: <span id="play_frame_dropped"></span></div>
+						<div id="frame_received_container">Frames Received: <span id="play_frame_received"></span></div>
+					</div>
+				</div>
+			</div>
+
+		</section>
+
+	</div>
+
+
+	<script src="https://code.jquery.com/jquery-3.4.1.min.js"  crossorigin="anonymous"></script>
+	<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" crossorigin="anonymous"></script>
+	<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"  crossorigin="anonymous"></script>	
+
+
+</body>
+<script type="module" lang="javascript">
+	import {WebRTCAdaptor} from "./js/webrtc_adaptor.js"
+	import {getUrlParameter} from "./js/fetch.stream.js" 
+
+
+
+	function init () {
+		var id = getUrlParameter("id");
+		if(typeof id != "undefined") {
+			$("#streamName").val(id);
+		}
+		else {
+			id = getUrlParameter("name");
+			if (typeof id != "undefined") {
+				$("#streamName").val(id);
+			} 
+			else {
+				$("#streamName").val("stream1");
+			}
+		}
+
+	}
+	$(function() {
+		init();
+
+	});
+
+	var maxVideoBitrateKbps = 900;
+
+	var statsTime = 0;
+	var publishMinBitrateValue =0;
+	var publishMaxBitrateValue =0;
+	var playMinBitrateValue =0;
+	var playMaxBitrateValue =0;
+
+
+	var test_result_text = document.getElementById("test_result");
+	var progress = document.getElementById("progress");
+	var publish_statistics = document.getElementById("publish_statistics");
+
+	//TODO: Migrate these methods to Jquery
+	var start_publish_button = document.getElementById("start_publish_button");
+	start_publish_button.addEventListener("click", startPublishing, false);
+
+	var start_play_button = document.getElementById("start_play_button");
+	start_play_button.addEventListener("click", startPlaying, false);
+
+	//var stop_publish_button = document.getElementById("stop_publish_button");
+	//stop_publish_button.addEventListener("click", stopPublishing, false);
+	//var options = document.getElementById("options");
+	//options.addEventListener("click", toggleOptions, false);
+	//var send = document.getElementById("send");
+	//send.addEventListener("click", sendData, false);
+	
+	//document.getElementById("streamName").defaultValue = "Goofy";
+	//var streamNameBox = document.getElementById("streamName");
+	//streamNameBox.value = "stream1";
+	
+	/**
+	 * If publishing stops for any reason, it tries to republish again.
+	 */
+
+	 var autoRepublishEnabled = true;
+	/**
+	 * Timer job that checks the WebRTC connection 
+	 */
+	 var autoRepublishIntervalJob = null;
+
+	 var streamId = "testStream2";
+
+	 var token = getUrlParameter("token");
+
+	 var myVar;
+
+	 var i = 0;
+
+	 var test_type;
+
+	 function startPublishing() {
+	 	test_type="publish";
+	 	publishWebRTCAdaptor.publish(streamId, token);
+	 }
+
+	 function startPlaying() {
+	 	test_type="play";
+	 	publishWebRTCAdaptor.publish(streamId, token);
+
+	 	myVar = setInterval(checkPublishStatus, 1000);
+	 }
+
+	 function stopPublishing() {
+	 	if (autoRepublishIntervalJob != null) {
+	 		clearInterval(autoRepublishIntervalJob);
+	 		autoRepublishIntervalJob = null;
+	 	}
+	 	publishWebRTCAdaptor.stop(streamId);
+	 }
+
+	 function checkPublishStatus(){
+	 	i++;
+
+	 	if(publishWebRTCAdaptor.iceConnectionState(streamId) == "connected" || webRTCPlayAdaptor.iceConnectionState(streamId) == "connected") {
+	 		webRTCPlayAdaptor.play(streamId, token);
+	 		clearInterval(myVar);
+	 	}
+
+		// Error handling
+		if(i == 5){
+			console.log("Error handling");
+		}
+	}
+
+	function getCameraRadioButton(deviceName, deviceId) {
+		return "<div class=\"form-check form-check-inline\">" + 	
+		"<input class=\"form-check-input video-source\" name=\"videoSource\" type=\"radio\" value=\"" + deviceId + "\" id=\"" + deviceId + "\">" +
+		"<label class=\"form-check-label font-weight-light\" for=\"" + deviceId + "\" style=\"font-weight:normal\">" +
+		deviceName +
+		"</label>" +		
+		"</div>";
+	}
+
+	function getAudioRadioButton(deviceName, deviceId) {
+		return "<div class=\"form-check form-check-inline\">" + 	
+		"<input class=\"form-check-input audio-source\" name=\"audioSource\" type=\"radio\" value=\"" + deviceId + "\" id=\"" + deviceId + "\">" +
+		"<label class=\"form-check-label font-weight-light\" for=\"" + deviceId + "\" style=\"font-weight:normal\">" +
+		deviceName +
+		"</label>" +		
+		"</div>";
+	}
+
+	var pc_config = {
+		'iceServers' : [ {
+			'urls' : 'stun:stun1.l.google.com:19302'
+		} ]
+	};
+
+	var publishSdpConstraints = {
+		OfferToReceiveAudio : false,
+		OfferToReceiveVideo : false
+	};
+
+	var publishMediaConstraints = {
+		video: {
+			width: 1920,
+			height: 1080
+		},
+		audio : true
+	};
+
+	var appName = location.pathname.substring(0, location.pathname.lastIndexOf("/")+1);
+	var path =  location.hostname + ":" + location.port + appName + "websocket";
+	var websocketURL =  "ws://" + path;
+
+	if (location.protocol.startsWith("https")) {
+		websocketURL = "wss://" + path;
+	}
+
+	var publishWebRTCAdaptor = null;
+
+	function initWebRTCAdaptor(publishImmediately, autoRepublishEnabled) 
+	{
+		publishWebRTCAdaptor = new WebRTCAdaptor({
+			websocket_url : websocketURL,
+			mediaConstraints : publishMediaConstraints,
+			peerconnection_config : pc_config,
+			sdp_constraints : publishSdpConstraints,
+			localVideoId : "localVideo",
+			debug:true,
+			bandwidth:"unlimited",
+			callback : (info, obj) => {
+				if (info == "initialized") {
+					console.log("initialized");
+
+					start_publish_button.disabled = false;
+
+				} else if (info == "publish_started") {
+						//stream is being published
+						console.log("publish started");
+
+						if(test_type == "publish"){
+							publish_statistics.style.display = "block";
+							play_statistics.style.display = "none";
+						}
+						if(test_type == "play"){
+							publish_statistics.style.display = "none";
+							play_statistics.style.display = "block";
+						}
+
+						test_result_text.textContent = "Test Started";
+						start_publish_button.disabled = true;
+						start_play_button.disabled = true;
+						progress.style.display = "block";
+						
+
+						$(".progress-bar").css("width", statsTime*20 + "%").text(statsTime*20 + " %");
+
+						test_result_text.style.display = "block";
+						publishWebRTCAdaptor.enableStats(obj.streamId);
+
+					} else if (info == "publish_finished") {
+						//stream is being finished
+						console.log("publish finished");
+						start_publish_button.disabled = false;
+						start_play_button.disabled = false;
+
+						test_result_text.textContent = "Test Finished";
+
+					//	stop_publish_button.disabled = true;
+						//$("#stats_panel").hide();
+					}
+					else if (info == "browser_screen_share_supported") {
+						$(".video-source").prop("disabled", false);
+						
+						console.log("browser screen share supported");
+						//browser_screen_share_doesnt_support.style.display = "none";
+					}
+					else if (info == "screen_share_stopped") {
+						//choose the first video source. It may not be correct for all cases. 
+						$(".video-source").first().prop("checked", true);	
+						console.log("screen share stopped");
+					}
+					else if (info == "closed") {
+						//console.log("Connection closed");
+						if (typeof obj != "undefined") {
+							console.log("Connecton closed: " + JSON.stringify(obj));
+						}
+					}
+					else if (info == "pong") {
+						//ping/pong message are sent to and received from server to make the connection alive all the time
+						//It's especially useful when load balancer or firewalls close the websocket connection due to inactivity
+					}
+					else if (info == "refreshConnection") {
+						checkAndRepublishIfRequired();
+					}
+					else if (info == "ice_connection_state_changed") {
+						console.log("iceConnectionState Changed: ",JSON.stringify(obj));
+					}
+					else if (info == "updated_stats") {
+
+						statsTime++;
+
+						$(".progress-bar").css("width", statsTime*10 + "%").text(statsTime*10 + " %");
+
+						if(statsTime ==10){
+							publishWebRTCAdaptor.stop(streamId);
+							statsTime=0;
+						}
+
+						//obj is the PeerStats which has fields
+						 //averageOutgoingBitrate - kbits/sec
+						//currentOutgoingBitrate - kbits/sec
+						console.log("Average outgoing bitrate " + obj.averageOutgoingBitrate + " kbits/sec"
+							+ " Current outgoing bitrate: " + obj.currentOutgoingBitrate + " kbits/sec"
+							+ " video source width: " + obj.resWidth + " video source height: " + obj.resHeight
+							+ "frame width: " + obj.frameWidth + " frame height: " + obj.frameHeight
+							+ " video packetLost: "  + obj.videoPacketsLost + " audio packetsLost: " + obj.audioPacketsLost
+							+ " video RTT: " + obj.videoRoundTripTime + " audio RTT: " + obj.audioRoundTripTime 
+							+ " video jitter: " + obj.videoJitter + " audio jitter: " + obj.audioJitter);
+
+
+						if(publishMinBitrateValue == 0 || publishMinBitrateValue > obj.currentOutgoingBitrate){
+							publishMinBitrateValue = obj.currentOutgoingBitrate;
+						}
+
+
+						if(obj.currentOutgoingBitrate != 0 && publishMaxBitrateValue < obj.currentOutgoingBitrate ){
+							publishMaxBitrateValue = obj.currentOutgoingBitrate;
+						}
+
+						$("#publish_min_bit_rate").text(publishMinBitrateValue);
+						$("#publish_average_bit_rate").text(obj.averageOutgoingBitrate);
+						$("#publish_max_bit_rate").text(publishMaxBitrateValue);
+
+						$("#publish_latest_bit_rate").text(obj.currentOutgoingBitrate);
+
+						var packetLost = parseInt(obj.videoPacketsLost) + parseInt(obj.audioPacketsLost);	
+						
+						$("#publish_packet_lost_text").text(packetLost);
+
+						var jitter = ((parseFloat(obj.videoJitter) + parseInt(obj.audioJitter)) / 2).toPrecision(3);
+						$("#publish_jitter_text").text(jitter);
+
+						var rtt = ((parseFloat(obj.videoRoundTripTime) + parseFloat(obj.audioRoundTripTime)) / 2).toPrecision(3);
+						$("#publish_round_trip_time").text(rtt);
+						
+						$("#publish_source_width").text(obj.resWidth);
+						$("#publish_source_height").text(obj.resHeight);
+
+						$("#publish_ongoing_width").text(obj.frameWidth);
+						$("#publish_ongoing_height").text(obj.frameHeight);	
+
+						$("#publish_on_going_fps").text(obj.currentFPS);
+
+						$("#stats_panel").show();
+
+					}
+					else if (info == "data_received") {
+						console.log("Data received: " + obj.event.data + " type: " + obj.event.type + " for stream: " + obj.streamId);
+						$("#dataMessagesTextarea").append("Received: " + obj.event.data + "\r\n");
+					}
+					else if (info == "available_devices") {
+						var videoHtmlContent = "";
+						var audioHtmlContent = "";
+						obj.forEach(function(device) {
+							if (device.kind == "videoinput") {
+								videoHtmlContent += getCameraRadioButton(device.label, device.deviceId);
+							}
+							else if (device.kind == "audioinput"){
+								audioHtmlContent += getAudioRadioButton(device.label, device.deviceId);
+							}
+						}); 
+						$(videoHtmlContent).insertAfter(".video-source-legend");
+						$(".video-source").first().prop("checked", true);	
+						
+						$(audioHtmlContent).insertAfter(".audio-source-legend");
+						$(".audio-source").first().prop("checked", true);	
+
+						if (document.querySelector('input[name="videoSource"]')) {
+							document.querySelectorAll('input[name="videoSource"]').forEach((elem) => {
+								elem.addEventListener("change", function(event) {
+									var item = event.target;
+									switchVideoMode(item)
+								});
+							});
+						}
+						if (document.querySelector('input[name="audioSource"]')) {
+							document.querySelectorAll('input[name="audioSource"]').forEach((elem) => {
+								elem.addEventListener("change", function(event) {
+									var item = event.target;
+									switchAudioMode(item)
+								});
+							});
+						}
+					}
+					else {
+						console.log( info + " notification received");
+					}
+				},
+				callbackError : function(error, message) {
+					//some of the possible errors, NotFoundError, SecurityError,PermissionDeniedError
+
+					console.log("error callback: " +  JSON.stringify(error));
+					var errorMessage = JSON.stringify(error);
+					if (typeof message != "undefined") {
+						errorMessage = message;
+					}
+					var errorMessage = JSON.stringify(error);
+					if (error.indexOf("NotFoundError") != -1) {
+						errorMessage = "Camera or Mic are not found or not allowed in your device";
+					}
+					else if (error.indexOf("NotReadableError") != -1 || error.indexOf("TrackStartError") != -1) {
+						errorMessage = "Camera or Mic is being used by some other process that does not let read the devices";
+					}
+					else if(error.indexOf("OverconstrainedError") != -1 || error.indexOf("ConstraintNotSatisfiedError") != -1) {
+						errorMessage = "There is no device found that fits your video and audio constraints. You may change video and audio constraints"
+					}
+					else if (error.indexOf("NotAllowedError") != -1 || error.indexOf("PermissionDeniedError") != -1) {
+						errorMessage = "You are not allowed to access camera and mic.";
+					}
+					else if (error.indexOf("TypeError") != -1) {
+						errorMessage = "Video/Audio is required";
+					}
+					else if (error.indexOf("ScreenSharePermissionDenied") != -1) {
+						errorMessage = "You are not allowed to access screen share";
+						$(".video-source").first().prop("checked", true);						
+					}
+					else if (error.indexOf("WebSocketNotConnected") != -1) {
+						errorMessage = "WebSocket Connection is disconnected.";
+					}
+					alert(errorMessage);
+				}
+			});
+}
+
+	//initialize the WebRTCAdaptor
+	initWebRTCAdaptor(false, autoRepublishEnabled);
+
+	var playSdpConstraints = {
+		OfferToReceiveAudio : true,
+		OfferToReceiveVideo : true
+	};
+
+	var playMediaConstraints = {
+		video : false,
+		audio : false
+	};
+
+	var webRTCPlayAdaptor = new WebRTCAdaptor({
+		websocket_url : websocketURL,
+		mediaConstraints : playMediaConstraints,
+		peerconnection_config : pc_config,
+		sdp_constraints : playSdpConstraints,
+		remoteVideoId : "remoteVideo",
+		isPlayMode : true,
+		debug : true,
+		candidateTypes: ["tcp", "udp"],
+		callback : function(info, obj) {
+			if (info == "initialized") {
+				console.log("initialized");
+				start_play_button.disabled = false;
+				//stop_play_button.disabled = true;
+			} else if (info == "play_started") {
+				//joined the stream
+				console.log("play started");
+
+				webRTCPlayAdaptor.getStreamInfo(streamId); 
+				webRTCPlayAdaptor.enableStats(obj.streamId);
+
+			} else if (info == "play_finished") {
+				//leaved the stream
+				console.log("play finished");
+				start_play_button.disabled = false;
+				webRTCPlayAdaptor.disableStats(obj.streamId);
+
+				//stop_play_button.disabled = true;
+				//$("#stats_panel").hide();
+				// Reset stream resolutions in dropdown
+			//	document.getElementById("dropdownMenu").innerHTML = '<a class="dropdown-item active" href="#">Automatic</a>'; 
+		} else if (info == "closed") {
+				//console.log("Connection closed");
+				if (typeof obj != "undefined") {
+					console.log("Connecton closed: "
+						+ JSON.stringify(obj));
+				}
+			} 	
+			else if (info == "ice_connection_state_changed") {
+				console.log("iceConnectionState Changed: ",JSON.stringify(obj));
+			}
+			else if (info == "updated_stats") {
+
+				//obj is the PeerStats which has fields
+				 //averageIncomingBitrate - kbits/sec
+				//currentIncomingBitrate - kbits/sec
+				//packetsLost - total number of packet lost
+				//fractionLost - fraction of packet lost
+
+				if(playMinBitrateValue == 0 || playMinBitrateValue > obj.currentIncomingBitrate){
+					playMinBitrateValue = obj.currentIncomingBitrate;
+				}
+
+
+				if(obj.currentIncomingBitrate != 0 && playMaxBitrateValue < obj.currentIncomingBitrate ){
+					playMaxBitrateValue = obj.currentIncomingBitrate;
+				}
+
+				$("#play_min_bit_rate").text(playMinBitrateValue);
+				$("#play_average_bit_rate").text(obj.averageIncomingBitrate);
+				$("#play_max_bit_rate").text(playMaxBitrateValue);
+				
+				var packetLost = parseInt(obj.videoPacketsLost) + parseInt(obj.audioPacketsLost);	
+				$("#play_packet_lost_text").text(packetLost);
+
+				var jitterAverageDelay = ((parseFloat(obj.videoJitterAverageDelay) + parseFloat(obj.audioJitterAverageDelay)) / 2).toPrecision(3);
+				$("#play_jitter_text").text(jitterAverageDelay);
+				
+				$("#play_audio_level").text(obj.audioLevel.toPrecision(3));
+				
+				$("#play_frame_width").text(obj.frameWidth);
+				$("#play_frame_height").text(obj.frameHeight);
+				
+				$("#play_frame_received").text(obj.framesReceived);	
+				$("#play_frame_decoded").text(obj.framesDecoded);
+				$("#play_frame_dropped").text(obj.framesDropped);
+				
+				$("#stats_panel").show();
+				
+				
+
+				console.log("Average incoming kbits/sec: " + obj.averageIncomingBitrate 
+					+ " Current incoming kbits/sec: " + obj.currentIncomingBitrate
+					+ " video packetLost: " + obj.videoPacketsLost 
+					+ " audio packetLost: " + obj.audioPacketsLost 
+					+ " frame width: " + obj.frameWidth
+					+ " frame height: " + obj.frameHeight
+					+ " frame received: " + obj.framesReceived
+					+ " frame decoded: " + obj.framesDecoded
+					+ " frame dropped: " + obj.framesDropped
+					+ " video jitter average delay: " + obj.videoJitterAverageDelay
+					+ " audio jitter average delay: " + obj.audioJitterAverageDelay
+					+ " audio level: " + obj.audioLevel);
+
+			}
+			else if (info == "data_received") {
+				console.log("Data received: " + obj.event.data + " type: " + obj.event.type + " for stream: " + obj.streamId);
+				$("#dataMessagesTextarea").append("Received: " + obj.event.data + "\r\n");
+			}
+			else if (info == "bitrateMeasurement") {
+
+				console.debug(obj);	
+				if(obj.audioBitrate+obj.videoBitrate > obj.targetBitrate) {
+					startAnimation();
+				}
+				$("#video_bit_rate").text(parseInt(obj.audioBitrate) + parseInt(obj.videoBitrate));
+			}
+			else {
+				console.log( info + " notification received");
+			}
+		},
+		callbackError : function(error) {
+			//some of the possible errors, NotFoundError, SecurityError,PermissionDeniedError
+
+			console.log("error callback: " + JSON.stringify(error));
+			alert(JSON.stringify(error));
+		}
+	});
+
+window.publishWebRTCAdaptor = publishWebRTCAdaptor;
+window.webRTCPlayAdaptor = webRTCPlayAdaptor;
+
+
+
+</script>
+</html>
