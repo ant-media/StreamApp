@@ -400,7 +400,7 @@
 			* If streamId starts with streams, it's hls or mp4 file to be played
 			*/
 			var lastIndexOfDot = streamId.lastIndexOf(".")
-			streamPath = streamId.substring(streamsFolder.length+1, lastIndexOfDot);
+			var streamPath = streamId.substring(streamsFolder.length+1, lastIndexOfDot);
 			var extension = streamId.substring(lastIndexOfDot+1);
 			initializePlayer(streamPath, extension, token);
 		}
