@@ -550,10 +550,10 @@ video {
 								}
 							})
 							if (device.kind == "videoinput") {
-								videoHtmlContent += getCameraRadioButton(label, deviceId);
+								videoHtmlContent += getCameraRadioButton(label, device.deviceId);
 							}
 							else if (device.kind == "audioinput"){
-								audioHtmlContent += getAudioRadioButton(label, deviceId);
+								audioHtmlContent += getAudioRadioButton(label, device.deviceId);
 							}
 							devices.push(device.label)
 						}); 
