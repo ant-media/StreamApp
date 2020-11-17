@@ -62,7 +62,7 @@
     */
 
 	import {WebRTCAdaptor} from "./js/webrtc_adaptor.js"
-    import {getUrlParameter, isMobile, tryToPlay} from "./js/fetch.stream.js"
+    import {getUrlParameter, isMobile, tryToPlay, tryToVODPlay} from "./js/fetch.stream.js"
 	//The play order, player tries to play according to this order, if it can not play then tries following format
 	
 
@@ -84,13 +84,13 @@
 	 if (playType == null || playType=="mp4,webm"){
 		playType = ["mp4", "webm"];
 	 }
-	 else if(playType=="webm,mp4") {
+	 else if(playType == "webm,mp4") {
 	 	playType=["webm", "mp4"];
 	 }
-	 else if(playType="mp4"){
+	 else if(playType == "mp4"){
 	 	playType=["mp4"];
 	 }
-	 else if(playType="webm"){
+	 else if(playType == "webm"){
 	 	playType=["webm"];
 	 }
 	   
@@ -159,7 +159,7 @@
 		setTimeout(function() 
 		{
 			if(playOrder.includes("vod")){
-				tryToVODPlay(streamId, token, vodNoStreamCallback);	
+				tryToVODPlay(streamId, token, vodNoStreamCallback, playType);	
 			}
 		}, 3000);
     }
@@ -334,7 +334,7 @@
 			}
 			else if (playOrder[0] == "vod" )
 			{
-				tryToVODPlay(streamId, token, vodNoStreamCallback);	
+				tryToVODPlay(streamId, token, vodNoStreamCallback, playType);	
 			}
 			else {
 				alert("Unsupported play order requested. Supported formats are webrtc and hls. Use something like playOrder=webrtc,hls");
