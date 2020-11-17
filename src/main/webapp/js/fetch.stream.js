@@ -45,11 +45,19 @@ export function tryToPlay(name, token, type, noStreamCallback) {
 
 }
 
-export function tryToVODPlay(name, token, noStreamCallback){
+export function tryToVODPlay(name, token, noStreamCallback, playType){
 
+	if (typeof playType == "undefined" || playType == null || playType.length == 0) {
+		console.error("playType is not defined");
+		return;
+	}
 	var firstPlayType = playType[0];
-	var secondPlayType = playType[1];
-
+	var secondPlayType = null;
+	
+	if (playType.length >= 2) 
+	{
+		secondPlayType = playType[1];
+	}
 	fetch("streams/"+ name +"."+firstPlayType, {method:'HEAD'})
 		.then(function(response) {
 			if (response.status == 200) {
