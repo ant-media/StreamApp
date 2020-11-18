@@ -928,7 +928,7 @@ export class WebRTCAdaptor
 						this.changeBandwidth(this.bandwidth, streamId).then(() => {
 							console.log("Bandwidth is changed to " + this.bandwidth);
 						})
-						.catch(e => console.error(e));
+						.catch(e => console.warn(e));
 					}
 				}
 			}
