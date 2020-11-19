@@ -89,23 +89,7 @@ video {
 				</div>
 				<div class="dropdown-divider"></div>
 				<legend class="col-form-label video-source-legend">Video Source</legend>
-	
-				<div class="form-check form-check-inline">	
-					<input class="form-check-input video-source" disabled name="videoSource" type="radio" value="screen" 
-					id="screen_share_checkbox">
-					<label class="form-check-label font-weight-light" for="screen_share_checkbox" style="font-weight:normal">
-							Screen
-					</label>
-				</div>
-				
-				<div class="form-check form-check-inline">
-					<input class="form-check-input video-source" disabled name="videoSource" type="radio" value="screen+camera" 
-						id="screen_share_with_camera_checkbox">
-					<label class="form-check-label font-weight-light" for="screen_share_with_camera_checkbox" style="font-weight:normal">
-							Screen with Camera
-					</label>
-						<a id="browser_screen_share_doesnt_support" href="https://caniuse.com/#search=getDisplayMedia">Your browser doesn't support screen share. You can see supported browsers in this link </a>
-				</div>
+					<a id="browser_screen_share_doesnt_support" href="https://caniuse.com/#search=getDisplayMedia">Your browser doesn't support screen share. You can see supported browsers in this link </a>
 				<div class="dropdown-divider"></div>
 				<legend class="col-form-label audio-source-legend">Audio Source</legend>
 				
@@ -273,16 +257,31 @@ video {
 	function getCameraRadioButton(deviceName, deviceId) {
 		return "<div class=\"form-check form-check-inline\">" + 	
 							"<input class=\"form-check-input video-source\" name=\"videoSource\" type=\"radio\" value=\"" + deviceId + "\" id=\"" + deviceId + "\">" +
-							"<label class=\"form-check-label font-weight-light\" for=\"" + deviceId + "\" style=\"font-weight:normal\">" +
+							"<label class=\"form-check-label font-weight-light\" name=\"videoSource\" for=\"" + deviceId + "\" style=\"font-weight:normal\">" +
 								deviceName +
 							"</label>" +		
 						   "</div>";
 	}
-
+	function getScreenButton(){
+		return "<div class=\"form-check form-check-inline\">" +
+					"<input class=\"form-check-input video-source\" name=\"videoSource\" type=\"radio\" value=\"screen\" id=\"screen_share_checkbox\">" +
+					"<label class=\"form-check-label font-weight-light\" name=\"videoSource\" for=\"screen_share_checkbox\" style=\"font-weight:normal\">" +
+							"Screen" +
+					"</label>" +
+				"</div>"
+	}
+	function getScreenWithCamButton(){
+		return "<div class=\"form-check form-check-inline\">" +
+					"<input class=\"form-check-input video-source\" name=\"videoSource\" type=\"radio\" value=\"screenwithcamera\" id=\"screen_share_with_camera_checkbox\">" +
+					"<label class=\"form-check-label font-weight-light\" name=\"videoSource\" for=\"screen_share_with_camera_checkbox\" style=\"font-weight:normal\">" +
+							"Screen with Camera" +
+					"</label>" +
+				"</div>"
+	}
 	function getAudioRadioButton(deviceName, deviceId) {
 		return "<div class=\"form-check form-check-inline\">" + 	
-							"<input class=\"form-check-input audio-source\" name=\"audioSource\" type=\"radio\" value=\"" + deviceId + "\" id=\"" + deviceId + "\">" +
-							"<label class=\"form-check-label font-weight-light\" for=\"" + deviceId + "\" style=\"font-weight:normal\">" +
+							"<input class=\"form-check-input audio-source\" name=\"audioDeviceSource\" type=\"radio\" value=\"" + deviceId + "\" id=\"" + deviceId + "\">" +
+							"<label class=\"form-check-label font-weight-light\" name=\"audioDeviceSource\" for=\"" + deviceId + "\" style=\"font-weight:normal\">" +
 								deviceName +
 							"</label>" +		
 						   "</div>";
@@ -375,7 +374,9 @@ video {
 	}
 
 	var	webRTCAdaptor = null;
-	
+	var selectedRadio = null;
+	var selectedAudio = null;
+
 	function initWebRTCAdaptor(publishImmediately, autoRepublishEnabled) 
 	{
 		webRTCAdaptor = new WebRTCAdaptor({
@@ -538,31 +539,43 @@ video {
 						var i = 0;
 						obj.forEach(function(device) {
 							var label = device.label;
+							var deviceId = device.deviceId;
+							var devices = new Array();
+
 							devices.forEach(function(same){
 								if (same == device.label){
 									i += 1;
 									label = device.label + " - " + i
+									deviceId = device.deviceId + i
 								}
 							})
 							if (device.kind == "videoinput") {
 								videoHtmlContent += getCameraRadioButton(label, device.deviceId);
 							}
 							else if (device.kind == "audioinput"){
-								audioHtmlContent += getAudioRadioButton(device.label, device.deviceId);
+								audioHtmlContent += getAudioRadioButton(label, device.deviceId);
 							}
 							devices.push(device.label)
 						}); 
+						$('[name="videoSource"]').remove();
+						$('[name="audioDeviceSource"]').remove();
+
+						videoHtmlContent += getScreenButton();
+						videoHtmlContent += getScreenWithCamButton();
+
 						$(videoHtmlContent).insertAfter(".video-source-legend");
 						$(".video-source").first().prop("checked", true);	
 						
 						$(audioHtmlContent).insertAfter(".audio-source-legend");
 						$(".audio-source").first().prop("checked", true);	
 
+						
 						if (document.querySelector('input[name="videoSource"]')) {
 							document.querySelectorAll('input[name="videoSource"]').forEach((elem) => {
 								elem.addEventListener("change", function(event) {
 								var item = event.target;
 								switchVideoMode(item)
+								selectedRadio = item.value;
 								});
   							});
 						}
@@ -571,9 +584,12 @@ video {
 								elem.addEventListener("change", function(event) {
 								var item = event.target;
 								switchAudioMode(item)
+								selectedAudio = item.value;
 								});
   							});
 						}
+						$(":radio[value=" + selectedRadio + "]").prop("checked", true);
+						$(":radio[value=" + selectedAudio + "]").prop("checked", true);
 					}
 					else {
 						console.log( info + " notification received");
