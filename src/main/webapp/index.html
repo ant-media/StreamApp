@@ -193,8 +193,8 @@ video {
 	});
 
 	var maxVideoBitrateKbps = 900;
-	var subscriberId = "<%= request.getParameter("subscriberId") %>";
-	var subscriberCode = "<%= request.getParameter("subscriberCode") %>";
+	var subscriberId = getUrlParameter("subscriberId");
+	var subscriberCode = getUrlParameter("subscriberCode");
 	
 	//TODO: Migrate these methods to Jquery
 	var start_publish_button = document.getElementById("start_publish_button");
