@@ -46,6 +46,8 @@
 <!-- WebRTC Player -->
 <video id="remoteVideo" controls playsinline></video>
 <div id="networkWarning">Your connection isn't fast enough to play this stream!</div>
+<img id="play_button" src="images/play.png" onclick="playWebRTCVideo()"
+	style="position: absolute; top: 30px; left: 30px; display: none;" />
 
 <script type="module">
     /**
@@ -193,6 +195,7 @@
 
 	function hideWebRTCElements(){
 		document.getElementById("remoteVideo").style.display="none";
+		document.getElementById("play_button").style.display="none";
 	}
 
 	function playWebRTCVideo() {
@@ -204,7 +207,13 @@
 			document.getElementById("remoteVideo").muted=false;
 		}
 		if(autoPlay){
-			document.getElementById("remoteVideo").play();
+			document.getElementById("remoteVideo").play().then(function(value){
+				//autoplay started
+				document.getElementById("play_button").style.display="none";
+			}).catch(function(error) {
+				document.getElementById("play_button").style.display="block";
+				console.log("User interaction needed to start playing");
+			});
 		}
 	}
 
@@ -214,6 +223,7 @@
 	}
 
 	window.initializePlayer = initializePlayer	
+	window.playWebRTCVideo = playWebRTCVideo	
 
 	function startPlayer(streamId, extension, token) {
 		var type;
@@ -370,6 +380,10 @@
 					}
 				}
 				else if (info == "bitrateMeasurement") {
+
+					if(!document.getElementById("remoteVideo").paused){
+						document.getElementById("play_button").style.display="none";
+					}
 
 					console.debug(description);	
 					if(description.audioBitrate + description.videoBitrate > description.targetBitrate) 
