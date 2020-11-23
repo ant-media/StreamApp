@@ -13,7 +13,7 @@ if (!String.prototype.endsWith)
 	};
 }
 
-export function tryToHLSPlay(name, token, type, subscriberId, subscriberCode, noStreamCallback) {
+export function tryToPlay(name, token, type, subscriberId, subscriberCode, noStreamCallback) {
 	fetch("streams/"+ name +"_adaptive."+type, {method:'HEAD'})
 	.then(function(response) {
 		if (response.status == 200) {
@@ -44,10 +44,19 @@ export function tryToHLSPlay(name, token, type, subscriberId, subscriberCode, no
 
 }
 
-export function tryToVODPlay(name, token, subscriberId, subscriberCode, noStreamCallback){
+export function tryToVODPlay(name, token, subscriberId, subscriberCode, noStreamCallback, playType){
 
+	if (typeof playType == "undefined" || playType == null || playType.length == 0) {
+		console.error("playType is not defined");
+		return;
+	}
 	var firstPlayType = playType[0];
-	var secondPlayType = playType[1];
+	var secondPlayType = null;
+	
+	if (playType.length >= 2) 
+	{
+		secondPlayType = playType[1];
+	}
 
 	fetch("streams/"+ name +"."+firstPlayType, {method:'HEAD'})
 		.then(function(response) {

@@ -97,6 +97,9 @@ export class WebRTCAdaptor
 		*/
 		this.checkBrowserScreenShareSupported();
 
+		this.getDevices();
+		this.trackDeviceChange();
+
 		if (!this.isPlayMode && typeof this.mediaConstraints != "undefined" && this.localStream == null)
 		{
 			if (typeof this.mediaConstraints.video != "undefined" && this.mediaConstraints.video != false)
@@ -175,6 +178,11 @@ export class WebRTCAdaptor
 				canvasContext.drawImage(cameraVideo, positionX, positionY, cameraWidth, cameraHeight);
 			}, 66);
 		}, true)
+	}
+	trackDeviceChange(){
+		navigator.mediaDevices.ondevicechange = () => {
+			this.getDevices();
+		}
 	}
 	getDevices(){
 		navigator.mediaDevices.enumerateDevices().then(devices => {
@@ -945,7 +953,7 @@ export class WebRTCAdaptor
 						this.changeBandwidth(this.bandwidth, streamId).then(() => {
 							console.log("Bandwidth is changed to " + this.bandwidth);
 						})
-						.catch(e => console.error(e));
+						.catch(e => console.warn(e));
 					}
 				}
 			}

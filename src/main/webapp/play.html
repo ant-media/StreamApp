@@ -65,7 +65,7 @@
 
 
 	import {WebRTCAdaptor} from "./js/webrtc_adaptor.js"
-    import {getUrlParameter, isMobile, tryToPlay} from "./js/fetch.stream.js"
+    import {getUrlParameter, isMobile, tryToPlay, tryToVODPlay} from "./js/fetch.stream.js"
 	//The play order, player tries to play according to this order, if it can not play then tries following format
 
 	var playOrder = getUrlParameter("playOrder");
@@ -86,13 +86,13 @@
 	 if (playType == null || playType=="mp4,webm"){
 		playType = ["mp4", "webm"];
 	 }
-	 else if(playType=="webm,mp4") {
+	 else if(playType == "webm,mp4") {
 	 	playType=["webm", "mp4"];
 	 }
-	 else if(playType="mp4"){
+	 else if(playType == "mp4"){
 	 	playType=["mp4"];
 	 }
-	 else if(playType="webm"){
+	 else if(playType == "webm"){
 	 	playType=["webm"];
 	 }
 	   
@@ -106,8 +106,8 @@
 	
     var hlsExtension = "m3u8";
 	var dashExtension = "mpd";
-	var subscriberId = "<%= request.getParameter("subscriberId") %>";
-	var subscriberCode = "<%= request.getParameter("subscriberCode") %>";
+	var subscriberId = getUrlParameter("subscriberId");
+	var subscriberCode = getUrlParameter("subscriberCode");
 	
 	var autoPlay = true;
 	if (pAutoplay == "false" || isMobile()) {
@@ -153,7 +153,6 @@
 		}, 3000);
 	}
 	
-	
     function webrtcNoStreamCallback() {
       	/**
 		 * If HLS is in the play order then try to play HLS, if not wait for WebRTC stream
@@ -175,7 +174,7 @@
 		setTimeout(function() 
 		{
 			if(playOrder.includes("vod")){
-				tryToVODPlay(streamId, token, subscriberId, subscriberCode, vodNoStreamCallback);	
+				tryToVODPlay(streamId, token, subscriberId, subscriberCode, vodNoStreamCallback, playType);	
 			}
 		}, 3000);
 	    	
@@ -405,7 +404,7 @@
 			* If streamId starts with streams, it's hls or mp4 file to be played
 			*/
 			var lastIndexOfDot = streamId.lastIndexOf(".")
-			streamPath = streamId.substring(streamsFolder.length+1, lastIndexOfDot);
+			var streamPath = streamId.substring(streamsFolder.length+1, lastIndexOfDot);
 			var extension = streamId.substring(lastIndexOfDot+1);
 			initializePlayer(streamPath, extension, token);
 		}
@@ -419,11 +418,11 @@
 			} 
 			else if (playOrder[0] == "hls" )
 			{
-				tryToHLSPlay(streamId, token, subscriberId, subscriberCode, hlsNoStreamCallback);
+				tryToPlay(streamId, token, hlsExtension, subscriberId, subscriberCode, hlsNoStreamCallback);
 			}
 			else if (playOrder[0] == "vod" )
 			{
-				tryToVODPlay(streamId, token, subscriberId, subscriberCode, vodNoStreamCallback);	
+				tryToVODPlay(streamId, token, subscriberId, subscriberCode, vodNoStreamCallback, playType);	
 			}
 			else if (playOrder[0] == "dash" )
 			{
