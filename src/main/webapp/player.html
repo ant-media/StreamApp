@@ -173,6 +173,9 @@ video {
 	});
 
 
+	var subscriberId = getUrlParameter("subscriberId");
+	var subscriberCode = getUrlParameter("subscriberCode");
+		
 	var start_play_button = document.getElementById("start_play_button");
 	start_play_button.addEventListener("click", startPlaying, false)
 	var stop_play_button = document.getElementById("stop_play_button");
@@ -212,7 +215,7 @@ video {
 	
 	function startPlaying() {
 		streamId = streamNameBox.value;
-		webRTCAdaptor.play(streamNameBox.value, token);
+		webRTCAdaptor.play(streamNameBox.value, token, "", [], subscriberId, subscriberCode);
 	}
 
 	function stopPlaying() {

@@ -193,7 +193,9 @@ video {
 	});
 
 	var maxVideoBitrateKbps = 900;
-
+	var subscriberId = getUrlParameter("subscriberId");
+	var subscriberCode = getUrlParameter("subscriberCode");
+	
 	//TODO: Migrate these methods to Jquery
 	var start_publish_button = document.getElementById("start_publish_button");
 	start_publish_button.addEventListener("click", startPublishing, false);
@@ -226,7 +228,7 @@ video {
 
 	function startPublishing() {
 		streamId = streamNameBox.value;
-		webRTCAdaptor.publish(streamId, token);
+		webRTCAdaptor.publish(streamId, token, subscriberId, subscriberCode);
 	}
 
 	function stopPublishing() {
