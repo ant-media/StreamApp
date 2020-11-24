@@ -171,6 +171,13 @@ body {
 	import {WebRTCAdaptor} from "./js/webrtc_adaptor.js"
     import {getUrlParameter} from "./js/fetch.stream.js" 
 
+    /**
+    * This page accepts 3 arguments through url parameter
+    * 1. "streamId": the stream id to publish stream. It's optional. ?streamId=stream1
+    * 2. "playOnly": If it's true, user does not publish stream. It only play streams in the room.
+    * 3. "token": It's experimental. 
+    */
+
 	var token = getUrlParameter("token");
 	var streamId = getUrlParameter("streamId");
 	var playOnly = getUrlParameter("playOnly");
