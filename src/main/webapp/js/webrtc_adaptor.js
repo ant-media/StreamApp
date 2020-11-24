@@ -382,43 +382,34 @@ export class WebRTCAdaptor
 
 	publish(streamId, token, subscriberId, subscriberCode) 
 	{
-		var jsCmd = null;
-		if(subscriberId !== undefined && subscriberCode !== undefined) {
-			jsCmd = {
+		//If it started with playOnly mode and wants to publish now
+		if(this.localStream == null){
+			this.navigatorUserMedia(this.mediaConstraints, (stream => {
+				this.gotStream(stream);
+				var jsCmd = {
 					command : "publish",
 					streamId : streamId,
 					token : token,
-					subscriberId: subscriberId,
-					subscriberCode: subscriberCode,
+					subscriberId: typeof subscriberId !== undefined ? subscriberId : "" ,
+					subscriberCode: typeof subscriberCode !== undefined ? subscriberCode : "",
 					video: this.localStream.getVideoTracks().length > 0 ? true : false,
 							audio: this.localStream.getAudioTracks().length > 0 ? true : false,
 				};
-		} else {
-			//If it started with playOnly mode and wants to publish now
-			if(this.localStream == null){
-				this.navigatorUserMedia(this.mediaConstraints, (stream => {
-					this.gotStream(stream);
-					var jsCmd = {
-						command : "publish",
-						streamId : streamId,
-						token : token,
-						video: this.localStream.getVideoTracks().length > 0 ? true : false,
-								audio: this.localStream.getAudioTracks().length > 0 ? true : false,
-					};
-					this.webSocketAdaptor.send(JSON.stringify(jsCmd));
-				}), false);
-			}else{
-				var jsCmd = {
-						command : "publish",
-						streamId : streamId,
-						token : token,
-						video: this.localStream.getVideoTracks().length > 0 ? true : false,
-								audio: this.localStream.getAudioTracks().length > 0 ? true : false,
-				};
-			}				
+				this.webSocketAdaptor.send(JSON.stringify(jsCmd));
+			}), false);
+		}else{
+			var jsCmd = {
+					command : "publish",
+					streamId : streamId,
+					token : token,
+					subscriberId: typeof subscriberId !== undefined ? subscriberId : "" ,
+					subscriberCode: typeof subscriberCode !== undefined ? subscriberCode : "",
+					video: this.localStream.getVideoTracks().length > 0 ? true : false,
+							audio: this.localStream.getAudioTracks().length > 0 ? true : false,
+			};
 		}
 		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
-	}	
+	}
 
 	joinRoom(roomName, streamId) 
 	{
@@ -432,31 +423,22 @@ export class WebRTCAdaptor
 		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
 	}
 	
-	play(streamId, token, roomId, enableTracks, subscriberId, subscriberCode) {
+	play(streamId, token, roomId, enableTracks, subscriberId, subscriberCode) 
+	{
 		this.playStreamId.push(streamId);
-		var jsCmd = null;
-		if(subscriberId !== undefined && subscriberCode !== undefined) {
-		  jsCmd =
-		    {
-				command : "play",
-				streamId : streamId,
-				token : token,
-				subscriberId: subscriberId,
-				subscriberCode: subscriberCode,
-		    }
-		} else {
-			jsCmd =
-			  {
+		var jsCmd =
+		{
 				command : "play",
 				streamId : streamId,
 				token : token,
 				room : roomId,
 				trackList : enableTracks,
-			  }			
+				subscriberId: typeof subscriberId !== undefined ? subscriberId : "" ,
+				subscriberCode: typeof subscriberCode !== undefined ? subscriberCode : "",
 		}
 
 		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
-	}	
+	}
 
 	stop(streamId) 
 	{
