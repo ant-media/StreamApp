@@ -173,17 +173,25 @@ video {
 	  
 	  $("#maxBandwidthTextBox").val(maxVideoBitrateKbps);
 	  $("#max_bandwidth_apply").click(function() {
-		var bitrate = parseInt($("#maxBandwidthTextBox").val());
-		if (bitrate == NaN || bitrate < 100 || bitrate > 2500) {
-			maxVideoBitrateKbps = 900;
-		}
-		else {
-			maxVideoBitrateKbps = bitrate;
-		}
-		console.log("input bitrate: " + maxVideoBitrateKbps);
-		$("#maxBandwidthTextBox").val(maxVideoBitrateKbps)
-		if (webRTCAdaptor != null) {
+		var bitrateBoxValue = $("#maxBandwidthTextBox").val();
+		if(bitrateBoxValue == "unlimited" || bitrateBoxValue == NaN){
+			maxVideoBitrateKbps = "unlimited"
+			console.log("input bitrate: " + maxVideoBitrateKbps);
 			webRTCAdaptor.changeBandwidth(maxVideoBitrateKbps,  $("#streamName").val());
+		}
+		else{
+			var bitrate = parseInt(bitrateBoxValue);
+			if (bitrate == NaN || bitrate < 100 || bitrate > 2500) {
+				maxVideoBitrateKbps = 900;
+			}
+			else {
+				maxVideoBitrateKbps = bitrate;
+			}
+			console.log("input bitrate: " + maxVideoBitrateKbps);
+			$("#maxBandwidthTextBox").val(maxVideoBitrateKbps)
+			if (webRTCAdaptor != null) {
+				webRTCAdaptor.changeBandwidth(maxVideoBitrateKbps,  $("#streamName").val());
+			}
 		}
 	  })
     }
