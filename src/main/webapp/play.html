@@ -82,18 +82,6 @@
 		streamId = getUrlParameter("name");
 	}
 
-<<<<<<< HEAD
-	//Check HLS player is finished. If finished page should be reload
-	var video = videojs('video-player').ready(function(){
-		var player = this;
-		player.on('ended', function() {
-	  		location.reload();
-	  	});
-	});
-
-	var name = "<%= streamId %>";
-	var token = "<%= request.getParameter("token") %>";
-=======
 	 var playType = getUrlParameter("playType") ;
 	 if (playType == null || playType=="mp4,webm"){
 		playType = ["mp4", "webm"];
@@ -111,7 +99,6 @@
 	var token = getUrlParameter("token");
 	var pAutoplay = getUrlParameter("autoplay");
 	var targetLatency = getUrlParameter("targetLatency"); 
->>>>>>> refs/remotes/origin/master
 
     if(targetLatency == "null"){
 		targetLatency = 3;
@@ -296,15 +283,14 @@
 			
 			player.initialize(document.querySelector("#video-player"), "streams/" + streamId + "." + extension + "?token=" + token, true);
 		}
-
-		//Check HLS player is finished. If finished we can try next one
+		//Check HLS player is finished. If finished page should be reload
 		player.ready(function(){
 			var player = this;
 			player.on('ended', function() {
 				tryToPlay(streamId, token, hlsExtension, subscriberId, subscriberCode);
-	 	 	});
+	  		});
 		});
-
+		
 		document.getElementById("video_container").style.display = "block";
 		document.getElementById("video_info").hidden = true;
 	}
