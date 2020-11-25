@@ -380,7 +380,7 @@ export class WebRTCAdaptor
 		}
 	}
 
-	publish(streamId, token) 
+	publish(streamId, token, subscriberId, subscriberCode) 
 	{
 		//If it started with playOnly mode and wants to publish now
 		if(this.localStream == null){
@@ -390,6 +390,8 @@ export class WebRTCAdaptor
 					command : "publish",
 					streamId : streamId,
 					token : token,
+					subscriberId: typeof subscriberId !== undefined ? subscriberId : "" ,
+					subscriberCode: typeof subscriberCode !== undefined ? subscriberCode : "",
 					video: this.localStream.getVideoTracks().length > 0 ? true : false,
 							audio: this.localStream.getAudioTracks().length > 0 ? true : false,
 				};
@@ -400,6 +402,8 @@ export class WebRTCAdaptor
 					command : "publish",
 					streamId : streamId,
 					token : token,
+					subscriberId: typeof subscriberId !== undefined ? subscriberId : "" ,
+					subscriberCode: typeof subscriberCode !== undefined ? subscriberCode : "",
 					video: this.localStream.getVideoTracks().length > 0 ? true : false,
 							audio: this.localStream.getAudioTracks().length > 0 ? true : false,
 			};
@@ -418,8 +422,8 @@ export class WebRTCAdaptor
 		}
 		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
 	}
-
-	play(streamId, token, roomId, enableTracks) 
+	
+	play(streamId, token, roomId, enableTracks, subscriberId, subscriberCode) 
 	{
 		this.playStreamId.push(streamId);
 		var jsCmd =
@@ -429,6 +433,8 @@ export class WebRTCAdaptor
 				token : token,
 				room : roomId,
 				trackList : enableTracks,
+				subscriberId: typeof subscriberId !== undefined ? subscriberId : "" ,
+				subscriberCode: typeof subscriberCode !== undefined ? subscriberCode : "",
 		}
 
 		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
@@ -540,8 +546,9 @@ export class WebRTCAdaptor
 		if (this.webSocketAdaptor == null || this.webSocketAdaptor.isConnected() == false) {
 			this.webSocketAdaptor = new WebSocketAdaptor({websocket_url : this.websocket_url, webrtcadaptor : this, callback : this.callback, callbackError : this.callbackError})
 		}
-		this.getDevices()
-	};
+		this.getDevices();
+	}
+	
 	switchDesktopCapture(streamId){
 		this.publishMode = "screen";
 
@@ -928,7 +935,7 @@ export class WebRTCAdaptor
 						this.changeBandwidth(this.bandwidth, streamId).then(() => {
 							console.log("Bandwidth is changed to " + this.bandwidth);
 						})
-						.catch(e => console.error(e));
+						.catch(e => console.warn(e));
 					}
 				}
 			}

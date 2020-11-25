@@ -13,12 +13,12 @@ if (!String.prototype.endsWith)
 	};
 }
 
-export function tryToPlay(name, token, type, noStreamCallback) {
+export function tryToPlay(name, token, type, subscriberId, subscriberCode, noStreamCallback) {
 	fetch("streams/"+ name +"_adaptive."+type, {method:'HEAD'})
 	.then(function(response) {
 		if (response.status == 200) {
 			// adaptive m3u8 & mpd exists,play it
-			initializePlayer(name+"_adaptive", type , token);
+			initializePlayer(name+"_adaptive", type, token, subscriberId, subscriberCode);
 		}
 		else 
 		{
@@ -26,14 +26,13 @@ export function tryToPlay(name, token, type, noStreamCallback) {
 			fetch("streams/"+ name +"."+type, {method:'HEAD'})
 			.then(function(response) {
 				if (response.status == 200) {
-					initializePlayer(name, type, token);
+					initializePlayer(name, type, token, subscriberId, subscriberCode);
 				}
 				else {
 					console.log("No stream found");
 					if (typeof noStreamCallback != "undefined") {
 							noStreamCallback();
 						}
-
 					}
 			}).catch(function(err) {
 				console.log("Error: " + err);
@@ -45,7 +44,7 @@ export function tryToPlay(name, token, type, noStreamCallback) {
 
 }
 
-export function tryToVODPlay(name, token, noStreamCallback, playType){
+export function tryToVODPlay(name, token, subscriberId, subscriberCode, noStreamCallback, playType){
 
 	if (typeof playType == "undefined" || playType == null || playType.length == 0) {
 		console.error("playType is not defined");
@@ -58,18 +57,19 @@ export function tryToVODPlay(name, token, noStreamCallback, playType){
 	{
 		secondPlayType = playType[1];
 	}
+
 	fetch("streams/"+ name +"."+firstPlayType, {method:'HEAD'})
 		.then(function(response) {
 			if (response.status == 200) {
 				//firstPlayType exists, play it
-				initializePlayer(name, firstPlayType, token)
+				initializePlayer(name, firstPlayType, token, subscriberId, subscriberCode)
 			}
 			else if(secondPlayType  != null){
 				fetch("streams/"+ name +"."+secondPlayType, {method:'HEAD'})
 				.then(function(response) {
 				if (response.status == 200) {
 					//secondPlayType exists, play it
-					initializePlayer(name, secondPlayType, token)
+					initializePlayer(name, secondPlayType, token, subscriberId, subscriberCode)
 				}
 				else {
 					console.log("No stream found");

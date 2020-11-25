@@ -106,7 +106,9 @@
 	
     var hlsExtension = "m3u8";
 	var dashExtension = "mpd";
-
+	var subscriberId = getUrlParameter("subscriberId");
+	var subscriberCode = getUrlParameter("subscriberCode");
+	
 	var autoPlay = true;
 	if (pAutoplay == "false" || isMobile()) {
 		autoPlay = false;
@@ -114,8 +116,8 @@
 
 	var webRTCAdaptor = null;
 	var streamsFolder = "streams";
-
-    function genericCallback(currentTech) {
+	
+	function genericCallback(currentTech) {
 
 		document.getElementById("video_info").innerHTML="Stream will start playing automatically<br/>when it is live";
 		setTimeout(function() 
@@ -172,7 +174,7 @@
 		setTimeout(function() 
 		{
 			if(playOrder.includes("vod")){
-				tryToVODPlay(streamId, token, vodNoStreamCallback, playType);	
+				tryToVODPlay(streamId, token, subscriberId, subscriberCode, vodNoStreamCallback, playType);	
 			}
 		}, 3000);
 	    	
@@ -207,15 +209,17 @@
 
 	}
 
-	function initializePlayer(streamId, extension, token) {
+	function initializePlayer(streamId, extension, token, subscriberId, subscriberCode) {
 
 		hideWebRTCElements();
-		startPlayer(streamId, extension, token)
+		startPlayer(streamId, extension, token, subscriberId, subscriberCode)
 
-	}
+	}	
+	
 	window.initializePlayer = initializePlayer	
 	
-	function startPlayer(streamId, extension, token) {
+	
+	function startPlayer(streamId, extension, token, subscriberId, subscriberCode) {
 		var type;
 		var liveStream = false;
 		if (extension == "mp4") {
@@ -251,10 +255,10 @@
 				poster: "previews/"+preview+".png"
 			});
 
-			player.src({
-  				src: "streams/" + streamId + "." + extension + "?token=" + token,
-  				type: type,
-			});
+		player.src({
+  			src: "streams/" + streamId + "." + extension + "?token=" + token + "&subscriberId="+subscriberId +"&subscriberCode="+subscriberCode,
+  			type: type,
+		});
 		
 			player.poster("previews/"+preview+".png");
 
@@ -284,7 +288,7 @@
 	}
 
 
-	function initializeWebRTCPlayer(streamId, token, noStreamCallback) {
+	function initializeWebRTCPlayer(streamId, token, subscriberId, subscriberCode, noStreamCallback) {
 
 		hideHLSElements();
 
@@ -329,7 +333,7 @@
 				}
 				else if (info == "streamInformation") {
 					console.log("stream information");
-					webRTCAdaptor.play(streamId, token);
+					webRTCAdaptor.play(streamId, token, subscriberId, subscriberCode);
 				}
 				else if (info == "play_started") {
 					//joined the stream
@@ -410,15 +414,15 @@
 		    */
 			if (playOrder[0] == "webrtc" )
 			{
-				initializeWebRTCPlayer(streamId, token, webrtcNoStreamCallback);
+				initializeWebRTCPlayer(streamId, token, subscriberId, subscriberCode, webrtcNoStreamCallback);
 			} 
 			else if (playOrder[0] == "hls" )
 			{
-				tryToPlay(streamId, token, hlsExtension, hlsNoStreamCallback);
+				tryToPlay(streamId, token, hlsExtension, subscriberId, subscriberCode, hlsNoStreamCallback);
 			}
 			else if (playOrder[0] == "vod" )
 			{
-				tryToVODPlay(streamId, token, vodNoStreamCallback, playType);	
+				tryToVODPlay(streamId, token, subscriberId, subscriberCode, vodNoStreamCallback, playType);	
 			}
 			else if (playOrder[0] == "dash" )
 			{
