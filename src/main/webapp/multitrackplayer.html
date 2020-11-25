@@ -1,7 +1,6 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8"
-pageEncoding="UTF-8"%>
 <html>
 <head>
+<title>Ant Media Server WebRTC Multitrack Player</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta charset="UTF-8">
 <link rel="stylesheet"
@@ -9,7 +8,7 @@ pageEncoding="UTF-8"%>
 	integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u"
 	crossorigin="anonymous">
 <script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
-<script src="js/webrtc_adaptor.js"></script>
+<script src="https://code.jquery.com/jquery-3.4.1.min.js"  crossorigin="anonymous"></script>
 <style>
 video {
 	width: 100%;
@@ -99,22 +98,22 @@ body {
 			<div id="players">	
 			</div>
 			<p>
-				<input type="text" class="form-control" value="stream1"
+				<input type="text" class="form-control"
 					id="streamName" placeholder="Type stream name">
 			</p>
 			<p>
-				<button onclick="startPlaying()" class="btn btn-info"
+				<button class="btn btn-info"
 					id="start_play_button">Start Playing</button>
-				<button onclick="stopPlaying()" class="btn btn-info"
+				<button class="btn btn-info"
 					id="stop_play_button">Stop Playing</button>
-				<button onclick="getTracks()" class="btn btn-info"
+				<button class="btn btn-info"
 					id="get_tracks_button">Tracks</button>
 
 			</p>
 		</div>
 
 		<div class="container" style="padding: 40px 15px; text-align: center">
-			<ul id="trackList" name="trackList"">
+			<ul id="trackList" name="trackList">
 			</ul>
 		</div>
 
@@ -127,9 +126,12 @@ body {
 	</div>
 
 </body>
-<script>
+<script type="module">
 
-	var token = "<%= request.getParameter("token") %>";
+   import {WebRTCAdaptor} from "./js/webrtc_adaptor.js"
+   import {getUrlParameter, isMobile} from "./js/fetch.stream.js"
+
+	var token = getUrlParameter("token");
 	var start_play_button = document.getElementById("start_play_button");
 	var stop_play_button = document.getElementById("stop_play_button");
 
@@ -139,20 +141,6 @@ body {
 	
 	var tracks = [];
 	
-	function getUrlParameter(sParam) {
-	    var sPageURL = decodeURIComponent(window.location.search.substring(1)),
-	        sURLVariables = sPageURL.split('&'),
-	        sParameterName,
-	        i;
-
-	    for (i = 0; i < sURLVariables.length; i++) {
-	        sParameterName = sURLVariables[i].split('=');
-
-	        if (sParameterName[0] === sParam) {
-	            return sParameterName[1] === undefined ? true : sParameterName[1];
-	        }
-	    }
-	};
 	
 	var name = getUrlParameter("name");
 	if(name !== "undefined")
@@ -182,7 +170,11 @@ body {
 		webRTCAdaptor.getTracks(streamNameBox.value, token);
 	}
 
-	var pc_config = null;
+	var pc_config = {
+			'iceServers' : [ {
+				'urls' : 'stun:stun1.l.google.com:19302'
+			} ]
+		};
 
 	var sdpConstraints = {
 		OfferToReceiveAudio : true,
@@ -324,5 +316,23 @@ body {
 		player.innerHTML = '<video id="remoteVideo'+index+'" autoplay controls playsinline></video>'+'video:'+index;
 		document.getElementById("players").appendChild(player);
 	}
+
+	$(function() {
+		$("#streamName").val("stream_multi_track");
+
+		$("#start_play_button").click(function() {
+			startPlaying();
+		});
+
+		$("#stop_play_button").click(function() {
+			stopPlaying();
+		});
+
+		$("#get_tracks_button").click(function() {
+			getTracks();
+		});
+
+
+	});
 </script>
 </html>

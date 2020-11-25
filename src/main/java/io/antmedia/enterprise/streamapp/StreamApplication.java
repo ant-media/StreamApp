@@ -4,8 +4,8 @@ import java.io.File;
 import java.util.List;
 
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.bytedeco.javacpp.avcodec.AVPacket;
-import org.bytedeco.javacpp.avformat.AVFormatContext;
+import org.bytedeco.ffmpeg.avcodec.AVPacket;
+import org.bytedeco.ffmpeg.avformat.AVFormatContext;
 import org.red5.server.adapter.MultiThreadedApplicationAdapter;
 import org.red5.server.api.scope.IScope;
 import org.red5.server.api.stream.IBroadcastStream;
@@ -166,9 +166,9 @@ public class StreamApplication extends MultiThreadedApplicationAdapter implement
 	public void muxAdaptorRemoved(MuxAdaptor muxAdaptor) {
 		appAdaptor.muxAdaptorRemoved(muxAdaptor);		
 	}
-
+	
 	@Override
-	public boolean isValidStreamParameters(AVFormatContext inputFormatContext, AVPacket pkt) {
-		return appAdaptor.isValidStreamParameters(inputFormatContext,pkt);
+	public boolean isValidStreamParameters(int width, int height, int fps, int bitrate, String streamId) {
+		return appAdaptor.isValidStreamParameters(width, height, fps, bitrate, streamId);
 	}
 }

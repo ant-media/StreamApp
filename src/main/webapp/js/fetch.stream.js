@@ -13,60 +13,86 @@ if (!String.prototype.endsWith)
 	};
 }
 
-
-function tryToHLSPlay(name, token, noStreamCallback) {
-	fetch("streams/"+ name +"_adaptive.m3u8", {method:'HEAD'})
+export function tryToPlay(name, token, type, subscriberId, subscriberCode, noStreamCallback) {
+	fetch("streams/"+ name +"_adaptive."+type, {method:'HEAD'})
 	.then(function(response) {
 		if (response.status == 200) {
-			// adaptive m3u8 exists,play it
-			initializeHLSPlayer(name+"_adaptive", "m3u8", token);
-
+			// adaptive m3u8 & mpd exists,play it
+			initializePlayer(name+"_adaptive", type, token, subscriberId, subscriberCode);
 		}
 		else 
 		{
-			//adaptive m3u8 not exists, try m3u8 exists.
-			fetch("streams/"+ name +".m3u8", {method:'HEAD'})
+			//adaptive not exists, try mpd or m3u8 exists.
+			fetch("streams/"+ name +"."+type, {method:'HEAD'})
 			.then(function(response) {
 				if (response.status == 200) {
-					//m3u8 exists, play it
-					initializeHLSPlayer(name, "m3u8", token);
-
+					initializePlayer(name, type, token, subscriberId, subscriberCode);
 				}
 				else {
-					//no m3u8 exists, try vod file
-					fetch("streams/"+ name +".mp4", {method:'HEAD'})
-					.then(function(response) {
-						if (response.status == 200) {
-							//mp4 exists, play it
-							initializeHLSPlayer(name, "mp4", token);
-
+					console.log("No stream found");
+					if (typeof noStreamCallback != "undefined") {
+							noStreamCallback();
 						}
-						else {
-							console.log("No stream found");
-							if (typeof noStreamCallback != "undefined") {
-								noStreamCallback();
-							}
-
-						}
-					}).catch(function(err) {
-						console.log("Error: " + err);
-
-					});
-
-				}
+					}
 			}).catch(function(err) {
 				console.log("Error: " + err);
-
 			});
 		}
 	}).catch(function(err) {
 		console.log("Error: " + err);
-
 	});
 
 }
 
-function isMobile() { 
+export function tryToVODPlay(name, token, subscriberId, subscriberCode, noStreamCallback, playType){
+
+	if (typeof playType == "undefined" || playType == null || playType.length == 0) {
+		console.error("playType is not defined");
+		return;
+	}
+	var firstPlayType = playType[0];
+	var secondPlayType = null;
+	
+	if (playType.length >= 2) 
+	{
+		secondPlayType = playType[1];
+	}
+
+	fetch("streams/"+ name +"."+firstPlayType, {method:'HEAD'})
+		.then(function(response) {
+			if (response.status == 200) {
+				//firstPlayType exists, play it
+				initializePlayer(name, firstPlayType, token, subscriberId, subscriberCode)
+			}
+			else if(secondPlayType  != null){
+				fetch("streams/"+ name +"."+secondPlayType, {method:'HEAD'})
+				.then(function(response) {
+				if (response.status == 200) {
+					//secondPlayType exists, play it
+					initializePlayer(name, secondPlayType, token, subscriberId, subscriberCode)
+				}
+				else {
+					console.log("No stream found");
+					if (typeof noStreamCallback != "undefined") {
+						noStreamCallback();
+					}
+				}
+				}).catch(function(err) {
+					console.log("Error: " + err);
+				});
+			}
+			else{
+				console.log("No stream found");
+				if (typeof noStreamCallback != "undefined") {
+					noStreamCallback();
+				}
+			}
+		}).catch(function(err) {
+			console.log("Error: " + err);
+		});
+}
+
+export function isMobile() { 
 	if( navigator.userAgent.match(/Android/i)
 			|| navigator.userAgent.match(/webOS/i)
 			|| navigator.userAgent.match(/iPhone/i)
@@ -80,5 +106,20 @@ function isMobile() {
 	}
 	else {
 		return false;
+	}
+}
+
+export function getUrlParameter(sParam) {
+	var sPageURL = decodeURIComponent(window.location.search.substring(1)),
+		sURLVariables = sPageURL.split('&'),
+		sParameterName,
+		i;
+
+	for (i = 0; i < sURLVariables.length; i++) {
+		sParameterName = sURLVariables[i].split('=');
+
+		if (sParameterName[0] === sParam) {
+			return sParameterName[1] === undefined ? true : sParameterName[1];
+		}
 	}
 }

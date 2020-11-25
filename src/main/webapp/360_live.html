@@ -2,71 +2,69 @@
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<title>Ant Media Server WebRTC/HLS Player</title>
+<title>Ant Media Server WebRTC/HLS 360 Live Player</title>
 
-<!-- videojs includes  -->
-<link href="https://unpkg.com/video.js@7.8.3/dist/video-js.css" rel="stylesheet">
+<script src="https://aframe.io/releases/1.0.4/aframe.min.js"></script>
 
-<script src="https://unpkg.com/video.js@7.8.3/dist/video.js"></script>
-
-<script
-		src="https://unpkg.com/@videojs/http-streaming@1.13.3/dist/videojs-http-streaming.js"></script>
-<!--  end of video js includes  -->
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+<script src="https://rawgit.com/oscarmarinmiro/aframe-video-controls/master/dist/aframe-video-controls.min.js"></script>
 
 <script src="js/fetch.js"></script>
 <script src="js/promise.min.js"></script>
 <script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
-<script src="https://cdn.dashjs.org/v3.1.3/dash.all.min.js"></script>
 
 <link href="css/player.css" rel="stylesheet">
+
+ <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+ <script>
+        setTimeout(function(){
+            $(".a-enter-vr-button").click();
+        },3000);
+        AFRAME.registerComponent('vr-mode-on',{
+            schema:{
+                tagName:{type:'string',default:"video"}
+            },
+            init:function(){
+                this.el.addEventListener("click",function() {
+                    $(".a-enter-vr-button").click();
+                });
+            }
+        });
+
+ </script>
 
 </head>
 <body>
 
+<a-scene inspector="https://cdn.jsdelivr.net/npm/aframe-inspector@1.0.0/dist/aframe-inspector.min.js">
 
-	<div id="video_info">
-		Stream will start playing automatically<br />when it is live
-	</div>
+    <video id="remoteVideo" autoplay muted playsinline></video>
 
-	<!-- HLS Player -->
-	<div id="video_container">
-		<video id="video-player" 
-			class="video-js vjs-default-skin vjs-big-play-centered"
-			controls preload="auto" muted>
-			<p class="vjs-no-js">
-				To view this video please enable JavaScript, and consider upgrading
-				to a web browser that <a
-					href="http://videojs.com/html5-video-support/" target="_blank">supports
-					HTML5 video</a>
-			</p>
-		</video>
-	</div>
+    <a-entity distance="0.0" video-controls="src:#video"></a-entity>
+    <a-camera>
+        <a-cursor color="#FF0000"></a-cursor>
+    </a-camera>
 
 
-	<!-- WebRTC Player -->
-	<video id="remoteVideo" autoplay controls playsinline muted></video>
-	<div id="networkWarning">Your connection isn't fast enough to play this stream!</div>
-	<img id="play_button" src="images/play.png" onclick="playWebRTCVideo()"
-		style="position: absolute; top: 30px; left: 30px; display: none;" />
+    <a-videosphere src="#remoteVideo" rotation="0 180 0" style="background-color: antiquewhite"></a-videosphere>
+</a-scene>
 
-
-	<script type="module">
+	<script type = "module">
     /**
     * This page accepts 4 arguments. 
     * 1. "id": the stream id to play.It is mandatory
     * 2. "token": the token to play stream. It's mandatory if token security is enabled on server side.
     * 3. "autoplay": To start playing automatically if streams is available. Optional. Default value is true
     * 4. "playOrder": the order which technologies is used in playing. Optional. Default value is "webrtc,hls".
-    *     possible values are "hls,webrtc","webrtc","hls","vod","dash"
+    *     possible values are "hls,webrtc","webrtc","hls","vod" 
     * 5. "playType": the order which play type is used in playing. Optional. Default value is "mp4,webm".
     *     possible values are "webm,mp4"","mp4","webm"
-    * 6. "targetLatency": To define target latency for the DASH player. Optional. Default value is 3.
     */
-
 
 	import {WebRTCAdaptor} from "./js/webrtc_adaptor.js"
     import {getUrlParameter, isMobile, tryToPlay, tryToVODPlay} from "./js/fetch.stream.js"
 	//The play order, player tries to play according to this order, if it can not play then tries following format
+	
 
 	var playOrder = getUrlParameter("playOrder");
 	if (playOrder == null) {
@@ -82,18 +80,6 @@
 		streamId = getUrlParameter("name");
 	}
 
-<<<<<<< HEAD
-	//Check HLS player is finished. If finished page should be reload
-	var video = videojs('video-player').ready(function(){
-		var player = this;
-		player.on('ended', function() {
-	  		location.reload();
-	  	});
-	});
-
-	var name = "<%= streamId %>";
-	var token = "<%= request.getParameter("token") %>";
-=======
 	 var playType = getUrlParameter("playType") ;
 	 if (playType == null || playType=="mp4,webm"){
 		playType = ["mp4", "webm"];
@@ -110,18 +96,9 @@
 	   
 	var token = getUrlParameter("token");
 	var pAutoplay = getUrlParameter("autoplay");
-	var targetLatency = getUrlParameter("targetLatency"); 
->>>>>>> refs/remotes/origin/master
-
-    if(targetLatency == "null"){
-		targetLatency = 3;
-	}
 	
     var hlsExtension = "m3u8";
-	var dashExtension = "mpd";
-	var subscriberId = getUrlParameter("subscriberId");
-	var subscriberCode = getUrlParameter("subscriberCode");
-	
+
 	var autoPlay = true;
 	if (pAutoplay == "false" || isMobile()) {
 		autoPlay = false;
@@ -129,10 +106,11 @@
 
 	var webRTCAdaptor = null;
 	var streamsFolder = "streams";
-	
+
+	var video = document.getElementById('remoteVideo');
+
 	function genericCallback(currentTech) {
 
-		document.getElementById("video_info").innerHTML="Stream will start playing automatically<br/>when it is live";
 		setTimeout(function() 
 		{
             var index = playOrder.indexOf(currentTech);
@@ -159,10 +137,6 @@
 			{
 				tryToPlay(streamId, token, hlsExtension, hlsNoStreamCallback);
 			}
-			else if (tech == "dash") 
-			{
-				tryToPlay(streamId, token, dashExtension, dashNoStreamCallback);	
-			}
 		}, 3000);
 	}
 	
@@ -175,144 +149,63 @@
 	     genericCallback("webrtc");
 	}
     
-    function hlsNoStreamCallback() 
+ 	function hlsNoStreamCallback() 
     {
 	    genericCallback("hls");
-	    	
     }
-    
+
     function vodNoStreamCallback() 
     {
-	    document.getElementById("video_info").innerHTML="Stream will start playing automatically<br/>when it is live";
 		setTimeout(function() 
 		{
 			if(playOrder.includes("vod")){
-				tryToVODPlay(streamId, token, subscriberId, subscriberCode, vodNoStreamCallback, playType);	
+				tryToVODPlay(streamId, token, vodNoStreamCallback, playType);	
 			}
 		}, 3000);
-	    	
     }
-    
-    function dashNoStreamCallback() 
-    {
-	    genericCallback("dash");
-    }
-    
-	function hideHLSElements(){
-		document.getElementById("video_container").style.display="none";
-	}
-
-	function hideWebRTCElements(){
-
-		document.getElementById("remoteVideo").style.display="none";
-		document.getElementById("play_button").style.display="none";
-
-	}
 
 	function playWebRTCVideo() {
-		document.getElementById("remoteVideo").style.display = "block";
 		document.getElementById("remoteVideo").play().then(function(value){
-			//autoplay started
-			document.getElementById("play_button").style.display="none";
 		}).catch(function(error) {
-			//
-			document.getElementById("play_button").style.display="block";
 			console.log("User interaction needed to start playing");
 		});
 
 	}
 
-	function initializePlayer(streamId, extension, token, subscriberId, subscriberCode) {
-
-		hideWebRTCElements();
-		startPlayer(streamId, extension, token, subscriberId, subscriberCode)
-
+	function initializePlayer(streamId, extension, token) {
+		startPlayer(streamId, extension, token)
 	}	
-	
-	window.initializePlayer = initializePlayer	
-	
-	
-	function startPlayer(streamId, extension, token, subscriberId, subscriberCode) {
-		var type;
-		var liveStream = false;
-		if (extension == "mp4") {
-			type = "video/mp4";
-			liveStream = false;
-		}
-		else if (extension == "webm") {
-			type = "video/webm";
-			liveStream = false;
-		}
-		else if (extension == "m3u8") {
-			type = "application/x-mpegURL";
-			liveStream = true;
-		}
-		else if (extension == "mpd") {
-			type = "application/dash+xml";
-			liveStream = true;
-		}
-		else {
-			console.log("Unknown extension: " + extension);
-			return;
-		}
 
-		var preview = streamId;
-		if (streamId.endsWith("_adaptive")) {
-			preview = streamId.substring(0, streamId.indexOf("_adaptive"));
-		}
+	window.initializePlayer = initializePlayer;
 
-		// If it's not dash, play with videojs
-		if(extension != dashExtension){
+	function startPlayer(streamId, extension, token) {
 
-			var player = videojs('video-player', {
-				poster: "previews/"+preview+".png"
-			});
+  		if(Hls.isSupported() && extension == "m3u8") {
+        	var hls = new Hls({
+         	   debug: false
+        	});
 
-		player.src({
-  			src: "streams/" + streamId + "." + extension + "?token=" + token + "&subscriberId="+subscriberId +"&subscriberCode="+subscriberCode,
-  			type: type,
-		});
-		
-			player.poster("previews/"+preview+".png");
+       	 	hls.loadSource('streams/' + streamId + "." + extension + '?token=' + token);
+        	hls.attachMedia(video);
+        	hls.on(Hls.Events.MEDIA_ATTACHED, function() {
+            	video.muted = true;
+            	video.play();
+        	});
+    	}
+    	else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+        	video.src = 'streams/' + streamId + "." + extension + '?token=' + token;
+        	video.addEventListener('canplay',function() {
+            	video.play();
+        	});
+    	}
 
-			if (autoPlay) {
-				player.ready(function() {
-					player.play();
-			});
-			}
-		}else{
-            var player = dashjs.MediaPlayer().create();
-
-			player.updateSettings({'streaming': {'lowLatencyEnabled': true}});
-
-			player.updateSettings({
-                'streaming': {
-                    'liveDelay': targetLatency,
-                    'liveCatchUpMinDrift': 0.05,
-                    'liveCatchUpPlaybackRate': 0.5,
-                    "liveCatchupLatencyThreshold": 30,
-                }
-            });
-			
-			player.initialize(document.querySelector("#video-player"), "streams/" + streamId + "." + extension + "?token=" + token, true);
-		}
-
-		//Check HLS player is finished. If finished we can try next one
-		player.ready(function(){
-			var player = this;
-			player.on('ended', function() {
-				tryToPlay(streamId, token, hlsExtension, subscriberId, subscriberCode);
-	 	 	});
-		});
-
-		document.getElementById("video_container").style.display = "block";
-		document.getElementById("video_info").hidden = true;
+    	else if (extension == "webm" || extension == "mp4") {
+	    	video.src = 'streams/' + streamId + "." + extension + '?token=' + token;
+        	video.play();
+    	}
 	}
 
-
-	function initializeWebRTCPlayer(streamId, token, subscriberId, subscriberCode, noStreamCallback) {
-
-		hideHLSElements();
+	function initializeWebRTCPlayer(streamId, token, noStreamCallback) {
 
 		var pc_config = {
 				'iceServers' : [ {
@@ -355,13 +248,15 @@
 				}
 				else if (info == "streamInformation") {
 					console.log("stream information");
-					webRTCAdaptor.play(streamId, token, subscriberId, subscriberCode);
+					webRTCAdaptor.play(streamId, token);
 				}
 				else if (info == "play_started") {
 					//joined the stream
 					console.log("play started");
-					document.getElementById("video_info").style.display = "none";
-					playWebRTCVideo();
+
+					video.addEventListener('canplay',function() {
+            			video.play();
+        			});
 				} else if (info == "play_finished") {
 					//leaved the stream
 					console.log("play finished");
@@ -386,12 +281,7 @@
 							document.getElementById("networkWarning").style.display = "none";
 						}, 3000);
 					}
-					
-
-					
-					
 				}
-
 			},
 			callbackError : function(error) {
 				//some of the possible errors, NotFoundError, SecurityError,PermissionDeniedError
@@ -426,7 +316,7 @@
 			* If streamId starts with streams, it's hls or mp4 file to be played
 			*/
 			var lastIndexOfDot = streamId.lastIndexOf(".")
-			var streamPath = streamId.substring(streamsFolder.length+1, lastIndexOfDot);
+			streamPath = streamId.substring(streamsFolder.length+1, lastIndexOfDot);
 			var extension = streamId.substring(lastIndexOfDot+1);
 			initializePlayer(streamPath, extension, token);
 		}
@@ -436,19 +326,15 @@
 		    */
 			if (playOrder[0] == "webrtc" )
 			{
-				initializeWebRTCPlayer(streamId, token, subscriberId, subscriberCode, webrtcNoStreamCallback);
+				initializeWebRTCPlayer(streamId, token, webrtcNoStreamCallback);
 			} 
 			else if (playOrder[0] == "hls" )
 			{
-				tryToPlay(streamId, token, hlsExtension, subscriberId, subscriberCode, hlsNoStreamCallback);
+				tryToPlay(streamId, token, hlsExtension, hlsNoStreamCallback);
 			}
 			else if (playOrder[0] == "vod" )
 			{
-				tryToVODPlay(streamId, token, subscriberId, subscriberCode, vodNoStreamCallback, playType);	
-			}
-			else if (playOrder[0] == "dash" )
-			{
-				tryToPlay(streamId, token, dashExtension, dashNoStreamCallback);	
+				tryToVODPlay(streamId, token, vodNoStreamCallback, playType);	
 			}
 			else {
 				alert("Unsupported play order requested. Supported formats are webrtc and hls. Use something like playOrder=webrtc,hls");
@@ -462,4 +348,3 @@
 
 </body>
 </html>
-

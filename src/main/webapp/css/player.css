@@ -1,7 +1,7 @@
 
 body {
-	background-color:#eee;	
-	overflow:hidden;
+  	font-family: 'Poppins', sans-serif !important;
+  	background-color: black !important;
 }
 
 #video_container{
@@ -9,12 +9,47 @@ body {
 }
 
 #video_info {
-	color:#555;
-	position:relative;
+	color: white !important;
+	position: absolute;
 	top:30%;
+	left: 50%;
 	text-align:center;
-	font-size:36px;
-	font-family:sans-serif;
-	line-height:45px;
-	height:100%;
+	font-size: 27px !important;
+	font-family: inherit !important;
+	line-height: 1.4 !important;
+  	-webkit-transform: translate(-50%, -50%);
+  	transform: translate(-50%, -50%);
+}
+
+#video-player{
+	position: absolute;
+    top: 0;
+    left: 0; 
+	overflow: hidden;
+	width: 100% !important;
+	height: 100% !important;
+}
+
+#remoteVideo{
+	position: absolute;
+	top: 0;
+    left: 0;
+    overflow: hidden;
+	height: 100% !important;
+	width: 100% !important; 
+	display: none; 
+}
+
+#networkWarning {
+    color: #856404;
+    position: absolute;
+    top: 0;
+    right: 0;
+    text-align: right;
+    padding: 1em;
+    margin: 1em;
+    background-color: #fff3cd;
+    border-color: #ffeeba;
+	border-radius: .25em;
+	display: none;
 }
