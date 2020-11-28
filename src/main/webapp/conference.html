@@ -171,6 +171,13 @@ body {
 	import {WebRTCAdaptor} from "./js/webrtc_adaptor.js"
     import {getUrlParameter} from "./js/fetch.stream.js" 
 
+    /**
+    * This page accepts 3 arguments through url parameter
+    * 1. "streamId": the stream id to publish stream. It's optional. ?streamId=stream1
+    * 2. "playOnly": If it's true, user does not publish stream. It only play streams in the room.
+    * 3. "token": It's experimental. 
+    */
+
 	var token = getUrlParameter("token");
 	var streamId = getUrlParameter("streamId");
 	var playOnly = getUrlParameter("playOnly");
@@ -210,6 +217,7 @@ body {
 	var isDataChannelOpen = false;
 	var isMicMuted = false;
 	var isCameraOff = false;
+	var roomTimerId = -1;
 
 	function switchVideoMode(chbx){
 		if(chbx.value == "screen") {
@@ -453,8 +461,10 @@ body {
 										roomNameBox.value);
 							});
 							streamsList = obj.streams;
-						}			
-						webRTCAdaptor.getRoomInfo(roomNameBox.value, obj.streamId);
+						}
+						roomTimerId = setInterval(() => {			
+							webRTCAdaptor.getRoomInfo(roomNameBox.value, publishStreamId);
+						}, 5000);
 					}
 					else if (info == "newStreamAvailable") {
 						playVideo(obj);
@@ -498,6 +508,10 @@ body {
 						if(playOnly) {
 							join_publish_button.disabled = false;
 							stop_publish_button.disabled = true;
+						}
+						if (roomTimerId != null)
+						{
+							clearInterval(roomTimerId);
 						}
 
 					} 
@@ -568,6 +582,10 @@ body {
 				},
 				callbackError : function(error, message) {
 					//some of the possible errors, NotFoundError, SecurityError,PermissionDeniedError
+
+					if(error.indexOf("publishTimeoutError") != -1 && roomTimerId != null){
+						clearInterval(roomTimerId);
+					}
 
 					console.log("error callback: " + JSON.stringify(error));
 					var errorMessage = JSON.stringify(error);

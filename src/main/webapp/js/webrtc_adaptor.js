@@ -24,7 +24,6 @@ export class WebRTCAdaptor
 		this.bandwidth = 900; //default bandwidth kbps
 		this.isMultiPeer = false; //used for multiple peer client
 		this.multiPeerStreamId = null;   //used for multiple peer client
-		this.roomTimerId = -1;
 		this.isWebSocketTriggered = false;
 		this.webSocketAdaptor = null;
 		this.isPlayMode = false;
@@ -92,16 +91,16 @@ export class WebRTCAdaptor
 			this.callbackError("UnsecureContext");
 			return;
 		}		
-		/*
-		* Check browser support for screen share feature.
-		*/
-		this.checkBrowserScreenShareSupported();
-
-		this.getDevices();
-		this.trackDeviceChange();
 
 		if (!this.isPlayMode && typeof this.mediaConstraints != "undefined" && this.localStream == null)
 		{
+			//Check browser support for screen share function
+			this.checkBrowserScreenShareSupported();
+
+			// Get devices only in publish mode.
+			this.getDevices();
+			this.trackDeviceChange();
+
 			if (typeof this.mediaConstraints.video != "undefined" && this.mediaConstraints.video != false)
 			{
 				this.openStream(this.mediaConstraints, this.mode);	
@@ -380,7 +379,7 @@ export class WebRTCAdaptor
 		}
 	}
 
-	publish(streamId, token) 
+	publish(streamId, token, subscriberId, subscriberCode) 
 	{
 		//If it started with playOnly mode and wants to publish now
 		if(this.localStream == null){
@@ -390,6 +389,8 @@ export class WebRTCAdaptor
 					command : "publish",
 					streamId : streamId,
 					token : token,
+					subscriberId: typeof subscriberId !== undefined ? subscriberId : "" ,
+					subscriberCode: typeof subscriberCode !== undefined ? subscriberCode : "",
 					video: this.localStream.getVideoTracks().length > 0 ? true : false,
 							audio: this.localStream.getAudioTracks().length > 0 ? true : false,
 				};
@@ -400,6 +401,8 @@ export class WebRTCAdaptor
 					command : "publish",
 					streamId : streamId,
 					token : token,
+					subscriberId: typeof subscriberId !== undefined ? subscriberId : "" ,
+					subscriberCode: typeof subscriberCode !== undefined ? subscriberCode : "",
 					video: this.localStream.getVideoTracks().length > 0 ? true : false,
 							audio: this.localStream.getAudioTracks().length > 0 ? true : false,
 			};
@@ -418,8 +421,8 @@ export class WebRTCAdaptor
 		}
 		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
 	}
-
-	play(streamId, token, roomId, enableTracks) 
+	
+	play(streamId, token, roomId, enableTracks, subscriberId, subscriberCode) 
 	{
 		this.playStreamId.push(streamId);
 		var jsCmd =
@@ -429,6 +432,8 @@ export class WebRTCAdaptor
 				token : token,
 				room : roomId,
 				trackList : enableTracks,
+				subscriberId: typeof subscriberId !== undefined ? subscriberId : "" ,
+				subscriberCode: typeof subscriberCode !== undefined ? subscriberCode : "",
 		}
 
 		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
@@ -466,11 +471,6 @@ export class WebRTCAdaptor
 				room: roomName,
 		};
 		console.log ("leave request is sent for "+ roomName);
-		
-		if ( this.roomTimerId != null)
-		{
-			clearInterval(this.roomTimerId);
-		}
 
 		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
 	}
@@ -498,14 +498,12 @@ export class WebRTCAdaptor
 	
 	getRoomInfo(roomName,streamId) 
 	{
-		this.roomTimerId = setInterval(() => {
-			var jsCmd = {
+		var jsCmd = {
 				command : "getRoomInfo",
 				streamId : streamId,
 				room: roomName,
 		};
 		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
-		}, 5000);
 	}
 
 	enableTrack(mainTrackId, trackId, enabled) 
@@ -540,8 +538,9 @@ export class WebRTCAdaptor
 		if (this.webSocketAdaptor == null || this.webSocketAdaptor.isConnected() == false) {
 			this.webSocketAdaptor = new WebSocketAdaptor({websocket_url : this.websocket_url, webrtcadaptor : this, callback : this.callback, callbackError : this.callbackError})
 		}
-		this.getDevices()
-	};
+		this.getDevices();
+	}
+	
 	switchDesktopCapture(streamId){
 		this.publishMode = "screen";
 
