@@ -72,9 +72,7 @@
 
 		<div class="form-group">	
 			<button class="btn btn-primary" disabled
-			id="start_publish_button">Start WebRTC Publish Test</button>
-			<button class="btn btn-primary" disabled
-			id="start_play_button">Start WebRTC Play Test</button>
+			id="start-webrtc-test-button">Start WebRTC Testing</button>
 
 			<br>
 			<br>
@@ -235,13 +233,7 @@
 						<span id="play_jitter_info" style="display:none"><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/true-icon.png"></span>
 						<span id="play_jitter_container">Jitter Average Delay(Secs): <span id="play_jitter_text"></span></span>
 					</div>
-<!--
-						<div>
-							<a id="audio_level_warn" style="display:none" href="#" data-toggle="tooltip" title=""><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/false-icon.png"></a>
-							<span id="audio_level_info" style="display:none"><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/true-icon.png"></span>
-							<span id="audio_level_container">Audio Level: <span id="play_audio_level"></span></span>
-						</div>
-					-->
+
 				</div>
 				<div class="col-sm-4">
 
@@ -343,12 +335,8 @@
 	var progress = document.getElementById("progress");
 	var publish_statistics = document.getElementById("publish_statistics");
 
-	//TODO: Migrate these methods to Jquery
-	var start_publish_button = document.getElementById("start_publish_button");
-	start_publish_button.addEventListener("click", startPublishing, false);
-
-	var start_play_button = document.getElementById("start_play_button");
-	start_play_button.addEventListener("click", startPlaying, false);
+	var start_webrtc_test_button = document.getElementById("start-webrtc-test-button");
+	start_webrtc_test_button.addEventListener("click", startWebRTCTest, false);
 
 	//These are for the publish WebRTC Statistics information 
 
@@ -366,7 +354,6 @@
 
 	var publish_jitter_warn = document.getElementById("publish_jitter_warn");
 	var publish_jitter_info = document.getElementById("publish_jitter_info");
-
 
 
 	var round_trip_time_warn = document.getElementById("round_trip_time_warn");
@@ -398,10 +385,6 @@
 	var play_jitter_warn = document.getElementById("play_jitter_warn");
 	var play_jitter_info = document.getElementById("play_jitter_info");
 
-	//var audio_level_warn = document.getElementById("audio_level_warn");
-	//var audio_level_info = document.getElementById("audio_level_info");
-
-
 
 	var incoming_resolution_warn = document.getElementById("incoming_resolution_warn");
 	var incoming_resolution_info = document.getElementById("incoming_resolution_info");
@@ -419,6 +402,17 @@
 	var websocketButton = document.getElementById("websocket-button");
 	websocketButton.addEventListener("click", tryWebSocketConnect, false);
 
+	var websocketSucceed = document.getElementById("websocket-succeed");
+	var websocketFailed = document.getElementById("websocket-failed");
+
+	var test_websocket_url = document.getElementById("test_websocket_url");
+
+	test_websocket_url.addEventListener("change", function(){
+		if(websocketURL != test_websocket_url.value){
+    		websocketButton.disabled = false;
+    	}
+	});
+
 
 	var autoRepublishEnabled = true;
 	/**
@@ -426,7 +420,7 @@
 	 */
 	 var autoRepublishIntervalJob = null;
 
-	 var streamId = "testStream2";
+	 var streamId = "testStream"+Math.floor(Math.random() * 100000);
 
 	 var token = getUrlParameter("token");
 
@@ -434,34 +428,15 @@
 
 	 var i = 0;
 
-	 var test_type;
-
 	 function tryWebSocketConnect(){
-	 	websocketURL = document.getElementById("test_websocket_url").value;
+	 	websocketURL = test_websocket_url.value;
 	 	initPublishWebRTCAdaptor(false,null);
 	 	initPlayWebRTCAdaptor(null,null);
 	 }
 
-	 function startPublishing() {
-	 	websocketURL = document.getElementById("test_websocket_url").value;
-
-	 	test_type="publish";
+	 function startWebRTCTest() {
 	 	publishWebRTCAdaptor.publish(streamId, token);
-	 }
-
-	 function startPlaying() {
-	 	test_type="play";
-	 	publishWebRTCAdaptor.publish(streamId, token);
-
 	 	webRTCPlayIntervalJob = setInterval(checkPublishStatus, 1000);
-	 }
-
-	 function stopPublishing() {
-	 	if (autoRepublishIntervalJob != null) {
-	 		clearInterval(autoRepublishIntervalJob);
-	 		autoRepublishIntervalJob = null;
-	 	}
-	 	publishWebRTCAdaptor.stop(streamId);
 	 }
 
 	 function checkPublishStatus(){
@@ -472,7 +447,7 @@
 	 		clearInterval(webRTCPlayIntervalJob);
 	 	}
 
-		// Try with 10 seconds, if it's not playing stop interval
+		// Try with 10 times, if it's not playing stop interval
 		if(i == 10){
 			clearInterval(webRTCPlayIntervalJob);
 		}
@@ -494,13 +469,10 @@
 		play_packet_lost_info.style.display = "none";
 		play_jitter_info.style.display = "none";
 
-		//audio_level_info.style.display = "none";
-		//audio_level_info.style.display = "none";
 		incoming_resolution_info.style.display = "none";
 		frame_decoded_info.style.display = "none";
 		frame_dropped_info.style.display = "none";
 		frame_received_info.style.display = "none";
-
 	}
 
 	function resetPublishWarnStatistics(){
@@ -522,7 +494,6 @@
 		source_resolution_info.style.display = "none";
 		ongoing_resolution_info.style.display = "none";
 		on_going_fps_info.style.display = "none";
-
 	}
 
 	function getCameraRadioButton(deviceName, deviceId) {
@@ -588,11 +559,11 @@
 				if (info == "initialized") {
 					console.log("initialized");
 
-					document.getElementById("websocket-succeed").style.display = "block";
-					document.getElementById("websocket-failed").style.display = "none";
+					websocketButton.disabled = true;
+					websocketSucceed.style.display = "block";
+					websocketFailed.style.display = "none";
 
-					start_publish_button.disabled = false;
-					start_play_button.disabled = false;
+					start_webrtc_test_button.disabled = false;
 
 				} else if (info == "publish_started") {
 
@@ -606,18 +577,11 @@
 					//stream is being published
 					console.log("publish started");
 
-					if(test_type == "publish"){
-						publish_statistics.style.display = "block";
-						play_statistics.style.display = "none";
-					}
-					if(test_type == "play"){
-						publish_statistics.style.display = "none";
-						play_statistics.style.display = "block";
-					}
+					publish_statistics.style.display = "block";
+					play_statistics.style.display = "block";
 
 					test_result_text.textContent = "Test Started";
-					start_publish_button.disabled = true;
-					start_play_button.disabled = true;
+					start_webrtc_test_button.disabled = true;
 					progress.style.display = "block";
 
 
@@ -629,8 +593,8 @@
 				} else if (info == "publish_finished") {
 						//stream is being finished
 						console.log("publish finished");
-						start_publish_button.disabled = false;
-						start_play_button.disabled = false;
+
+						start_webrtc_test_button.disabled = false;
 						websocketButton.disabled = false;
 
 						test_result_text.textContent = "Test Finished";
@@ -638,10 +602,10 @@
 					else if (info == "closed") {
 						//console.log("Connection closed");
 						if (typeof obj != "undefined") {
-							document.getElementById("websocket-succeed").style.display = "none";
-							document.getElementById("websocket-failed").style.display = "block";
-							start_publish_button.disabled = true;
-							start_play_button.disabled = true;
+							websocketSucceed.style.display = "none";
+							websocketFailed.style.display = "block";
+
+							start_webrtc_test_button.disabled = true;
 							console.log("Connecton closed: " + JSON.stringify(obj));
 						}
 					}
@@ -657,10 +621,7 @@
 					}
 					else if (info == "updated_stats") {
 
-					//	console.log(test_duration_text.value);
-
 					statsTime++;
-
 					var percentValue = 100/test_duration_text.value;
 
 					$(".progress-bar").css("width", statsTime*percentValue + "%").text((statsTime*percentValue).toPrecision(3) + " %");
@@ -871,6 +832,7 @@
 					else if (error.indexOf("WebSocketNotConnected") != -1) {
 						errorMessage = "WebSocket Connection is disconnected.";
 					}
+
 					alert(errorMessage);
 				}
 			});
@@ -916,7 +878,6 @@
 			} else if (info == "play_finished") {
 				//leaved the stream
 				console.log("play finished");
-				start_play_button.disabled = false;
 				webRTCPlayAdaptor.disableStats(obj.streamId);
 
 				if(isFinished){
@@ -963,8 +924,6 @@
 					else{
 						frame_dropped_warn.style.display = "inline";
 					}
-
-					//audio_level_info.style.display = "inline";
 
 					incoming_resolution_info.style.display = "inline";
 					frame_decoded_info.style.display = "inline";
@@ -1064,8 +1023,11 @@
 		callbackError : function(error) {
 			//some of the possible errors, NotFoundError, SecurityError,PermissionDeniedError
 
-			console.log("error callback: " + JSON.stringify(error));
-			alert(JSON.stringify(error));
+			//console.log("error callback: " + JSON.stringify(error));
+			//alert(JSON.stringify(error));
+			if(error != "{\"isTrusted\":true}"){
+				alert("WebSocketNotConnected");
+			}
 		}
 	});
 }
