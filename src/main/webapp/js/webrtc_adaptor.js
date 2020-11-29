@@ -24,7 +24,6 @@ export class WebRTCAdaptor
 		this.bandwidth = 900; //default bandwidth kbps
 		this.isMultiPeer = false; //used for multiple peer client
 		this.multiPeerStreamId = null;   //used for multiple peer client
-		this.roomTimerId = -1;
 		this.isWebSocketTriggered = false;
 		this.webSocketAdaptor = null;
 		this.isPlayMode = false;
@@ -92,16 +91,16 @@ export class WebRTCAdaptor
 			this.callbackError("UnsecureContext");
 			return;
 		}		
-		/*
-		* Check browser support for screen share feature.
-		*/
-		this.checkBrowserScreenShareSupported();
-
-		this.getDevices();
-		this.trackDeviceChange();
 
 		if (!this.isPlayMode && typeof this.mediaConstraints != "undefined" && this.localStream == null)
 		{
+			//Check browser support for screen share function
+			this.checkBrowserScreenShareSupported();
+
+			// Get devices only in publish mode.
+			this.getDevices();
+			this.trackDeviceChange();
+
 			if (typeof this.mediaConstraints.video != "undefined" && this.mediaConstraints.video != false)
 			{
 				this.openStream(this.mediaConstraints, this.mode);	
@@ -472,11 +471,6 @@ export class WebRTCAdaptor
 				room: roomName,
 		};
 		console.log ("leave request is sent for "+ roomName);
-		
-		if ( this.roomTimerId != null)
-		{
-			clearInterval(this.roomTimerId);
-		}
 
 		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
 	}
@@ -504,14 +498,12 @@ export class WebRTCAdaptor
 	
 	getRoomInfo(roomName,streamId) 
 	{
-		this.roomTimerId = setInterval(() => {
-			var jsCmd = {
+		var jsCmd = {
 				command : "getRoomInfo",
 				streamId : streamId,
 				room: roomName,
 		};
 		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
-		}, 5000);
 	}
 
 	enableTrack(mainTrackId, trackId, enabled) 

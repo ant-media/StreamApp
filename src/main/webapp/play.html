@@ -32,7 +32,7 @@
 	<div id="video_container">
 		<video id="video-player" 
 			class="video-js vjs-default-skin vjs-big-play-centered"
-			controls preload="auto" muted>
+			controls preload="auto">
 			<p class="vjs-no-js">
 				To view this video please enable JavaScript, and consider upgrading
 				to a web browser that <a
@@ -44,7 +44,7 @@
 
 
 	<!-- WebRTC Player -->
-	<video id="remoteVideo" autoplay controls playsinline muted></video>
+	<video id="remoteVideo" controls playsinline></video>
 	<div id="networkWarning">Your connection isn't fast enough to play this stream!</div>
 	<img id="play_button" src="images/play.png" onclick="playWebRTCVideo()"
 		style="position: absolute; top: 30px; left: 30px; display: none;" />
@@ -56,11 +56,12 @@
     * 1. "id": the stream id to play.It is mandatory
     * 2. "token": the token to play stream. It's mandatory if token security is enabled on server side.
     * 3. "autoplay": To start playing automatically if streams is available. Optional. Default value is true
-    * 4. "playOrder": the order which technologies is used in playing. Optional. Default value is "webrtc,hls".
+    * 4. "mute": To start playing with mute if streams is available. Optional. Default value is true
+    * 5. "playOrder": the order which technologies is used in playing. Optional. Default value is "webrtc,hls".
     *     possible values are "hls,webrtc","webrtc","hls","vod","dash"
-    * 5. "playType": the order which play type is used in playing. Optional. Default value is "mp4,webm".
+    * 6. "playType": the order which play type is used in playing. Optional. Default value is "mp4,webm".
     *     possible values are "webm,mp4"","mp4","webm"
-    * 6. "targetLatency": To define target latency for the DASH player. Optional. Default value is 3.
+    * 7. "targetLatency": To define target latency for the DASH player. Optional. Default value is 3.
     */
 
 
@@ -98,6 +99,7 @@
 	   
 	var token = getUrlParameter("token");
 	var pAutoplay = getUrlParameter("autoplay");
+	var mute = getUrlParameter("mute");
 	var targetLatency = getUrlParameter("targetLatency"); 
 
     if(targetLatency == "null"){
@@ -112,6 +114,13 @@
 	var autoPlay = true;
 	if (pAutoplay == "false" || isMobile()) {
 		autoPlay = false;
+	}
+
+	if (mute == "true" || mute == null) {
+		mute = true;
+	}
+	else{
+		mute = false;
 	}
 
 	var webRTCAdaptor = null;
@@ -190,24 +199,29 @@
 	}
 
 	function hideWebRTCElements(){
-
 		document.getElementById("remoteVideo").style.display="none";
 		document.getElementById("play_button").style.display="none";
-
 	}
 
 	function playWebRTCVideo() {
 		document.getElementById("remoteVideo").style.display = "block";
-		document.getElementById("remoteVideo").play().then(function(value){
-			//autoplay started
-			document.getElementById("play_button").style.display="none";
-		}).catch(function(error) {
-			//
-			document.getElementById("play_button").style.display="block";
-			console.log("User interaction needed to start playing");
-		});
-
+		if(mute){
+			document.getElementById("remoteVideo").muted=true;
+		}
+		else{
+			document.getElementById("remoteVideo").muted=false;
+		}
+		if(autoPlay){
+			document.getElementById("remoteVideo").play().then(function(value){
+				//autoplay started
+				document.getElementById("play_button").style.display="none";
+			}).catch(function(error) {
+				document.getElementById("play_button").style.display="block";
+				console.log("User interaction needed to start playing");
+			});
+		}
 	}
+
 
 	function initializePlayer(streamId, extension, token, subscriberId, subscriberCode) {
 
@@ -217,7 +231,7 @@
 	}	
 	
 	window.initializePlayer = initializePlayer	
-	
+	window.playWebRTCVideo = playWebRTCVideo	
 	
 	function startPlayer(streamId, extension, token, subscriberId, subscriberCode) {
 		var type;
@@ -262,10 +276,17 @@
 		
 			player.poster("previews/"+preview+".png");
 
+			if(mute){
+				player.muted(true);
+			}
+			else{
+				player.muted(false);
+			}
+
 			if (autoPlay) {
 				player.ready(function() {
 					player.play();
-			});
+				});
 			}
 		}else{
             var player = dashjs.MediaPlayer().create();
@@ -281,7 +302,19 @@
                 }
             });
 			
-			player.initialize(document.querySelector("#video-player"), "streams/" + streamId + "." + extension + "?token=" + token, true);
+			player.initialize(document.querySelector("#video-player"), "streams/" + streamId + "." + extension + "?token=" + token, false);
+
+			if(mute){
+				player.setMute(true);
+			}
+			else{
+				player.setMute(false);
+			}
+
+			if (autoPlay && player.isReady()) {
+				player.play();
+			}
+
 		}
 		//Check HLS player is finished. If finished page should be reload
 		player.ready(function(){
@@ -363,6 +396,10 @@
 					}
 				}
 				else if (info == "bitrateMeasurement") {
+
+					if(!document.getElementById("remoteVideo").paused){
+						document.getElementById("play_button").style.display="none";
+					}
 
 					console.debug(description);	
 					if(description.audioBitrate + description.videoBitrate > description.targetBitrate) 
