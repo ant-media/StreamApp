@@ -132,6 +132,15 @@
 	</mime-mapping>
 
 	<filter>
+		<filter-name>RestJWTAuthenticationFilter</filter-name>
+		<filter-class>io.antmedia.filter.JWTFilter</filter-class>
+	</filter>
+	<filter-mapping>
+		<filter-name>RestJWTAuthenticationFilter</filter-name>
+		<url-pattern>/rest/*</url-pattern>
+	</filter-mapping>
+
+	<filter>
 		<filter-name>RestAuthenticationFiler</filter-name>
 		<filter-class>io.antmedia.filter.IPFilter</filter-class>
 	</filter>
