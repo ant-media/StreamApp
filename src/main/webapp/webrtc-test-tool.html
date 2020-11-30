@@ -424,10 +424,6 @@
 
 	 var token = getUrlParameter("token");
 
-	 var webRTCPlayIntervalJob = null;
-
-	 var i = 0;
-
 	 function tryWebSocketConnect(){
 	 	websocketURL = test_websocket_url.value;
 	 	initPublishWebRTCAdaptor(false,null);
@@ -436,22 +432,7 @@
 
 	 function startWebRTCTest() {
 	 	publishWebRTCAdaptor.publish(streamId, token);
-	 	webRTCPlayIntervalJob = setInterval(checkPublishStatus, 1000);
 	 }
-
-	 function checkPublishStatus(){
-	 	i++;
-
-	 	if(publishWebRTCAdaptor.iceConnectionState(streamId) == "connected" || webRTCPlayAdaptor.iceConnectionState(streamId) == "connected") {
-	 		webRTCPlayAdaptor.play(streamId, token);
-	 		clearInterval(webRTCPlayIntervalJob);
-	 	}
-
-		// Try with 10 times, if it's not playing stop interval
-		if(i == 10){
-			clearInterval(webRTCPlayIntervalJob);
-		}
-	}
 
 	function resetPlayWarnStatistics(){
 		play_min_bit_rate_warn.style.display = "none";
@@ -566,6 +547,8 @@
 					start_webrtc_test_button.disabled = false;
 
 				} else if (info == "publish_started") {
+
+					webRTCPlayAdaptor.play(streamId, token);
 
 					resetPublishWarnStatistics();
 					resetPublishInfoStatistics();
