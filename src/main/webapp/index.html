@@ -234,6 +234,25 @@ video {
 	// It should be true
 	var rtmpForward = getUrlParameter("rtmpForward");
 
+	var volume_change_input = document.getElementById("volume_change_input");
+	volume_change_input.addEventListener("change", changeVolume);
+
+	function changeVolume(){
+	/**
+   	* Change the gain levels on the input selector.
+   	*/
+   		if(document.getElementById('volume_change_input') != null){
+   			webRTCAdaptor.currentVolume = this.value;
+        	if(webRTCAdaptor.desktopGainNode != null){
+        		webRTCAdaptor.desktopGainNode.gain.value = this.value; // Any number between 0 and 1.
+        	}
+
+       		if(webRTCAdaptor.micGainNode != null){
+       			webRTCAdaptor.micGainNode.gain.value = this.value; // Any number between 0 and 1.
+       		}
+   		}
+    }
+
 	function startPublishing() {
 		streamId = streamNameBox.value;
 		webRTCAdaptor.publish(streamId, token, subscriberId, subscriberCode);
