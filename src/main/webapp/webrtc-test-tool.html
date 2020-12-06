@@ -70,28 +70,24 @@
 
 		<video style="display:none" id="localVideo" autoplay="" muted="" playsinline=""></video>
 
+		<div class="form-group">
+
+			<span style="float:left" class="">Test WebSocket URL: </span><br>
+			<div class="form-row">
+				<div class="col-6">
+					<span ><input type="text" id="test_websocket_url" class="form-control" placeholder="Please write your WebSocket URL. For example: wss://serverdomain.com:5443/LiveApp/websocket"></span>
+				</div>
+				<div style="margin-top:10px;" class="col-12">
+					<span style="float:left">WebSocket Status: </span> 
+					<span id="websocket-succeed" style="float:left; margin-left:5px; display: none"> <img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/true-icon.png"></span>
+					<span id="websocket-failed" style="float:left; margin-left:5px; display: none"> <img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/false-icon.png"></span>
+				</div>
+			</div>
+		</div>
+
 		<div class="form-group">	
 			<button class="btn btn-primary" disabled
 			id="start-webrtc-test-button">Start WebRTC Testing</button>
-
-			<br>
-			<br>
-
-			<div class="form-group">
-
-				<span style="float:left" class="">Test WebSocket URL: </span><br>
-				<div class="form-row">
-					<div class="col-6">
-						<span ><input type="text" id="test_websocket_url" class="form-control" placeholder="Please write your WebSocket URL. For example: wss://serverdomain.com:5443/LiveApp/websocket"></span>
-					</div>
-					<div style="margin-top:10px;" class="col-12">
-						<span style="float:left">WebSocket Status: </span> 
-						<span id="websocket-succeed" style="float:left; margin-left:5px; display: none"> <img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/true-icon.png"></span>
-						<span id="websocket-failed" style="float:left; margin-left:5px; display: none"> <img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/false-icon.png"></span>
-					</div>
-				</div>
-			</div>
-
 		</div>
 
 		<legend class="col-form-label video-source-legend">Test video devices:</legend>
@@ -482,63 +478,63 @@
 
 	 function resetParameters(){
 	 	// Reset Publish stats
-		$("#publish_min_bit_rate").text(0);
-		$("#publish_average_bit_rate").text(0);
-		$("#publish_max_bit_rate").text(0);
-		$("#publish_latest_bit_rate").text(0);
-			
-		$("#publish_packet_lost_text").text(0);
-		$("#publish_jitter_text").text(0);
-		$("#publish_round_trip_time").text(0);
+	 	$("#publish_min_bit_rate").text(0);
+	 	$("#publish_average_bit_rate").text(0);
+	 	$("#publish_max_bit_rate").text(0);
+	 	$("#publish_latest_bit_rate").text(0);
 
-		$("#publish_source_width").text("");
-		$("#publish_source_height").text("");
+	 	$("#publish_packet_lost_text").text(0);
+	 	$("#publish_jitter_text").text(0);
+	 	$("#publish_round_trip_time").text(0);
 
-		$("#publish_ongoing_width").text("");
-		$("#publish_ongoing_height").text("");	
+	 	$("#publish_source_width").text("");
+	 	$("#publish_source_height").text("");
 
-		$("#publish_on_going_fps").text(0);
+	 	$("#publish_ongoing_width").text("");
+	 	$("#publish_ongoing_height").text("");	
+
+	 	$("#publish_on_going_fps").text(0);
 
 		// Reset Play stats
 		$("#play_min_bit_rate").text(0);
 		$("#play_average_bit_rate").text(0);
 		$("#play_max_bit_rate").text(0);
-				
+
 		$("#play_packet_lost_text").text(0);
 
 		$("#play_jitter_text").text(0);
-				
+
 		$("#play_audio_level").text(0);
-				
+
 		$("#play_frame_width").text("");
 		$("#play_frame_height").text("");
-				
+
 		$("#play_frame_received").text(0);	
 		$("#play_frame_decoded").text(0);
 		$("#play_frame_dropped").text(0);
 	}
 
 
-	 function getCameraRadioButton(deviceName, deviceId) {
-	 	return "<div class=\"form-check form-check-inline\">" + 	
-	 	"<input class=\"form-check-input video-source\" name=\"videoSource\" type=\"radio\" value=\"" + deviceId + "\" id=\"" + deviceId + "\">" +
-	 	"<label class=\"form-check-label font-weight-light\" name=\"videoSource\" for=\"" + deviceId + "\" style=\"font-weight:normal\">" +
-	 	deviceName +
-	 	"</label>" +		
-	 	"</div>";
-	 }
+	function getCameraRadioButton(deviceName, deviceId) {
+		return "<div class=\"form-check form-check-inline\">" + 	
+		"<input class=\"form-check-input video-source\" name=\"videoSource\" type=\"radio\" value=\"" + deviceId + "\" id=\"" + deviceId + "\">" +
+		"<label class=\"form-check-label font-weight-light\" name=\"videoSource\" for=\"" + deviceId + "\" style=\"font-weight:normal\">" +
+		deviceName +
+		"</label>" +		
+		"</div>";
+	}
 
-	 function getAudioRadioButton(deviceName, deviceId) {
-	 	return "<div class=\"form-check form-check-inline\">" + 	
-	 	"<input class=\"form-check-input audio-source\" name=\"audioDeviceSource\" type=\"radio\" value=\"" + deviceId + "\" id=\"" + deviceId + "\">" +
-	 	"<label class=\"form-check-label font-weight-light\" name=\"audioDeviceSource\" for=\"" + deviceId + "\" style=\"font-weight:normal\">" +
-	 	deviceName +
-	 	"</label>" +		
-	 	"</div>";
-	 }
+	function getAudioRadioButton(deviceName, deviceId) {
+		return "<div class=\"form-check form-check-inline\">" + 	
+		"<input class=\"form-check-input audio-source\" name=\"audioDeviceSource\" type=\"radio\" value=\"" + deviceId + "\" id=\"" + deviceId + "\">" +
+		"<label class=\"form-check-label font-weight-light\" name=\"audioDeviceSource\" for=\"" + deviceId + "\" style=\"font-weight:normal\">" +
+		deviceName +
+		"</label>" +		
+		"</div>";
+	}
 
-	 function switchVideoMode(chbx) {
-	 	if(chbx.value == "screen") {
+	function switchVideoMode(chbx) {
+		if(chbx.value == "screen") {
 			  //webRTCAdaptor.switchDesktopWithMicAudio(streamId);
 			  publishWebRTCAdaptor.switchDesktopCapture(streamId);
 			}
@@ -806,9 +802,6 @@
 						$('[name="videoSource"]').remove();
 						$('[name="audioDeviceSource"]').remove();
 
-						//videoHtmlContent += getScreenButton();
-						//videoHtmlContent += getScreenWithCamButton();
-
 						$(videoHtmlContent).insertAfter(".video-source-legend");
 						$(".video-source").first().prop("checked", true);	
 						
@@ -843,6 +836,8 @@
 				},
 				callbackError : function(error, message) {
 					//some of the possible errors, NotFoundError, SecurityError,PermissionDeniedError
+
+					start_webrtc_test_button.disabled = false;
 
 					console.log("error callback: " +  JSON.stringify(error));
 					var errorMessage = JSON.stringify(error);
