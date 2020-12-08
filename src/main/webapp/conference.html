@@ -102,6 +102,7 @@ body {
 		<div id="players">
 			<div class="col-sm-3">
 				<video id="localVideo" autoplay muted controls playsinline></video>
+				<div style="margin-top:10px;" class="col-sm-8 col-sm-offset-2">Microphone Gain: <input type=range id=volume_change_input min=0 max=1 value=1 step=0.01></div>
 			</div>
 		</div>
 
@@ -184,6 +185,25 @@ body {
 	if(playOnly == null) {
 		playOnly = false;
 	}
+
+	var volume_change_input = document.getElementById("volume_change_input");
+	volume_change_input.addEventListener("change", changeVolume);
+
+	function changeVolume(){
+	/**
+   	* Change the gain levels on the input selector.
+   	*/
+   		if(document.getElementById('volume_change_input') != null){
+   			webRTCAdaptor.currentVolume = this.value;
+        	if(webRTCAdaptor.soundOriginGainNode != null){
+        		webRTCAdaptor.soundOriginGainNode.gain.value = this.value; // Any number between 0 and 1.
+        	}
+
+       		if(webRTCAdaptor.secondStreamGainNode != null){
+       			webRTCAdaptor.secondStreamGainNode.gain.value = this.value; // Any number between 0 and 1.
+       		}
+   		}
+    }
 
 	var join_publish_button = document.getElementById("join_publish_button");
 	join_publish_button.addEventListener("click", joinRoom, false);

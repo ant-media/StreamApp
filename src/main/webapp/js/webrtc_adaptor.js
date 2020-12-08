@@ -19,6 +19,9 @@ export class WebRTCAdaptor
 		this.videoTrackSender = null;
 		this.audioTrackSender = null;
 		this.playStreamId = new Array();
+		this.currentVolume = null;
+
+	    this.soundOriginGainNode = null;
 		this.secondStreamGainNode = null;
 		this.localStream = null;
 		this.bandwidth = 900; //default bandwidth kbps
@@ -206,6 +209,8 @@ export class WebRTCAdaptor
 		if (audioConstraint != "undefined" && audioConstraint != false) {
 			var media_audio_constraint = { audio: audioConstraint};
 			this.navigatorUserMedia(media_audio_constraint, audioStream => {
+
+				audioStream = this.setGainNodeStream(audioStream);
 
 				//add callback if desktop is sharing
 				var onended = event => {
@@ -540,6 +545,8 @@ export class WebRTCAdaptor
 
 	gotStream(stream)
 	{
+		stream = this.setGainNodeStream(stream);
+
 		this.localStream = stream;
 		this.localVideo.srcObject = stream;
 		
@@ -578,7 +585,7 @@ export class WebRTCAdaptor
 		var audioDestionation = audioContext.createMediaStreamDestination();
 
 		if (stream.getAudioTracks().length > 0) {
-			var soundOriginGainNode = audioContext.createGain();
+			this.soundOriginGainNode = audioContext.createGain();
 
 			//Adjust the gain for screen sound
 			soundOriginGainNode.gain.value = 1;
@@ -609,6 +616,61 @@ export class WebRTCAdaptor
 		});
 
 		return composedStream;
+	}
+
+	setGainNodeStream(stream){
+
+		// Get the videoTracks from the stream.
+  		const videoTracks = stream.getVideoTracks();
+
+  		// Get the audioTracks from the stream.
+  		const audioTracks = stream.getAudioTracks();
+
+  		/**
+   		* Create a new audio context and build a stream source,
+   		* stream destination and a gain node. Pass the stream into 
+   		* the mediaStreamSource so we can use it in the Web Audio API.
+   		*/
+  		let audioContext = new AudioContext();
+  		let mediaStreamSource = audioContext.createMediaStreamSource(stream);
+  		let mediaStreamDestination = audioContext.createMediaStreamDestination();
+  		this.soundOriginGainNode = audioContext.createGain();
+
+  		/**
+   		* Connect the stream to the gainNode so that all audio
+   		* passes through the gain and can be controlled by it.
+   		* Then pass the stream from the gain to the mediaStreamDestination
+   		* which can pass it back to the RTC client.
+   		*/
+  		mediaStreamSource.connect(this.soundOriginGainNode);
+  		this.soundOriginGainNode.connect(mediaStreamDestination);
+
+  		if(this.currentVolume == null){
+  			this.soundOriginGainNode.gain.value = 1;
+  		}
+  		else{
+  			this.soundOriginGainNode.gain.value = this.currentVolume;
+  		}
+
+  		/**
+   		* The mediaStreamDestination.stream outputs a MediaStream object
+   		* containing a single AudioMediaStreamTrack. Add the video track
+   		* to the new stream to rejoin the video with the controlled audio.
+   		*/
+  		const controlledStream = mediaStreamDestination.stream;
+
+  		for (const videoTrack of videoTracks) {
+    		controlledStream.addTrack(videoTrack);
+  		}
+		for (const audioTrack of audioTracks) {
+    		controlledStream.addTrack(audioTrack);
+  		}
+
+  		/**
+   		* Use the stream that went through the gainNode. This
+   		* is the same stream but with altered input volume levels.
+   		*/
+   		return controlledStream;
 	}
 
 	switchAudioInputSource(streamId, deviceId) 
@@ -729,6 +791,7 @@ export class WebRTCAdaptor
 	setVideoCameraSource(streamId, mediaConstraints, onEndedCallback, stopDesktop) 
 	{
 		this.navigatorUserMedia(mediaConstraints, stream => {
+			stream = this.setGainNodeStream(stream);
 			this.updateVideoTrack(stream, streamId, mediaConstraints, onEndedCallback, stopDesktop);
 			this.updateAudioTrack(stream, streamId, mediaConstraints, onEndedCallback);
 		}, true);
