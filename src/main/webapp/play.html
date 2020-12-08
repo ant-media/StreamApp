@@ -316,6 +316,14 @@
 			}
 
 		}
+		//Check HLS player is finished. If finished page should be reload
+		player.ready(function(){
+			var player = this;
+			player.on('ended', function() {
+				tryToPlay(streamId, token, hlsExtension, subscriberId, subscriberCode);
+	  		});
+		});
+		
 		document.getElementById("video_container").style.display = "block";
 		document.getElementById("video_info").hidden = true;
 	}
