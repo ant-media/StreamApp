@@ -1,0 +1,1076 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Ant Media Server WebRTC Publish</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta charset="UTF-8">
+	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+
+	<script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
+
+
+
+	<style>
+		video {
+			width: 100%;
+			max-width: 640px;
+		}
+
+		/* Everything but the jumbotron gets side spacing for mobile first views */
+		.header, .marketing, .footer {
+			padding: 15px;
+		}
+
+		/* Custom page header */
+		.header {
+			padding-bottom: 20px;
+		}
+
+		.container-narrow>hr {
+			margin: 30px 0;
+		}
+
+		/* Main marketing message and sign up button */
+		.jumbotron {
+			text-align: center;
+		}
+
+		/* Responsive: Portrait tablets and up */
+		@media screen and (min-width: 768px) {
+			/* Remove the padding we set earlier */
+			.header, .marketing, .footer {
+				padding-right: 0;
+				padding-left: 0;
+			}
+		}
+		.options {
+			display:none;
+		}
+
+	</style>
+</head>
+<body>
+
+
+	<div class="container">
+
+		<header class="blog-header header py-3">
+
+			<div class="row justify-content-between align-items-center">
+				<div class="col-12 col-md-12 footer-center">
+					<h3 class="text-muted">WebRTC Test Tool</h3>
+				</div>
+			</div>
+
+
+		</header>
+	</div>
+
+	<div class="container">
+
+		<video style="display:none" id="localVideo" autoplay="" muted="" playsinline=""></video>
+
+		<div class="form-group">
+
+			<span style="float:left" class="">Test WebSocket URL: </span><br>
+			<div class="form-row">
+				<div class="col-6">
+					<span ><input type="text" id="test_websocket_url" class="form-control" placeholder="Please write your WebSocket URL. For example: wss://serverdomain.com:5443/LiveApp/websocket"></span>
+				</div>
+				<div style="margin-top:10px;" class="col-12">
+					<span style="float:left">WebSocket Status: </span> 
+					<span id="websocket-succeed" style="float:left; margin-left:5px; display: none"> <img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/true-icon.png"></span>
+					<span id="websocket-failed" style="float:left; margin-left:5px; display: none"> <img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/false-icon.png"></span>
+				</div>
+			</div>
+		</div>
+
+		<div class="form-group">	
+			<button class="btn btn-primary" disabled
+			id="start-webrtc-test-button">Start WebRTC Testing</button>
+		</div>
+
+		<legend class="col-form-label video-source-legend">Test video devices:</legend>
+
+		<br>
+		<br>
+
+		<div class="form-group">	
+			<div class="form-row">
+				<div class="col-6">
+					<span class="">Test duration(time): </span><input type="number" id="test_duration" class="form-control" value="10">
+				</div>
+			</div>
+		</div> 
+
+
+		<div class="form-group">	
+			<div id="test_result" style="display:none">Test Started</div>
+		</div>
+
+		<div class="form-group">	
+			<div id="progress" class="progress" style="display:none">
+				<div id="progress-bar" class="progress-bar progress-bar-striped" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+			</div>
+		</div>
+
+		<section id="publish_statistics" style="display:none">
+			<div class="form-group">	
+				<h5 class="text-muted">WebRTC Publish Statistics:</h5>
+			</div>
+
+			<div class="form-group">	
+				<div id="stats_panel" style="margin-top: 10px" >
+					<div class="row">
+						<div class="col-sm-4">
+
+							<div>
+								<a id="publish_min_bit_rate_warn" style="display:none" href="#" data-toggle="tooltip" title="Min Bitrate parameter should at least 250kbps"><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/false-icon.png"></a>
+								<span id="publish_min_bit_rate_info" style="display:none"><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/true-icon.png"></span>
+								<span id="publish_min_bit_rate_container">Min Bitrate(Kbps): <span id="publish_min_bit_rate"></span></span>
+							</div>
+
+							<div>
+								<a id="publish_average_bit_rate_warn" style="display:none" href="#" data-toggle="tooltip" title="Average Bitrate parameter should at least 250kbps"><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/false-icon.png"></a>
+								<span id="publish_average_bit_rate_info" style="display:none"><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/true-icon.png"></span>
+								<span id="publish_average_bit_rate_container">Average Bitrate(Kbps): <span id="publish_average_bit_rate"></span></span>
+							</div>
+
+							<div>
+								<a id="publish_max_bit_rate_warn" style="display:none" href="#" data-toggle="tooltip" title="Max Bitrate parameter should at least 250kbps"><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/false-icon.png"></a>
+								<span id="publish_max_bit_rate_info" style="display:none"><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/true-icon.png"></span>
+								<span id="publish_max_bit_rate_container">Max Bitrate(Kbps): <span id="publish_max_bit_rate"></span></span>
+							</div>
+
+							<div>
+								<a id="publish_packet_lost_warn" style="display:none" href="#" data-toggle="tooltip" title="Packet lost parameter should max 20"><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/false-icon.png"></a>
+								<span id="publish_packet_lost_info" style="display:none"><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/true-icon.png"></span>
+								<span id="publish_packet_lost_container">PacketsLost: <span id="publish_packet_lost_text"></span></span>
+							</div>
+
+							<div>
+								<a id="publish_jitter_warn" style="display:none" href="#" data-toggle="tooltip" title="Jitter parameter should max 100ms"><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/false-icon.png"></a>
+								<span id="publish_jitter_info" style="display:none"><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/true-icon.png"></span>
+								<span id="publish_jitter_container">Jitter(Secs): <span id="publish_jitter_text"></span></span>
+							</div>
+
+
+						</div>
+						<div class="col-sm-4">
+
+							<div>
+								<a id="round_trip_time_warn" style="display:none" href="#" data-toggle="tooltip" title="RTT parameter should max 100ms"><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/false-icon.png"></a>
+								<span id="round_trip_time_info" style="display:none"><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/true-icon.png"></span>
+								<span id="round_trip_time_container">Round Trip Time(Secs): <span id="publish_round_trip_time"></span></span>
+							</div>
+
+							<div>
+								<a id="source_resolution_warn" style="display:none" href="#" data-toggle="tooltip" title=""><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/false-icon.png"></a>
+								<span id="source_resolution_info" style="display:none"><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/true-icon.png"></span>
+								<span id="source_resolution_container">Source WidthxHeight: <span id="publish_source_width"></span> x <span id="publish_source_height"></span></span>
+							</div>
+
+							<div>
+								<a id="ongoing_resolution_warn" style="display:none" href="#" data-toggle="tooltip" title=""><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/false-icon.png"></a>
+								<span id="ongoing_resolution_info" style="display:none"><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/true-icon.png"></span>
+								<span id="ongoing_resolution_container">On-going WidthxHeight: <span id="publish_ongoing_width"></span> x <span id="publish_ongoing_height"></span></span>
+							</div>
+
+							<div>
+								<a id="on_going_fps_warn" style="display:none" href="#" data-toggle="tooltip" title=""><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/false-icon.png"></a>
+								<span id="on_going_fps_info" style="display:none"><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/true-icon.png"></span>
+								<span id="on_going_fps_container">On-going FPS: <span id="publish_on_going_fps"></span></span>
+							</div>	
+
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+
+		<section id="play_statistics" style="display:none ">
+			<div class="form-group">	
+				<h5 class="text-muted">WebRTC Play Statistics:</h5>
+			</div>
+
+			<div class="form-group">
+				<div class="row">
+					<div class="col-sm-4">
+
+						<div>
+							<a id="play_min_bit_rate_warn" style="display:none" href="#" data-toggle="tooltip" title="Min Bitrate parameter should at least 250kbps"><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/false-icon.png"></a>
+							<span id="play_min_bit_rate_info" style="display:none"><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/true-icon.png"></span>
+							<span id="play_min_bit_rate_container">Min Bitrate(Kbps): <span id="play_min_bit_rate"></span></span>
+						</div>
+
+						<div>
+							<a id="play_average_bit_rate_warn" style="display:none" href="#" data-toggle="tooltip" title="Average Bitrate parameter should at least 250kbps"><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/false-icon.png"></a>
+							<span id="play_average_bit_rate_info" style="display:none"><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/true-icon.png"></span>
+							<span id="play_average_bit_rate_container">Average Bitrate(Kbps): <span id="play_average_bit_rate"></span></span>
+						</div>
+
+						<div>
+							<a id="play_max_bit_rate_warn" style="display:none" href="#" data-toggle="tooltip" title="Max Bitrate parameter should at least 250kbps"><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/false-icon.png"></a>
+							<span id="play_max_bit_rate_info" style="display:none"><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/true-icon.png"></span>
+							<span id="play_max_bit_rate_container">Max Bitrate(Kbps): <span id="play_max_bit_rate"></span></span>
+						</div>
+
+						<div>
+							<a id="play_packet_lost_warn" style="display:none"  href="#" data-toggle="tooltip" title="Packet lost parameter should max 20"><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/false-icon.png"></a>
+							<span id="play_packet_lost_info" style="display:none"><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/true-icon.png"></span>
+							<span id="play_packet_lost_container">PacketsLost: <span id="play_packet_lost_text"></span></span>
+						</div>
+
+						<div>
+							<a id="play_jitter_warn" style="display:none" href="#" data-toggle="tooltip" title="Jitter parameter should max 100ms"><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/false-icon.png"></a>
+							<span id="play_jitter_info" style="display:none"><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/true-icon.png"></span>
+							<span id="play_jitter_container">Jitter Average Delay(Secs): <span id="play_jitter_text"></span></span>
+						</div>
+
+					</div>
+					<div class="col-sm-4">
+
+						<div>
+							<a id="incoming_resolution_warn" style="display:none" href="#" data-toggle="tooltip" title=""><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/false-icon.png"></a>
+							<span id="incoming_resolution_info" style="display:none"><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/true-icon.png"></span>
+							<span id="incoming_resolution_container">Frame WidthxHeight: <span id="play_frame_width"></span>x<span id="play_frame_height"></span></span>
+						</div>
+
+						<div>
+							<a id="frame_decoded_warn" style="display:none" href="#" data-toggle="tooltip" title=""><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/false-icon.png"></a>
+							<span id="frame_decoded_info" style="display:none"><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/true-icon.png"></span>
+							<span id="frame_decoded_container">Frames Decoded: <span id="play_frame_decoded"></span></span>
+						</div>
+
+						<div>
+							<a id="frame_dropped_warn" style="display:none" href="#" data-toggle="tooltip" title="Frames Dropped parameter should max 20"><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/false-icon.png"></a>
+							<span id="frame_dropped_info" style="display:none"><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/true-icon.png"></span>
+							<span id="frame_dropped_container">Frames Dropped: <span id="play_frame_dropped"></span></span>
+						</div>
+
+						<div>
+							<a id="frame_received_warn" style="display:none" href="#" data-toggle="tooltip" title=""><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/false-icon.png"></a>
+							<span id="frame_received_info" style="display:none"><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/true-icon.png"></span>
+							<span id="frame_received_container">Frames Received: <span id="play_frame_received"></span></span>
+						</div>
+
+					</div>
+				</div>
+			</div>
+
+		</section>
+
+		<div class="form-group">	
+			<h5 class="text-muted">Reference Documents:</h5>
+		</div>
+
+		<div class="form-group">
+			<div class="row">
+				<div class="col-sm-12">
+					<a target="_blank" href="https://antmedia.io/webrtc-video-play-pixelating-blurring-issues-troubleshooting/">WebRTC Freezing/Pixellation issues</a><br>
+					<a target="_blank" href="https://www.callstats.io/blog/why-is-round-trip-time-a-valuable-webrtc-metric-for-call-centers">WebRTC RTT time metric</a><br>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<script src="https://code.jquery.com/jquery-3.4.1.min.js"  crossorigin="anonymous"></script>
+	<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" crossorigin="anonymous"></script>
+	<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"  crossorigin="anonymous"></script>	
+
+</body>
+<script type="module" lang="javascript">
+	import {WebRTCAdaptor} from "./js/webrtc_adaptor.js"
+	import {getUrlParameter} from "./js/fetch.stream.js" 
+
+	function init () {
+		var id = getUrlParameter("id");
+		if(typeof id != "undefined") {
+			$("#streamName").val(id);
+		}
+		else {
+			id = getUrlParameter("name");
+			if (typeof id != "undefined") {
+				$("#streamName").val(id);
+			} 
+			else {
+				$("#streamName").val("stream1");
+			}
+		}
+
+	}
+	$(function() {
+		init();
+	});
+
+	var websocketURL;
+
+	var isFinished = false;
+	var statsTime = 0;
+
+	var publishMinBitrateValue =0;
+	var publishAverageBitrateValue =0;
+	var publishMaxBitrateValue =0;
+	var publishPacketLostValue = 0;
+	var publishJitterValue = 0;
+	var publishRTTValue = 0;
+
+	var playMinBitrateValue =0;
+	var playAverageBitrateValue =0;
+	var playMaxBitrateValue =0;
+	var playPacketLostValue = 0;
+	var playJitterValue = 0;
+	var playFrameDropValue = 0;
+
+	var test_duration_text = document.getElementById("test_duration");
+
+	var test_result_text = document.getElementById("test_result");
+	var progress = document.getElementById("progress");
+	var publish_statistics = document.getElementById("publish_statistics");
+
+	var start_webrtc_test_button = document.getElementById("start-webrtc-test-button");
+	start_webrtc_test_button.addEventListener("click", startWebRTCTest, false);
+
+	//These are for the publish WebRTC Statistics information 
+
+	var publish_min_bit_rate_warn = document.getElementById("publish_min_bit_rate_warn");
+	var publish_min_bit_rate_info = document.getElementById("publish_min_bit_rate_info");
+
+	var publish_average_bit_rate_warn = document.getElementById("publish_average_bit_rate_warn");
+	var publish_average_bit_rate_info = document.getElementById("publish_average_bit_rate_info");
+
+	var publish_max_bit_rate_warn = document.getElementById("publish_max_bit_rate_warn");
+	var publish_max_bit_rate_info = document.getElementById("publish_max_bit_rate_info");
+
+	var publish_packet_lost_warn = document.getElementById("publish_packet_lost_warn");
+	var publish_packet_lost_info = document.getElementById("publish_packet_lost_info");
+
+	var publish_jitter_warn = document.getElementById("publish_jitter_warn");
+	var publish_jitter_info = document.getElementById("publish_jitter_info");
+
+
+	var round_trip_time_warn = document.getElementById("round_trip_time_warn");
+	var round_trip_time_info = document.getElementById("round_trip_time_info");
+
+	var source_resolution_warn = document.getElementById("source_resolution_warn");
+	var source_resolution_info = document.getElementById("source_resolution_info");
+
+	var ongoing_resolution_warn = document.getElementById("ongoing_resolution_warn");
+	var ongoing_resolution_info = document.getElementById("ongoing_resolution_info");
+
+	var on_going_fps_warn = document.getElementById("on_going_fps_warn");
+	var on_going_fps_info = document.getElementById("on_going_fps_info");
+
+	//These are for the play WebRTC Statistics information 
+
+	var play_min_bit_rate_warn = document.getElementById("play_min_bit_rate_warn");
+	var play_min_bit_rate_info = document.getElementById("play_min_bit_rate_info");
+
+	var play_average_bit_rate_warn = document.getElementById("play_average_bit_rate_warn");
+	var play_average_bit_rate_info = document.getElementById("play_average_bit_rate_info");
+
+	var play_max_bit_rate_warn = document.getElementById("play_max_bit_rate_warn");
+	var play_max_bit_rate_info = document.getElementById("play_max_bit_rate_info");
+
+	var play_packet_lost_warn = document.getElementById("play_packet_lost_warn");
+	var play_packet_lost_info = document.getElementById("play_packet_lost_info");
+
+	var play_jitter_warn = document.getElementById("play_jitter_warn");
+	var play_jitter_info = document.getElementById("play_jitter_info");
+
+
+	var incoming_resolution_warn = document.getElementById("incoming_resolution_warn");
+	var incoming_resolution_info = document.getElementById("incoming_resolution_info");
+
+	var frame_decoded_warn = document.getElementById("frame_decoded_warn");
+	var frame_decoded_infos = document.getElementById("frame_decoded_info");
+
+	var frame_dropped_warn = document.getElementById("frame_dropped_warn");
+	var frame_dropped_info = document.getElementById("frame_dropped_info");
+
+	var frame_received_warn = document.getElementById("frame_received_warn");
+	var frame_received_info = document.getElementById("frame_received_info");
+
+
+	var websocketSucceed = document.getElementById("websocket-succeed");
+	var websocketFailed = document.getElementById("websocket-failed");
+
+	var test_websocket_url = document.getElementById("test_websocket_url");
+
+	var autoRepublishEnabled = true;
+	/**
+	 * Timer job that checks the WebRTC connection 
+	 */
+	 var autoRepublishIntervalJob = null;
+
+	 var streamId = "testStream"+Math.floor(Math.random() * 100000);
+
+	 var token = getUrlParameter("token");
+
+	 var startPublish = false;
+
+	 function startWebRTCTest() {
+	 	start_webrtc_test_button.disabled = true;
+	 	if(websocketURL != test_websocket_url.value){
+	 		websocketURL = test_websocket_url.value;
+	 		startPublish = true;
+	 		initPublishWebRTCAdaptor(false,null);
+	 		initPlayWebRTCAdaptor(null,null);
+	 	}
+	 	else{
+	 		publishWebRTCAdaptor.publish(streamId, token);
+	 	}
+	 }
+
+	 function resetPlayWarnStatistics(){
+	 	play_min_bit_rate_warn.style.display = "none";
+	 	play_average_bit_rate_warn.style.display = "none";
+	 	play_max_bit_rate_warn.style.display = "none";
+	 	play_packet_lost_warn.style.display = "none";	
+	 	play_jitter_warn.style.display = "none";
+
+	 	incoming_resolution_warn.style.display = "none";
+	 	frame_decoded_warn.style.display = "none";
+	 	frame_dropped_warn.style.display = "none";
+	 	frame_received_warn.style.display = "none";
+	 }
+
+	 function resetPlayInfoStatistics(){
+
+	 	play_min_bit_rate_info.style.display = "none";
+	 	play_average_bit_rate_info.style.display = "none";
+	 	play_max_bit_rate_info.style.display = "none";
+	 	play_packet_lost_info.style.display = "none";
+	 	play_jitter_info.style.display = "none";
+
+	 	incoming_resolution_info.style.display = "none";
+	 	frame_decoded_info.style.display = "none";
+	 	frame_dropped_info.style.display = "none";
+	 	frame_received_info.style.display = "none";
+	 }
+
+	 function resetPublishWarnStatistics(){
+	 	publish_min_bit_rate_warn.style.display = "none";
+	 	publish_average_bit_rate_warn.style.display = "none";
+	 	publish_max_bit_rate_warn.style.display = "none";
+	 	publish_packet_lost_warn.style.display = "none";
+	 	publish_jitter_warn.style.display = "none";	
+
+	 	round_trip_time_warn.style.display = "none";
+	 	source_resolution_warn.style.display = "none";
+	 	ongoing_resolution_warn.style.display = "none";
+	 	on_going_fps_warn.style.display = "none";
+	 }
+
+	 function resetPublishInfoStatistics(){
+
+	 	publish_min_bit_rate_info.style.display = "none";
+	 	publish_average_bit_rate_info.style.display = "none";
+	 	publish_max_bit_rate_info.style.display = "none";
+	 	publish_packet_lost_info.style.display = "none";
+	 	publish_jitter_info.style.display = "none";
+
+	 	round_trip_time_info.style.display = "none";
+	 	source_resolution_info.style.display = "none";
+	 	ongoing_resolution_info.style.display = "none";
+	 	on_going_fps_info.style.display = "none";
+	 }
+
+	 function resetParameters(){
+	 	// Reset Publish stats
+	 	$("#publish_min_bit_rate").text(0);
+	 	$("#publish_average_bit_rate").text(0);
+	 	$("#publish_max_bit_rate").text(0);
+	 	$("#publish_latest_bit_rate").text(0);
+
+	 	$("#publish_packet_lost_text").text(0);
+	 	$("#publish_jitter_text").text(0);
+	 	$("#publish_round_trip_time").text(0);
+
+	 	$("#publish_source_width").text("");
+	 	$("#publish_source_height").text("");
+
+	 	$("#publish_ongoing_width").text("");
+	 	$("#publish_ongoing_height").text("");	
+
+	 	$("#publish_on_going_fps").text(0);
+
+		// Reset Play stats
+		$("#play_min_bit_rate").text(0);
+		$("#play_average_bit_rate").text(0);
+		$("#play_max_bit_rate").text(0);
+
+		$("#play_packet_lost_text").text(0);
+
+		$("#play_jitter_text").text(0);
+
+		$("#play_audio_level").text(0);
+
+		$("#play_frame_width").text("");
+		$("#play_frame_height").text("");
+
+		$("#play_frame_received").text(0);	
+		$("#play_frame_decoded").text(0);
+		$("#play_frame_dropped").text(0);
+	}
+
+
+	function getCameraRadioButton(deviceName, deviceId) {
+		return "<div class=\"form-check form-check-inline\">" + 	
+		"<input class=\"form-check-input video-source\" name=\"videoSource\" type=\"radio\" value=\"" + deviceId + "\" id=\"" + deviceId + "\">" +
+		"<label class=\"form-check-label font-weight-light\" name=\"videoSource\" for=\"" + deviceId + "\" style=\"font-weight:normal\">" +
+		deviceName +
+		"</label>" +		
+		"</div>";
+	}
+
+	function getAudioRadioButton(deviceName, deviceId) {
+		return "<div class=\"form-check form-check-inline\">" + 	
+		"<input class=\"form-check-input audio-source\" name=\"audioDeviceSource\" type=\"radio\" value=\"" + deviceId + "\" id=\"" + deviceId + "\">" +
+		"<label class=\"form-check-label font-weight-light\" name=\"audioDeviceSource\" for=\"" + deviceId + "\" style=\"font-weight:normal\">" +
+		deviceName +
+		"</label>" +		
+		"</div>";
+	}
+
+	function switchVideoMode(chbx) {
+		if(chbx.value == "screen") {
+			  //webRTCAdaptor.switchDesktopWithMicAudio(streamId);
+			  publishWebRTCAdaptor.switchDesktopCapture(streamId);
+			}
+			else if(chbx.value == "screenwithcamera"){
+				publishWebRTCAdaptor.switchDesktopCaptureWithCamera(streamId);
+			}
+			else {
+				publishWebRTCAdaptor.switchVideoCameraCapture(streamId, chbx.value);
+			}
+		}
+
+		var pc_config = {
+			'iceServers' : [ {
+				'urls' : 'stun:stun1.l.google.com:19302'
+			} ]
+		};
+
+		var publishSdpConstraints = {
+			OfferToReceiveAudio : false,
+			OfferToReceiveVideo : false
+		};
+
+		var publishMediaConstraints = {
+			video: true,
+			audio : true
+		};
+
+		var appName = location.pathname.substring(0, location.pathname.lastIndexOf("/")+1);
+		var path =  location.hostname + ":" + location.port + appName + "websocket";
+
+		websocketURL =  "ws://" + path;
+
+		if (location.protocol.startsWith("https")) {
+			websocketURL = "wss://" + path;
+		}
+
+		document.getElementById("test_websocket_url").value = websocketURL;
+
+		var publishWebRTCAdaptor = null;
+		var selectedRadio = null;
+		var selectedAudio = null;
+
+		function initPublishWebRTCAdaptor(publishImmediately, autoRepublishEnabled) 
+		{
+			publishWebRTCAdaptor = new WebRTCAdaptor({
+				websocket_url : websocketURL,
+				mediaConstraints : publishMediaConstraints,
+				peerconnection_config : pc_config,
+				sdp_constraints : publishSdpConstraints,
+				localVideoId : "localVideo",
+				debug:true,
+				bandwidth:"unlimited",
+				callback : (info, obj) => {
+					if (info == "initialized") {
+						console.log("initialized");
+
+						websocketSucceed.style.display = "block";
+						websocketFailed.style.display = "none";
+
+						start_webrtc_test_button.disabled = false;
+
+						if(startPublish){
+							publishWebRTCAdaptor.publish(streamId, token);
+						}
+
+					} else if (info == "publish_started") {
+
+						webRTCPlayAdaptor.play(streamId, token);
+
+						resetPublishWarnStatistics();
+						resetPublishInfoStatistics();
+						resetPlayInfoStatistics();
+						resetPlayWarnStatistics();
+
+						resetParameters();
+
+					//stream is being published
+					console.log("publish started");
+
+					publish_statistics.style.display = "block";
+					play_statistics.style.display = "block";
+
+					test_result_text.textContent = "Test Started";
+					start_webrtc_test_button.disabled = true;
+					progress.style.display = "block";
+
+
+					$(".progress-bar").css("width", statsTime + "%").text(statsTime + " %");
+
+					test_result_text.style.display = "block";
+					publishWebRTCAdaptor.enableStats(obj.streamId);
+
+				} else if (info == "publish_finished") {
+						//stream is being finished
+						console.log("publish finished");
+
+						start_webrtc_test_button.disabled = false;
+						test_result_text.textContent = "Test Finished";
+					}
+					else if (info == "closed") {
+						//console.log("Connection closed");
+						if (typeof obj != "undefined") {
+							websocketSucceed.style.display = "none";
+							websocketFailed.style.display = "block";
+
+							console.log("Connecton closed: " + JSON.stringify(obj));
+						}
+					}
+					else if (info == "pong") {
+						//ping/pong message are sent to and received from server to make the connection alive all the time
+						//It's especially useful when load balancer or firewalls close the websocket connection due to inactivity
+					}
+					else if (info == "refreshConnection") {
+						checkAndRepublishIfRequired();
+					}
+					else if (info == "ice_connection_state_changed") {
+						console.log("iceConnectionState Changed: ",JSON.stringify(obj));
+					}
+					else if (info == "updated_stats") {
+
+						statsTime++;
+						var percentValue = 100/test_duration_text.value;
+
+						$(".progress-bar").css("width", statsTime*percentValue + "%").text((statsTime*percentValue).toPrecision(3) + " %");
+
+						if(statsTime == test_duration_text.value){
+
+							isFinished = true;
+							publishWebRTCAdaptor.stop(streamId);
+							statsTime=0;
+
+							if(publishMinBitrateValue < 250){
+								publish_min_bit_rate_warn.style.display = "inline";
+							}
+							else{
+								publish_min_bit_rate_info.style.display = "inline";
+							}
+
+							if(publishAverageBitrateValue < 250){
+								publish_average_bit_rate_warn.style.display = "inline";
+							}
+							else{
+								publish_average_bit_rate_info.style.display = "inline";
+							}
+
+
+							if(publishMaxBitrateValue < 250){
+								publish_max_bit_rate_warn.style.display = "inline";
+							}
+							else{
+								publish_max_bit_rate_info.style.display = "inline";
+							}
+
+
+							if(publishPacketLostValue < 20){
+								publish_packet_lost_info.style.display = "inline";	
+							}
+							else{
+								publish_packet_lost_warn.style.display = "inline";	
+							}
+
+
+							if(publishJitterValue < 0.1){
+								publish_jitter_info.style.display = "inline";	
+							}
+							else{
+								publish_jitter_warn.style.display = "inline";	
+							}
+
+
+							if(publishRTTValue < 0.1){
+								round_trip_time_info.style.display = "inline";
+							}
+							else{
+								round_trip_time_warn.style.display = "inline";
+							}
+
+							source_resolution_info.style.display = "inline";
+							ongoing_resolution_info.style.display = "inline";
+							on_going_fps_info.style.display = "inline";
+
+						}
+
+						//obj is the PeerStats which has fields
+						 //averageOutgoingBitrate - kbits/sec
+						//currentOutgoingBitrate - kbits/sec
+						console.log("Average outgoing bitrate " + obj.averageOutgoingBitrate + " kbits/sec"
+							+ " Current outgoing bitrate: " + obj.currentOutgoingBitrate + " kbits/sec"
+							+ " video source width: " + obj.resWidth + " video source height: " + obj.resHeight
+							+ "frame width: " + obj.frameWidth + " frame height: " + obj.frameHeight
+							+ " video packetLost: "  + obj.videoPacketsLost + " audio packetsLost: " + obj.audioPacketsLost
+							+ " video RTT: " + obj.videoRoundTripTime + " audio RTT: " + obj.audioRoundTripTime 
+							+ " video jitter: " + obj.videoJitter + " audio jitter: " + obj.audioJitter
+							);
+
+
+						if(publishMinBitrateValue == 0 || publishMinBitrateValue > obj.currentOutgoingBitrate){
+							publishMinBitrateValue = obj.currentOutgoingBitrate;
+						}
+
+						if(publishAverageBitrateValue == 0 || publishAverageBitrateValue > obj.averageOutgoingBitrate){
+							publishAverageBitrateValue = obj.averageOutgoingBitrate;
+						}
+
+						if(obj.currentOutgoingBitrate != 0 && publishMaxBitrateValue < obj.currentOutgoingBitrate ){
+							publishMaxBitrateValue = obj.currentOutgoingBitrate;
+						}
+
+
+						$("#publish_min_bit_rate").text(publishMinBitrateValue);
+						$("#publish_average_bit_rate").text(obj.averageOutgoingBitrate);
+						$("#publish_max_bit_rate").text(publishMaxBitrateValue);
+
+						$("#publish_latest_bit_rate").text(obj.currentOutgoingBitrate);
+
+						var packetLost = parseInt(obj.videoPacketsLost) + parseInt(obj.audioPacketsLost);	
+						
+						$("#publish_packet_lost_text").text(packetLost);
+
+						var jitter = ((parseFloat(obj.videoJitter) + parseFloat(obj.audioJitter)) / 2).toPrecision(3);
+						$("#publish_jitter_text").text(jitter);
+
+						var rtt = ((parseFloat(obj.videoRoundTripTime) + parseFloat(obj.audioRoundTripTime)) / 2).toPrecision(4);
+						$("#publish_round_trip_time").text(rtt);
+						
+						$("#publish_source_width").text(obj.resWidth);
+						$("#publish_source_height").text(obj.resHeight);
+
+						$("#publish_ongoing_width").text(obj.frameWidth);
+						$("#publish_ongoing_height").text(obj.frameHeight);	
+
+						$("#publish_on_going_fps").text(obj.currentFPS);
+
+						publishPacketLostValue = packetLost;
+						publishJitterValue = jitter;
+						publishRTTValue = rtt;
+
+					}
+					else if (info == "available_devices") {
+						var videoHtmlContent = "";
+						var audioHtmlContent = "";
+						var devices = new Array();
+
+						var i = 0;
+						obj.forEach(function(device) {
+							var label = device.label;
+							var deviceId = device.deviceId;
+							var devices = new Array();
+
+							devices.forEach(function(same){
+								if (same == device.label){
+									i += 1;
+									label = device.label + " - " + i
+									deviceId = device.deviceId + i
+								}
+							})
+							if (device.kind == "videoinput") {
+								videoHtmlContent += getCameraRadioButton(label, device.deviceId);
+							}
+							else if (device.kind == "audioinput"){
+								audioHtmlContent += getAudioRadioButton(label, device.deviceId);
+							}
+							devices.push(device.label)
+						}); 
+						$('[name="videoSource"]').remove();
+						$('[name="audioDeviceSource"]').remove();
+
+						$(videoHtmlContent).insertAfter(".video-source-legend");
+						$(".video-source").first().prop("checked", true);	
+						
+						$(audioHtmlContent).insertAfter(".audio-source-legend");
+						$(".audio-source").first().prop("checked", true);	
+
+						
+						if (document.querySelector('input[name="videoSource"]')) {
+							document.querySelectorAll('input[name="videoSource"]').forEach((elem) => {
+								elem.addEventListener("change", function(event) {
+									var item = event.target;
+									switchVideoMode(item)
+									selectedRadio = item.value;
+								});
+							});
+						}
+						if (document.querySelector('input[name="audioSource"]')) {
+							document.querySelectorAll('input[name="audioSource"]').forEach((elem) => {
+								elem.addEventListener("change", function(event) {
+									var item = event.target;
+									switchAudioMode(item)
+									selectedAudio = item.value;
+								});
+							});
+						}
+						$(":radio[value=" + selectedRadio + "]").prop("checked", true);
+						$(":radio[value=" + selectedAudio + "]").prop("checked", true);
+					}
+					else {
+						console.log( info + " notification received");
+					}
+				},
+				callbackError : function(error, message) {
+					//some of the possible errors, NotFoundError, SecurityError,PermissionDeniedError
+
+					start_webrtc_test_button.disabled = false;
+
+					console.log("error callback: " +  JSON.stringify(error));
+					var errorMessage = JSON.stringify(error);
+					if (typeof message != "undefined") {
+						errorMessage = message;
+					}
+					var errorMessage = JSON.stringify(error);
+					if (error.indexOf("NotFoundError") != -1) {
+						errorMessage = "Camera or Mic are not found or not allowed in your device";
+					}
+					else if (error.indexOf("NotReadableError") != -1 || error.indexOf("TrackStartError") != -1) {
+						errorMessage = "Camera or Mic is being used by some other process that does not let read the devices";
+					}
+					else if(error.indexOf("OverconstrainedError") != -1 || error.indexOf("ConstraintNotSatisfiedError") != -1) {
+						errorMessage = "There is no device found that fits your video and audio constraints. You may change video and audio constraints"
+					}
+					else if (error.indexOf("NotAllowedError") != -1 || error.indexOf("PermissionDeniedError") != -1) {
+						errorMessage = "You are not allowed to access camera and mic.";
+					}
+					else if (error.indexOf("TypeError") != -1) {
+						errorMessage = "Video/Audio is required";
+					}
+					else if (error.indexOf("ScreenSharePermissionDenied") != -1) {
+						errorMessage = "You are not allowed to access screen share";
+						$(".video-source").first().prop("checked", true);						
+					}
+					else if (error.indexOf("WebSocketNotConnected") != -1) {
+						errorMessage = "WebSocket Connection is disconnected.";
+					}
+
+					alert(errorMessage);
+				}
+			});
+}
+
+	//initialize the WebRTCAdaptor
+	initPublishWebRTCAdaptor(false, autoRepublishEnabled);
+
+	var playSdpConstraints = {
+		OfferToReceiveAudio : true,
+		OfferToReceiveVideo : true
+	};
+
+	var playMediaConstraints = {
+		video : false,
+		audio : false
+	};
+
+	var webRTCPlayAdaptor = null;
+
+	function initPlayWebRTCAdaptor() 
+	{
+		webRTCPlayAdaptor = new WebRTCAdaptor({
+			websocket_url : websocketURL,
+			mediaConstraints : playMediaConstraints,
+			peerconnection_config : pc_config,
+			sdp_constraints : playSdpConstraints,
+			remoteVideoId : "remoteVideo",
+			isPlayMode : true,
+			debug : true,
+			candidateTypes: ["tcp", "udp"],
+			callback : function(info, obj) {
+				if (info == "initialized") {
+					console.log("initialized");
+
+				} else if (info == "play_started") {
+				//joined the stream
+				console.log("play started");
+
+				webRTCPlayAdaptor.getStreamInfo(streamId); 
+				webRTCPlayAdaptor.enableStats(obj.streamId);
+
+			} else if (info == "play_finished") {
+				//leaved the stream
+				console.log("play finished");
+				webRTCPlayAdaptor.disableStats(obj.streamId);
+
+				if(isFinished){
+
+					if(playMinBitrateValue < 250){
+						play_min_bit_rate_warn.style.display = "inline";
+					}
+					else{
+						play_min_bit_rate_info.style.display = "inline";
+					}
+
+					if(playAverageBitrateValue < 250){
+						play_average_bit_rate_warn.style.display = "inline";
+					}
+					else{
+						play_average_bit_rate_info.style.display = "inline";
+					}
+
+
+					if(playMaxBitrateValue < 250){
+						play_max_bit_rate_warn.style.display = "inline";
+					}
+					else{
+						play_max_bit_rate_info.style.display = "inline";
+					}
+
+					if(playPacketLostValue < 20){
+						play_packet_lost_info.style.display = "inline";	
+					}
+					else{
+						play_packet_lost_warn.style.display = "inline";	
+					}
+
+					if(playJitterValue < 0.1){
+						play_jitter_info.style.display = "inline";
+					}
+					else{
+						play_jitter_warn.style.display = "inline";
+					}
+
+					if(playFrameDropValue < 20){
+						frame_dropped_info.style.display = "inline";
+					}
+					else{
+						frame_dropped_warn.style.display = "inline";
+					}
+
+					incoming_resolution_info.style.display = "inline";
+					frame_decoded_info.style.display = "inline";
+					frame_received_info.style.display = "inline";
+				}
+
+
+			} else if (info == "closed") {
+				//console.log("Connection closed");
+				if (typeof obj != "undefined") {
+					console.log("Connecton closed: "
+						+ JSON.stringify(obj));
+				}
+			} 	
+			else if (info == "ice_connection_state_changed") {
+				console.log("iceConnectionState Changed: ",JSON.stringify(obj));
+			}
+			else if (info == "updated_stats") {
+
+				//obj is the PeerStats which has fields
+				 //averageIncomingBitrate - kbits/sec
+				//currentIncomingBitrate - kbits/sec
+				//packetsLost - total number of packet lost
+				//fractionLost - fraction of packet lost
+
+				if(playMinBitrateValue == 0 || playMinBitrateValue > obj.currentIncomingBitrate){
+					playMinBitrateValue = obj.currentIncomingBitrate;
+				}
+
+				if(playAverageBitrateValue == 0 || playAverageBitrateValue > obj.averageIncomingBitrate){
+					playAverageBitrateValue = obj.averageIncomingBitrate;
+				}
+
+				if(obj.currentIncomingBitrate != 0 && playMaxBitrateValue < obj.currentIncomingBitrate ){
+					playMaxBitrateValue = obj.currentIncomingBitrate;
+				}
+
+				$("#play_min_bit_rate").text(playMinBitrateValue);
+				$("#play_average_bit_rate").text(obj.averageIncomingBitrate);
+				$("#play_max_bit_rate").text(playMaxBitrateValue);
+				
+				var packetLost = parseInt(obj.videoPacketsLost) + parseInt(obj.audioPacketsLost);	
+				$("#play_packet_lost_text").text(packetLost);
+
+				if(isNaN(obj.videoJitterAverageDelay)){
+					obj.videoJitterAverageDelay = 0;
+				}
+				if(isNaN(obj.audioJitterAverageDelay)){
+					obj.audioJitterAverageDelay = 0;
+				}	
+
+				var jitterAverageDelay = ((parseFloat(obj.videoJitterAverageDelay) + parseFloat(obj.audioJitterAverageDelay)) / 2).toPrecision(3);
+				$("#play_jitter_text").text(jitterAverageDelay);
+				
+				$("#play_audio_level").text(obj.audioLevel.toPrecision(3));
+				
+				$("#play_frame_width").text(obj.frameWidth);
+				$("#play_frame_height").text(obj.frameHeight);
+				
+				$("#play_frame_received").text(obj.framesReceived);	
+				$("#play_frame_decoded").text(obj.framesDecoded);
+				$("#play_frame_dropped").text(obj.framesDropped + " (" + (obj.framesDropped/obj.framesDecoded).toPrecision(2) + "%)");
+				
+				$("#stats_panel").show();
+
+				playPacketLostValue = packetLost;
+				playJitterValue = jitterAverageDelay;
+				playFrameDropValue = obj.framesDropped;
+
+				console.log("Average incoming kbits/sec: " + obj.averageIncomingBitrate 
+					+ " Current incoming kbits/sec: " + obj.currentIncomingBitrate
+					+ " video packetLost: " + obj.videoPacketsLost 
+					+ " audio packetLost: " + obj.audioPacketsLost 
+					+ " frame width: " + obj.frameWidth
+					+ " frame height: " + obj.frameHeight
+					+ " frame received: " + obj.framesReceived
+					+ " frame decoded: " + obj.framesDecoded
+					+ " frame dropped: " + obj.framesDropped
+					+ " video jitter average delay: " + obj.videoJitterAverageDelay
+					+ " audio jitter average delay: " + obj.audioJitterAverageDelay
+					+ " audio level: " + obj.audioLevel);
+
+			}
+			else if (info == "data_received") {
+				console.log("Data received: " + obj.event.data + " type: " + obj.event.type + " for stream: " + obj.streamId);
+				$("#dataMessagesTextarea").append("Received: " + obj.event.data + "\r\n");
+			}
+			else if (info == "bitrateMeasurement") {
+
+				console.debug(obj);	
+				$("#video_bit_rate").text(parseInt(obj.audioBitrate) + parseInt(obj.videoBitrate));
+			}
+			else {
+				console.log( info + " notification received");
+			}
+		},
+		callbackError : function(error) {
+			//some of the possible errors, NotFoundError, SecurityError,PermissionDeniedError
+
+			//console.log("error callback: " + JSON.stringify(error));
+			//alert(JSON.stringify(error));
+			if(error != "{\"isTrusted\":true}"){
+				alert("WebSocketNotConnected");
+			}
+		}
+	});
+}
+
+initPlayWebRTCAdaptor();
+
+window.publishWebRTCAdaptor = publishWebRTCAdaptor;
+window.webRTCPlayAdaptor = webRTCPlayAdaptor;
+
+</script>
+</html>
