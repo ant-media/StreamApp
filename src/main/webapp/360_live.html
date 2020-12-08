@@ -73,6 +73,9 @@
     else {
         playOrder = playOrder.split(',');
 	}
+
+	var subscriberId = getUrlParameter("subscriberId");
+	var subscriberCode = getUrlParameter("subscriberCode");
 	
 	var streamId = getUrlParameter("id");
 	if (streamId == null) {
@@ -135,7 +138,7 @@
 			}
 			else if (tech == "hls")
 			{
-				tryToPlay(streamId, token, hlsExtension, hlsNoStreamCallback);
+				tryToPlay(streamId, token, hlsExtension,  subscriberId, subscriberCode, hlsNoStreamCallback);
 			}
 		}, 3000);
 	}
@@ -298,7 +301,7 @@
 					/*
 					* If getting codec incompatible or remote description error, it will redirect HLS player.
 					*/
-					tryToPlay(streamId, token, hlsExtension, hlsNoStreamCallback);
+					tryToPlay(streamId, token, hlsExtension,  subscriberId, subscriberCode, hlsNoStreamCallback);
 					
 				}
 			}
@@ -330,7 +333,7 @@
 			} 
 			else if (playOrder[0] == "hls" )
 			{
-				tryToPlay(streamId, token, hlsExtension, hlsNoStreamCallback);
+				tryToPlay(streamId, token, hlsExtension,  subscriberId, subscriberCode, hlsNoStreamCallback);
 			}
 			else if (playOrder[0] == "vod" )
 			{
