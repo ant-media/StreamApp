@@ -153,11 +153,11 @@
 			}
 			else if (tech == "hls")
 			{
-				tryToPlay(streamId, token, hlsExtension, hlsNoStreamCallback);
+				tryToPlay(streamId, token, hlsExtension,  subscriberId, subscriberCode, hlsNoStreamCallback);
 			}
 			else if (tech == "dash") 
 			{
-				tryToPlay(streamId, token, dashExtension, dashNoStreamCallback);	
+				tryToPlay(streamId, token, dashExtension, subscriberId, subscriberCode, dashNoStreamCallback);	
 			}
 		}, 3000);
 	}
@@ -423,7 +423,7 @@
 					/*
 					* If getting codec incompatible or remote description error, it will redirect HLS player.
 					*/
-					tryToPlay(streamId, token, hlsExtension, hlsNoStreamCallback);
+					tryToPlay(streamId, token, hlsExtension,  subscriberId, subscriberCode, hlsNoStreamCallback);
 					
 				}
 			}
@@ -463,7 +463,7 @@
 			}
 			else if (playOrder[0] == "dash" )
 			{
-				tryToPlay(streamId, token, dashExtension, dashNoStreamCallback);	
+				tryToPlay(streamId, token, dashExtension,  subscriberId, subscriberCode, dashNoStreamCallback);	
 			}
 			else {
 				alert("Unsupported play order requested. Supported formats are webrtc and hls. Use something like playOrder=webrtc,hls");
