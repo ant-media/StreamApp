@@ -154,7 +154,10 @@ video {
 <script type="module" lang="javascript">
 	import {WebRTCAdaptor} from "./js/webrtc_adaptor.js"
     import {getUrlParameter} from "./js/fetch.stream.js" 
-	
+	var debug = getUrlParameter("debug");
+	  if(debug == null) {
+		debug = false;
+		}
 
     function init () {
 	  var id = getUrlParameter("id");
@@ -395,7 +398,7 @@ video {
 				peerconnection_config : pc_config,
 				sdp_constraints : sdpConstraints,
 				localVideoId : "localVideo",
-				debug:true,
+				debug:debug,
 				bandwidth:maxVideoBitrateKbps,
 				callback : (info, obj) => {
 					if (info == "initialized") {
@@ -628,6 +631,9 @@ video {
 					}
 					else if (error.indexOf("TypeError") != -1) {
 						errorMessage = "Video/Audio is required";
+					}
+					else if (error.indexOf("getUserMediaIsNotAllowed")){
+						errorMessage = "You are not allowed to reach devices from an insecure origin, please enable ssl";
 					}
 					else if (error.indexOf("ScreenSharePermissionDenied") != -1) {
 						errorMessage = "You are not allowed to access screen share";

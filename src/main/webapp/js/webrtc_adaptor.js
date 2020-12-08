@@ -78,18 +78,7 @@ export class WebRTCAdaptor
 		else if(this.mediaConstraints.video == "screen+camera") {
 			this.publishMode="screen+camera";
 		}
-
-		if (!("WebSocket" in window)) {
-			console.log("WebSocket not supported.");
-			this.callbackError("WebSocketNotSupported");
-			return;
-		}
-
-		if (typeof navigator.mediaDevices == "undefined" && this.isPlayMode == false) {
-			console.log("Cannot open camera and mic because of unsecure context. Please Install SSL(https)");
-			this.callbackError("UnsecureContext");
-			return;
-		}		
+		this.checkWebRTCPermissions();		
 
 		if (!this.isPlayMode && typeof this.mediaConstraints != "undefined" && this.localStream == null)
 		{
@@ -115,7 +104,7 @@ export class WebRTCAdaptor
 		else {
 			//just playing, it does not open any stream
 			if (this.webSocketAdaptor == null || this.webSocketAdaptor.isConnected() == false) {
-				this.webSocketAdaptor = new WebSocketAdaptor({websocket_url : this.websocket_url, webrtcadaptor : this, callback : this.callback, callbackError : this.callbackError});
+				this.webSocketAdaptor = new WebSocketAdaptor({websocket_url : this.websocket_url, webrtcadaptor : this, callback : this.callback, callbackError : this.callbackError, debug : this.debug});
 			}
 		}
 	}
@@ -353,6 +342,25 @@ export class WebRTCAdaptor
 			track.stop();
 		});
 	}
+	/*
+	* Checks if we is permitted from browser
+	*/
+	checkWebRTCPermissions(){
+		if (!("WebSocket" in window)) {
+			console.log("WebSocket not supported.");
+			this.callbackError("WebSocketNotSupported");
+			return;
+		}
+
+		if (typeof navigator.mediaDevices == "undefined" && this.isPlayMode == false) {
+			console.log("Cannot open camera and mic because of unsecure context. Please Install SSL(https)");
+			this.callbackError("UnsecureContext");
+			return;
+		}
+		if (typeof navigator.mediaDevices == "undefined" || navigator.mediaDevices == undefined || navigator.mediaDevices == null ) {
+			this.callbackError("getUserMediaIsNotAllowed");
+		}
+	}
 
 	/**
 	 * Checks browser supports screen share feature
@@ -536,7 +544,7 @@ export class WebRTCAdaptor
 		this.localVideo.srcObject = stream;
 		
 		if (this.webSocketAdaptor == null || this.webSocketAdaptor.isConnected() == false) {
-			this.webSocketAdaptor = new WebSocketAdaptor({websocket_url : this.websocket_url, webrtcadaptor : this, callback : this.callback, callbackError : this.callbackError})
+			this.webSocketAdaptor = new WebSocketAdaptor({websocket_url : this.websocket_url, webrtcadaptor : this, callback : this.callback, callbackError : this.callbackError, debug: this.debug})
 		}
 		this.getDevices();
 	}
