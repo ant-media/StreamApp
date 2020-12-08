@@ -145,8 +145,8 @@ body {
    	*/
    	if(document.getElementById('volume_change_input') != null){
    		webRTCAdaptor.currentVolume = this.value;
-       	if(webRTCAdaptor.micGainNode != null){
-       		webRTCAdaptor.micGainNode.gain.value = this.value; // Any number between 0 and 1.
+       	if(webRTCAdaptor.soundOriginGainNode != null){
+       		webRTCAdaptor.soundOriginGainNode.gain.value = this.value; // Any number between 0 and 1.
        	}
    	}
     }

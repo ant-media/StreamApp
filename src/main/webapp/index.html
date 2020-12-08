@@ -244,12 +244,12 @@ video {
    	*/
    		if(document.getElementById('volume_change_input') != null){
    			webRTCAdaptor.currentVolume = this.value;
-        	if(webRTCAdaptor.desktopGainNode != null){
-        		webRTCAdaptor.desktopGainNode.gain.value = this.value; // Any number between 0 and 1.
+        	if(webRTCAdaptor.soundOriginGainNode != null){
+        		webRTCAdaptor.soundOriginGainNode.gain.value = this.value; // Any number between 0 and 1.
         	}
 
-       		if(webRTCAdaptor.micGainNode != null){
-       			webRTCAdaptor.micGainNode.gain.value = this.value; // Any number between 0 and 1.
+       		if(webRTCAdaptor.secondStreamGainNode != null){
+       			webRTCAdaptor.secondStreamGainNode.gain.value = this.value; // Any number between 0 and 1.
        		}
    		}
     }

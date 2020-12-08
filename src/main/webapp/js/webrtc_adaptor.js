@@ -19,9 +19,10 @@ export class WebRTCAdaptor
 		this.videoTrackSender = null;
 		this.audioTrackSender = null;
 		this.playStreamId = new Array();
-		this.micGainNode = null;
-		this.desktopGainNode = null;
 		this.currentVolume = null;
+
+	    this.soundOriginGainNode = null;
+		this.secondStreamGainNode = null;
 		this.localStream = null;
 		this.bandwidth = 900; //default bandwidth kbps
 		this.isMultiPeer = false; //used for multiple peer client
@@ -30,7 +31,6 @@ export class WebRTCAdaptor
 		this.webSocketAdaptor = null;
 		this.isPlayMode = false;
 		this.debug = false;
-		this.composedStream = new MediaStream();
 
 		this.publishMode="camera"; //screen, screen+camera
 
@@ -232,8 +232,8 @@ export class WebRTCAdaptor
 				if(this.publishMode == "screen"){
 					this.updateVideoTrack(stream,streamId,mediaConstraints,onended,true);
 					if(audioTrack.length > 0 ){
-						this.captureScreenSound(stream, audioStream, streamId);
-						this.updateAudioTrack(this.composedStream,streamId,null);
+						var mixedStream = this.mixAudioStreams(stream, audioStream, streamId);
+						this.updateAudioTrack(mixedStream,streamId,null);
 					}
 					else{
 						this.updateAudioTrack(audioStream,streamId,null);
@@ -241,9 +241,9 @@ export class WebRTCAdaptor
 				}
 				else if(this.publishMode == "screen+camera" ){
 					if(audioTrack.length > 0 ){
-						this.captureScreenSound(stream, audioStream, streamId);
-						this.updateAudioTrack(this.composedStream,streamId,null);
-						this.setDesktopwithCameraSource(stream,streamId,this.composedStream,onended);
+						var mixedStream = this.mixAudioStreams(stream, audioStream, streamId);
+						this.updateAudioTrack(mixedStream,streamId,null);
+						this.setDesktopwithCameraSource(stream,streamId, mixedStream,onended);
 					}
 					else{
 						this.updateAudioTrack(audioStream,streamId,null);
@@ -371,14 +371,15 @@ export class WebRTCAdaptor
 		}
 	};
 
-	enableMicInMixedAudio(enable) 
+	enableSecondStreamInMixedAudio(enable) 
 	{
-		if (this.micGainNode != null) {
+		
+		if (this.secondStreamGainNode != null) {
 			if (enable) {
-				this.micGainNode.gain.value = 1;
+				this.secondStreamGainNode.gain.value = 1;
 			}
 			else {
-				this.micGainNode.gain.value = 0;
+				this.secondStreamGainNode.gain.value = 0;
 			}
 		}
 	}
@@ -558,10 +559,12 @@ export class WebRTCAdaptor
 		this.getUserMedia(this.mediaConstraints, audioConstraint, streamId);
 	}
 	/*
-	* This method captures the sound of desktop and merge it with the sound of microphone. 
-	* Gain values can be adjusted in the merged sound. composedStream is the merged sound stream.
+	* This method mixed the first stream audio to the second stream audio and 
+	* returns mixed stream. 
+	* stream: Initiali stream that contain video and audio
+	* 
 	*/
-	captureScreenSound(stream, micStream,streamId)
+	mixAudioStreams(stream, secondStream,streamId)
 	{
 		//console.debug("audio stream track count: " + audioStream.getAudioTracks().length);
 		var composedStream = new MediaStream();
@@ -571,28 +574,40 @@ export class WebRTCAdaptor
 		});
 
 		var audioContext = new AudioContext();
-		var desktopSoundGainNode = audioContext.createGain();
-
-		//Adjust the gain for screen sound
-		desktopSoundGainNode.gain.value = 1;
-
 		var audioDestionation = audioContext.createMediaStreamDestination();
-		var audioSource = audioContext.createMediaStreamSource(stream);
 
-		audioSource.connect(desktopSoundGainNode).connect(audioDestionation);;
+		if (stream.getAudioTracks().length > 0) {
+			this.soundOriginGainNode = audioContext.createGain();
 
-		this.micGainNode = audioContext.createGain();
-		
-		//Adjust the gain for microphone sound
-		this.micGainNode.gain.value = 0;
+			//Adjust the gain for screen sound
+			soundOriginGainNode.gain.value = 1;
+			var audioSource = audioContext.createMediaStreamSource(stream);
 
-		var audioSource2 = audioContext.createMediaStreamSource(micStream);
-		audioSource2.connect(this.micGainNode).connect(audioDestionation);;
+			audioSource.connect(soundOriginGainNode).connect(audioDestionation);
+		}
+		else {
+			console.debug("Origin stream does not have audio track")
+		}
+
+		if (secondStream.getAudioTracks().length > 0) {
+			this.secondStreamGainNode = audioContext.createGain();
+			
+			//Adjust the gain for second sound
+			this.secondStreamGainNode.gain.value = 1;
+
+			var audioSource2 = audioContext.createMediaStreamSource(secondStream);
+			audioSource2.connect(this.secondStreamGainNode).connect(audioDestionation);
+		}
+		else {
+			console.debug("Second stream does not have audio track")
+		}
 
 		audioDestionation.stream.getAudioTracks().forEach(function(track) {
 			composedStream.addTrack(track);
+			console.log("audio destination add track");
 		});
-		this.composedStream = composedStream;
+
+		return composedStream;
 	}
 
 	setGainNodeStream(stream){
@@ -611,7 +626,7 @@ export class WebRTCAdaptor
   		let audioContext = new AudioContext();
   		let mediaStreamSource = audioContext.createMediaStreamSource(stream);
   		let mediaStreamDestination = audioContext.createMediaStreamDestination();
-  		this.micGainNode = audioContext.createGain();
+  		this.soundOriginGainNode = audioContext.createGain();
 
   		/**
    		* Connect the stream to the gainNode so that all audio
@@ -619,14 +634,14 @@ export class WebRTCAdaptor
    		* Then pass the stream from the gain to the mediaStreamDestination
    		* which can pass it back to the RTC client.
    		*/
-  		mediaStreamSource.connect(this.micGainNode);
-  		this.micGainNode.connect(mediaStreamDestination);
+  		mediaStreamSource.connect(this.soundOriginGainNode);
+  		this.soundOriginGainNode.connect(mediaStreamDestination);
 
   		if(this.currentVolume == null){
-  			this.micGainNode.gain.value = 1;
+  			this.soundOriginGainNode.gain.value = 1;
   		}
   		else{
-  			this.micGainNode.gain.value = this.currentVolume;
+  			this.soundOriginGainNode.gain.value = this.currentVolume;
   		}
 
   		/**
@@ -704,11 +719,22 @@ export class WebRTCAdaptor
 	updateLocalAudioStream(stream, onEndedCallback) 
 	{
 		var audioTrack = this.localStream.getAudioTracks()[0];
-		this.localStream.removeTrack(audioTrack);
-		audioTrack.stop();
-		this.localStream.addTrack(stream.getAudioTracks()[0]);
-		this.localVideo.srcObject = this.localStream;
+		var newAudioTrack = stream.getAudioTracks()[0];
+		
+		if (audioTrack != null) 
+		{
+			this.localStream.removeTrack(audioTrack);
+			audioTrack.stop();
+		}
 
+		
+		this.localStream.addTrack(newAudioTrack);
+		
+		
+		if (this.localVideo != null) 
+		{   //it can be null
+			this.localVideo.srcObject = this.localStream;
+		}
 		if (onEndedCallback != null) {
 			stream.getAudioTracks()[0].onended = function(event) {
 				onEndedCallback(event);
