@@ -588,10 +588,10 @@ export class WebRTCAdaptor
 			this.soundOriginGainNode = audioContext.createGain();
 
 			//Adjust the gain for screen sound
-			soundOriginGainNode.gain.value = 1;
+			this.soundOriginGainNode.gain.value = 1;
 			var audioSource = audioContext.createMediaStreamSource(stream);
 
-			audioSource.connect(soundOriginGainNode).connect(audioDestionation);
+			audioSource.connect(this.soundOriginGainNode).connect(audioDestionation);
 		}
 		else {
 			console.debug("Origin stream does not have audio track")
