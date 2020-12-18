@@ -81,10 +81,11 @@ export class WebRTCAdaptor
 		else if(this.mediaConstraints.video == "screen+camera") {
 			this.publishMode="screen+camera";
 		}
-		this.checkWebRTCPermissions();		
+				
 
 		if (!this.isPlayMode && typeof this.mediaConstraints != "undefined" && this.localStream == null)
 		{
+			this.checkWebRTCPermissions();
 			//Check browser support for screen share function
 			this.checkBrowserScreenShareSupported();
 

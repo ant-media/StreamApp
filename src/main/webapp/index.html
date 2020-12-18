@@ -652,7 +652,7 @@ video {
 					else if (error.indexOf("TypeError") != -1) {
 						errorMessage = "Video/Audio is required";
 					}
-					else if (error.indexOf("getUserMediaIsNotAllowed")){
+					else if (error.indexOf("getUserMediaIsNotAllowed") != -1){
 						errorMessage = "You are not allowed to reach devices from an insecure origin, please enable ssl";
 					}
 					else if (error.indexOf("ScreenSharePermissionDenied") != -1) {
