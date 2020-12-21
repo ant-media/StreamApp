@@ -8,151 +8,11 @@
 
 	<script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
 
-	<script src="https://rtcmulticonnection.herokuapp.com/dist/RTCMultiConnection.min.js"></script>
-	<script src="https://rtcmulticonnection.herokuapp.com/socket.io/socket.io.js"></script>
-
-	<script src="https://rtcmulticonnection.herokuapp.com/node_modules/canvas-designer/dev/webrtc-handler.js"></script>
-	<script src="https://rtcmulticonnection.herokuapp.com/node_modules/canvas-designer/canvas-designer-widget.js"></script>
-
-
 	<script src="https://code.jquery.com/jquery-3.4.1.min.js" ></script>
 	<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" ></script>
 	<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>	
-	<script src="https://rtcmulticonnection.herokuapp.com/demos/js/emojionearea.min.js" ></script>	
 
-<!--
 
-	<style type="text/css">
-html, body, section, ul, li, nav, a, h1, h2 {
-    padding: 0;
-    margin: 0;
-    outline: none;
-    text-shadow: none;
-    box-shadow: none;
-    border-radius: 0;
-    text-decoration: none;
-}
-/*
-body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
-    font-size: 17px;
-    line-height: 1.5em;
-}
-*/
-input[disabled], button[disabled] {
-  background: transparent!important;
-  color: #dcd7d7!important;
-  border: 1px solid #dcd7d7!important;
-  cursor: not-allowed!important;
-  text-shadow: none!important;
-  box-shadow: none!important;
-  text-decoration: none!important;
-  outline: none!important;
-}
-</style>
-</head>
-<body>
-<style>
-.extra-controls {
-    position: absolute;
-    right: 21%;
-}
-
-#btn-comments {
-  color: red;
-  margin-top: 5px;
-  font-size: 24px;
-  text-shadow: 1px 1px white;
-}
-
-#other-videos {
-    margin-top: 5px;
-}
-
-#other-videos video {
-    width: 45%;
-    margin: 5px;
-    border: 1px solid black;
-    padding: 1px;
-    border-radius: 3px;
-}
-
-#txt-chat-message {
-    width: 100%;
-    resize: vertical;
-    margin: 5px;
-    margin-right: 0;
-    min-height: 30px;
-}
-
-#btn-chat-message {
-    margin: 5px;
-}
-
-#conversation-panel {
-    margin-bottom: 20px;
-    text-align: left;
-    max-height: 200px;
-    overflow: auto;
-    border-top: 1px solid #E5E5E5;
-    width: 106%;
-}
-
-#conversation-panel .message {
-    border-bottom: 1px solid #E5E5E5;
-    padding: 5px 10px;
-}
-
-#conversation-panel .message img, #conversation-panel .message video, #conversation-panel .message iframe {
-    max-width: 100%;
-}
-
-#main-video {
-    width: 100%;
-    margin-top: -9px;
-    border-bottom: 1px solid #121010;
-    display: none;
-    padding-bottom: 1px;
-    display: none;
-}
-
-hr {
-    height: 1px;
-    border: 0;
-    background: #E5E5E5;
-}
-
-#btn-attach-file {
-    width: 25px;
-    vertical-align: middle;
-    cursor: pointer;
-    display: none;
-}
-
-#btn-share-screen {
-    width: 25px;
-    vertical-align: middle;
-    cursor: pointer;
-    display: none;
-}
-
-.checkmark {
-    display:none;
-    width: 15px;
-    vertical-align: middle;
-}
-
-#screen-viewer {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 9999999999999;
-    display: none;
-}
-</style>
--->
 <style>
 	video {
 		width: 100%;
@@ -214,12 +74,14 @@ hr {
 	</div>
 
 	<div class="row">
-		<div class="offset-md-1 col-md-4">
+		<div class="offset-md-3 col-md-6">
 
 			<div class="jumbotron">
 				<div class="col-sm-12 form-group">
-					<video id="localVideo"  autoplay muted controls playsinline></video>
-				</div>
+					 <video id="localVideo" style="display:none;"  autoplay muted controls playsinline></video>
+					<div id="canvas-designer" style="margin: 0px auto; width: 100% !important; height: 700px !important;  border-color: black !important; border:2px solid black !important;"> <!--  -->
+ 				</div>
+ 				<br>
 				<div class="form-group col-sm-12 text-left">
 					<input type="text" class="form-control"
 					id="streamName" name="streamIdTextBox" placeholder="Type stream name">
@@ -244,20 +106,6 @@ hr {
 
 				</div>	
 				<div class="dropdown-divider"></div>
-				<!--
-				<div class="form-group col-sm-12 text-left options">
-					<label>Data Channel Messages</label>
-					<textarea class="form-control" id="dataMessagesTextarea" style="font-size:10px" rows="8"></textarea>
-					<div class="form-row">
-						<div class="form-group col-sm-10">
-							<input type="text" class="form-control" id="dataTextbox" placeholder="Write your message to send players">
-						</div>
-						<div class="form-group col-sm-2">
-							<button type="button" id="send" class="btn btn-outline-primary btn-block">Send</button>
-						</div>
-					</div>
-				</div>
--->
 
 				<div class="form-group">	
 					<button class="btn btn-primary" disabled
@@ -294,21 +142,9 @@ hr {
 
 		</div>
 
-
-		<div class="col-md-6">
-
-
-			<div class="jumbotron">
-
-				<div id="testgg" style="margin: 0px auto; width: 100% !important; height: 600px !important;">
-				</div>
-
-			</div>
-		</div>
-
-
 		<!-- Row -->
 	</div>
+</div>
 
 	<footer class="footer text-center">
 		<p>
@@ -317,20 +153,8 @@ hr {
 	</footer>
 
 
-	<!-- url-parameters -->
-
-
 	<!-- 1st step -->
-	<script src="https://www.webrtc-experiment.com/Canvas-Designer/canvas-designer-widget.js"></script>
-
-
-	<script>
-
-
-	</script>
-
-	<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@2.0.489/build/pdf.min.js"></script>
-
+	<script src="js/canvas-designer-widget.js"></script>
 
 </body>
 
@@ -395,12 +219,12 @@ hr {
 	stop_publish_button.addEventListener("click", stopPublishing, false);
 	var options = document.getElementById("options");
 	options.addEventListener("click", toggleOptions, false);
-	//var send = document.getElementById("send");
-	//send.addEventListener("click", sendData, false);
 	
 	document.getElementById("streamName").defaultValue = "Goofy"
 	var streamNameBox = document.getElementById("streamName");
 	streamNameBox.value = "stream1";
+
+	var isDataChannelEnabled = false;
 	
 	/**
 	 * If publishing stops for any reason, it tries to republish again.
@@ -488,17 +312,16 @@ hr {
 		function sendData(data) {
 			try {
 				var iceState = webRTCAdaptor.iceConnectionState(streamId);
-				if (iceState != null && iceState != "failed" && iceState != "disconnected") {
-
+				if (iceState != null && iceState != "failed" && iceState != "disconnected" && isDataChannelEnabled) {
 					webRTCAdaptor.sendData($("#streamName").val(),data);
-				//$("#dataMessagesTextarea").append("Sent: " + $("#dataTextbox").val() + "\r\n");
-				//$("#dataTextbox").val("");
 			}
 			else {
-				alert("WebRTC publishing is not active. Please click Start Publishing first")
+				designer.undo('all');
+				alert("WebRTC publishing is not active. Please click Start Publishing first or check your Data Channel option.")
 			}
 		}
 		catch (exception) {
+			designer.undo('all');
 			console.error(exception);
 			alert("Message cannot be sent. Make sure you've enabled data channel on server web panel");
 		}
@@ -588,17 +411,17 @@ hr {
     function requestData() {
     	try {
     		var iceState = webRTCAdaptor.iceConnectionState(streamId);
-    		if (iceState != null && iceState != "failed" && iceState != "disconnected") {
+    		if (iceState != null && iceState != "failed" && iceState != "disconnected" && isDataChannelEnabled) {
 
     			webRTCAdaptor.sendData($("#streamName").val(),"request");
-			//	$("#dataMessagesTextarea").append("Sent: " + $("#dataTextbox").val() + "\r\n");
-			//	$("#dataTextbox").val("");
 		}
 		else {
+			designer.undo('all');
 			alert("WebRTC playing is not active. Please click Start Playing first")
 		}
 	}
 	catch (exception) {
+		designer.undo('all');
 		console.error(exception);
 		alert("Message cannot be sent. Make sure you've enabled data channel and choose the correct player distribution on server web panel");
 	}
@@ -608,10 +431,8 @@ hr {
 var designer = new CanvasDesigner();
 
 // you can place widget.html anywhere
-designer.widgetHtmlURL = 'https://www.webrtc-experiment.com/Canvas-Designer/widget.html';
-designer.widgetJsURL = 'https://www.webrtc-experiment.com/Canvas-Designer/widget.js'
-
-designer.appendTo(document.getElementById('testgg'));
+designer.widgetHtmlURL = 'js/canvas-designer.html';
+designer.widgetJsURL = 'canvas-designer.js'
 
 designer.setSelected('pencil');
 
@@ -619,7 +440,7 @@ designer.setTools({
 	pencil: true,
 	text: true,
 	image: true,
-	pdf: true,
+	pdf: false,
 	eraser: true,
 	line: true,
 	arrow: true,
@@ -628,15 +449,18 @@ designer.setTools({
 	arc: true,
 	rectangle: true,
 	quadratic: false,
-	bezier: true,
+	bezier: false,
 	marker: true,
-	zoom: false,
+	zoom: true,
 	lineWidth: false,
 	colorsPicker: false,
 	extraOptions: false,
 	code: false,
 	undo: true
 });
+
+
+designer.appendTo(document.getElementById('canvas-designer'));
 
 function initWebRTCAdaptor(publishImmediately, autoRepublishEnabled) 
 {
@@ -672,6 +496,8 @@ function initWebRTCAdaptor(publishImmediately, autoRepublishEnabled)
 				webRTCAdaptor.enableStats(obj.streamId);
 
 			} else if (info == "publish_finished") {
+						isDataChannelEnabled = false;
+						designer.undo('all');
 						//stream is being finished
 						console.log("publish finished");
 						start_publish_button.disabled = false;
@@ -717,6 +543,8 @@ function initWebRTCAdaptor(publishImmediately, autoRepublishEnabled)
 				//requester
 				//ilk başta plz-sync-points atıyor
 				else if (info == "data_channel_opened"){
+
+					isDataChannelEnabled = true;
 
 					var iceState = webRTCAdaptor.iceConnectionState(streamId);
 					if (iceState != null && iceState == "connected") {
@@ -925,15 +753,8 @@ function initWebRTCAdaptor(publishImmediately, autoRepublishEnabled)
 	initWebRTCAdaptor(false, autoRepublishEnabled);
 
 	designer.addSyncListener(function(data) {
-
-		var iceState = webRTCAdaptor.iceConnectionState(streamId);
-		if (iceState != null && iceState == "connected") {
-			sendData(JSON.stringify(data));
-		}
+		sendData(JSON.stringify(data));
 	});
-
-
-
 
 </script>
 

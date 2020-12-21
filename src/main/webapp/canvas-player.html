@@ -68,12 +68,14 @@
 	</div>
 
 	<div class="row">
-		<div class="offset-md-1 col-md-4">
+		<div class="offset-md-3 col-md-6">
 
 			<div class="jumbotron">
 
 				<div class="col-sm-12 form-group">
-					<video id="remoteVideo" autoplay controls playsinline ></video>
+					<video  style="display: none;" id="remoteVideo" autoplay muted controls playsinline ></video>
+					<div id="canvas-designer" style="margin: 0px auto; width: 100% !important; height: 700px !important;  border-color: black !important; border:2px solid black !important;"> <!--  -->
+				</div>
 				</div>
 				<div class="form-group col-sm-12 text-left">
 					<input type="text" class="form-control"
@@ -144,15 +146,6 @@
 			</div>
 		</div>
 
-		<div class="col-md-6">
-
-			<div class="jumbotron">
-
-				<div id="testgg" style="margin: 0px auto; width: 100% !important; height: 600px !important;">
-				</div>
-			</div>
-		</div>
-
 		<!-- Row -->
 	</div>
 
@@ -201,13 +194,14 @@
 	stop_play_button.addEventListener("click",stopPlaying,false);
 	var options = document.getElementById("options");
 	options.addEventListener("click", toggleOptions, false);
-	//var send = document.getElementById("send");
-	//send.addEventListener("click", sendData, false);
 
 	var streamNameBox = document.getElementById("streamName")
 	streamNameBox.defaultValue = "stream1";
 
 	var streamId;
+
+	var isDataChannelEnabled = false;
+	
 	
 	function toggleOptions() {
 		$(".options").toggle();
@@ -216,18 +210,17 @@
 	function sendData(data) {
 		try {
 			var iceState = webRTCAdaptor.iceConnectionState(streamId);
-			if (iceState != null && iceState == "connected") {
+			if (iceState != null && iceState == "connected" && isDataChannelEnabled) {
 
 				webRTCAdaptor.sendData($("#streamName").val(),data);
-			//	$("#dataMessagesTextarea").append("Sent: " + $("#dataTextbox").val() + "\r\n");
-			//	$("#dataTextbox").val("");
 		}
 		else {
-			//designer.undo();
-			alert("sendData - WebRTC playing is not active. Please click Start Playing first");
+			designer.undo('all');
+			alert("WebRTC playing is not active. Please click Start Playing first");
 		}
 	}
 	catch (exception) {
+		designer.undo('all');
 		console.error(exception);
 		alert("Message cannot be sent. Make sure you've enabled data channel and choose the correct player distribution on server web panel");
 	}
@@ -243,10 +236,12 @@ function requestData() {
 			//	$("#dataTextbox").val("");
 		}
 		else {
-			alert("requestData - WebRTC playing is not active. Please click Start Playing first")
+			designer.undo('all');
+			alert("WebRTC playing is not active. Please click Start Playing first");
 		}
 	}
 	catch (exception) {
+		designer.undo('all');
 		console.error(exception);
 		alert("Message cannot be sent. Make sure you've enabled data channel and choose the correct player distribution on server web panel");
 	}
@@ -317,11 +312,8 @@ var designer = new CanvasDesigner();
 
 
 
-// you can place widget.html anywhere
-designer.widgetHtmlURL = 'https://www.webrtc-experiment.com/Canvas-Designer/widget.html';
-designer.widgetJsURL = 'https://www.webrtc-experiment.com/Canvas-Designer/widget.js'
-
-designer.appendTo(document.getElementById('testgg'));
+designer.widgetHtmlURL = 'js/canvas-designer.html';
+designer.widgetJsURL = 'canvas-designer.js'
 
 designer.setSelected('pencil');
 
@@ -329,7 +321,7 @@ designer.setTools({
 	pencil: true,
 	text: true,
 	image: true,
-	pdf: true,
+	pdf: false,
 	eraser: true,
 	line: true,
 	arrow: true,
@@ -338,15 +330,17 @@ designer.setTools({
 	arc: true,
 	rectangle: true,
 	quadratic: false,
-	bezier: true,
+	bezier: false,
 	marker: true,
-	zoom: false,
+	zoom: true,
 	lineWidth: false,
 	colorsPicker: false,
 	extraOptions: false,
 	code: false,
 	undo: true
 });
+
+designer.appendTo(document.getElementById('canvas-designer'));
 
 
 var webRTCAdaptor = new WebRTCAdaptor({
@@ -374,6 +368,7 @@ var webRTCAdaptor = new WebRTCAdaptor({
 
 			} else if (info == "play_finished") {
 
+				isDataChannelEnabled = false;
 				designer.undo('all');
 
 				//leaved the stream
@@ -432,6 +427,9 @@ var webRTCAdaptor = new WebRTCAdaptor({
 
 			}
 			else if (info == "data_channel_opened"){
+
+				isDataChannelEnabled = true;
+
 				var iceState = webRTCAdaptor.iceConnectionState(streamId);
 				if (iceState != null && iceState == "connected") {
 					if (designer.pointsLength > 0) {
@@ -579,12 +577,9 @@ var webRTCAdaptor = new WebRTCAdaptor({
 
 window.webRTCAdaptor = webRTCAdaptor;
 
-designer.addSyncListener(function(data) {
-	var iceState = webRTCAdaptor.iceConnectionState(streamId);
-	if (iceState != null && iceState == "connected") {
+	designer.addSyncListener(function(data) {
 		sendData(JSON.stringify(data));
-	}
-});
+	});
 
 </script>
 </html>
