@@ -148,7 +148,7 @@ body {
 	var token = getUrlParameter("token");
 	var streamId = getUrlParameter("streamId");
     var playOnly = true;
-	var merger = new StreamMerger(600,600);
+	var merger = new StreamMerger(640,480, true);
 
 	var join_publish_button = document.getElementById("join_publish_button");
 	join_publish_button.addEventListener("click", joinRoom, false);

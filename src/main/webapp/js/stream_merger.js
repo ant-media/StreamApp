@@ -1,14 +1,14 @@
 
 
 export class StreamMerger{
-  constructor(width, height){
+  constructor(width, height, autoMode){
       this.streams = [];
       this.width = width;
       this.height = height;
       const AudioContext = window.AudioContext || window.webkitAudioContext
       this.audioCtx = new AudioContext();
       this.audioDestination = this.audioCtx.createMediaStreamDestination()
-
+      this.autoMode = autoMode;
 
       this.canvas = document.createElement('canvas');
       this.canvas.setAttribute('width', this.width);
@@ -76,6 +76,10 @@ export class StreamMerger{
       stream.element = videoElement
       this.streams.push(stream)
       console.log("Added stream Id = " + stream.streamId);
+
+      if(this.autoMode == true){
+        this.resizeAndSortV2();
+      }
     }
 
     requestAnimationFrameV2(callback) {
@@ -94,6 +98,127 @@ export class StreamMerger{
           callback()
         }
       })
+    }
+
+    resizeAndSortV2(){
+      //Clears all of the canvas when sorted.
+      this.ctx.clearRect(0, 0, this.width, this.height);
+
+      let xindex = 0;
+      let yindex = 0;
+
+      let yNumber = 0
+
+      //TODO: OFFSET WIDTH GIRILECEK TOTAL WIDTH TOPLANIRKEN BULUNABILIR ÇOK RAHAT
+      let cropWidth = 0;
+      let cropHeight = 0;
+      let topWidth = 0;
+      let bottomWidth = 0;
+      let remainingStreams = this.streams.length;
+
+      let widthOffset = 0;
+      let heightOffset = 0;
+
+      let divider = 0;
+
+      //Default video size is 320x240, it protects aspect ratio, might be changed while adding streams.
+      for(let i = 1; i <= 5; i++){
+        if(this.streams.length <= i*i){
+          divider = i;
+          if( i*(i-1) >= this.streams.length && this.streams.length > 2){
+            yNumber = i - 1;
+            this.height = 240 * yNumber;
+            this.width = 320 * yNumber;
+          }
+          else{
+            yNumber = i;
+            this.height = 240 * yNumber;
+            this.width = 320 * yNumber;
+          }
+          break;
+        }
+      }
+      this.canvas.setAttribute('width', this.width);
+      this.canvas.setAttribute('height', this.height);
+
+      console.log("Row number = " + yNumber)
+      console.log("canvas width = " + this.width + "canvas height = " + this.height);
+
+      var extraStreams = this.streams.length - (yNumber * yNumber);
+      let tmp = 0;
+      for( let i = 1; i <= this.streams.length; i++ ){
+
+        console.log("extraStreams = " + extraStreams + " stream length = " + this.streams.length)
+        console.log("Xindex = " + xindex + "Yindex = " + yindex);
+
+        const stream = this.streams[i-1];
+        if(extraStreams <= 0 || this.streams.length <= 3){
+          stream.width = (this.width) / (divider);
+          tmp += stream.width;
+          stream.height = (this.height) / (divider);
+          console.log("Video width = " + stream.width + "Video height = " + stream.height);
+
+          stream.x = stream.width * xindex;
+          stream.y = (stream.height * yindex) - heightOffset;
+
+          //widthOffset = (cropWidth - bottomWidth);
+
+          /*if(widthOffset > 0){
+            stream.x = stream.x + widthOffset
+          }
+          if(this.streams.length == 3 && yindex == 1){
+            stream.x += (this.width - stream.width) / 2
+          }*/
+
+          if(xindex == 0){
+            cropHeight = cropHeight + stream.height;
+            console.debug("CropHeight = " + cropHeight);
+          }
+
+          xindex ++;
+          if(yindex >= (yNumber)-1){
+            console.log("TopWidth = " + topWidth + " remainingStreams = " + remainingStreams);
+            widthOffset = (topWidth - (stream.width * remainingStreams )) / 2;
+            stream.x += widthOffset;
+          }  
+
+          if( xindex >= yNumber){
+            xindex = 0;
+            topWidth = tmp;
+            tmp = 0;
+            yindex ++;
+            remainingStreams -= yNumber;
+          } 
+        }
+        else{
+          stream.width = (this.width) / (divider + 1);
+          cropWidth = cropWidth + stream.width
+
+          stream.height = (this.height) / (divider + 1);
+          console.log("Video Width = " + stream.width + "VideoHeight = " + stream.height);
+
+          if(xindex == 0){
+            cropHeight = cropHeight + stream.height;
+            console.debug("CropHeight = " + cropHeight);
+          }
+          stream.x = stream.width * xindex;
+          stream.y = stream.height * yindex;
+          xindex ++;
+          if( xindex > yNumber){
+            heightOffset = ((this.height) / (divider)) - stream.height;
+            xindex = 0;
+            yindex ++;
+            widthOffset = this.width - cropWidth;
+            this.canvas.setAttribute('width', cropWidth);
+            console.log("New canvas width= " + cropWidth);
+            topWidth = cropWidth;
+            cropWidth = 0;
+            extraStreams --;
+            remainingStreams -= (yNumber + 1);
+          }
+        }
+      }
+      this.canvas.setAttribute('height', cropHeight);
     }
 
     start() {
@@ -152,6 +277,9 @@ export class StreamMerger{
         }
       }
       console.log("removed streamId = " + streamId);
+      if(this.autoMode == true){
+        this.resizeAndSortV2();
+      }
     }
 
     stop() {
