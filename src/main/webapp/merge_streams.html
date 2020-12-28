@@ -1,33 +1,21 @@
-<html>
+<!doctype html>
+<html lang="en">
 <head>
-<title>Ant Media Server WebRTC Conference Room Merge</title>
-	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<meta charset="UTF-8">
-	<link rel="stylesheet"
-		  href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
-		  integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u"
-		  crossorigin="anonymous">
-	<script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
-	<script
-			src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+<title>Ant Media Server WebRTC Stream Merger</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="UTF-8">
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+<script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
 
-	<style>
+<style>
 video {
 	width: 100%;
-	max-width: 320px;
-	height: 100%;
-	max-height: 240px;
-}
-/* Space out content a bit */
-body {
-	padding-top: 20px;
-	padding-bottom: 20px;
+	max-width: 640px;
 }
 
 /* Everything but the jumbotron gets side spacing for mobile first views */
 .header, .marketing, .footer {
-	padding-right: 15px;
-	padding-left: 15px;
+	padding: 15px;
 }
 
 /* Custom page header */
@@ -35,27 +23,18 @@ body {
 	padding-bottom: 20px;
 	border-bottom: 1px solid #e5e5e5;
 }
-/* Make the masthead heading the same height as the navigation */
-.header h3 {
-	margin-top: 0;
-	margin-bottom: 0;
-	line-height: 40px;
-}
 
+/* Customize container */
+@media ( min-width : 768px) {
+	.container {
+		max-width: 730px;
+	}
+}
 /* Custom page footer */
 .footer {
 	padding-top: 19px;
 	color: #777;
 	border-top: 1px solid #e5e5e5;
-}
-
-/* Customize container */
-@media ( min-width : 768px) {
-	.container {
-		/*max-width: 730px;
-		*/
-		width: 100%;
-	}
 }
 
 .container-narrow>hr {
@@ -75,63 +54,56 @@ body {
 		padding-right: 0;
 		padding-left: 0;
 	}
-	/* Space out the masthead */
-	.header {
-		margin-bottom: 30px;
-	}
-	/* Remove the bottom border on the jumbotron for visual effect */
-	.jumbotron {
-		border-bottom: 0;
-	}
 }
+.options {
+		display:none;
+	}
 </style>
 </head>
 <body>
-<div class="container">
 
-	<div class="header clearfix">
-		<nav>
-			<ul class="nav navbar-pills pull-right">
-				<li><a href="http://antmedia.io">Contact</a></li>
-			</ul>
-		</nav>
-		<h3 class="text-muted">WebRTC Conference</h3>
-	</div>
-
-	<div class="jumbotron">
-		<div id="players">
-			<div class="col-sm-3">
-				<video id="localVideo" autoplay muted controls playsinline></video>
+	<div class="container">
+		<div class="header clearfix">
+			<div class="row">
+				<h3 class="col text-muted">WebRTC Merge</h3>
+				<nav class="col align-self-center">
+					<ul class="nav float-right">
+						<li><a href="http://antmedia.io">Contact</a></li>
+					</ul>
+				</nav>
 			</div>
 		</div>
 
-		<div class="row">
-			<div class="col-sm-6 col-sm-offset-3">
-				<p>
-					<input type="text" class="form-control" value="room1"
-						   id="roomName" placeholder="Type room name">
-				</p>
-				<p>
-					<button class="btn btn-info" disabled
-							id="join_publish_button">Join Room</button>
-					<button class="btn btn-info" disabled
-							id="start_publish_button">Start Merging</button>		
-					<button class="btn btn-info"
-							id="stop_publish_button">Leave Room</button>
-                </p>
-                
-        </div>
-        <span class="label label-success" id="broadcastingInfo"
-        style="font-size: 14px; display: none" style="display: none">Publishing</span>
-	</div>
-	<footer class="footer">
-		<p>
-			<a href="http://antmedia.io">Ant Media Server Enterprise
-				Edition</a>
-		</p>
-	</footer>
 
-</div>
+		<div class="jumbotron">
+
+			<div class="col-sm-12 form-group">
+				<video id="localVideo" autoplay controls playsinline ></video>
+			</div>
+	
+				<div class="form-group">
+					<button class="btn btn-primary"
+						id="join_publish_button">Start Playing</button>
+					<button class="btn btn-primary"
+						id="stop_publish_button">Stop Playing</button>
+				</div>
+				<span class="badge badge-warning" id="bitrateInfo" style="font-size:14px;display:none"
+							style="display: none">Weak Network Connection</span>
+				<span class="label label-success" id="broadcastingInfo"
+				style="font-size: 14px; display: none" style="display: none">Publishing</span>
+
+		</div>	
+		<footer class="footer text-center">
+			<p>
+				<a href="http://antmedia.io">Ant Media Server</a>
+			</p>
+		</footer>
+
+	</div>
+
+	<script src="https://code.jquery.com/jquery-3.4.1.min.js"  crossorigin="anonymous"></script>
+	<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" crossorigin="anonymous"></script>
+	<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"  crossorigin="anonymous"></script>	
 </body>
 <script type="module">
 	import {WebRTCAdaptor} from "./js/webrtc_adaptor.js"
@@ -147,13 +119,12 @@ body {
 
 	var token = getUrlParameter("token");
 	var streamId = getUrlParameter("streamId");
+	var roomName = getUrlParameter("roomName");
     var playOnly = true;
 	var merger = new StreamMerger(640,480, true);
 
 	var join_publish_button = document.getElementById("join_publish_button");
 	join_publish_button.addEventListener("click", joinRoom, false);
-	var start_publish_button = document.getElementById("start_publish_button");
-	start_publish_button.addEventListener("click", mergeStreams, false);
 	var stop_publish_button = document.getElementById("stop_publish_button");
 	stop_publish_button.addEventListener("click", leaveRoom, false);
 
@@ -167,15 +138,14 @@ body {
   		});
 	}
 
-	var roomNameBox = document.getElementById("roomName");
-
 	var roomOfStream = new Array();
 	var streamsList = new Array();
 
 	var publishStreamId;
 	var isDataChannelOpen = false;
     var roomTimerId = -1;
-    var streamCount = 0;
+	var streamCount = 0;
+	var noStream = false;
 
 
 	function sendNotificationEvent(eventType) {
@@ -208,31 +178,38 @@ body {
 	}
 
 	function mergeStreams(){
-		merger.start();
-		var result = merger.getResult();
-		webRTCAdaptor.gotStream(result);
-		console.log("streamslist = " + streamsList);
-		if(streamsList.length > 0){
-			publish(publishStreamId);
-		}
-		else{
-			alert("There is no stream available in the room");
-		}
-		
+		var delayInMilliseconds = 1500;
+
+		setTimeout(function() {
+			merger.start();
+			var result = merger.getResult();
+			webRTCAdaptor.gotStream(result);
+			console.log("streamslist = " + streamsList);
+			if(streamsList.length > 0){
+				publish(publishStreamId);
+				noStream = false;
+			}
+			else{
+				alert("There is no stream available in the room");
+				noStream = true;
+			}
+		}, delayInMilliseconds);
 	}
 
 	function joinRoom() {
-		webRTCAdaptor.joinRoom(roomNameBox.value, streamId);
+		let room;
+		if(roomName != null){
+			room = roomName;
+		}
+		else{
+			roomName = "room1";
+		}
+		console.warn(room);
+		webRTCAdaptor.joinRoom(roomName, "MergedStream");
 	}
 
 	function leaveRoom() {
-		webRTCAdaptor.leaveFromRoom(roomNameBox.value);
-
-		for (var node in document.getElementById("players").childNodes) {
-			if(node.tagName == 'DIV' && node.id != "localVideo") {
-				document.getElementById("players").removeChild(node);
-			}
-		}
+		webRTCAdaptor.leaveFromRoom(roomName);
 		merger.stop();
 	}
 
@@ -242,7 +219,7 @@ body {
 	}
 
 	function streamInformation(obj) {
-		webRTCAdaptor.play(obj.streamId, token,	roomNameBox.value);
+		webRTCAdaptor.play(obj.streamId, token,	roomName);
 	}
 
 	function playVideo(stream, streamId) {
@@ -350,9 +327,9 @@ body {
 						console.log("initialized");
 						join_publish_button.disabled = false;
 						stop_publish_button.disabled = true;
-						
 					} 
 					else if (info == "joinedTheRoom") {
+						mergeStreams();
 						var room = obj.ATTR_ROOM_NAME;
 						roomOfStream[obj.streamId] = room;
 						console.log("joined the room: "
@@ -361,21 +338,24 @@ body {
 						publishStreamId = obj.streamId
 						join_publish_button.disabled = true;
 						stop_publish_button.disabled = false;
-						start_publish_button.disabled = false;
 												
 						if (obj.streams != null) {
 							obj.streams.forEach(function(item) {
 								console.log("Stream joined with ID: "+item);
 								webRTCAdaptor.play(item, token,
-										roomNameBox.value);
+										roomName);
 							});
 							streamsList = obj.streams;
 						}
 						roomTimerId = setInterval(() => {			
-							webRTCAdaptor.getRoomInfo(roomNameBox.value, publishStreamId);
+							webRTCAdaptor.getRoomInfo(roomName, publishStreamId);
 						}, 5000);
 					}
 					else if (info == "newStreamAvailable") {
+						if( noStream){
+							mergeStreams();
+						}
+						noStream = false;
                         if (oldId != obj.streamId){
 							merger.addStream(obj.stream,{ Xindex : xindex, Yindex : yindex, streamId : obj.streamId});
 							if(xindex == 3){
@@ -393,7 +373,6 @@ body {
 						console.debug("publish started to room: "
                                 + roomOfStream[obj.streamId]);
 						startAnimation();
-						start_publish_button.disabled = true;
 					} 
 					else if (info == "publish_finished") {
 						//stream is being finished
@@ -469,7 +448,7 @@ body {
 								tempRoomStreamList.push(item);
 								console.log("Stream joined with ID: "+item);
 								webRTCAdaptor.play(item, token,
-										roomNameBox.value);
+										roomName);
 							});
 						}
 						streamsList = tempRoomStreamList;

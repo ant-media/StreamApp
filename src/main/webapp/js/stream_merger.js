@@ -176,7 +176,7 @@ export class StreamMerger{
           }
 
           xindex ++;
-          if(yindex >= (yNumber)-1){
+          if(yindex >= (yNumber)-1 && this.streams.length != 1){
             console.log("TopWidth = " + topWidth + " remainingStreams = " + remainingStreams);
             widthOffset = (topWidth - (stream.width * remainingStreams )) / 2;
             stream.x += widthOffset;
