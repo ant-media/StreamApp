@@ -109,7 +109,6 @@ export class StreamMerger{
 
       let yNumber = 0
 
-      //TODO: OFFSET WIDTH GIRILECEK TOTAL WIDTH TOPLANIRKEN BULUNABILIR ÇOK RAHAT
       let cropWidth = 0;
       let cropHeight = 0;
       let topWidth = 0;
@@ -160,15 +159,6 @@ export class StreamMerger{
 
           stream.x = stream.width * xindex;
           stream.y = (stream.height * yindex) - heightOffset;
-
-          //widthOffset = (cropWidth - bottomWidth);
-
-          /*if(widthOffset > 0){
-            stream.x = stream.x + widthOffset
-          }
-          if(this.streams.length == 3 && yindex == 1){
-            stream.x += (this.width - stream.width) / 2
-          }*/
 
           if(xindex == 0){
             cropHeight = cropHeight + stream.height;
@@ -291,10 +281,10 @@ export class StreamMerger{
         }
       })
       this.streams = []
-      //this.audioCtx.close()
-      //this.audioCtx = null
-      //this.audioDestination = null
-      //this.videoSyncDelayNode = null
+      this.audioCtx.close()
+      this.audioCtx = null
+      this.audioDestination = null
+      this.videoSyncDelayNode = null
     
       this.result.getTracks().forEach((track) => {
         track.stop()
