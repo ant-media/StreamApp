@@ -71,7 +71,7 @@ video {
 			<div class="col-sm-12 form-group">
 				<video id="localVideo"  autoplay muted controls playsinline></video>
 			</div>
-			<div style="margin-top:10px;" class="form-group">Microphone Gain: <br><input type=range id="volume_change_input" min=0 max=1 value=1 step=0.01></div>
+
 			<div class="form-group col-sm-12 text-left">
 				<input type="text" class="form-control"
 						id="streamName" name="streamIdTextBox" placeholder="Type stream name">
@@ -80,6 +80,8 @@ video {
 				<button type="button" id="options" class="btn btn-outline-primary btn-sm" >Options</button>
 			</div>
 			<div class="form-group col-sm-12 text-left options">
+
+				<div style="margin-top:10px;" class="form-group">Microphone Gain: <br><input type=range id="volume_change_input" min=0 max=1 value=1 step=0.01></div>
 				
 				<label class=" mr-2" for="inlineFormCustomSelectPref">Max Video Bitrate(Kbps):</label>
 				<div class="form-inline">
@@ -128,6 +130,7 @@ video {
 						 <div id="latest_bit_rate_container">Latest Bitrate(Kbps): <span id="latest_bit_rate"></span></div>
 						 <div id="packet_lost_container">PacketsLost: <span id="packet_lost_text"></span></div>
 						 <div id="jitter_text_container">Jitter(Secs): <span id="jitter_text"></span></div>
+						 <div>Audio Level: <span id="audio_level_text"></span> <meter id="audio_level_text_container" high="0.25" max="1" value="0"></meter></div>
 						</small>
 					  </div>
 					  <div class="col-sm-6">
@@ -155,6 +158,7 @@ video {
 <script type="module" lang="javascript">
 	import {WebRTCAdaptor} from "./js/webrtc_adaptor.js"
     import {getUrlParameter} from "./js/fetch.stream.js" 
+    import {SoundMeter} from "./js/soundmeter.js" 
 	var debug = getUrlParameter("debug");
 	  if(debug == null) {
 		debug = false;
@@ -201,7 +205,6 @@ video {
     }
 	$(function() {
 		init();
-
 	});
 
 	var maxVideoBitrateKbps = 900;
@@ -257,9 +260,31 @@ video {
    		}
     }
 
+    let meterRefresh = null;
+
+    const instantMeter = document.querySelector('#audio_level_text_container');
+    const instantValueDisplay = document.querySelector('#audio_level_text');
+
+    function enableAudioLevel() {
+  	// Put variables in global scope to make them available to the
+  	// browser console.
+  	window.stream = webRTCAdaptor.localStream;
+  	const soundMeter = window.soundMeter = new SoundMeter(webRTCAdaptor.audioContext);
+  	soundMeter.connectToSource(stream, function(e) {
+    if (e) {
+    	alert(e);
+      	return;
+    }
+    meterRefresh = setInterval(() => {
+    	instantMeter.value = instantValueDisplay.innerText = soundMeter.instant.toFixed(2);
+    }, 200);
+	});
+	}
+
 	function startPublishing() {
 		streamId = streamNameBox.value;
 		webRTCAdaptor.publish(streamId, token, subscriberId, subscriberCode);
+		enableAudioLevel();
 	}
 
 	function stopPublishing() {
