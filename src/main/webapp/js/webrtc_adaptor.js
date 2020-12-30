@@ -21,6 +21,7 @@ export class WebRTCAdaptor
 		this.playStreamId = new Array();
 		this.currentVolume = null;
 
+		this.audioContext = null;
 	    this.soundOriginGainNode = null;
 		this.secondStreamGainNode = null;
 		this.localStream = null;
@@ -582,15 +583,15 @@ export class WebRTCAdaptor
 			composedStream.addTrack(videoTrack);
 		});
 
-		var audioContext = new AudioContext();
-		var audioDestionation = audioContext.createMediaStreamDestination();
+		this.audioContext = new AudioContext();
+		var audioDestionation = this.audioContext.createMediaStreamDestination();
 
 		if (stream.getAudioTracks().length > 0) {
-			this.soundOriginGainNode = audioContext.createGain();
+			this.soundOriginGainNode = this.audioContext.createGain();
 
 			//Adjust the gain for screen sound
 			this.soundOriginGainNode.gain.value = 1;
-			var audioSource = audioContext.createMediaStreamSource(stream);
+			var audioSource = this.audioContext.createMediaStreamSource(stream);
 
 			audioSource.connect(this.soundOriginGainNode).connect(audioDestionation);
 		}
@@ -599,12 +600,12 @@ export class WebRTCAdaptor
 		}
 
 		if (secondStream.getAudioTracks().length > 0) {
-			this.secondStreamGainNode = audioContext.createGain();
+			this.secondStreamGainNode = this.audioContext.createGain();
 			
 			//Adjust the gain for second sound
 			this.secondStreamGainNode.gain.value = 1;
 
-			var audioSource2 = audioContext.createMediaStreamSource(secondStream);
+			var audioSource2 = this.audioContext.createMediaStreamSource(secondStream);
 			audioSource2.connect(this.secondStreamGainNode).connect(audioDestionation);
 		}
 		else {
@@ -632,10 +633,10 @@ export class WebRTCAdaptor
    		* stream destination and a gain node. Pass the stream into 
    		* the mediaStreamSource so we can use it in the Web Audio API.
    		*/
-  		let audioContext = new AudioContext();
-  		let mediaStreamSource = audioContext.createMediaStreamSource(stream);
-  		let mediaStreamDestination = audioContext.createMediaStreamDestination();
-  		this.soundOriginGainNode = audioContext.createGain();
+  		this.audioContext = new AudioContext();
+  		let mediaStreamSource = this.audioContext.createMediaStreamSource(stream);
+  		let mediaStreamDestination = this.audioContext.createMediaStreamDestination();
+  		this.soundOriginGainNode = this.audioContext.createGain();
 
   		/**
    		* Connect the stream to the gainNode so that all audio

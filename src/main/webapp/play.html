@@ -244,6 +244,16 @@
 			type = "video/webm";
 			liveStream = false;
 		}
+		else if(extension == "mov"){
+			type = "video/mp4";
+			alert("Browsers do not support to play mov format");
+			liveStream = false;
+		}
+		else if(extension == "avi"){
+			type = "video/mp4";
+			alert("Browsers do not support to play avi format");
+			liveStream = false;
+		}
 		else if (extension == "m3u8") {
 			type = "application/x-mpegURL";
 			liveStream = true;

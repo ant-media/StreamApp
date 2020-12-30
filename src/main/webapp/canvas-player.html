@@ -8,9 +8,25 @@
 	<script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
 
 	<style>
+		iframe {
+			width: 107% !important;
+			height: 100% !important;
+			border: 0px !important;
+			background: transparent;
+			z-index: 1;
+			left: -43px;
+			top: 0;
+			position: absolute;
+		}
+
 		video {
+			position: relative;
+			left: 0;
+			right: 0;
+			top: 0;
 			width: 100%;
-			max-width: 640px;
+			height: 550px;
+			z-index: 0;
 		}
 
 		/* Everything but the jumbotron gets side spacing for mobile first views */
@@ -38,7 +54,7 @@
 		.jumbotron {
 			text-align: center;
 		}
-
+		
 		/* Responsive: Portrait tablets and up */
 		@media screen and (min-width: 768px) {
 			/* Remove the padding we set earlier */
@@ -49,6 +65,27 @@
 		}
 		.options {
 			display:none;
+		}
+
+		#canvas-designer {
+			margin: 0px auto;
+			width: 100% !important;
+			height: 100% !important;
+			border-color: black !important;
+			border: 0 solid black !important;
+			position: absolute;
+			top: 0;
+		}
+		.jumbotron {
+			padding: 0;
+			overflow: hidden;
+			width: 105%;
+			margin: 0;
+			padding-bottom: 30px;
+		}
+		.forms {
+			position: relative;
+			z-index: 2;
 		}
 	</style>
 </head>
@@ -67,101 +104,88 @@
 		</div>
 	</div>
 
-	<div class="row">
-		<div class="offset-md-1 col-md-4">
+	<div class="container">
+		<div class="row">
+			<div class="col-md-12">
 
-			<div class="jumbotron">
+				<div class="jumbotron">
 
-				<div class="col-sm-12 form-group">
-					<video id="remoteVideo" autoplay controls playsinline ></video>
-				</div>
-				<div class="form-group col-sm-12 text-left">
-					<input type="text" class="form-control"
-					id="streamName" placeholder="Type stream name">
-				</div>
-				<div class="col-sm-12 text-right">
-					<button type="button" id="options" class="btn btn-outline-primary btn-sm">Options</button>
-				</div>
-				<div class="form-group col-sm-12 text-left options">
-					<div class="dropdown">
-						<button class="btn btn-outline-primary btn-sm dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-							Force Stream Resolution
-						</button>
-						<div id="dropdownMenu" class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-							<a class="dropdown-item active" href="#" >Automatic</a>
+					<video id="localVideo" autoplay muted controls playsinline></video>
+					<div id="canvas-designer"></div>
+					<br>
+
+					<div class="forms">
+
+						<div class="form-group col-sm-12 text-left">
+							<input type="text" class="form-control"
+							id="streamName" placeholder="Type stream name">
 						</div>
+
+						<div class="col-sm-12 text-right">
+							<button type="button" id="options" class="btn btn-outline-primary btn-sm">Options</button>
+						</div>
+
+						<div class="form-group col-sm-12 text-left options">
+							<div class="dropdown">
+								<button class="btn btn-outline-primary btn-sm dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+									Force Stream Resolution
+								</button>
+								<div id="dropdownMenu" class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+									<a class="dropdown-item active" href="#" >Automatic</a>
+								</div>
+							</div>
+							<div class="dropdown-divider"></div>
+						</div>
+
+						<div class="dropdown-divider"></div>
+
+						<div class="form-group">
+							<button class="btn btn-primary"
+							id="start_play_button">Start Playing</button>
+							<button class="btn btn-primary"
+							id="stop_play_button">Stop Playing</button>
+						</div>
+
+						<div class="col-sm-10 offset-sm-1" id="stats_panel" style="display: none;">
+							<div class="row text-muted text-left">
+								<div class="col-sm-6">
+									<small>
+										<div id="average_bit_rate_container">Average Bitrate(Kbps): <span id="average_bit_rate"></span></div>
+										<div id="latest_bit_rate_container">Latest Bitrate(Kbps): <span id="latest_bit_rate"></span></div>
+										<div id="packet_lost_container">PacketsLost: <span id="packet_lost_text"></span></div>
+										<div id="jitter_container">Jitter Average Delay(Secs): <span id="jitter_text"></span></div>
+										<div id="audio_level_container">Audio Level: <span id="audio_level"></span></div>
+
+									</small>
+								</div>
+								<div class="col-sm-6">
+									<small>
+										<div id="incoming_resolution_container">Frame WidthxHeight: <span id="frame_width"></span>x<span id="frame_height"></span></div>
+										<div id="frame_decoded_container">Frames Decoded: <span id="frame_decoded"></span></div>
+										<div id="frame_dropped_container">Frames Dropped: <span id="frame_dropped"></span></div>
+										<div id="frame_received_container">Frames Received: <span id="frame_received"></span></div>
+									</small>
+								</div>
+							</div>
+						</div>
+
+						<span class="badge badge-warning" id="bitrateInfo" style="font-size:14px;display:none"
+						style="display: none">Weak Network Connection</span>
+
 					</div>
-					<div class="dropdown-divider"></div>
-<!--
-					<label>Data Channel Messages</label>
-					<textarea class="form-control" id="dataMessagesTextarea" style="font-size:10px" rows="8"></textarea>
-					<div class="form-row">
-						<div class="form-group col-sm-10">
-							<input type="text" class="form-control" id="dataTextbox" placeholder="Write your message to send publisher/players">
-						</div>
-						<div class="form-group col-sm-2">
-							<button type="button" id="send" class="btn btn-outline-primary btn-block">Send</button>
-						</div>
-					</div>
--->
-				</div>
 
-
-				<div class="form-group">
-					<button class="btn btn-primary"
-					id="start_play_button">Start Playing</button>
-					<button class="btn btn-primary"
-					id="stop_play_button">Stop Playing</button>
-				</div>
-
-				<div class="col-sm-10 offset-sm-1" id="stats_panel" style="display: none;">
-					<div class="row text-muted text-left">
-						<div class="col-sm-6">
-							<small>
-								<div id="average_bit_rate_container">Average Bitrate(Kbps): <span id="average_bit_rate"></span></div>
-								<div id="latest_bit_rate_container">Latest Bitrate(Kbps): <span id="latest_bit_rate"></span></div>
-								<div id="packet_lost_container">PacketsLost: <span id="packet_lost_text"></span></div>
-								<div id="jitter_container">Jitter Average Delay(Secs): <span id="jitter_text"></span></div>
-								<div id="audio_level_container">Audio Level: <span id="audio_level"></span></div>
-
-							</small>
-						</div>
-						<div class="col-sm-6">
-							<small>
-								<div id="incoming_resolution_container">Frame WidthxHeight: <span id="frame_width"></span>x<span id="frame_height"></span></div>
-								<div id="frame_decoded_container">Frames Decoded: <span id="frame_decoded"></span></div>
-								<div id="frame_dropped_container">Frames Dropped: <span id="frame_dropped"></span></div>
-								<div id="frame_received_container">Frames Received: <span id="frame_received"></span></div>
-							</small>
-						</div>
-					</div>
-				</div>
-				<span class="badge badge-warning" id="bitrateInfo" style="font-size:14px;display:none"
-				style="display: none">Weak Network Connection</span>
-
-
-
-			</div>
-		</div>
-
-		<div class="col-md-6">
-
-			<div class="jumbotron">
-
-				<div id="testgg" style="margin: 0px auto; width: 100% !important; height: 600px !important;">
 				</div>
 			</div>
-		</div>
 
-		<!-- Row -->
+			<!-- Row -->
+		</div>
 	</div>
-
 	<footer class="footer text-center">
 		<p>
 			<a href="http://antmedia.io">Ant Media Server</a>
 		</p>
 	</footer>
-	
+
 
 	<script src="https://code.jquery.com/jquery-3.4.1.min.js"  crossorigin="anonymous"></script>
 	<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" crossorigin="anonymous"></script>
@@ -201,14 +225,15 @@
 	stop_play_button.addEventListener("click",stopPlaying,false);
 	var options = document.getElementById("options");
 	options.addEventListener("click", toggleOptions, false);
-	//var send = document.getElementById("send");
-	//send.addEventListener("click", sendData, false);
 
 	var streamNameBox = document.getElementById("streamName")
 	streamNameBox.defaultValue = "stream1";
 
 	var streamId;
-	
+
+	var isDataChannelEnabled = false;
+
+
 	function toggleOptions() {
 		$(".options").toggle();
 	}
@@ -216,37 +241,38 @@
 	function sendData(data) {
 		try {
 			var iceState = webRTCAdaptor.iceConnectionState(streamId);
-			if (iceState != null && iceState == "connected") {
+			if (iceState != null && iceState == "connected" && isDataChannelEnabled) {
 
 				webRTCAdaptor.sendData($("#streamName").val(),data);
+			}
+			else {
+				designer.undo('all');
+				alert("WebRTC playing is not active. Please click Start Playing first");
+			}
+		}
+		catch (exception) {
+			designer.undo('all');
+			console.error(exception);
+			alert("Message cannot be sent. Make sure you've enabled data channel and choose the correct player distribution on server web panel");
+		}
+	}
+
+	function requestData() {
+		try {
+			var iceState = webRTCAdaptor.iceConnectionState(streamId);
+			if (iceState != null && iceState == "connected") {
+
+				webRTCAdaptor.sendData($("#streamName").val(),"request");
 			//	$("#dataMessagesTextarea").append("Sent: " + $("#dataTextbox").val() + "\r\n");
 			//	$("#dataTextbox").val("");
 		}
 		else {
-			//designer.undo();
-			alert("sendData - WebRTC playing is not active. Please click Start Playing first");
+			designer.undo('all');
+			alert("WebRTC playing is not active. Please click Start Playing first");
 		}
 	}
 	catch (exception) {
-		console.error(exception);
-		alert("Message cannot be sent. Make sure you've enabled data channel and choose the correct player distribution on server web panel");
-	}
-}
-
-function requestData() {
-	try {
-		var iceState = webRTCAdaptor.iceConnectionState(streamId);
-		if (iceState != null && iceState == "connected") {
-
-			webRTCAdaptor.sendData($("#streamName").val(),"request");
-			//	$("#dataMessagesTextarea").append("Sent: " + $("#dataTextbox").val() + "\r\n");
-			//	$("#dataTextbox").val("");
-		}
-		else {
-			alert("requestData - WebRTC playing is not active. Please click Start Playing first")
-		}
-	}
-	catch (exception) {
+		designer.undo('all');
 		console.error(exception);
 		alert("Message cannot be sent. Make sure you've enabled data channel and choose the correct player distribution on server web panel");
 	}
@@ -317,11 +343,8 @@ var designer = new CanvasDesigner();
 
 
 
-// you can place widget.html anywhere
-designer.widgetHtmlURL = 'https://www.webrtc-experiment.com/Canvas-Designer/widget.html';
-designer.widgetJsURL = 'https://www.webrtc-experiment.com/Canvas-Designer/widget.js'
-
-designer.appendTo(document.getElementById('testgg'));
+designer.widgetHtmlURL = 'js/canvas-designer.html';
+designer.widgetJsURL = 'canvas-designer.js'
 
 designer.setSelected('pencil');
 
@@ -329,7 +352,7 @@ designer.setTools({
 	pencil: true,
 	text: true,
 	image: true,
-	pdf: true,
+	pdf: false,
 	eraser: true,
 	line: true,
 	arrow: true,
@@ -338,15 +361,17 @@ designer.setTools({
 	arc: true,
 	rectangle: true,
 	quadratic: false,
-	bezier: true,
+	bezier: false,
 	marker: true,
-	zoom: false,
+	zoom: true,
 	lineWidth: false,
 	colorsPicker: false,
 	extraOptions: false,
 	code: false,
 	undo: true
 });
+
+designer.appendTo(document.getElementById('canvas-designer'));
 
 
 var webRTCAdaptor = new WebRTCAdaptor({
@@ -374,6 +399,7 @@ var webRTCAdaptor = new WebRTCAdaptor({
 
 			} else if (info == "play_finished") {
 
+				isDataChannelEnabled = false;
 				designer.undo('all');
 
 				//leaved the stream
@@ -432,6 +458,9 @@ var webRTCAdaptor = new WebRTCAdaptor({
 
 			}
 			else if (info == "data_channel_opened"){
+
+				isDataChannelEnabled = true;
+
 				var iceState = webRTCAdaptor.iceConnectionState(streamId);
 				if (iceState != null && iceState == "connected") {
 					if (designer.pointsLength > 0) {
@@ -580,10 +609,7 @@ var webRTCAdaptor = new WebRTCAdaptor({
 window.webRTCAdaptor = webRTCAdaptor;
 
 designer.addSyncListener(function(data) {
-	var iceState = webRTCAdaptor.iceConnectionState(streamId);
-	if (iceState != null && iceState == "connected") {
-		sendData(JSON.stringify(data));
-	}
+	sendData(JSON.stringify(data));
 });
 
 </script>
