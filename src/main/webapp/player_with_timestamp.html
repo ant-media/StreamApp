@@ -8,7 +8,7 @@
 <script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
 
 <style>
-video {
+video, canvas {
 	width: 100%;
 	max-width: 640px;
 }
@@ -103,7 +103,10 @@ video {
 				
 			</div>
 
-			
+			<div class="alert alert-warning" role="alert">
+				Sychronize your device with a Network Time Server.<br/>
+				Typical accuracy is tens of milliseconds. 
+			</div>
 				<div class="form-group">
 					<button class="btn btn-primary"
 						id="start_play_button">Start Playing</button>

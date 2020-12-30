@@ -327,12 +327,18 @@
 
 		}
 		//Check HLS player is finished. If finished page should be reload
-		player.ready(function(){
+        if (typeof player.ready != "undefined" ) 
+        {
+		  player.ready(function(){
 			var player = this;
 			player.on('ended', function() {
 				tryToPlay(streamId, token, hlsExtension, subscriberId, subscriberCode);
 	  		});
-		});
+		  });
+		}
+		else {
+          console.log("player ready is not available. List playing may not be continous");
+		}
 		
 		document.getElementById("video_container").style.display = "block";
 		document.getElementById("video_info").hidden = true;
