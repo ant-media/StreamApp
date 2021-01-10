@@ -123,6 +123,7 @@ video, canvas {
 							<div id="packet_lost_container">PacketsLost: <span id="packet_lost_text"></span></div>
 							<div id="jitter_container">Jitter Average Delay(Secs): <span id="jitter_text"></span></div>
 							<div id="audio_level_container">Audio Level: <span id="audio_level"></span></div>
+							<div id="latency_container">Latency: <span id="latency"></span></div>
 							
 						</small>
 						</div>
@@ -150,6 +151,7 @@ video, canvas {
 	<script src="https://code.jquery.com/jquery-3.4.1.min.js"  crossorigin="anonymous"></script>
 	<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" crossorigin="anonymous"></script>
 	<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"  crossorigin="anonymous"></script>	
+	<script src='https://unpkg.com/tesseract.js@v2.1.0/dist/tesseract.min.js'></script>
 
 </body>
 <script type="module">
@@ -178,6 +180,7 @@ video, canvas {
 
 
 	var subscriberId = getUrlParameter("subscriberId");
+	var enableVisionAPI= getUrlParameter("enableVisionAPI");
 	var subscriberCode = getUrlParameter("subscriberCode");
 		
 	var start_play_button = document.getElementById("start_play_button");
@@ -191,6 +194,13 @@ video, canvas {
 
 	var streamNameBox = document.getElementById("streamName")
 	streamNameBox.defaultValue = "stream1";
+	if(enableVisionAPI == null || enableVisionAPI == undefined){
+		enableVisionAPI = false;
+	}
+
+	//ENTER YOUR GOOGLE VISION API TOKEN FOR E2E latency measurement.
+	//It is the result of command = $gcloud auth application-default print-access-token
+	var visionToken = "ya29.c.Kp0B7QdKFV-4SJohFHahM-IrqWLy_H1GRVi0nSnYv2e2uDXtmr2PxflNqc_HieETpNVNPrcJ6xSJMt1EoEaA0rVhp7PceVaKNCqLU9yiJkYoQpMM036KXo7W6Gpz_7HMBIjCbLp4H3u_Gq0Ei5NWL01WAJfSEDmuL1mHuEgtLSjRfiSorKwlM0i753uh83UJDHWUas8xLgVTjjKTOMPxWQ";
 
 
 	var canvas = document.getElementById('canvas');
@@ -222,7 +232,10 @@ video, canvas {
 		$(".options").toggle();
 	}
 
-
+	function getBase64Img(){
+		var dataURL = canvas.toDataURL()
+		return dataURL.replace(/^data:image\/(png|jpg);base64,/, "");
+	}
 
 	function sendData() {
 		try {
@@ -271,6 +284,7 @@ video, canvas {
 	var appName = location.pathname.substring(0, location.pathname.lastIndexOf("/")+1);
 	var path =  location.hostname + ":" + location.port + appName + "websocket";
 	var websocketURL =  "ws://" + path;
+	var e2eLatencyInterval;
 	
 	if (location.protocol.startsWith("https")) {
 		websocketURL = "wss://" + path;
@@ -284,7 +298,60 @@ video, canvas {
         	$("#bitrateInfo").html("Weak Network Connection");
           });
         });
-      }
+	  }
+	  var latency;
+	  
+	  function VisionAPI(img){
+		console.log("creating request for google vision API");
+		let request = new XMLHttpRequest();
+
+		request.onreadystatechange = function() {
+			if (request.readyState == XMLHttpRequest.DONE) {
+				console.log((request.responseText));
+				let resp = JSON.parse(request.responseText);
+				let obj = resp.responses;
+				
+				let splitted = obj[0]["fullTextAnnotation"]["text"].split("\n");
+				if(splitted == undefined || splitted == null){
+					console.error(request.responseText);
+				}
+				
+				let playTime = splitted[1].split(" ")[1];
+				let publishTime = splitted[0].split(" ")[1];
+				console.log("player time = " + playTime + " Publisher time = " + publishTime);
+				let player_time = parseInt(playTime);
+				let publisher_time = parseInt(publishTime);
+				latency = player_time - publisher_time;
+				console.log("Latency = " + latency);
+				$("#latency").text(latency);
+				if (enableVisionAPI) {
+					$("#latency_container").show();
+				}
+				else {
+					$("#latency_container").hide();
+				}
+
+			}
+		}
+		request.open("POST" ,"https://vision.googleapis.com/v1/images:annotate");
+		request.setRequestHeader("Authorization", "Bearer " + visionToken);
+		request.setRequestHeader("Content-type", "application/json; charset=utf-8");
+		request.send(JSON.stringify({
+		"requests": [
+			{
+			"image": {
+				"content": img
+			},
+			"features": [
+				{
+				"type": "TEXT_DETECTION"
+				}
+			]
+			}
+		]
+		}));
+		console.log(request.status);
+	}
 
 	var webRTCAdaptor = new WebRTCAdaptor({
 		websocket_url : websocketURL,
@@ -307,16 +374,23 @@ video, canvas {
 				stop_play_button.disabled = false;
 				webRTCAdaptor.getStreamInfo(streamId); 
 				webRTCAdaptor.enableStats(obj.streamId);
-
+				console.log("ananın amı")
 				//update canvas for every 20ms
 				setInterval(function() { draw(); }, 20);
-
+				if(enableVisionAPI){
+					e2eLatencyInterval = setInterval(function() { 
+						let img = getBase64Img(); 
+						VisionAPI(img);
+						
+					}, 1000);
+				}
 			} else if (info == "play_finished") {
 				//leaved the stream
 				console.log("play finished");
 				start_play_button.disabled = false;
 				stop_play_button.disabled = true;
 				$("#stats_panel").hide();
+				clearInterval(e2eLatencyInterval);
 				// Reset stream resolutions in dropdown
 				document.getElementById("dropdownMenu").innerHTML = '<a class="dropdown-item active" href="#">Automatic</a>'; 
 			} else if (info == "closed") {
