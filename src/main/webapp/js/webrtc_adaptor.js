@@ -32,6 +32,7 @@ export class WebRTCAdaptor
 		this.webSocketAdaptor = null;
 		this.isPlayMode = false;
 		this.debug = false;
+		this.viewerInfo = "";
 
 		this.publishMode="camera"; //screen, screen+camera
 
@@ -449,6 +450,7 @@ export class WebRTCAdaptor
 				trackList : enableTracks,
 				subscriberId: typeof subscriberId !== undefined ? subscriberId : "" ,
 				subscriberCode: typeof subscriberCode !== undefined ? subscriberCode : "",
+				viewerInfo : this.viewerInfo,
 		}
 
 		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
