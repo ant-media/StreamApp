@@ -20,7 +20,12 @@ export class WebRTCAdaptor
 		this.audioTrackSender = null;
 		this.playStreamId = new Array();
 		this.currentVolume = null;
-
+		this.originalAudioTrackGainNode = null;
+		this.videoTrack = null;
+		this.audioTrack = null;
+		this.smallVideoTrack = null;
+		
+		
 		this.audioContext = null;
 	    this.soundOriginGainNode = null;
 		this.secondStreamGainNode = null;
@@ -117,7 +122,8 @@ export class WebRTCAdaptor
 	{
 		this.desktopStream = stream;
 		this.navigatorUserMedia({video: true, audio: false},cameraStream => {
-
+			this.smallVideoTrack = cameraStream.getVideoTracks()[0];
+			
 			//create a canvas element
 			var canvas = document.createElement("canvas");
 			var canvasContext = canvas.getContext("2d");
@@ -213,6 +219,10 @@ export class WebRTCAdaptor
 			this.navigatorUserMedia(media_audio_constraint, audioStream => {
 
 				audioStream = this.setGainNodeStream(audioStream);
+				if (this.originalAudioTrackGainNode !== null) {
+					this.originalAudioTrackGainNode.stop();
+				}
+				this.originalAudioTrackGainNode = audioStream.getAudioTracks()[1];
 
 				//add callback if desktop is sharing
 				var onended = event => {
@@ -277,10 +287,32 @@ export class WebRTCAdaptor
 	 */
 	getUserMedia(mediaConstraints, audioConstraint, streamId) 
 	{
+		const resetTrack = (stream) => {
+			let videoTracks = stream.getVideoTracks();
+			let audioTracks = stream.getAudioTracks();
+			
+			if (videoTracks.length > 0) {
+				if (this.videoTrack !== null)
+					this.videoTrack.stop();
+				this.videoTrack = videoTracks[0];
+			}
+			
+			if (audioTracks.length > 0) {
+				if (this.audioTrack !== null)
+					this.audioTrack.stop();				
+				this.audioTrack = audioTracks[0];	
+			}		
+
+			if (this.smallVideoTrack)
+				this.smallVideoTrack.stop();
+			return stream;
+		}
+		
 		// Check Media Constraint video value screen or screen + camera
 		if(this.publishMode == "screen+camera" || this.publishMode == "screen"){
 			navigator.mediaDevices.getDisplayMedia(mediaConstraints)
 			.then(stream =>{
+				resetTrack(stream);
 				this.prepareStreamTracks(mediaConstraints,audioConstraint,stream, streamId);
 
 			})
@@ -309,6 +341,7 @@ export class WebRTCAdaptor
 		// If mediaConstraints only user camera
 		else {
 			this.navigatorUserMedia(mediaConstraints, (stream =>{
+				resetTrack(stream);
 				this.prepareStreamTracks(mediaConstraints,audioConstraint,stream, streamId);
 			}),true);
 		}
@@ -348,6 +381,21 @@ export class WebRTCAdaptor
 			track.onended = null;
 			track.stop();
 		});
+		if (this.videoTrack !== null) {
+			this.videoTrack.stop();
+		}
+
+		if (this.audioTrack !== null) {
+			this.audioTrack.stop();
+		}
+
+		if (this.smallVideoTrack !== null) {
+			this.smallVideoTrack.stop();
+		}		
+		if (this.originalAudioTrackGainNode) {
+			this.originalAudioTrackGainNode.stop();
+		}		
+		
 	}
 	/*
 	* Checks if we is permitted from browser
