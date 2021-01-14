@@ -83,10 +83,12 @@ video {
 	
 				<div class="form-group">
 					<p>
+						<h10 class="text-muted">roomId</h10>
 						<input type="text" class="form-control" value="room1"
 							   id="roomName" placeholder="Type room name">
 					</p>
 					<p>
+						<h10 class="col text-muted">streamId</h10>
 						<input type="text" class="form-control" value="mergedStream"
 							   id="streamId" placeholder="Type streamId here">
 					</p>
@@ -135,6 +137,8 @@ video {
 	join_publish_button.addEventListener("click", joinRoom, false);
 	var stop_publish_button = document.getElementById("stop_publish_button");
 	stop_publish_button.addEventListener("click", leaveRoom, false);
+	var roomNameBox = document.getElementById("roomName");
+	var streamNameBox = document.getElementById("streamId");
 
 	//Handles radio buttons for screen share feature
 	if (document.querySelector('input[name="videoSource"]')) {
@@ -155,6 +159,13 @@ video {
 	var streamCount = 0;
 	var noStream = false;
 
+	if(roomName != null){
+			roomNameBox.value = roomName;
+	}
+
+	if(streamId != null){
+		streamNameBox.value = streamId;
+	}	
 
 	function sendNotificationEvent(eventType) {
 		if(isDataChannelOpen) {
@@ -205,23 +216,16 @@ video {
 	}
 
 	function joinRoom() {
-		let room;
-		if(roomName != null){
-			room = roomName;
-		}
-		else{
-			roomName = "room1";
-		}
-		console.warn(room);
-		webRTCAdaptor.joinRoom(roomName, streamId);
+		webRTCAdaptor.joinRoom(roomNameBox.value, streamId);
 	}
 
 	function leaveRoom() {
-		webRTCAdaptor.leaveFromRoom(roomName);
+		webRTCAdaptor.leaveFromRoom(roomNameBox.value);
 		merger.stop();
 	}
 
 	function publish(streamName, token) {
+		streamName = streamNameBox.value;
 		publishStreamId = streamName;
 		webRTCAdaptor.publish(streamName, token);
 	}
