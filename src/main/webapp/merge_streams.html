@@ -231,7 +231,7 @@ video {
 	}
 
 	function streamInformation(obj) {
-		webRTCAdaptor.play(obj.streamId, token,	roomName);
+		webRTCAdaptor.play(obj.streamId, token,	roomNameBox.value);
 	}
 
 	function playVideo(stream, streamId) {
@@ -355,12 +355,12 @@ video {
 							obj.streams.forEach(function(item) {
 								console.log("Stream joined with ID: "+item);
 								webRTCAdaptor.play(item, token,
-										roomName);
+										roomNameBox.value);
 							});
 							streamsList = obj.streams;
 						}
 						roomTimerId = setInterval(() => {			
-							webRTCAdaptor.getRoomInfo(roomName, publishStreamId);
+							webRTCAdaptor.getRoomInfo(roomNameBox.value, publishStreamId);
 						}, 5000);
 					}
 					else if (info == "newStreamAvailable") {
@@ -460,7 +460,7 @@ video {
 								tempRoomStreamList.push(item);
 								console.log("Stream joined with ID: "+item);
 								webRTCAdaptor.play(item, token,
-										roomName);
+										roomNameBox.value);
 							});
 						}
 						streamsList = tempRoomStreamList;
