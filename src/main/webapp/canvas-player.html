@@ -144,6 +144,7 @@
 							id="start_play_button">Start Playing</button>
 							<button class="btn btn-primary"
 							id="stop_play_button">Stop Playing</button>
+							<button class="btn btn-primary" id="clear_draw">Clear Draw</button>
 						</div>
 
 						<div class="col-sm-10 offset-sm-1" id="stats_panel" style="display: none;">
@@ -223,6 +224,8 @@
 	start_play_button.addEventListener("click", startPlaying, false)
 	var stop_play_button = document.getElementById("stop_play_button");
 	stop_play_button.addEventListener("click",stopPlaying,false);
+	var clear_draw = document.getElementById("clear_draw");
+	clear_draw.addEventListener("click", clearDraw, false);
 	var options = document.getElementById("options");
 	options.addEventListener("click", toggleOptions, false);
 
@@ -263,8 +266,6 @@
 			if (iceState != null && iceState == "connected") {
 
 				webRTCAdaptor.sendData($("#streamName").val(),"request");
-			//	$("#dataMessagesTextarea").append("Sent: " + $("#dataTextbox").val() + "\r\n");
-			//	$("#dataTextbox").val("");
 		}
 		else {
 			designer.undo('all');
@@ -285,6 +286,10 @@ function startPlaying() {
 
 function stopPlaying() {
 	webRTCAdaptor.stop(streamId);
+}
+
+function clearDraw() {
+	designer.clearCanvas();
 }
 
 var pc_config = {
@@ -363,7 +368,7 @@ designer.setTools({
 	quadratic: false,
 	bezier: false,
 	marker: true,
-	zoom: true,
+	zoom: false,
 	lineWidth: false,
 	colorsPicker: false,
 	extraOptions: false,
