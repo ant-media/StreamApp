@@ -5,12 +5,12 @@
 <title>Ant Media Server WebRTC/HLS Player</title>
 
 <!-- videojs includes  -->
-<link href="https://unpkg.com/video.js@7.8.3/dist/video-js.css" rel="stylesheet">
+  <link href="https://unpkg.com/video.js@7.8.4/dist/video-js.css" rel="stylesheet">
 
-<script src="https://unpkg.com/video.js@7.8.3/dist/video.js"></script>
+  <script src="https://vjs.zencdn.net/7.8.4/video.js"></script>
+  <script src="https://unpkg.com/videojs-contrib-hls.js"></script>
 
-<script
-		src="https://unpkg.com/@videojs/http-streaming@1.13.3/dist/videojs-http-streaming.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/videojs-overlay/1.1.4/videojs-overlay.min.js"></script>
 <!--  end of video js includes  -->
 
 <script src="js/fetch.js"></script>
@@ -32,7 +32,10 @@
 	<div id="video_container">
 		<video id="video-player" 
 			class="video-js vjs-default-skin vjs-big-play-centered"
-			controls preload="auto">
+			controls preload="auto"
+			data-setup='{"liveui": true, "liveTracker": {
+				"trackingThreshold": 0
+				}}'>
 			<p class="vjs-no-js">
 				To view this video please enable JavaScript, and consider upgrading
 				to a web browser that <a
@@ -41,7 +44,6 @@
 			</p>
 		</video>
 	</div>
-
 
 	<!-- WebRTC Player -->
 	<video id="remoteVideo" controls playsinline></video>
@@ -275,14 +277,12 @@
 		// If it's not dash, play with videojs
 		if(extension != dashExtension){
 
-			var player = videojs('video-player', {
-				poster: "previews/"+preview+".png"
-			});
+			var player = videojs('video-player');
 
-		player.src({
-  			src: "streams/" + streamId + "." + extension + "?token=" + token + "&subscriberId="+subscriberId +"&subscriberCode="+subscriberCode,
-  			type: type,
-		});
+			player.src({
+				src: "streams/" + streamId + "." + extension + "?token=" + token + "&subscriberId="+subscriberId +"&subscriberCode="+subscriberCode,
+				type: type,
+			});
 		
 			player.poster("previews/"+preview+".png");
 
