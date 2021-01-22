@@ -83,12 +83,12 @@ export class WebRTCAdaptor
 			this.publishMode="screen+camera";
 		}
 				
-
+		//Check browser support for screen share function
+		this.checkBrowserScreenShareSupported();
+		
 		if (!this.isPlayMode && typeof this.mediaConstraints != "undefined" && this.localStream == null)
 		{
 			this.checkWebRTCPermissions();
-			//Check browser support for screen share function
-			this.checkBrowserScreenShareSupported();
 
 			// Get devices only in publish mode.
 			this.getDevices();
