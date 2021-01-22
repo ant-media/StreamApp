@@ -42,6 +42,10 @@
 		class="#{ T(io.antmedia.rest.RestServiceBase).isEnterprise() ? 'io.antmedia.enterprise.security.PublishIPFilter' : 'io.antmedia.security.MockTokenService' }">
     </bean>
     
+    <bean id="chunked.cache.manager"
+		class="#{ T(io.antmedia.rest.RestServiceBase).isEnterprise() ? 'io.antmedia.enterprise.chunkedTransfer.ChunkedCacheManager' : 'io.antmedia.servlet.MockChunkedCacheManager' }">
+    </bean>
+    
     <bean id="streamAcceptFilter" class="io.antmedia.filter.StreamAcceptFilter"/>
 
 	<!-- Defines the web handler which acts as an applications endpoint -->

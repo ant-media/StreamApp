@@ -120,7 +120,21 @@
 		<servlet-name>jersey-serlvet</servlet-name>
 		<url-pattern>/rest/*</url-pattern>
 	</servlet-mapping>
-
+	
+	<servlet>
+		<servlet-name>chunked-transfer-servlet</servlet-name>
+		<servlet-class>io.antmedia.servlet.ChunkedTransferServlet</servlet-class>
+		<async-supported>true</async-supported>
+		<load-on-startup>1</load-on-startup>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>chunked-transfer-servlet</servlet-name>
+		<url-pattern>/chunked/*</url-pattern>
+		<url-pattern>*.mpd</url-pattern>
+		<url-pattern>*.m4s</url-pattern>
+	</servlet-mapping>
+	
+	
 	<servlet-mapping>
 		<servlet-name>jsp</servlet-name>
 		<url-pattern>*.html</url-pattern>
@@ -133,6 +147,16 @@
 	<mime-mapping>
 		<extension>ts</extension>
 		<mime-type>video/MP2T</mime-type>
+	</mime-mapping>
+	
+	<mime-mapping>
+		<extension>mpd</extension>
+		<mime-type>application/dash+xml</mime-type>
+	</mime-mapping>
+	
+	<mime-mapping>
+		<extension>m4s</extension>
+		<mime-type>video/iso.segment</mime-type>
 	</mime-mapping>
 
 	<filter>
@@ -161,7 +185,15 @@
 			<param-value>access plus 0 seconds</param-value>
 		</init-param>
 		<init-param>
+			<param-name>ExpiresByType application/dash+xml</param-name>
+			<param-value>access plus 0 seconds</param-value>
+		</init-param>
+		<init-param>
 			<param-name>ExpiresByType video/MP2T</param-name>
+			<param-value>access plus 10 seconds</param-value>
+		</init-param>
+		<init-param>
+			<param-name>ExpiresByType video/iso.segment</param-name>
 			<param-value>access plus 10 seconds</param-value>
 		</init-param>
 	</filter>
