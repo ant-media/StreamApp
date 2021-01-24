@@ -28,6 +28,7 @@
 	<filter>
 		<filter-name>TokenFilter</filter-name>
 		<filter-class>io.antmedia.filter.TokenFilterManager</filter-class>
+		<async-supported>true</async-supported>
 	</filter>
 	<filter-mapping>
 		<filter-name>TokenFilter</filter-name>
@@ -38,6 +39,7 @@
 	<filter>
 		<filter-name>HttpForwardFilter</filter-name>
 		<filter-class>io.antmedia.filter.HttpForwardFilter</filter-class>
+		<async-supported>true</async-supported>
 	</filter>
 	<filter-mapping>
 		<filter-name>HttpForwardFilter</filter-name>
@@ -48,6 +50,7 @@
 	<filter>
 		<filter-name>HlsStatisticsFilter</filter-name>
 		<filter-class>io.antmedia.filter.HlsStatisticsFilter</filter-class>
+		<async-supported>true</async-supported>
 	</filter>
 	<filter-mapping>
 		<filter-name>HlsStatisticsFilter</filter-name>
