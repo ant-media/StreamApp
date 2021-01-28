@@ -141,6 +141,7 @@
 	<filter>
 		<filter-name>RestJWTAuthenticationFilter</filter-name>
 		<filter-class>io.antmedia.filter.JWTFilter</filter-class>
+		<async-supported>true</async-supported>
 	</filter>
 	<filter-mapping>
 		<filter-name>RestJWTAuthenticationFilter</filter-name>
@@ -150,6 +151,7 @@
 	<filter>
 		<filter-name>RestAuthenticationFiler</filter-name>
 		<filter-class>io.antmedia.filter.IPFilter</filter-class>
+		<async-supported>true</async-supported>
 	</filter>
 	<filter-mapping>
 		<filter-name>RestAuthenticationFiler</filter-name>
