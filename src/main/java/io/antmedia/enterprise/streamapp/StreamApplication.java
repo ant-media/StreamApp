@@ -166,9 +166,13 @@ public class StreamApplication extends MultiThreadedApplicationAdapter implement
 	public void muxAdaptorRemoved(MuxAdaptor muxAdaptor) {
 		appAdaptor.muxAdaptorRemoved(muxAdaptor);		
 	}
-
+	
 	@Override
-	public boolean isValidStreamParameters(AVFormatContext inputFormatContext, AVPacket pkt, String streamId) {
-		return appAdaptor.isValidStreamParameters(inputFormatContext,pkt, streamId);
+	public boolean isValidStreamParameters(int width, int height, int fps, int bitrate, String streamId) {
+		return appAdaptor.isValidStreamParameters(width, height, fps, bitrate, streamId);
 	}
+	
+	public boolean isServerShuttingDown() {
+		return appAdaptor.isServerShuttingDown();
+	};
 }

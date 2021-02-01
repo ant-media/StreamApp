@@ -19,19 +19,23 @@ export class WebRTCAdaptor
 		this.videoTrackSender = null;
 		this.audioTrackSender = null;
 		this.playStreamId = new Array();
-		this.micGainNode = null;
+		this.currentVolume = null;
+
+	    this.soundOriginGainNode = null;
+		this.secondStreamGainNode = null;
 		this.localStream = null;
 		this.bandwidth = 900; //default bandwidth kbps
 		this.isMultiPeer = false; //used for multiple peer client
 		this.multiPeerStreamId = null;   //used for multiple peer client
-		this.roomTimerId = -1;
 		this.isWebSocketTriggered = false;
 		this.webSocketAdaptor = null;
 		this.isPlayMode = false;
 		this.debug = false;
+
 		this.composedStream = new MediaStream();
 		this.reqId = null;
 		this.stopBlur = false;
+		this.onlyDataChannel = false;
 
 		this.publishMode="camera"; //screen, screen+camera
 
@@ -82,25 +86,18 @@ export class WebRTCAdaptor
 		else if(this.mediaConstraints.video == "screen+camera") {
 			this.publishMode="screen+camera";
 		}
-
-		if (!("WebSocket" in window)) {
-			console.log("WebSocket not supported.");
-			this.callbackError("WebSocketNotSupported");
-			return;
-		}
-
-		if (typeof navigator.mediaDevices == "undefined" && this.isPlayMode == false) {
-			console.log("Cannot open camera and mic because of unsecure context. Please Install SSL(https)");
-			this.callbackError("UnsecureContext");
-			return;
-		}		
-		/*
-		* Check browser support for screen share feature.
-		*/
+				
+		//Check browser support for screen share function
 		this.checkBrowserScreenShareSupported();
-
-		if (!this.isPlayMode && typeof this.mediaConstraints != "undefined" && this.localStream == null)
+		
+		if (!this.isPlayMode && !this.onlyDataChannel && typeof this.mediaConstraints != "undefined" && this.localStream == null)
 		{
+			this.checkWebRTCPermissions();
+
+			// Get devices only in publish mode.
+			this.getDevices();
+			this.trackDeviceChange();
+
 			if (typeof this.mediaConstraints.video != "undefined" && this.mediaConstraints.video != false)
 			{
 				this.openStream(this.mediaConstraints, this.mode);	
@@ -116,7 +113,7 @@ export class WebRTCAdaptor
 		else {
 			//just playing, it does not open any stream
 			if (this.webSocketAdaptor == null || this.webSocketAdaptor.isConnected() == false) {
-				this.webSocketAdaptor = new WebSocketAdaptor({websocket_url : this.websocket_url, webrtcadaptor : this, callback : this.callback, callbackError : this.callbackError});
+				this.webSocketAdaptor = new WebSocketAdaptor({websocket_url : this.websocket_url, webrtcadaptor : this, callback : this.callback, callbackError : this.callbackError, debug : this.debug});
 			}
 		}
 	}
@@ -178,6 +175,11 @@ export class WebRTCAdaptor
 			}, 66);
 		}, true)
 	}
+	trackDeviceChange(){
+		navigator.mediaDevices.ondevicechange = () => {
+			this.getDevices();
+		}
+	}
 	getDevices(){
 		navigator.mediaDevices.enumerateDevices().then(devices => {
 			let deviceArray = new Array();
@@ -214,6 +216,8 @@ export class WebRTCAdaptor
 			var media_audio_constraint = { audio: audioConstraint};
 			this.navigatorUserMedia(media_audio_constraint, audioStream => {
 
+				audioStream = this.setGainNodeStream(audioStream);
+
 				//add callback if desktop is sharing
 				var onended = event => {
 					this.callback("screen_share_stopped");
@@ -223,8 +227,8 @@ export class WebRTCAdaptor
 				if(this.publishMode == "screen"){
 					this.updateVideoTrack(stream,streamId,mediaConstraints,onended,true);
 					if(audioTrack.length > 0 ){
-						this.captureScreenSound(stream, audioStream, streamId);
-						this.updateAudioTrack(this.composedStream,streamId,null);
+						var mixedStream = this.mixAudioStreams(stream, audioStream, streamId);
+						this.updateAudioTrack(mixedStream,streamId,null);
 					}
 					else{
 						this.updateAudioTrack(audioStream,streamId,null);
@@ -232,9 +236,9 @@ export class WebRTCAdaptor
 				}
 				else if(this.publishMode == "screen+camera" ){
 					if(audioTrack.length > 0 ){
-						this.captureScreenSound(stream, audioStream, streamId);
-						this.updateAudioTrack(this.composedStream,streamId,null);
-						this.setDesktopwithCameraSource(stream,streamId,this.composedStream,onended);
+						var mixedStream = this.mixAudioStreams(stream, audioStream, streamId);
+						this.updateAudioTrack(mixedStream,streamId,null);
+						this.setDesktopwithCameraSource(stream,streamId, mixedStream,onended);
 					}
 					else{
 						this.updateAudioTrack(audioStream,streamId,null);
@@ -415,6 +419,25 @@ export class WebRTCAdaptor
 			track.stop();
 		});
 	}
+	/*
+	* Checks if we is permitted from browser
+	*/
+	checkWebRTCPermissions(){
+		if (!("WebSocket" in window)) {
+			console.log("WebSocket not supported.");
+			this.callbackError("WebSocketNotSupported");
+			return;
+		}
+
+		if (typeof navigator.mediaDevices == "undefined" && this.isPlayMode == false) {
+			console.log("Cannot open camera and mic because of unsecure context. Please Install SSL(https)");
+			this.callbackError("UnsecureContext");
+			return;
+		}
+		if (typeof navigator.mediaDevices == "undefined" || navigator.mediaDevices == undefined || navigator.mediaDevices == null ) {
+			this.callbackError("getUserMediaIsNotAllowed");
+		}
+	}
 
 	/**
 	 * Checks browser supports screen share feature
@@ -428,40 +451,57 @@ export class WebRTCAdaptor
 		}
 	};
 
-	enableMicInMixedAudio(enable) 
+	enableSecondStreamInMixedAudio(enable) 
 	{
-		if (this.micGainNode != null) {
+		
+		if (this.secondStreamGainNode != null) {
 			if (enable) {
-				this.micGainNode.gain.value = 1;
+				this.secondStreamGainNode.gain.value = 1;
 			}
 			else {
-				this.micGainNode.gain.value = 0;
+				this.secondStreamGainNode.gain.value = 0;
 			}
 		}
 	}
 
-	publish(streamId, token) 
+	publish(streamId, token, subscriberId, subscriberCode) 
 	{
+		if (this.onlyDataChannel) {
+			var jsCmd = {
+				command : "publish",
+				streamId : streamId,
+				token : token,
+				subscriberId: typeof subscriberId !== undefined ? subscriberId : "" ,
+				subscriberCode: typeof subscriberCode !== undefined ? subscriberCode : "",
+				video: false,
+				audio: false,
+			};
+		}
 		//If it started with playOnly mode and wants to publish now
-		if(this.localStream == null){
+		else if(this.localStream == null){
 			this.navigatorUserMedia(this.mediaConstraints, (stream => {
 				this.gotStream(stream);
 				var jsCmd = {
 					command : "publish",
 					streamId : streamId,
 					token : token,
+					subscriberId: typeof subscriberId !== undefined ? subscriberId : "" ,
+					subscriberCode: typeof subscriberCode !== undefined ? subscriberCode : "",
 					video: this.localStream.getVideoTracks().length > 0 ? true : false,
-							audio: this.localStream.getAudioTracks().length > 0 ? true : false,
+					audio: this.localStream.getAudioTracks().length > 0 ? true : false,
 				};
 				this.webSocketAdaptor.send(JSON.stringify(jsCmd));
 			}), false);
-		}else{
+		} 
+		else{
 			var jsCmd = {
 					command : "publish",
 					streamId : streamId,
 					token : token,
+					subscriberId: typeof subscriberId !== undefined ? subscriberId : "" ,
+					subscriberCode: typeof subscriberCode !== undefined ? subscriberCode : "",
 					video: this.localStream.getVideoTracks().length > 0 ? true : false,
-							audio: this.localStream.getAudioTracks().length > 0 ? true : false,
+					audio: this.localStream.getAudioTracks().length > 0 ? true : false,
 			};
 		}
 		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
@@ -478,8 +518,8 @@ export class WebRTCAdaptor
 		}
 		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
 	}
-
-	play(streamId, token, roomId, enableTracks) 
+	
+	play(streamId, token, roomId, enableTracks, subscriberId, subscriberCode) 
 	{
 		this.playStreamId.push(streamId);
 		var jsCmd =
@@ -489,6 +529,8 @@ export class WebRTCAdaptor
 				token : token,
 				room : roomId,
 				trackList : enableTracks,
+				subscriberId: typeof subscriberId !== undefined ? subscriberId : "" ,
+				subscriberCode: typeof subscriberCode !== undefined ? subscriberCode : "",
 		}
 
 		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
@@ -526,11 +568,6 @@ export class WebRTCAdaptor
 				room: roomName,
 		};
 		console.log ("leave request is sent for "+ roomName);
-		
-		if ( this.roomTimerId != null)
-		{
-			clearInterval(this.roomTimerId);
-		}
 
 		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
 	}
@@ -558,14 +595,12 @@ export class WebRTCAdaptor
 	
 	getRoomInfo(roomName,streamId) 
 	{
-		this.roomTimerId = setInterval(() => {
-			var jsCmd = {
+		var jsCmd = {
 				command : "getRoomInfo",
 				streamId : streamId,
 				room: roomName,
 		};
 		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
-		}, 5000);
 	}
 
 	enableTrack(mainTrackId, trackId, enabled) 
@@ -594,14 +629,17 @@ export class WebRTCAdaptor
 
 	gotStream(stream)
 	{
+		stream = this.setGainNodeStream(stream);
+
 		this.localStream = stream;
 		this.localVideo.srcObject = stream;
 		
 		if (this.webSocketAdaptor == null || this.webSocketAdaptor.isConnected() == false) {
-			this.webSocketAdaptor = new WebSocketAdaptor({websocket_url : this.websocket_url, webrtcadaptor : this, callback : this.callback, callbackError : this.callbackError})
+			this.webSocketAdaptor = new WebSocketAdaptor({websocket_url : this.websocket_url, webrtcadaptor : this, callback : this.callback, callbackError : this.callbackError, debug: this.debug})
 		}
-		this.getDevices()
-	};
+		this.getDevices();
+	}
+	
 	switchDesktopCapture(streamId){
 		this.publishMode = "screen";
 
@@ -613,10 +651,12 @@ export class WebRTCAdaptor
 		this.getUserMedia(this.mediaConstraints, audioConstraint, streamId);
 	}
 	/*
-	* This method captures the sound of desktop and merge it with the sound of microphone. 
-	* Gain values can be adjusted in the merged sound. composedStream is the merged sound stream.
+	* This method mixed the first stream audio to the second stream audio and 
+	* returns mixed stream. 
+	* stream: Initiali stream that contain video and audio
+	* 
 	*/
-	captureScreenSound(stream, micStream,streamId)
+	mixAudioStreams(stream, secondStream,streamId)
 	{
 		//console.debug("audio stream track count: " + audioStream.getAudioTracks().length);
 		var composedStream = new MediaStream();
@@ -626,28 +666,95 @@ export class WebRTCAdaptor
 		});
 
 		var audioContext = new AudioContext();
-		var desktopSoundGainNode = audioContext.createGain();
-
-		//Adjust the gain for screen sound
-		desktopSoundGainNode.gain.value = 1;
-
 		var audioDestionation = audioContext.createMediaStreamDestination();
-		var audioSource = audioContext.createMediaStreamSource(stream);
 
-		audioSource.connect(desktopSoundGainNode).connect(audioDestionation);;
+		if (stream.getAudioTracks().length > 0) {
+			this.soundOriginGainNode = audioContext.createGain();
 
-		this.micGainNode = audioContext.createGain();
-		
-		//Adjust the gain for microphone sound
-		this.micGainNode.gain.value = 0;
+			//Adjust the gain for screen sound
+			this.soundOriginGainNode.gain.value = 1;
+			var audioSource = audioContext.createMediaStreamSource(stream);
 
-		var audioSource2 = audioContext.createMediaStreamSource(micStream);
-		audioSource2.connect(this.micGainNode).connect(audioDestionation);;
+			audioSource.connect(this.soundOriginGainNode).connect(audioDestionation);
+		}
+		else {
+			console.debug("Origin stream does not have audio track")
+		}
+
+		if (secondStream.getAudioTracks().length > 0) {
+			this.secondStreamGainNode = audioContext.createGain();
+			
+			//Adjust the gain for second sound
+			this.secondStreamGainNode.gain.value = 1;
+
+			var audioSource2 = audioContext.createMediaStreamSource(secondStream);
+			audioSource2.connect(this.secondStreamGainNode).connect(audioDestionation);
+		}
+		else {
+			console.debug("Second stream does not have audio track")
+		}
 
 		audioDestionation.stream.getAudioTracks().forEach(function(track) {
 			composedStream.addTrack(track);
+			console.log("audio destination add track");
 		});
-		this.composedStream = composedStream;
+
+		return composedStream;
+	}
+
+	setGainNodeStream(stream){
+
+		// Get the videoTracks from the stream.
+  		const videoTracks = stream.getVideoTracks();
+
+  		// Get the audioTracks from the stream.
+  		const audioTracks = stream.getAudioTracks();
+
+  		/**
+   		* Create a new audio context and build a stream source,
+   		* stream destination and a gain node. Pass the stream into 
+   		* the mediaStreamSource so we can use it in the Web Audio API.
+   		*/
+  		let audioContext = new AudioContext();
+  		let mediaStreamSource = audioContext.createMediaStreamSource(stream);
+  		let mediaStreamDestination = audioContext.createMediaStreamDestination();
+  		this.soundOriginGainNode = audioContext.createGain();
+
+  		/**
+   		* Connect the stream to the gainNode so that all audio
+   		* passes through the gain and can be controlled by it.
+   		* Then pass the stream from the gain to the mediaStreamDestination
+   		* which can pass it back to the RTC client.
+   		*/
+  		mediaStreamSource.connect(this.soundOriginGainNode);
+  		this.soundOriginGainNode.connect(mediaStreamDestination);
+
+  		if(this.currentVolume == null){
+  			this.soundOriginGainNode.gain.value = 1;
+  		}
+  		else{
+  			this.soundOriginGainNode.gain.value = this.currentVolume;
+  		}
+
+  		/**
+   		* The mediaStreamDestination.stream outputs a MediaStream object
+   		* containing a single AudioMediaStreamTrack. Add the video track
+   		* to the new stream to rejoin the video with the controlled audio.
+   		*/
+  		const controlledStream = mediaStreamDestination.stream;
+
+  		for (const videoTrack of videoTracks) {
+    		controlledStream.addTrack(videoTrack);
+  		}
+		for (const audioTrack of audioTracks) {
+    		controlledStream.addTrack(audioTrack);
+  		}
+
+  		/**
+   		* Use the stream that went through the gainNode. This
+   		* is the same stream but with altered input volume levels.
+   		*/
+   		return controlledStream;
 	}
 
 	switchAudioInputSource(streamId, deviceId) 
@@ -704,11 +811,22 @@ export class WebRTCAdaptor
 	updateLocalAudioStream(stream, onEndedCallback) 
 	{
 		var audioTrack = this.localStream.getAudioTracks()[0];
-		this.localStream.removeTrack(audioTrack);
-		audioTrack.stop();
-		this.localStream.addTrack(stream.getAudioTracks()[0]);
-		this.localVideo.srcObject = this.localStream;
+		var newAudioTrack = stream.getAudioTracks()[0];
+		
+		if (audioTrack != null) 
+		{
+			this.localStream.removeTrack(audioTrack);
+			audioTrack.stop();
+		}
 
+		
+		this.localStream.addTrack(newAudioTrack);
+		
+		
+		if (this.localVideo != null) 
+		{   //it can be null
+			this.localVideo.srcObject = this.localStream;
+		}
 		if (onEndedCallback != null) {
 			stream.getAudioTracks()[0].onended = function(event) {
 				onEndedCallback(event);
@@ -757,6 +875,7 @@ export class WebRTCAdaptor
 	setVideoCameraSource(streamId, mediaConstraints, onEndedCallback, stopDesktop) 
 	{
 		this.navigatorUserMedia(mediaConstraints, stream => {
+			stream = this.setGainNodeStream(stream);
 			this.updateVideoTrack(stream, streamId, mediaConstraints, onEndedCallback, stopDesktop);
 			this.updateAudioTrack(stream, streamId, mediaConstraints, onEndedCallback);
 		}, true);
@@ -988,7 +1107,7 @@ export class WebRTCAdaptor
 						this.changeBandwidth(this.bandwidth, streamId).then(() => {
 							console.log("Bandwidth is changed to " + this.bandwidth);
 						})
-						.catch(e => console.error(e));
+						.catch(e => console.warn(e));
 					}
 				}
 			}

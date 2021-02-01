@@ -102,6 +102,7 @@ body {
 		<div id="players">
 			<div class="col-sm-3">
 				<video id="localVideo" autoplay muted controls playsinline></video>
+				<div style="margin-top:10px;" class="col-sm-8 col-sm-offset-2">Microphone Gain: <input type=range id=volume_change_input min=0 max=1 value=1 step=0.01></div>
 			</div>
 		</div>
 
@@ -171,12 +172,38 @@ body {
 	import {WebRTCAdaptor} from "./js/webrtc_adaptor.js"
     import {getUrlParameter} from "./js/fetch.stream.js" 
 
+    /**
+    * This page accepts 3 arguments through url parameter
+    * 1. "streamId": the stream id to publish stream. It's optional. ?streamId=stream1
+    * 2. "playOnly": If it's true, user does not publish stream. It only play streams in the room.
+    * 3. "token": It's experimental. 
+    */
+
 	var token = getUrlParameter("token");
 	var streamId = getUrlParameter("streamId");
 	var playOnly = getUrlParameter("playOnly");
 	if(playOnly == null) {
 		playOnly = false;
 	}
+
+	var volume_change_input = document.getElementById("volume_change_input");
+	volume_change_input.addEventListener("change", changeVolume);
+
+	function changeVolume(){
+	/**
+   	* Change the gain levels on the input selector.
+   	*/
+   		if(document.getElementById('volume_change_input') != null){
+   			webRTCAdaptor.currentVolume = this.value;
+        	if(webRTCAdaptor.soundOriginGainNode != null){
+        		webRTCAdaptor.soundOriginGainNode.gain.value = this.value; // Any number between 0 and 1.
+        	}
+
+       		if(webRTCAdaptor.secondStreamGainNode != null){
+       			webRTCAdaptor.secondStreamGainNode.gain.value = this.value; // Any number between 0 and 1.
+       		}
+   		}
+    }
 
 	var join_publish_button = document.getElementById("join_publish_button");
 	join_publish_button.addEventListener("click", joinRoom, false);
@@ -210,6 +237,7 @@ body {
 	var isDataChannelOpen = false;
 	var isMicMuted = false;
 	var isCameraOff = false;
+	var roomTimerId = -1;
 
 	function switchVideoMode(chbx){
 		if(chbx.value == "screen") {
@@ -354,6 +382,7 @@ body {
 			video.srcObject = null;
 			document.getElementById("players").removeChild(player);
 		}
+		webRTCAdaptor.stop(streamId);
 	}
 
 	function startAnimation() {
@@ -453,8 +482,10 @@ body {
 										roomNameBox.value);
 							});
 							streamsList = obj.streams;
-						}			
-						webRTCAdaptor.getRoomInfo(roomNameBox.value, obj.streamId);
+						}
+						roomTimerId = setInterval(() => {			
+							webRTCAdaptor.getRoomInfo(roomNameBox.value, publishStreamId);
+						}, 5000);
 					}
 					else if (info == "newStreamAvailable") {
 						playVideo(obj);
@@ -470,17 +501,6 @@ body {
 					else if (info == "publish_finished") {
 						//stream is being finished
 						console.debug("publish finished");
-						join_publish_button.disabled = false;
-						stop_publish_button.disabled = true;
-						
-						if (streamsList != null) {
-							streamsList.forEach(function(item) {
-								removeRemoteVideo(item);
-							});
-						}
-
-						// we need to reset streams list
-						streamsList = new Array();
 					} 
 					else if (info == "screen_share_stopped") {
 						console.log("screen share stopped");
@@ -495,11 +515,21 @@ body {
 					else if (info == "leavedFromRoom") {
 						var room = obj.ATTR_ROOM_NAME;
 						console.debug("leaved from the room:" + room);
-						if(playOnly) {
-							join_publish_button.disabled = false;
-							stop_publish_button.disabled = true;
+						if (roomTimerId != null)
+						{
+							clearInterval(roomTimerId);
 						}
 
+						join_publish_button.disabled = false;
+						stop_publish_button.disabled = true;
+						
+						if (streamsList != null) {
+							streamsList.forEach(function(item) {
+								removeRemoteVideo(item);
+							});
+						}
+						// we need to reset streams list
+						streamsList = new Array();
 					} 
 					else if (info == "closed") {
 						//console.log("Connection closed");
@@ -510,49 +540,27 @@ body {
 					} 
 					else if (info == "play_finished") {
 						console.log("play_finished");
-						var video = document.getElementById("remoteVideo"
-								+ obj.streamId);
-						if (video != null) {
-							video.srcObject = null;
-						}
+						removeRemoteVideo(obj.streamId);
 					} 
 					else if (info == "streamInformation") {
 						streamInformation(obj);
 					} 
 					else if (info == "roomInformation") {
-						var tempRoomStreamList = Array();
-						// Check stream is in room
-						// PS: Old room list mean streams doesn't have own stream ID
-						if (streamsList != null) {
-							for (var i = 0; i < streamsList.length; i++) {
-								var oldStreamListItem = streamsList[i];
-
-								var oldRoomItemIndex = streamsList.indexOf(oldStreamListItem);
-								var newRoomItemIndex = obj.streams.indexOf(oldStreamListItem);
-
-								// If streams item is in obj.streams, it's 
-								if(obj.streams.includes(oldStreamListItem)){
-									if (newRoomItemIndex > -1) {
-  										obj.streams.splice(newRoomItemIndex, 1);
-									}
-									tempRoomStreamList.push(oldStreamListItem);
-								}
-								else{
-									removeRemoteVideo(oldStreamListItem);
-								}
+						//Checks if any new stream has added, if yes, plays.
+						for(let str of obj.streams){
+							if(!streamsList.includes(str)){
+								webRTCAdaptor.play(str, token,
+										roomNameBox.value);
 							}
 						}
-
-						//Play new streams in list
-						if (obj.streams != null) {
-							obj.streams.forEach(function(item) {
-								tempRoomStreamList.push(item);
-								console.log("Stream joined with ID: "+item);
-								webRTCAdaptor.play(item, token,
-										roomNameBox.value);
-							});
+						// Checks if any stream has been removed, if yes, removes the view and stops webrtc connection.
+						for(let str of streamsList){
+							if(!obj.streams.includes(str)){
+								removeRemoteVideo(str);
+							}
 						}
-						streamsList = tempRoomStreamList;
+						//Lastly updates the current streamlist with the fetched one.
+						streamsList=obj.streams;
 					}
 					else if (info == "data_channel_opened") {
 						console.log("Data Channel open for stream id", obj );
@@ -568,6 +576,10 @@ body {
 				},
 				callbackError : function(error, message) {
 					//some of the possible errors, NotFoundError, SecurityError,PermissionDeniedError
+
+					if(error.indexOf("publishTimeoutError") != -1 && roomTimerId != null){
+						clearInterval(roomTimerId);
+					}
 
 					console.log("error callback: " + JSON.stringify(error));
 					var errorMessage = JSON.stringify(error);

@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<title>Ant Media Server WebRTC Publish</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta charset="UTF-8">
+	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+	integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+
+	<script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
+
+	<script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
+	<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
+
+
+	<style>
+		iframe {
+			width: 107% !important;
+			height: 100% !important;
+			border: 0px !important;
+			background: transparent;
+			z-index: 1;
+			left: -43px;
+			top: 0;
+			position: absolute;
+		}
+
+		video {
+			position: relative;
+			left: 0;
+			right: 0;
+			top: 0;
+			width: 100%;
+			height: auto;
+			z-index: 0;
+		}
+
+		/* Everything but the jumbotron gets side spacing for mobile first views */
+		.header,
+		.marketing,
+		.footer {
+			padding: 15px;
+		}
+
+		/* Custom page header */
+		.header {
+			padding-bottom: 20px;
+		}
+
+		/* Customize container */
+		@media (min-width : 768px) {
+			.container {
+				max-width: 730px;
+			}
+		}
+
+		.container-narrow>hr {
+			margin: 30px 0;
+		}
+
+		/* Main marketing message and sign up button */
+		.jumbotron {
+			text-align: center;
+		}
+
+		/* Responsive: Portrait tablets and up */
+		@media screen and (min-width: 768px) {
+
+			/* Remove the padding we set earlier */
+			.header,
+			.marketing,
+			.footer {
+				padding-right: 0;
+				padding-left: 0;
+			}
+		}
+
+		.options {
+			display: none;
+		}
+
+		#canvas-designer {
+			margin: 0px auto;
+			width: 100% !important;
+			height: 100% !important;
+			border-color: black !important;
+			border: 0 solid black !important;
+			position: absolute;
+			top: 0;
+		}
+		.jumbotron {
+			padding: 0;
+			overflow: hidden;
+			width: 105%;
+			margin: 0;
+			padding-bottom: 30px;
+		}
+		.forms {
+			position: relative;
+			z-index: 2;
+		}
+	</style>
+</head>
+
+<body>
+	<div class="container">
+		<div class="header clearfix">
+			<div class="row">
+				<h3 class="col text-muted">WebRTC Publish</h3>
+				<nav class="col align-self-center">
+					<ul class="nav float-right">
+						<li><a href="http://antmedia.io">Contact</a></li>
+					</ul>
+				</nav>
+			</div>
+		</div>
+	</div>
+
+	<div class="container">
+		<div class="row">
+			<div class="col-md-12">
+
+				<div class="jumbotron">
+
+					<video id="localVideo" autoplay muted controls playsinline></video>
+					<div id="canvas-designer"></div>
+					<br>
+					
+					<div class="forms">
+
+						<div class="form-group col-sm-12 text-left">
+							<input type="text" class="form-control" id="streamName" name="streamIdTextBox"
+							placeholder="Type stream name">
+						</div>
+
+						<div class="col-sm-12 text-right">
+							<button type="button" id="options" class="btn btn-outline-primary btn-sm">Options</button>
+						</div>
+
+						<div class="form-group col-sm-12 text-left options">
+
+							<label class=" mr-2" for="inlineFormCustomSelectPref">Max Video Bitrate(Kbps):</label>
+							<div class="form-inline">
+								<input type="text" class="form-control  mr-sm-2" id="maxBandwidthTextBox"
+								name="maxBandwidthTextBox">
+
+								<button type="button" class="btn btn-outline-primary btn-sm"
+								id="max_bandwidth_apply">Apply</button>
+							</div>
+							<div class="dropdown-divider"></div>
+							<legend class="col-form-label video-source-legend">Video Source</legend>
+							<a id="browser_screen_share_doesnt_support"
+							href="https://caniuse.com/#search=getDisplayMedia">Your browser doesn't support screen
+						share. You can see supported browsers in this link </a>
+						
+						<div class="dropdown-divider"></div>
+						<legend class="col-form-label audio-source-legend">Audio Source</legend>
+					</div>
+
+					<div class="dropdown-divider"></div>
+
+					<div class="form-group">
+						<button class="btn btn-primary" disabled id="start_publish_button">Start Publishing</button>
+						<button class="btn btn-primary" disabled id="stop_publish_button">Stop Publishing</button>
+						<button class="btn btn-primary" id="clear_draw">Clear Draw</button>
+					</div>
+
+					<span class="badge badge-success" id="broadcastingInfo" style="font-size:14px;display:none"
+					style="display: none">Publishing</span>
+					<div class="dropdown-divider"></div>
+					<div class="col-sm-10 offset-sm-1" id="stats_panel" style="display: none;">
+						<div class="row text-muted text-left">
+							<div class="col-sm-6">
+								<small>
+									<div id="average_bit_rate_container">Average Bitrate(Kbps): <span
+										id="average_bit_rate"></span></div>
+										<div id="latest_bit_rate_container">Latest Bitrate(Kbps): <span
+											id="latest_bit_rate"></span></div>
+											<div id="packet_lost_container">PacketsLost: <span id="packet_lost_text"></span>
+											</div>
+											<div id="jitter_text_container">Jitter(Secs): <span id="jitter_text"></span></div>
+										</small>
+									</div>
+									<div class="col-sm-6">
+										<small>
+											<div id="round_trip_time_container">Round Trip Time(Secs): <span
+												id="round_trip_time"></span></div>
+												<div id="source_resolution_container">Source WidthxHeight: <span
+													id="source_width"></span> x <span id="source_height"></span></div>
+													<div id="ongoing_resolution_container">On-going WidthxHeight: <span
+														id="ongoing_width"></span> x <span id="ongoing_height"></span></div>
+														<div id="on_going_fps_container">On-going FPS: <span id="on_going_fps"></span></div>
+
+													</small>
+												</div>
+											</div>
+										</div>
+
+									</div>
+
+								</div>
+
+								<!-- Row -->
+							</div>
+						</div>
+					</div>
+					<footer class="footer text-center">
+						<p>
+							<a href="http://antmedia.io">Ant Media Server</a>
+						</p>
+					</footer>
+
+
+					<!-- 1st step -->
+					<script src="js/canvas-designer-widget.js"></script>
+
+				</body>
+
+
+
+				<script type="module" lang="javascript">
+					import { WebRTCAdaptor } from "./js/webrtc_adaptor.js"
+					import { getUrlParameter } from "./js/fetch.stream.js"
+
+
+					function init() {
+						var id = getUrlParameter("id");
+						if (typeof id != "undefined") {
+							$("#streamName").val(id);
+						}
+						else {
+							id = getUrlParameter("name");
+							if (typeof id != "undefined") {
+								$("#streamName").val(id);
+							}
+							else {
+								$("#streamName").val("stream1");
+							}
+						}
+
+						$("#maxBandwidthTextBox").val(maxVideoBitrateKbps);
+						$("#max_bandwidth_apply").click(function () {
+							var bitrateBoxValue = $("#maxBandwidthTextBox").val();
+							if (bitrateBoxValue == "unlimited" || bitrateBoxValue == NaN) {
+								maxVideoBitrateKbps = "unlimited"
+								console.log("input bitrate: " + maxVideoBitrateKbps);
+								webRTCAdaptor.changeBandwidth(maxVideoBitrateKbps, $("#streamName").val());
+							}
+							else {
+								var bitrate = parseInt(bitrateBoxValue);
+								if (bitrate == NaN || bitrate < 100 || bitrate > 2500) {
+									maxVideoBitrateKbps = 900;
+								}
+								else {
+									maxVideoBitrateKbps = bitrate;
+								}
+								console.log("input bitrate: " + maxVideoBitrateKbps);
+								$("#maxBandwidthTextBox").val(maxVideoBitrateKbps)
+								if (webRTCAdaptor != null) {
+									webRTCAdaptor.changeBandwidth(maxVideoBitrateKbps, $("#streamName").val());
+								}
+							}
+						})
+					}
+					$(function () {
+						init();
+					});
+
+					var maxVideoBitrateKbps = 900;
+					var subscriberId = getUrlParameter("subscriberId");
+					var subscriberCode = getUrlParameter("subscriberCode");
+
+	//TODO: Migrate these methods to Jquery
+	var start_publish_button = document.getElementById("start_publish_button");
+	start_publish_button.addEventListener("click", startPublishing, false);
+	var stop_publish_button = document.getElementById("stop_publish_button");
+	stop_publish_button.addEventListener("click", stopPublishing, false);
+	var clear_draw = document.getElementById("clear_draw");
+	clear_draw.addEventListener("click", clearDraw, false);
+	var options = document.getElementById("options");
+	options.addEventListener("click", toggleOptions, false);
+
+	document.getElementById("streamName").defaultValue = "Goofy"
+	var streamNameBox = document.getElementById("streamName");
+	streamNameBox.value = "stream1";
+
+	var isDataChannelEnabled = false;
+
+	/**
+	 * If publishing stops for any reason, it tries to republish again.
+	 */
+	 var autoRepublishEnabled = true;
+	/**
+	 * Timer job that checks the WebRTC connection 
+	 */
+	 var autoRepublishIntervalJob = null;
+
+	 var streamId;
+
+	 var token = getUrlParameter("token");
+
+	// It should be true
+	var rtmpForward = getUrlParameter("rtmpForward");
+
+	function startPublishing() {
+		streamId = streamNameBox.value;
+		webRTCAdaptor.publish(streamId, token, subscriberId, subscriberCode);
+	}
+
+	function stopPublishing() {
+		if (autoRepublishIntervalJob != null) {
+			clearInterval(autoRepublishIntervalJob);
+			autoRepublishIntervalJob = null;
+		}
+		webRTCAdaptor.stop(streamId);
+	}
+
+	function clearDraw() {
+		designer.clearCanvas();
+	}
+
+	function switchVideoMode(chbx) {
+		if (chbx.value == "screen") {
+			//webRTCAdaptor.switchDesktopWithMicAudio(streamId);
+			webRTCAdaptor.switchDesktopCapture(streamId);
+		}
+		else if (chbx.value == "screenwithcamera") {
+			webRTCAdaptor.switchDesktopCaptureWithCamera(streamId);
+		}
+		else {
+			webRTCAdaptor.switchVideoCameraCapture(streamId, chbx.value);
+		}
+	}
+
+	function switchAudioMode(chbx) {
+		webRTCAdaptor.switchAudioInputSource(streamId, chbx.value);
+	}
+
+	function getCameraRadioButton(deviceName, deviceId) {
+		return "<div class=\"form-check form-check-inline\">" +
+		"<input class=\"form-check-input video-source\" name=\"videoSource\" type=\"radio\" value=\"" + deviceId + "\" id=\"" + deviceId + "\">" +
+		"<label class=\"form-check-label font-weight-light\" name=\"videoSource\" for=\"" + deviceId + "\" style=\"font-weight:normal\">" +
+		deviceName +
+		"</label>" +
+		"</div>";
+	}
+	function getScreenButton() {
+		return "<div class=\"form-check form-check-inline\">" +
+		"<input class=\"form-check-input video-source\" name=\"videoSource\" type=\"radio\" value=\"screen\" id=\"screen_share_checkbox\">" +
+		"<label class=\"form-check-label font-weight-light\" name=\"videoSource\" for=\"screen_share_checkbox\" style=\"font-weight:normal\">" +
+		"Screen" +
+		"</label>" +
+		"</div>"
+	}
+	function getScreenWithCamButton() {
+		return "<div class=\"form-check form-check-inline\">" +
+		"<input class=\"form-check-input video-source\" name=\"videoSource\" type=\"radio\" value=\"screenwithcamera\" id=\"screen_share_with_camera_checkbox\">" +
+		"<label class=\"form-check-label font-weight-light\" name=\"videoSource\" for=\"screen_share_with_camera_checkbox\" style=\"font-weight:normal\">" +
+		"Screen with Camera" +
+		"</label>" +
+		"</div>"
+	}
+	function getAudioRadioButton(deviceName, deviceId) {
+		return "<div class=\"form-check form-check-inline\">" +
+		"<input class=\"form-check-input audio-source\" name=\"audioDeviceSource\" type=\"radio\" value=\"" + deviceId + "\" id=\"" + deviceId + "\">" +
+		"<label class=\"form-check-label font-weight-light\" name=\"audioDeviceSource\" for=\"" + deviceId + "\" style=\"font-weight:normal\">" +
+		deviceName +
+		"</label>" +
+		"</div>";
+	}
+
+	function toggleOptions() {
+		$(".options").toggle();
+	}
+
+	function sendData(data) {
+		try {
+			var iceState = webRTCAdaptor.iceConnectionState(streamId);
+			if (iceState != null && iceState != "failed" && iceState != "disconnected" && isDataChannelEnabled) {
+				webRTCAdaptor.sendData($("#streamName").val(), data);
+			}
+			else {
+				designer.undo('all');
+				alert("WebRTC publishing is not active. Please click Start Publishing first or check your Data Channel option.")
+			}
+		}
+		catch (exception) {
+			designer.undo('all');
+			console.error(exception);
+			alert("Message cannot be sent. Make sure you've enabled data channel on server web panel");
+		}
+	}
+
+
+	function checkAndRepublishIfRequired() {
+		var iceState = webRTCAdaptor.iceConnectionState(streamId);
+		console.log("Ice state checked = " + iceState);
+
+		if (iceState == null || iceState == "failed" || iceState == "disconnected") {
+			webRTCAdaptor.stop(streamId);
+			webRTCAdaptor.closePeerConnection(streamId);
+			webRTCAdaptor.closeWebSocket();
+			initWebRTCAdaptor(true, autoRepublishEnabled);
+		}
+	}
+
+	function startAnimation() {
+
+		$("#broadcastingInfo").fadeIn(800, function () {
+			$("#broadcastingInfo").fadeOut(800, function () {
+				var state = webRTCAdaptor.signallingState(streamId);
+				if (state != null && state != "closed") {
+					var iceState = webRTCAdaptor.iceConnectionState(streamId);
+					if (iceState != null && iceState != "failed" && iceState != "disconnected") {
+						startAnimation();
+					}
+				}
+			});
+		});
+	}
+
+	var pc_config = {
+		'iceServers': [{
+			'urls': 'stun:stun1.l.google.com:19302'
+		}]
+	};
+	/* 
+	//sample turn configuration
+	{
+	   iceServers: [
+					{ urls: "",
+					  username: "",
+					  credential: "",
+					}
+				   ]
+	};
+	*/
+
+	var sdpConstraints = {
+		OfferToReceiveAudio: false,
+		OfferToReceiveVideo: false
+	};
+
+	var mediaConstraints = {
+		video: true,
+		audio: true
+	};
+
+		var appName = location.pathname.substring(0, location.pathname.lastIndexOf("/") + 1);
+		var path = location.hostname + ":" + location.port + appName + "websocket?rtmpForward=" + rtmpForward;
+		var websocketURL = "ws://" + path;
+
+		if (location.protocol.startsWith("https")) {
+			websocketURL = "wss://" + path;
+		}
+
+		var webRTCAdaptor = null;
+		var selectedRadio = null;
+		var selectedAudio = null;
+
+
+		(function () {
+			var params = {},
+			r = /([^&=]+)=?([^&]*)/g;
+
+			function d(s) {
+				return decodeURIComponent(s.replace(/\+/g, ' '));
+			}
+			var match, search = window.location.search;
+			while (match = r.exec(search.substring(1)))
+				params[d(match[1])] = d(match[2]);
+			window.params = params;
+		})();
+
+		function requestData() {
+			try {
+				var iceState = webRTCAdaptor.iceConnectionState(streamId);
+				if (iceState != null && iceState != "failed" && iceState != "disconnected" && isDataChannelEnabled) {
+
+					webRTCAdaptor.sendData($("#streamName").val(), "request");
+				}
+				else {
+					designer.undo('all');
+					alert("WebRTC playing is not active. Please click Start Playing first")
+				}
+			}
+			catch (exception) {
+				designer.undo('all');
+				console.error(exception);
+				alert("Message cannot be sent. Make sure you've enabled data channel and choose the correct player distribution on server web panel");
+			}
+		}
+
+	// here goes canvas designer
+	var designer = new CanvasDesigner();
+
+	// you can place widget.html anywhere
+	designer.widgetHtmlURL = 'js/canvas-designer.html';
+	designer.widgetJsURL = 'canvas-designer.js'
+
+	designer.setSelected('pencil');
+
+	designer.setTools({
+		pencil: true,
+		text: true,
+		image: true,
+		pdf: false,
+		eraser: true,
+		line: true,
+		arrow: true,
+		dragSingle: true,
+		dragMultiple: true,
+		arc: true,
+		rectangle: true,
+		quadratic: false,
+		bezier: false,
+		marker: true,
+		zoom: false,
+		lineWidth: false,
+		colorsPicker: false,
+		extraOptions: false,
+		code: false,
+		undo: true
+	});
+
+
+	designer.appendTo(document.getElementById('canvas-designer'));
+
+	function initWebRTCAdaptor(publishImmediately, autoRepublishEnabled) {
+		webRTCAdaptor = new WebRTCAdaptor({
+			websocket_url: websocketURL,
+			mediaConstraints: mediaConstraints,
+			peerconnection_config: pc_config,
+			sdp_constraints: sdpConstraints,
+			localVideoId: "localVideo",
+			debug: true,
+			bandwidth: maxVideoBitrateKbps,
+			callback: (info, obj) => {
+				if (info == "initialized") {
+					console.log("initialized");
+					start_publish_button.disabled = false;
+					stop_publish_button.disabled = true;
+					if (publishImmediately) {
+						webRTCAdaptor.publish(streamId, token)
+					}
+
+				} else if (info == "publish_started") {
+
+					console.log("publish started");
+					start_publish_button.disabled = true;
+					stop_publish_button.disabled = false;
+					startAnimation();
+					if (autoRepublishEnabled && autoRepublishIntervalJob == null) {
+						autoRepublishIntervalJob = setInterval(() => {
+							checkAndRepublishIfRequired();
+						}, 3000);
+					}
+					webRTCAdaptor.enableStats(obj.streamId);
+
+				} else if (info == "publish_finished") {
+					isDataChannelEnabled = false;
+					designer.undo('all');
+					//stream is being finished
+					console.log("publish finished");
+					start_publish_button.disabled = false;
+					stop_publish_button.disabled = true;
+					$("#stats_panel").hide();
+				}
+				else if (info == "browser_screen_share_supported") {
+					$(".video-source").prop("disabled", false);
+
+					console.log("browser screen share supported");
+					browser_screen_share_doesnt_support.style.display = "none";
+				}
+				else if (info == "screen_share_stopped") {
+					//choose the first video source. It may not be correct for all cases. 
+					$(".video-source").first().prop("checked", true);
+					console.log("screen share stopped");
+				}
+				else if (info == "closed") {
+					//console.log("Connection closed");
+					if (typeof obj != "undefined") {
+						console.log("Connecton closed: " + JSON.stringify(obj));
+					}
+				}
+				else if (info == "pong") {
+				}
+				else if (info == "refreshConnection") {
+					checkAndRepublishIfRequired();
+				}
+				else if (info == "ice_connection_state_changed") {
+					console.log("iceConnectionState Changed: ", JSON.stringify(obj));
+
+				}
+
+				else if (info == "data_channel_opened") {
+
+					isDataChannelEnabled = true;
+
+					var iceState = webRTCAdaptor.iceConnectionState(streamId);
+					if (iceState != null && iceState == "connected") {
+						if (designer.pointsLength > 0) {
+							designer.undo('all');
+						}
+						requestData();
+					}
+				}
+				else if (info == "data_received") {
+
+					if (obj.event.data == "request") {
+						designer.sync();
+					}
+					else {
+						designer.syncData(JSON.parse(obj.event.data));
+					}
+					console.log(obj.event.data);
+
+				}
+				else if (info == "updated_stats") {
+					//obj is the PeerStats which has fields
+					//averageOutgoingBitrate - kbits/sec
+					//currentOutgoingBitrate - kbits/sec
+					console.log("Average outgoing bitrate " + obj.averageOutgoingBitrate + " kbits/sec"
+						+ " Current outgoing bitrate: " + obj.currentOutgoingBitrate + " kbits/sec"
+						+ " video source width: " + obj.resWidth + " video source height: " + obj.resHeight
+						+ "frame width: " + obj.frameWidth + " frame height: " + obj.frameHeight
+						+ " video packetLost: " + obj.videoPacketsLost + " audio packetsLost: " + obj.audioPacketsLost
+						+ " video RTT: " + obj.videoRoundTripTime + " audio RTT: " + obj.audioRoundTripTime
+						+ " video jitter: " + obj.videoJitter + " audio jitter: " + obj.audioJitter);
+
+
+					$("#average_bit_rate").text(obj.averageOutgoingBitrate);
+					if (obj.averageOutgoingBitrate > 0) {
+						$("#average_bit_rate_container").show();
+					}
+					else {
+						$("#average_bit_rate_container").hide();
+					}
+
+					$("#latest_bit_rate").text(obj.currentOutgoingBitrate);
+					if (obj.currentOutgoingBitrate > 0) {
+						$("#latest_bit_rate_container").show();
+					}
+					else {
+						$("#latest_bit_rate_container").hide();
+					}
+					var packetLost = parseInt(obj.videoPacketsLost) + parseInt(obj.audioPacketsLost);
+
+					$("#packet_lost_text").text(packetLost);
+					if (packetLost > -1) {
+						$("#packet_lost_container").show();
+					}
+					else {
+						$("#packet_lost_container").hide();
+					}
+					var jitter = ((parseFloat(obj.videoJitter) + parseInt(obj.audioJitter)) / 2).toPrecision(3);
+					$("#jitter_text").text(jitter);
+					if (jitter > 0) {
+						$("#jitter_container").show();
+					}
+					else {
+						$("#jitter_container").hide();
+					}
+
+					var rtt = ((parseFloat(obj.videoRoundTripTime) + parseFloat(obj.audioRoundTripTime)) / 2).toPrecision(3);
+					$("#round_trip_time").text(rtt);
+					if (rtt > 0) {
+						$("#round_trip_time_container").show();
+					}
+					else {
+						$("#round_trip_time_container").hide();
+					}
+
+					$("#source_width").text(obj.resWidth);
+					$("#source_height").text(obj.resHeight);
+					if (obj.resWidth > 0 && obj.resHeight > 0) {
+						$("#source_resolution_container").show();
+					}
+					else {
+						$("#source_resolution_container").hide();
+					}
+
+					$("#ongoing_width").text(obj.frameWidth);
+					$("#ongoing_height").text(obj.frameHeight);
+					if (obj.frameWidth > 0 && obj.frameHeight > 0) {
+						$("#ongoing_resolution_container").show();
+					}
+					else {
+						$("#ongoing_resolution_container").hide();
+					}
+
+					$("#on_going_fps").text(obj.currentFPS);
+					if (obj.currentFPS > 0) {
+						$("#on_going_fps_container").show();
+					}
+					else {
+						$("#on_going_fps_container").hide();
+					}
+
+					$("#stats_panel").show();
+
+				}
+				else if (info == "available_devices") {
+					var videoHtmlContent = "";
+					var audioHtmlContent = "";
+					var devices = new Array();
+
+					var i = 0;
+					obj.forEach(function (device) {
+						var label = device.label;
+						var deviceId = device.deviceId;
+						var devices = new Array();
+
+						devices.forEach(function (same) {
+							if (same == device.label) {
+								i += 1;
+								label = device.label + " - " + i
+								deviceId = device.deviceId + i
+							}
+						})
+						if (device.kind == "videoinput") {
+							videoHtmlContent += getCameraRadioButton(label, device.deviceId);
+						}
+						else if (device.kind == "audioinput") {
+							audioHtmlContent += getAudioRadioButton(label, device.deviceId);
+						}
+						devices.push(device.label)
+					});
+					$('[name="videoSource"]').remove();
+					$('[name="audioDeviceSource"]').remove();
+
+					videoHtmlContent += getScreenButton();
+					videoHtmlContent += getScreenWithCamButton();
+
+					$(videoHtmlContent).insertAfter(".video-source-legend");
+					$(".video-source").first().prop("checked", true);
+
+					$(audioHtmlContent).insertAfter(".audio-source-legend");
+					$(".audio-source").first().prop("checked", true);
+
+
+					if (document.querySelector('input[name="videoSource"]')) {
+						document.querySelectorAll('input[name="videoSource"]').forEach((elem) => {
+							elem.addEventListener("change", function (event) {
+								var item = event.target;
+								switchVideoMode(item)
+								selectedRadio = item.value;
+							});
+						});
+					}
+					if (document.querySelector('input[name="audioSource"]')) {
+						document.querySelectorAll('input[name="audioSource"]').forEach((elem) => {
+							elem.addEventListener("change", function (event) {
+								var item = event.target;
+								switchAudioMode(item)
+								selectedAudio = item.value;
+							});
+						});
+					}
+					$(":radio[value=" + selectedRadio + "]").prop("checked", true);
+					$(":radio[value=" + selectedAudio + "]").prop("checked", true);
+				}
+				else {
+					console.log(info + " notification received");
+				}
+			},
+			callbackError: function (error, message) {
+				//some of the possible errors, NotFoundError, SecurityError,PermissionDeniedError
+
+				console.log("error callback: " + JSON.stringify(error));
+				var errorMessage = JSON.stringify(error);
+				if (typeof message != "undefined") {
+					errorMessage = message;
+				}
+				var errorMessage = JSON.stringify(error);
+				if (error.indexOf("NotFoundError") != -1) {
+					errorMessage = "Camera or Mic are not found or not allowed in your device";
+				}
+				else if (error.indexOf("NotReadableError") != -1 || error.indexOf("TrackStartError") != -1) {
+					errorMessage = "Camera or Mic is being used by some other process that does not let read the devices";
+				}
+				else if (error.indexOf("OverconstrainedError") != -1 || error.indexOf("ConstraintNotSatisfiedError") != -1) {
+					errorMessage = "There is no device found that fits your video and audio constraints. You may change video and audio constraints"
+				}
+				else if (error.indexOf("NotAllowedError") != -1 || error.indexOf("PermissionDeniedError") != -1) {
+					errorMessage = "You are not allowed to access camera and mic.";
+				}
+				else if (error.indexOf("TypeError") != -1) {
+					errorMessage = "Video/Audio is required";
+				}
+				else if (error.indexOf("ScreenSharePermissionDenied") != -1) {
+					errorMessage = "You are not allowed to access screen share";
+					$(".video-source").first().prop("checked", true);
+				}
+				else if (error.indexOf("WebSocketNotConnected") != -1) {
+					errorMessage = "WebSocket Connection is disconnected.";
+				}
+				alert(errorMessage);
+			}
+		});
+}
+
+	//initialize the WebRTCAdaptor
+	initWebRTCAdaptor(false, autoRepublishEnabled);
+
+	designer.addSyncListener(function (data) {
+		sendData(JSON.stringify(data));
+	});
+
+</script>
+
+
+</html>

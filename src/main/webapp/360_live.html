@@ -62,36 +62,46 @@
     */
 
 	import {WebRTCAdaptor} from "./js/webrtc_adaptor.js"
-    import {getUrlParameter, isMobile, tryToHLSPlay} from "./js/fetch.stream.js"
+    import {getUrlParameter, isMobile, tryToPlay, tryToVODPlay} from "./js/fetch.stream.js"
 	//The play order, player tries to play according to this order, if it can not play then tries following format
 	
 
-    var playOrder = getUrlParameter("playOrder");
-    if (playOrder == null || playOrder=="webrtc,hls") {
-        playOrder = ["webrtc", "hls"];
-    }
-    else if(playOrder == "hls,webrtc") {
-        playOrder=["hls", "webrtc"];
-    }
-    else if(playOrder == "hls") {
-        playOrder=["hls"];
-    }
-    else if(playOrder == "webrtc") {
-        playOrder=["webrtc"];
-    }
-    else if(playOrder == "vod") {
-        playOrder=["vod"];
-    }
-
-
-
-	var name = getUrlParameter("id");
-	if (name == null) {
-		name = getUrlParameter("name");
+	var playOrder = getUrlParameter("playOrder");
+	if (playOrder == null) {
+		playOrder = ["webrtc", "hls"];
 	}
-	var token = getUrlParameter("token");
+    else {
+        playOrder = playOrder.split(',');
+	}
 
+	var subscriberId = getUrlParameter("subscriberId");
+	var subscriberCode = getUrlParameter("subscriberCode");
+	
+	var streamId = getUrlParameter("id");
+	if (streamId == null) {
+		//check name variable for compatibility with older versions
+		streamId = getUrlParameter("name");
+	}
+
+	 var playType = getUrlParameter("playType") ;
+	 if (playType == null || playType=="mp4,webm"){
+		playType = ["mp4", "webm"];
+	 }
+	 else if(playType == "webm,mp4") {
+	 	playType=["webm", "mp4"];
+	 }
+	 else if(playType == "mp4"){
+	 	playType=["mp4"];
+	 }
+	 else if(playType == "webm"){
+	 	playType=["webm"];
+	 }
+	   
+	var token = getUrlParameter("token");
 	var pAutoplay = getUrlParameter("autoplay");
+	
+    var hlsExtension = "m3u8";
+
 	var autoPlay = true;
 	if (pAutoplay == "false" || isMobile()) {
 		autoPlay = false;
@@ -100,7 +110,38 @@
 	var webRTCAdaptor = null;
 	var streamsFolder = "streams";
 
-	let video = document.getElementById('remoteVideo');
+	var video = document.getElementById('remoteVideo');
+
+	function genericCallback(currentTech) {
+
+		setTimeout(function() 
+		{
+            var index = playOrder.indexOf(currentTech);
+			if (index == -1 || index == (playOrder.length-1)) {
+ 				index = 0;
+			}
+			else {
+				index++;
+			}
+
+			var tech = playOrder[index];
+
+			if (tech == "webrtc") 
+			{
+				// It means there is no HLS stream, so try to play WebRTC stream
+				if (webRTCAdaptor == null) {
+					initializeWebRTCPlayer(streamId, token, webrtcNoStreamCallback);
+				}
+				else {
+					webRTCAdaptor.getStreamInfo(streamId);
+				}
+			}
+			else if (tech == "hls")
+			{
+				tryToPlay(streamId, token, hlsExtension,  subscriberId, subscriberCode, hlsNoStreamCallback);
+			}
+		}, 3000);
+	}
 	
     function webrtcNoStreamCallback() {
       	/**
@@ -108,74 +149,46 @@
 		 * In some cases user may want to remove HLS from the order and force to play WebRTC only
 		 * in these cases player only waits for WebRTC streams
 		 */
-	     setTimeout(function(){
-		 if (playOrder.includes("hls"))
-		 {
-		   tryToHLSPlay(name, token, hlsNoStreamCallback);	
-		 } 
-		 else
-		 {
-			webRTCAdaptor.getStreamInfo(name);		
-		 }
-		}, 3000);
+	     genericCallback("webrtc");
 	}
     
-    function hlsNoStreamCallback() 
+ 	function hlsNoStreamCallback() 
     {
-		setTimeout(function() 
-		{
-			if (playOrder.includes("webrtc")) 
-			{
-				// It means there is no HLS stream, so try to play WebRTC stream
-				if (webRTCAdaptor == null) {
-					initializeWebRTCPlayer(name, token, webrtcNoStreamCallback);
-				}
-				else {
-					webRTCAdaptor.getStreamInfo(name);
-				}
-			}
-			else 
-			{
-				tryToHLSPlay(name, token, hlsNoStreamCallback);	
-			}
-		}, 3000);
-	    	
+	    genericCallback("hls");
     }
-    
+
     function vodNoStreamCallback() 
     {
 		setTimeout(function() 
 		{
 			if(playOrder.includes("vod")){
-				tryToVODPlay(name, token, vodNoStreamCallback);	
+				tryToVODPlay(streamId, token, vodNoStreamCallback, playType);	
 			}
 		}, 3000);
-	    	
     }
 
 	function playWebRTCVideo() {
 		document.getElementById("remoteVideo").play().then(function(value){
-
 		}).catch(function(error) {
 			console.log("User interaction needed to start playing");
 		});
 
 	}
 
-	function initializePlayer(name, extension, token) {
-		startPlayer(name, extension, token)
+	function initializePlayer(streamId, extension, token) {
+		startPlayer(streamId, extension, token)
 	}	
 
 	window.initializePlayer = initializePlayer;
-	
-	function startPlayer(name, extension, token) {
+
+	function startPlayer(streamId, extension, token) {
 
   		if(Hls.isSupported() && extension == "m3u8") {
         	var hls = new Hls({
          	   debug: false
         	});
 
-       	 	hls.loadSource('streams/' + name + "." + extension + '?token=' + token);
+       	 	hls.loadSource('streams/' + streamId + "." + extension + '?token=' + token);
         	hls.attachMedia(video);
         	hls.on(Hls.Events.MEDIA_ATTACHED, function() {
             	video.muted = true;
@@ -183,20 +196,19 @@
         	});
     	}
     	else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-        	video.src = 'streams/' + name + "." + extension + '?token=' + token;
+        	video.src = 'streams/' + streamId + "." + extension + '?token=' + token;
         	video.addEventListener('canplay',function() {
             	video.play();
         	});
     	}
 
     	else if (extension == "webm" || extension == "mp4") {
-	    	video.src = 'streams/' + name + "." + extension + '?token=' + token;
+	    	video.src = 'streams/' + streamId + "." + extension + '?token=' + token;
         	video.play();
     	}
-
 	}
 
-	function initializeWebRTCPlayer(name, token, noStreamCallback) {
+	function initializeWebRTCPlayer(streamId, token, noStreamCallback) {
 
 		var pc_config = {
 				'iceServers' : [ {
@@ -235,11 +247,11 @@
 			callback : function(info, description) {
 				if (info == "initialized") {
 					console.log("initialized");
-					webRTCAdaptor.getStreamInfo(name);
+					webRTCAdaptor.getStreamInfo(streamId);
 				}
 				else if (info == "streamInformation") {
 					console.log("stream information");
-					webRTCAdaptor.play(name, token);
+					webRTCAdaptor.play(streamId, token);
 				}
 				else if (info == "play_started") {
 					//joined the stream
@@ -253,7 +265,7 @@
 					console.log("play finished");
 					//check that publish may start again
 					setTimeout(function(){
-						webRTCAdaptor.getStreamInfo(name);
+						webRTCAdaptor.getStreamInfo(streamId);
 					}, 3000);
 				}
 				else if (info == "closed") {
@@ -262,7 +274,17 @@
 						console.log("Connecton closed: " + JSON.stringify(description));
 					}
 				}
+				else if (info == "bitrateMeasurement") {
 
+					console.debug(description);	
+					if(description.audioBitrate + description.videoBitrate > description.targetBitrate) 
+					{
+						document.getElementById("networkWarning").style.display = "block";
+						setTimeout(function() {
+							document.getElementById("networkWarning").style.display = "none";
+						}, 3000);
+					}
+				}
 			},
 			callbackError : function(error) {
 				//some of the possible errors, NotFoundError, SecurityError,PermissionDeniedError
@@ -279,7 +301,7 @@
 					/*
 					* If getting codec incompatible or remote description error, it will redirect HLS player.
 					*/
-					tryToHLSPlay(name, token, hlsNoStreamCallback);
+					tryToPlay(streamId, token, hlsExtension,  subscriberId, subscriberCode, hlsNoStreamCallback);
 					
 				}
 			}
@@ -288,17 +310,17 @@
 	
 	
 	
-	 if (name != "undefined")
+	 if (streamId != "undefined")
 	 {
 		
-		if (name.startsWith(streamsFolder)) 
+		if (streamId.startsWith(streamsFolder)) 
 		{
 			/*
-			* If name starts with streams, it's hls or mp4 file to be played
+			* If streamId starts with streams, it's hls or mp4 file to be played
 			*/
-			var lastIndexOfDot = name.lastIndexOf(".")
-			streamPath = name.substring(streamsFolder.length+1, lastIndexOfDot);
-			var extension = name.substring(lastIndexOfDot+1);
+			var lastIndexOfDot = streamId.lastIndexOf(".")
+			streamPath = streamId.substring(streamsFolder.length+1, lastIndexOfDot);
+			var extension = streamId.substring(lastIndexOfDot+1);
 			initializePlayer(streamPath, extension, token);
 		}
 		else {
@@ -307,15 +329,15 @@
 		    */
 			if (playOrder[0] == "webrtc" )
 			{
-				initializeWebRTCPlayer(name, token, webrtcNoStreamCallback);
+				initializeWebRTCPlayer(streamId, token, webrtcNoStreamCallback);
 			} 
 			else if (playOrder[0] == "hls" )
 			{
-				tryToHLSPlay(name, token, hlsNoStreamCallback);
+				tryToPlay(streamId, token, hlsExtension,  subscriberId, subscriberCode, hlsNoStreamCallback);
 			}
 			else if (playOrder[0] == "vod" )
 			{
-				tryToVODPlay(name, token, vodNoStreamCallback);	
+				tryToVODPlay(streamId, token, vodNoStreamCallback, playType);	
 			}
 			else {
 				alert("Unsupported play order requested. Supported formats are webrtc and hls. Use something like playOrder=webrtc,hls");

@@ -8,7 +8,7 @@
 <script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
 
 <style>
-video {
+video, canvas {
 	width: 100%;
 	max-width: 640px;
 }
@@ -70,7 +70,8 @@ video {
 		<div class="jumbotron">
 
 			<div class="col-sm-12 form-group">
-				<video id="remoteVideo" autoplay controls playsinline ></video>
+				<canvas id="canvas" ></canvas>
+				<video id="remoteVideo" autoplay controls playsinline style="display:none" ></video>
 			</div>
 			<div class="form-group col-sm-12 text-left">
 				<input type="text" class="form-control"
@@ -102,7 +103,10 @@ video {
 				
 			</div>
 
-			
+			<div class="alert alert-warning" role="alert">
+				Sychronize your device with a Network Time Server.<br/>
+				Typical accuracy is tens of milliseconds. 
+			</div>
 				<div class="form-group">
 					<button class="btn btn-primary"
 						id="start_play_button">Start Playing</button>
@@ -188,11 +192,37 @@ video {
 	var streamNameBox = document.getElementById("streamName")
 	streamNameBox.defaultValue = "stream1";
 
+
+	var canvas = document.getElementById('canvas');
+	var remoteVideoView = document.getElementById("remoteVideo");
+	function draw() 
+     {
+      if (canvas.getContext && remoteVideoView != null) {
+        var ctx = canvas.getContext('2d');
+
+        canvas.width = remoteVideoView.videoWidth;
+        canvas.height = remoteVideoView.videoHeight;
+
+        ctx.drawImage(remoteVideoView, 0, 0, canvas.width, canvas.height);
+
+		ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+		ctx.font = "20px Arial";
+		var text = "Play: " + Date.now();
+		var textMetrics = ctx.measureText(text);
+		ctx.fillRect(canvas.width - textMetrics.width - 20, canvas.height - 40, textMetrics.width+ 10, 30);
+		ctx.fillStyle = 'rgba(0, 0, 255, 1.0)';
+
+        ctx.fillText(text, canvas.width - textMetrics.width - 10, canvas.height - 20);
+      }
+    }
+
 	var streamId;
 	
 	function toggleOptions() {
 		$(".options").toggle();
 	}
+
+
 
 	function sendData() {
 		try {
@@ -277,6 +307,9 @@ video {
 				stop_play_button.disabled = false;
 				webRTCAdaptor.getStreamInfo(streamId); 
 				webRTCAdaptor.enableStats(obj.streamId);
+
+				//update canvas for every 20ms
+				setInterval(function() { draw(); }, 20);
 
 			} else if (info == "play_finished") {
 				//leaved the stream
@@ -443,9 +476,7 @@ video {
 				}
 				$("#video_bit_rate").text(parseInt(obj.audioBitrate) + parseInt(obj.videoBitrate));
 			}
-			else {
-				console.log( info + " notification received");
-			}
+	
 		},
 		callbackError : function(error) {
 			//some of the possible errors, NotFoundError, SecurityError,PermissionDeniedError
