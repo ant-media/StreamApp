@@ -315,7 +315,6 @@ export class WebRTCAdaptor
 			else{
 				this.updateVideoTrack(canvasStream,streamId,this.mediaConstraints,null,null);
 			}
-			var ckbx = document.getElementById("blur")
 			var draw = async () => {
 				const segmentation = await net.segmentPerson(cameraVideo);
 
