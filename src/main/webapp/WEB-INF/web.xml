@@ -28,6 +28,7 @@
 	<filter>
 		<filter-name>TokenFilter</filter-name>
 		<filter-class>io.antmedia.filter.TokenFilterManager</filter-class>
+		<async-supported>true</async-supported>
 	</filter>
 	<filter-mapping>
 		<filter-name>TokenFilter</filter-name>
@@ -38,6 +39,7 @@
 	<filter>
 		<filter-name>HttpForwardFilter</filter-name>
 		<filter-class>io.antmedia.filter.HttpForwardFilter</filter-class>
+		<async-supported>true</async-supported>
 	</filter>
 	<filter-mapping>
 		<filter-name>HttpForwardFilter</filter-name>
@@ -48,6 +50,7 @@
 	<filter>
 		<filter-name>HlsStatisticsFilter</filter-name>
 		<filter-class>io.antmedia.filter.HlsStatisticsFilter</filter-class>
+		<async-supported>true</async-supported>
 	</filter>
 	<filter-mapping>
 		<filter-name>HlsStatisticsFilter</filter-name>
@@ -68,38 +71,14 @@
 		 	<param-name>cors.allowed.headers</param-name>
             <param-value>Accept, Origin, X-Requested-With, Access-Control-Request-Headers, Content-Type, Access-Control-Request-Method, Authorization</param-value>
          </init-param>
+         <async-supported>true</async-supported>
 	</filter>
 	<filter-mapping>
 		<filter-name>CorsFilter</filter-name>
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>
 
-	<filter>
-		<filter-name>LoggerContextFilter</filter-name>
-		<filter-class>org.red5.logging.LoggerContextFilter</filter-class>
-	</filter>
 
-	<filter-mapping>
-		<filter-name>LoggerContextFilter</filter-name>
-		<url-pattern>/*</url-pattern>
-	</filter-mapping>
-
-	<!-- remove the following servlet tags if you want to disable remoting for 
-		this application -->
-	<servlet>
-		<servlet-name>gateway</servlet-name>
-		<servlet-class>
-			org.red5.server.net.servlet.AMFGatewayServlet
-		</servlet-class>
-		<load-on-startup>1</load-on-startup>
-	</servlet>
-
-	<!-- The servlet-mapping element defines a mapping between a servlet and 
-		a url pattern -->
-	<servlet-mapping>
-		<servlet-name>gateway</servlet-name>
-		<url-pattern>/gateway</url-pattern>
-	</servlet-mapping>
 	<servlet>
 		<servlet-name>jersey-serlvet</servlet-name>
 		<servlet-class>
@@ -120,7 +99,21 @@
 		<servlet-name>jersey-serlvet</servlet-name>
 		<url-pattern>/rest/*</url-pattern>
 	</servlet-mapping>
-
+	
+	<servlet>
+		<servlet-name>chunked-transfer-servlet</servlet-name>
+		<servlet-class>io.antmedia.servlet.ChunkedTransferServlet</servlet-class>
+		<async-supported>true</async-supported>
+		<load-on-startup>1</load-on-startup>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>chunked-transfer-servlet</servlet-name>
+		<url-pattern>/chunked/*</url-pattern>
+		<url-pattern>*.mpd</url-pattern>
+		<url-pattern>*.m4s</url-pattern>
+	</servlet-mapping>
+	
+	
 	<servlet-mapping>
 		<servlet-name>jsp</servlet-name>
 		<url-pattern>*.html</url-pattern>
@@ -134,10 +127,21 @@
 		<extension>ts</extension>
 		<mime-type>video/MP2T</mime-type>
 	</mime-mapping>
+	
+	<mime-mapping>
+		<extension>mpd</extension>
+		<mime-type>application/dash+xml</mime-type>
+	</mime-mapping>
+	
+	<mime-mapping>
+		<extension>m4s</extension>
+		<mime-type>video/iso.segment</mime-type>
+	</mime-mapping>
 
 	<filter>
 		<filter-name>RestJWTAuthenticationFilter</filter-name>
 		<filter-class>io.antmedia.filter.JWTFilter</filter-class>
+		<async-supported>true</async-supported>
 	</filter>
 	<filter-mapping>
 		<filter-name>RestJWTAuthenticationFilter</filter-name>
@@ -147,10 +151,14 @@
 	<filter>
 		<filter-name>RestAuthenticationFiler</filter-name>
 		<filter-class>io.antmedia.filter.IPFilter</filter-class>
+		<async-supported>true</async-supported>
 	</filter>
 	<filter-mapping>
 		<filter-name>RestAuthenticationFiler</filter-name>
 		<url-pattern>/rest/*</url-pattern>
+		
+		<!-- Add chunked servlet security filter. I'm not sure it's a good idea but it provides just simple protection  -->
+		<url-pattern>/chunked/*</url-pattern>
 	</filter-mapping>
 
 	<filter>
@@ -161,9 +169,18 @@
 			<param-value>access plus 0 seconds</param-value>
 		</init-param>
 		<init-param>
+			<param-name>ExpiresByType application/dash+xml</param-name>
+			<param-value>access plus 0 seconds</param-value>
+		</init-param>
+		<init-param>
 			<param-name>ExpiresByType video/MP2T</param-name>
 			<param-value>access plus 10 seconds</param-value>
 		</init-param>
+		<init-param>
+			<param-name>ExpiresByType video/iso.segment</param-name>
+			<param-value>access plus 10 seconds</param-value>
+		</init-param>
+		 <async-supported>true</async-supported>
 	</filter>
 
 	<filter-mapping>
