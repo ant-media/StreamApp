@@ -185,6 +185,9 @@ video, canvas {
 	var options = document.getElementById("options");
 	options.addEventListener("click", toggleOptions, false);
 
+	var publish_offset = document.getElementById("publisherOffset");
+	var play_offset= document.getElementById("playerOffset");
+
 	var streamNameBox = document.getElementById("streamName")
 	streamNameBox.defaultValue = "stream1";
 	if(enableVisionAPI == null || enableVisionAPI == undefined){
@@ -193,7 +196,8 @@ video, canvas {
 
 	//ENTER YOUR GOOGLE VISION API TOKEN FOR E2E latency measurement.
 	//It is the result of command = $gcloud auth application-default print-access-token
-	var visionToken = "ya29.a0AfH6SMAHvOlPo4LePA3amMnDxecM5jTvw-F3ekBKjZytPI12LzpfRU2r9cUdLpUR52CJiXyP2JJXQYgAvoaMnMl_kWkmR5fGlWHGXiLQx-CE8MSGWxllkmMKnOsX91deHdw4qrQVjJrVbZtud48xf0u1jAEV5a7btpITiLL1qjg";
+	var vis = document.getElementById("visionToken");
+	console.log(vis.value);
 
 
 	var canvas = document.getElementById('canvas');
@@ -276,12 +280,14 @@ video, canvas {
 	  var latency;
 	  
 	  function VisionAPI(img){
+		var visionToken = vis.value;
 		console.log("creating request for google vision API");
 		let request = new XMLHttpRequest();
-
+		console.log(visionToken);
 		request.onreadystatechange = function() {
 			if (request.readyState == XMLHttpRequest.DONE) {
 				console.log((request.responseText));
+				
 				let resp = JSON.parse(request.responseText);
 				let obj = resp.responses;
 				
@@ -289,13 +295,24 @@ video, canvas {
 				if(splitted == undefined || splitted == null){
 					console.error(request.responseText);
 				}
-				
-				let playTime = splitted[1].split(" ")[1];
-				let publishTime = splitted[0].split(" ")[1];
+				let playTime;
+				let publishTime;
+				splitted.forEach(element => {
+					var tmp = element.split(" ")[0]
+					if(tmp == "Publish:" ){
+						publishTime = element.split(" ")[1];
+					}
+					else if (tmp == "Play:"){
+						playTime = element.split(" ")[1];
+					}
+				})
+				let pub_offs = parseInt(publish_offset.value);
+				let play_offs = parseInt(play_offset.value);
+
 				console.log("player time = " + playTime + " Publisher time = " + publishTime);
 				let player_time = parseInt(playTime);
 				let publisher_time = parseInt(publishTime);
-				latency = player_time - publisher_time;
+				latency = (player_time + play_offs) - (publisher_time + pub_offs);
 				console.log("Latency = " + latency);
 				$("#latency").text(latency);
 				if (enableVisionAPI) {
@@ -536,5 +553,4 @@ video, canvas {
 	window.webRTCAdaptor = webRTCAdaptor;
 </script>
 </html>
-
 
