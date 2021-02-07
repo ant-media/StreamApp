@@ -1,11 +1,3 @@
-
-// Last time updated: 2019-02-08 7:50:22 AM UTC
-
-// _______________
-// Canvas-Designer
-
-// https://github.com/muaz-khan/Canvas-Designer
-
 'use strict';
 
 (function() {
@@ -1733,8 +1725,11 @@
     var pencilDrawHelper = clone(drawHelper);
 
     pencilDrawHelper.getOptions = function() {
-        return [pencilLineWidth, pencilStrokeStyle, fillStyle, globalAlpha, globalCompositeOperation, lineCap, lineJoin, font];
-    }
+		pencilLineWidth = document.getElementById('line-width-text').value;
+		pencilStrokeStyle = document.getElementById('stroke-style').value;
+
+	return [pencilLineWidth, pencilStrokeStyle, fillStyle, globalAlpha, globalCompositeOperation, lineCap, lineJoin, font];
+}
 
     var markerHandler = {
         ismousedown: false,
@@ -3031,6 +3026,7 @@
 
                     strokeStyle = 'White';
                     fillStyle = 'White';
+
                     lineWidth = 10;
                 } else if (cache.strokeStyle && cache.fillStyle && typeof cache.lineWidth !== 'undefined') {
                     strokeStyle = cache.strokeStyle;

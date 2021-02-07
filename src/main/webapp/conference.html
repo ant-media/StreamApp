@@ -501,17 +501,6 @@ body {
 					else if (info == "publish_finished") {
 						//stream is being finished
 						console.debug("publish finished");
-						join_publish_button.disabled = false;
-						stop_publish_button.disabled = true;
-						
-						if (streamsList != null) {
-							streamsList.forEach(function(item) {
-								removeRemoteVideo(item);
-							});
-						}
-
-						// we need to reset streams list
-						streamsList = new Array();
 					} 
 					else if (info == "screen_share_stopped") {
 						console.log("screen share stopped");
@@ -526,15 +515,21 @@ body {
 					else if (info == "leavedFromRoom") {
 						var room = obj.ATTR_ROOM_NAME;
 						console.debug("leaved from the room:" + room);
-						if(playOnly) {
-							join_publish_button.disabled = false;
-							stop_publish_button.disabled = true;
-						}
 						if (roomTimerId != null)
 						{
 							clearInterval(roomTimerId);
 						}
 
+						join_publish_button.disabled = false;
+						stop_publish_button.disabled = true;
+						
+						if (streamsList != null) {
+							streamsList.forEach(function(item) {
+								removeRemoteVideo(item);
+							});
+						}
+						// we need to reset streams list
+						streamsList = new Array();
 					} 
 					else if (info == "closed") {
 						//console.log("Connection closed");

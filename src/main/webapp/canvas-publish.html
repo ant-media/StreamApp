@@ -164,6 +164,7 @@
 					<div class="form-group">
 						<button class="btn btn-primary" disabled id="start_publish_button">Start Publishing</button>
 						<button class="btn btn-primary" disabled id="stop_publish_button">Stop Publishing</button>
+						<button class="btn btn-primary" id="clear_draw">Clear Draw</button>
 					</div>
 
 					<span class="badge badge-success" id="broadcastingInfo" style="font-size:14px;display:none"
@@ -276,6 +277,8 @@
 	start_publish_button.addEventListener("click", startPublishing, false);
 	var stop_publish_button = document.getElementById("stop_publish_button");
 	stop_publish_button.addEventListener("click", stopPublishing, false);
+	var clear_draw = document.getElementById("clear_draw");
+	clear_draw.addEventListener("click", clearDraw, false);
 	var options = document.getElementById("options");
 	options.addEventListener("click", toggleOptions, false);
 
@@ -312,6 +315,10 @@
 			autoRepublishIntervalJob = null;
 		}
 		webRTCAdaptor.stop(streamId);
+	}
+
+	function clearDraw() {
+		designer.clearCanvas();
 	}
 
 	function switchVideoMode(chbx) {
@@ -436,24 +443,10 @@
 		OfferToReceiveVideo: false
 	};
 
-
-
-
 	var mediaConstraints = {
 		video: true,
 		audio: true
 	};
-
-	/*
-		var mediaConstraints = {
-			video: {
-				width: { min: 480, ideal: 480, max: 1920 },
-				height: { min: 360, ideal: 360, max: 1080 }
-			},
-			audio: true
-		};
-		*/
-
 
 		var appName = location.pathname.substring(0, location.pathname.lastIndexOf("/") + 1);
 		var path = location.hostname + ":" + location.port + appName + "websocket?rtmpForward=" + rtmpForward;
@@ -524,7 +517,7 @@
 		quadratic: false,
 		bezier: false,
 		marker: true,
-		zoom: true,
+		zoom: false,
 		lineWidth: false,
 		colorsPicker: false,
 		extraOptions: false,
@@ -815,8 +808,6 @@
 	designer.addSyncListener(function (data) {
 		sendData(JSON.stringify(data));
 	});
-
-
 
 </script>
 

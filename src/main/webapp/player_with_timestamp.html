@@ -47,9 +47,10 @@ video, canvas {
 		padding-left: 0;
 	}
 }
+
 .options {
-		display:none;
-	}
+	display:none;
+}
 </style>
 </head>
 <body>
@@ -77,36 +78,34 @@ video, canvas {
 				<input type="text" class="form-control"
 					id="streamName" placeholder="Type stream name">
 			</div>
-			<div class="col-sm-12 text-right">
+			<div class="col-sm-12 text-right" style="margin-bottom:10px">
 				<button type="button" id="options" class="btn btn-outline-primary btn-sm">Options</button>
 			</div>
 			<div class="form-group col-sm-12 text-left options">
-				<div class="dropdown">
-  					<button class="btn btn-outline-primary btn-sm dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-    					Force Stream Resolution
-  					</button>
-  					<div id="dropdownMenu" class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-    					<a class="dropdown-item active" href="#" >Automatic</a>
-  					</div>
-				</div>
 				<div class="dropdown-divider"></div>
-				<label>Data Channel Messages</label>
-				<textarea class="form-control" id="dataMessagesTextarea" style="font-size:10px" rows="8"></textarea>
-				<div class="form-row">
-					<div class="form-group col-sm-10">
-						<input type="text" class="form-control" id="dataTextbox" placeholder="Write your message to send publisher/players">
-					</div>
-					<div class="form-group col-sm-2">
-					<button type="button" id="send" class="btn btn-outline-primary btn-block">Send</button>
-					</div>
-				</div>
-				
+				<label>Vision Token</label>
+				<input type="text" class="form-control"
+					id="visionToken" placeholder="Enter vision token">
+
+				<div class="dropdown-divider"></div>
+				<label>Publisher Time Offset</label>
+				<input type="text" class="form-control" value="0"
+						id="publisherOffset" placeholder="Enter Publisher offset">
+					
+				<label>Player Time Offset</label>
+				<input type="text" class="form-control" value="0"
+						id="playerOffset" placeholder="Enter Player offset">
 			</div>
 
 			<div class="alert alert-warning" role="alert">
-				Sychronize your device with a Network Time Server.<br/>
-				Typical accuracy is tens of milliseconds. 
+				Sychronize your device with a Network Time Server
 			</div>
+
+			
+			<div id="latency_container" class="form-group" >Latency: <span id="latency">0</span></div>
+
+			<a style="display:block;margin:10px" href="https://github.com/ant-media/Ant-Media-Server/wiki/How-to-Measure-E2E-Latency" >How to Measure E2E Latency Guide & Accuracy Estimation</a>
+
 				<div class="form-group">
 					<button class="btn btn-primary"
 						id="start_play_button">Start Playing</button>
@@ -122,8 +121,7 @@ video, canvas {
 							<div id="latest_bit_rate_container">Latest Bitrate(Kbps): <span id="latest_bit_rate"></span></div>
 							<div id="packet_lost_container">PacketsLost: <span id="packet_lost_text"></span></div>
 							<div id="jitter_container">Jitter Average Delay(Secs): <span id="jitter_text"></span></div>
-							<div id="audio_level_container">Audio Level: <span id="audio_level"></span></div>
-							
+							<div id="audio_level_container">Audio Level: <span id="audio_level"></span></div>				
 						</small>
 						</div>
 						<div class="col-sm-6">
@@ -158,7 +156,6 @@ video, canvas {
 
 
 	var token = getUrlParameter("token");
-    
 
 	$(function() {
 	  var id = getUrlParameter("id");
@@ -178,6 +175,7 @@ video, canvas {
 
 
 	var subscriberId = getUrlParameter("subscriberId");
+	var enableVisionAPI= getUrlParameter("enableVisionAPI");
 	var subscriberCode = getUrlParameter("subscriberCode");
 		
 	var start_play_button = document.getElementById("start_play_button");
@@ -186,11 +184,20 @@ video, canvas {
 	stop_play_button.addEventListener("click",stopPlaying,false);
 	var options = document.getElementById("options");
 	options.addEventListener("click", toggleOptions, false);
-	var send = document.getElementById("send");
-	send.addEventListener("click", sendData, false);
+
+	var publish_offset = document.getElementById("publisherOffset");
+	var play_offset= document.getElementById("playerOffset");
 
 	var streamNameBox = document.getElementById("streamName")
 	streamNameBox.defaultValue = "stream1";
+	if(enableVisionAPI == null || enableVisionAPI == undefined){
+		enableVisionAPI = true;
+	}
+
+	//ENTER YOUR GOOGLE VISION API TOKEN FOR E2E latency measurement.
+	//It is the result of command = $gcloud auth application-default print-access-token
+	var vis = document.getElementById("visionToken");
+	console.log(vis.value);
 
 
 	var canvas = document.getElementById('canvas');
@@ -222,25 +229,9 @@ video, canvas {
 		$(".options").toggle();
 	}
 
-
-
-	function sendData() {
-		try {
-			var iceState = webRTCAdaptor.iceConnectionState(streamId);
-            if (iceState != null && iceState != "failed" && iceState != "disconnected") {
-            
-				webRTCAdaptor.sendData($("#streamName").val(), $("#dataTextbox").val());
-				$("#dataMessagesTextarea").append("Sent: " + $("#dataTextbox").val() + "\r\n");
-				$("#dataTextbox").val("");
-			}
-			else {
-				alert("WebRTC playing is not active. Please click Start Playing first")
-			}
-		}
-		catch (exception) {
-			console.error(exception);
-			alert("Message cannot be sent. Make sure you've enabled data channel and choose the correct player distribution on server web panel");
-		}
+	function getBase64Img(){
+		var dataURL = canvas.toDataURL()
+		return dataURL.replace(/^data:image\/(png|jpg);base64,/, "");
 	}
 	
 	function startPlaying() {
@@ -271,6 +262,7 @@ video, canvas {
 	var appName = location.pathname.substring(0, location.pathname.lastIndexOf("/")+1);
 	var path =  location.hostname + ":" + location.port + appName + "websocket";
 	var websocketURL =  "ws://" + path;
+	var e2eLatencyInterval;
 	
 	if (location.protocol.startsWith("https")) {
 		websocketURL = "wss://" + path;
@@ -284,7 +276,73 @@ video, canvas {
         	$("#bitrateInfo").html("Weak Network Connection");
           });
         });
-      }
+	  }
+	  var latency;
+	  
+	  function VisionAPI(img){
+		var visionToken = vis.value;
+		console.log("creating request for google vision API");
+		let request = new XMLHttpRequest();
+		console.log(visionToken);
+		request.onreadystatechange = function() {
+			if (request.readyState == XMLHttpRequest.DONE) {
+				console.log((request.responseText));
+				
+				let resp = JSON.parse(request.responseText);
+				let obj = resp.responses;
+				
+				let splitted = obj[0]["fullTextAnnotation"]["text"].split("\n");
+				if(splitted == undefined || splitted == null){
+					console.error(request.responseText);
+				}
+				let playTime;
+				let publishTime;
+				splitted.forEach(element => {
+					var tmp = element.split(" ")[0]
+					if(tmp == "Publish:" ){
+						publishTime = element.split(" ")[1];
+					}
+					else if (tmp == "Play:"){
+						playTime = element.split(" ")[1];
+					}
+				})
+				let pub_offs = parseInt(publish_offset.value);
+				let play_offs = parseInt(play_offset.value);
+
+				console.log("player time = " + playTime + " Publisher time = " + publishTime);
+				let player_time = parseInt(playTime);
+				let publisher_time = parseInt(publishTime);
+				latency = (player_time + play_offs) - (publisher_time + pub_offs);
+				console.log("Latency = " + latency);
+				$("#latency").text(latency);
+				if (enableVisionAPI) {
+					$("#latency_container").show();
+				}
+				else {
+					$("#latency_container").hide();
+				}
+
+			}
+		}
+		request.open("POST" ,"https://vision.googleapis.com/v1/images:annotate");
+		request.setRequestHeader("Authorization", "Bearer " + visionToken);
+		request.setRequestHeader("Content-type", "application/json; charset=utf-8");
+		request.send(JSON.stringify({
+		"requests": [
+			{
+			"image": {
+				"content": img
+			},
+			"features": [
+				{
+				"type": "TEXT_DETECTION"
+				}
+			]
+			}
+		]
+		}));
+		console.log(request.status);
+	}
 
 	var webRTCAdaptor = new WebRTCAdaptor({
 		websocket_url : websocketURL,
@@ -307,16 +365,22 @@ video, canvas {
 				stop_play_button.disabled = false;
 				webRTCAdaptor.getStreamInfo(streamId); 
 				webRTCAdaptor.enableStats(obj.streamId);
-
 				//update canvas for every 20ms
 				setInterval(function() { draw(); }, 20);
-
+				if(enableVisionAPI){
+					e2eLatencyInterval = setInterval(function() { 
+						let img = getBase64Img(); 
+						VisionAPI(img);
+						
+					}, 5000);
+				}
 			} else if (info == "play_finished") {
 				//leaved the stream
 				console.log("play finished");
 				start_play_button.disabled = false;
 				stop_play_button.disabled = true;
 				$("#stats_panel").hide();
+				clearInterval(e2eLatencyInterval);
 				// Reset stream resolutions in dropdown
 				document.getElementById("dropdownMenu").innerHTML = '<a class="dropdown-item active" href="#">Automatic</a>'; 
 			} else if (info == "closed") {
@@ -489,5 +553,4 @@ video, canvas {
 	window.webRTCAdaptor = webRTCAdaptor;
 </script>
 </html>
-
 

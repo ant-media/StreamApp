@@ -157,7 +157,8 @@
 			}
 			else if (tech == "dash") 
 			{
-				tryToPlay(streamId, token, dashExtension, subscriberId, subscriberCode, dashNoStreamCallback);	
+				var dashFile = streamId + "/" + streamId;
+				tryToPlay(dashFile, token, dashExtension, subscriberId, subscriberCode, dashNoStreamCallback);	
 			}
 		}, 3000);
 	}
@@ -282,6 +283,7 @@
 		player.src({
   			src: "streams/" + streamId + "." + extension + "?token=" + token + "&subscriberId="+subscriberId +"&subscriberCode="+subscriberCode,
   			type: type,
+            withCredentials: true,
 		});
 		
 			player.poster("previews/"+preview+".png");
@@ -324,6 +326,11 @@
 			if (autoPlay && player.isReady()) {
 				player.play();
 			}
+
+			setInterval(function() {
+				console.log("live latency: " + player.getCurrentLiveLatency());
+				}, 2000);
+			
 
 		}
 		//Check HLS player is finished. If finished page should be reload

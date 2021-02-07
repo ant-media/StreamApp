@@ -21,7 +21,6 @@ export class WebRTCAdaptor
 		this.playStreamId = new Array();
 		this.currentVolume = null;
 
-		this.audioContext = null;
 	    this.soundOriginGainNode = null;
 		this.secondStreamGainNode = null;
 		this.localStream = null;
@@ -33,6 +32,7 @@ export class WebRTCAdaptor
 		this.isPlayMode = false;
 		this.debug = false;
 		this.viewerInfo = "";
+		this.onlyDataChannel = false;
 
 		this.publishMode="camera"; //screen, screen+camera
 
@@ -84,12 +84,12 @@ export class WebRTCAdaptor
 			this.publishMode="screen+camera";
 		}
 				
-
-		if (!this.isPlayMode && typeof this.mediaConstraints != "undefined" && this.localStream == null)
+		//Check browser support for screen share function
+		this.checkBrowserScreenShareSupported();
+		
+		if (!this.isPlayMode && !this.onlyDataChannel && typeof this.mediaConstraints != "undefined" && this.localStream == null)
 		{
 			this.checkWebRTCPermissions();
-			//Check browser support for screen share function
-			this.checkBrowserScreenShareSupported();
 
 			// Get devices only in publish mode.
 			this.getDevices();
@@ -397,8 +397,19 @@ export class WebRTCAdaptor
 
 	publish(streamId, token, subscriberId, subscriberCode) 
 	{
+		if (this.onlyDataChannel) {
+			var jsCmd = {
+				command : "publish",
+				streamId : streamId,
+				token : token,
+				subscriberId: typeof subscriberId !== undefined ? subscriberId : "" ,
+				subscriberCode: typeof subscriberCode !== undefined ? subscriberCode : "",
+				video: false,
+				audio: false,
+			};
+		}
 		//If it started with playOnly mode and wants to publish now
-		if(this.localStream == null){
+		else if(this.localStream == null){
 			this.navigatorUserMedia(this.mediaConstraints, (stream => {
 				this.gotStream(stream);
 				var jsCmd = {
@@ -408,11 +419,12 @@ export class WebRTCAdaptor
 					subscriberId: typeof subscriberId !== undefined ? subscriberId : "" ,
 					subscriberCode: typeof subscriberCode !== undefined ? subscriberCode : "",
 					video: this.localStream.getVideoTracks().length > 0 ? true : false,
-							audio: this.localStream.getAudioTracks().length > 0 ? true : false,
+					audio: this.localStream.getAudioTracks().length > 0 ? true : false,
 				};
 				this.webSocketAdaptor.send(JSON.stringify(jsCmd));
 			}), false);
-		}else{
+		} 
+		else{
 			var jsCmd = {
 					command : "publish",
 					streamId : streamId,
@@ -420,7 +432,7 @@ export class WebRTCAdaptor
 					subscriberId: typeof subscriberId !== undefined ? subscriberId : "" ,
 					subscriberCode: typeof subscriberCode !== undefined ? subscriberCode : "",
 					video: this.localStream.getVideoTracks().length > 0 ? true : false,
-							audio: this.localStream.getAudioTracks().length > 0 ? true : false,
+					audio: this.localStream.getAudioTracks().length > 0 ? true : false,
 			};
 		}
 		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
@@ -585,15 +597,15 @@ export class WebRTCAdaptor
 			composedStream.addTrack(videoTrack);
 		});
 
-		this.audioContext = new AudioContext();
-		var audioDestionation = this.audioContext.createMediaStreamDestination();
+		var audioContext = new AudioContext();
+		var audioDestionation = audioContext.createMediaStreamDestination();
 
 		if (stream.getAudioTracks().length > 0) {
-			this.soundOriginGainNode = this.audioContext.createGain();
+			this.soundOriginGainNode = audioContext.createGain();
 
 			//Adjust the gain for screen sound
 			this.soundOriginGainNode.gain.value = 1;
-			var audioSource = this.audioContext.createMediaStreamSource(stream);
+			var audioSource = audioContext.createMediaStreamSource(stream);
 
 			audioSource.connect(this.soundOriginGainNode).connect(audioDestionation);
 		}
@@ -602,12 +614,12 @@ export class WebRTCAdaptor
 		}
 
 		if (secondStream.getAudioTracks().length > 0) {
-			this.secondStreamGainNode = this.audioContext.createGain();
+			this.secondStreamGainNode = audioContext.createGain();
 			
 			//Adjust the gain for second sound
 			this.secondStreamGainNode.gain.value = 1;
 
-			var audioSource2 = this.audioContext.createMediaStreamSource(secondStream);
+			var audioSource2 = audioContext.createMediaStreamSource(secondStream);
 			audioSource2.connect(this.secondStreamGainNode).connect(audioDestionation);
 		}
 		else {
@@ -635,10 +647,10 @@ export class WebRTCAdaptor
    		* stream destination and a gain node. Pass the stream into 
    		* the mediaStreamSource so we can use it in the Web Audio API.
    		*/
-  		this.audioContext = new AudioContext();
-  		let mediaStreamSource = this.audioContext.createMediaStreamSource(stream);
-  		let mediaStreamDestination = this.audioContext.createMediaStreamDestination();
-  		this.soundOriginGainNode = this.audioContext.createGain();
+  		let audioContext = new AudioContext();
+  		let mediaStreamSource = audioContext.createMediaStreamSource(stream);
+  		let mediaStreamDestination = audioContext.createMediaStreamDestination();
+  		this.soundOriginGainNode = audioContext.createGain();
 
   		/**
    		* Connect the stream to the gainNode so that all audio
