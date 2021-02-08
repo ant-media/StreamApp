@@ -284,7 +284,6 @@ video {
 	function startPublishing() {
 		streamId = streamNameBox.value;
 		webRTCAdaptor.publish(streamId, token, subscriberId, subscriberCode);
-		enableAudioLevel();
 	}
 
 	function stopPublishing() {
@@ -467,6 +466,7 @@ video {
 							}, 3000);
 						}
 						webRTCAdaptor.enableStats(obj.streamId);
+						enableAudioLevel();
 					} else if (info == "publish_finished") {
 						//stream is being finished
 						console.log("publish finished");
