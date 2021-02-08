@@ -162,7 +162,7 @@
 		setTimeout(function() 
 		{
 			if(playOrder.includes("vod")){
-				tryToVODPlay(streamId, token, vodNoStreamCallback, playType);	
+				tryToVODPlay(streamId, token, subscriberId, subscriberCode, vodNoStreamCallback, playType);
 			}
 		}, 3000);
     }
@@ -337,7 +337,7 @@
 			}
 			else if (playOrder[0] == "vod" )
 			{
-				tryToVODPlay(streamId, token, vodNoStreamCallback, playType);	
+				tryToVODPlay(streamId, token, subscriberId, subscriberCode, vodNoStreamCallback, playType);	
 			}
 			else {
 				alert("Unsupported play order requested. Supported formats are webrtc and hls. Use something like playOrder=webrtc,hls");
