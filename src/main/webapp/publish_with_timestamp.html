@@ -81,7 +81,8 @@
             </div>
             
             <div class="alert alert-warning" role="alert">
-				Sychronize your device with a Network Time Server			
+				Sychronize your device with a Network Time Server.<br/>
+				Typical accuracy is tens of milliseconds. 
 			</div>
             <div class="form-group">	
                 <button class="btn btn-primary" disabled
@@ -133,6 +134,10 @@
 
 
 	var token = "<%= request.getParameter("token") %>";
+
+	var camera_checkbox = document.getElementById("camera_checkbox");
+	var screen_share_checkbox = document.getElementById("screen_share_checkbox");
+  	var screen_share_with_camera_checkbox = document.getElementById("screen_share_with_camera_checkbox");
 
 	var start_publish_button = document.getElementById("start_publish_button");
 	
@@ -233,10 +238,8 @@
 					stop_publish_button.disabled = true;
 				}
 				else if (info == "browser_screen_share_supported") {
-					console.log("browser screen share supported");
 				}
 				else if (info == "screen_share_stopped") {
-					console.log("screen share stopped");
 				}
 				else if (info == "closed") {
 					//console.log("Connection closed");
@@ -289,6 +292,9 @@
 				}
 				else if (error.indexOf("ScreenSharePermissionDenied") != -1) {
 					errorMessage = "You are not allowed to access screen share";
+					camera_checkbox.checked = true;
+					screen_share_checkbox.checked = false;
+					screen_share_with_camera_checkbox.checked = false;
 				}
 				else if (error.indexOf("WebSocketNotConnected") != -1) {
 					errorMessage = "WebSocket Connection is disconnected.";

@@ -48,7 +48,10 @@ video, canvas {
 	}
 }
 
-.options {
+.visionAPI {
+	display:none;
+}
+.awsRekog{
 	display:none;
 }
 </style>
@@ -78,10 +81,12 @@ video, canvas {
 				<input type="text" class="form-control"
 					id="streamName" placeholder="Type stream name">
 			</div>
+			<form>
 			<div class="col-sm-12 text-right" style="margin-bottom:10px">
-				<button type="button" id="options" class="btn btn-outline-primary btn-sm">Options</button>
+				<input type="radio" name = "options" id="AWSrekognition" class="btn btn-outline-primary btn-sm">Amazon Rekognition</input>
+				<input type="radio" name= "options" id="visionAPI" class="btn btn-outline-primary btn-sm">Google Vision API</input>
 			</div>
-			<div class="form-group col-sm-12 text-left options">
+			<div class="form-group col-sm-12 text-left visionAPI">
 				<div class="dropdown-divider"></div>
 				<label>Vision Token</label>
 				<input type="text" class="form-control"
@@ -96,7 +101,28 @@ video, canvas {
 				<input type="text" class="form-control" value="0"
 						id="playerOffset" placeholder="Enter Player offset">
 			</div>
+			<div class="form-group col-sm-12 text-left awsRekog">
+				<div class="dropdown-divider2"></div>
+				<label>AWS Region</label>
+				<input type="text" class="form-control"
+					id="region" placeholder="Enter AWS Region (ex. us-east-1)">
+				<label>AWS Access Key ID</label>
+				<input type="text" class="form-control"
+					id="accessKeyId" placeholder="Enter AWS Access Key ID">
+				<label>AWS Secret Key</label>
+				<input type="text" class="form-control"
+					id="secretKeyId" placeholder="Enter AWS Secret Key">
 
+				<div class="dropdown-divider2"></div>
+				<label>Publisher Time Offset</label>
+				<input type="text" class="form-control" value="0"
+						id="publisherOffset" placeholder="Enter Publisher offset">
+					
+				<label>Player Time Offset</label>
+				<input type="text" class="form-control" value="0"
+						id="playerOffset" placeholder="Enter Player offset">
+			</div>
+		</form>
 			<div class="alert alert-warning" role="alert">
 				Sychronize your device with a Network Time Server
 			</div>
@@ -147,7 +173,8 @@ video, canvas {
 
 	<script src="https://code.jquery.com/jquery-3.4.1.min.js"  crossorigin="anonymous"></script>
 	<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" crossorigin="anonymous"></script>
-	<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"  crossorigin="anonymous"></script>	
+	<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"  crossorigin="anonymous"></script>
+	<script src="https://sdk.amazonaws.com/js/aws-sdk-2.839.0.min.js"></script>	
 
 </body>
 <script type="module">
@@ -175,29 +202,37 @@ video, canvas {
 
 
 	var subscriberId = getUrlParameter("subscriberId");
-	var enableVisionAPI= getUrlParameter("enableVisionAPI");
 	var subscriberCode = getUrlParameter("subscriberCode");
 		
 	var start_play_button = document.getElementById("start_play_button");
 	start_play_button.addEventListener("click", startPlaying, false)
 	var stop_play_button = document.getElementById("stop_play_button");
 	stop_play_button.addEventListener("click",stopPlaying,false);
-	var options = document.getElementById("options");
-	options.addEventListener("click", toggleOptions, false);
+
+	var googlevis = document.getElementById("visionAPI");
+	googlevis.addEventListener("click", toggleOptions, false);
+	var enableVisionAPI = false;
+
+	var awsRekog = document.getElementById("AWSrekognition");
+	awsRekog.addEventListener("click", toggleOptions, false);
+	var enableRekognition = false;
 
 	var publish_offset = document.getElementById("publisherOffset");
 	var play_offset= document.getElementById("playerOffset");
 
+	var aws_region = document.getElementById("region");
+
 	var streamNameBox = document.getElementById("streamName")
 	streamNameBox.defaultValue = "stream1";
-	if(enableVisionAPI == null || enableVisionAPI == undefined){
-		enableVisionAPI = true;
-	}
+
 
 	//ENTER YOUR GOOGLE VISION API TOKEN FOR E2E latency measurement.
 	//It is the result of command = $gcloud auth application-default print-access-token
 	var vis = document.getElementById("visionToken");
 	console.log(vis.value);
+
+	var awsID = document.getElementById("accessKeyId");
+	var awsSecret = document.getElementById("secretKeyId");
 
 
 	var canvas = document.getElementById('canvas');
@@ -226,8 +261,46 @@ video, canvas {
 	var streamId;
 	
 	function toggleOptions() {
-		$(".options").toggle();
+		if(googlevis.checked == true){
+			$(".visionAPI").toggle();
+			$(".awsRekog").hide();
+			enableRekognition = false;
+			if(enableVisionAPI == true){
+				enableVisionAPI = false;
+			}else{
+				enableVisionAPI = true;
+			}
+			console.log("rekogn = " + enableRekognition + " visin = " + enableVisionAPI)
+		}
+		else if(awsRekog.checked == true){
+			$(".awsRekog").toggle();
+			$(".visionAPI").hide();
+			enableVisionAPI = false;
+			if(enableRekognition == true){
+				enableRekognition = false;
+			}else{
+				enableRekognition = true;
+			}
+			console.log("rekogn = " + enableRekognition + " visin = " + enableVisionAPI)
+		}
 	}
+
+	function getBinary(base64Image) {
+        //var base64Image = encodedFile.split("data:image/jpeg;base64,")[1];
+        var binaryImg = atob(base64Image);
+        var length = binaryImg.length;
+        var ab = new ArrayBuffer(length);
+        var ua = new Uint8Array(ab);
+        for (var i = 0; i < length; i++) {
+          ua[i] = binaryImg.charCodeAt(i);
+        }
+
+        var blob = new Blob([ab], {
+          type: "image/jpeg"
+        });
+
+        return ab;
+      }
 
 	function getBase64Img(){
 		var dataURL = canvas.toDataURL()
@@ -278,12 +351,68 @@ video, canvas {
         });
 	  }
 	  var latency;
+
+	  function AwsRekognition(img){
+		console.log("Creating request for AWS Rekognition");
+		let awsReg = "us-east-1"
+		if(aws_region.value != null || aws_region.value != undefined){
+			awsReg = aws_region.value;	
+		}
+		AWS.region = awsReg;
+		AWS.config.update({
+			region: awsReg,
+			accessKeyId: awsID.value,
+			secretAccessKey: awsSecret.value});
+
+    	var rekognition = new AWS.Rekognition();
+		var rekimg = getBinary(img);
+    	var params = {
+		Image: {
+			Bytes: rekimg
+			}
+		};
+    	rekognition.detectText(params, function(err, data) {
+			if (err) console.log(err, err.stack); // an error occurred
+			else     console.log(data);           // successful response
+
+			let splitted = data["TextDetections"]
+			console.log("splitted = " + splitted )
+			if(splitted == undefined || splitted == null){
+				console.error("No response from AWS");
+			}
+			let playTime;
+			let publishTime;
+			splitted.forEach(element => {
+				var tmp = element["DetectedText"].split(" ")[0]
+				if(tmp == "Publish:" && element["DetectedText"].length > 10 ){
+					publishTime = element["DetectedText"].split(" ")[1];
+				}
+				else if (tmp == "Play:" && element["DetectedText"].length > 10){
+					playTime = element["DetectedText"].split(" ")[1];
+				}
+			})
+			let pub_offs = parseInt(publish_offset.value);
+			let play_offs = parseInt(play_offset.value);
+
+			console.log("player time = " + playTime + " Publisher time = " + publishTime);
+			let player_time = parseInt(playTime);
+			let publisher_time = parseInt(publishTime);
+			latency = (player_time + play_offs) - (publisher_time + pub_offs);
+			console.log("Latency = " + latency);
+			$("#latency").text(latency);
+			
+			$("#latency_container").show();
+
+
+		});
+	  }
 	  
 	  function VisionAPI(img){
 		var visionToken = vis.value;
 		console.log("creating request for google vision API");
 		let request = new XMLHttpRequest();
 		console.log(visionToken);
+
 		request.onreadystatechange = function() {
 			if (request.readyState == XMLHttpRequest.DONE) {
 				console.log((request.responseText));
@@ -367,13 +496,20 @@ video, canvas {
 				webRTCAdaptor.enableStats(obj.streamId);
 				//update canvas for every 20ms
 				setInterval(function() { draw(); }, 20);
-				if(enableVisionAPI){
-					e2eLatencyInterval = setInterval(function() { 
-						let img = getBase64Img(); 
+				
+				e2eLatencyInterval = setInterval(function() { 
+					let img = getBase64Img(); 
+					if(enableVisionAPI == true && enableRekognition == false){
 						VisionAPI(img);
-						
-					}, 5000);
-				}
+					}
+					else if(enableRekognition == true && enableVisionAPI == false){
+						AwsRekognition(img);
+					}
+					else{
+						alert("Please select one of the AWS or Google APIs");
+					}			
+				}, 2000);
+				
 			} else if (info == "play_finished") {
 				//leaved the stream
 				console.log("play finished");
@@ -553,4 +689,3 @@ video, canvas {
 	window.webRTCAdaptor = webRTCAdaptor;
 </script>
 </html>
-
