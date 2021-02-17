@@ -748,7 +748,10 @@ export class WebRTCAdaptor
 		}
 
 		if (typeof deviceId != "undefined" ) {
-			this.mediaConstraints.audio = { "deviceId": deviceId };
+			if(this.mediaConstraints.audio !== true)
+				this.mediaConstraints.audio.deviceId = deviceId;
+			else 
+				this.mediaConstraints.audio = { "deviceId": deviceId };
 		}
 		this.setAudioInputSource(streamId, this.mediaConstraints, null, true, deviceId);
 	}
@@ -767,7 +770,10 @@ export class WebRTCAdaptor
 		this.publishMode = "camera";
 
 		if (typeof deviceId != "undefined" ) {
-			this.mediaConstraints.video = { "deviceId": deviceId };
+			if(this.mediaConstraints.video !== true)
+				this.mediaConstraints.video.deviceId = deviceId;
+			else 
+				this.mediaConstraints.video = { "deviceId": deviceId };
 		}
 		this.setVideoCameraSource(streamId, this.mediaConstraints, null, true, deviceId);
 	}
