@@ -64,13 +64,7 @@
 					</div>
 					<p class="mb-1">Play WebRTC stream that is broadcasting to the Ant Media Server. You can play any stream(RTMP & WebRTC ingesting, Stream sources, IP Camera, etc.)</p>
 				</div>
-
-				<div class="row">
-					<div class="d-flex w-100">
-						<a href="360_live.html" class="flex-column "><h5 class="mb-1">WebRTC 360 Play</h5></a>
-					</div>
-					<p class="mb-1">Play 360 degree WebRTC stream that is broadcasting to the Ant Media Server. Make sure that your stream is 360 degree.Otherwise view is distorted</p>
-				</div>
+				
 				<div class="row">
 					<div class="d-flex w-100">
 						<a href="canvas-publish.html" class="flex-column "><h5 class="mb-1">WebRTC Publish with WhiteBoard</h5></a>
@@ -148,6 +142,36 @@
 						<a href="webrtc-test-tool.html" class="flex-column "><h5 class="mb-1">WebRTC Test Tool</h5></a>
 					</div>
 					<p class="mb-1">Measure E2E(End to end) bitrate, RTT, packet lost, etc.</p>
+				</div>
+
+				<div class="row">
+					<div class="d-flex w-100">
+						<a href="play.html?id=stream1" class="flex-column "><h5 class="mb-1">Embedded Player</h5></a>
+					</div>
+					<p class="mb-1">Play WebRTC/HLS/DASH/VoD streams. Following parameters can be given as URL query
+						<ul style="font-family: 'Courier New', Courier, monospace;">
+						
+						  <li> "id": The stream id to play. It is mandatory
+						  <li> "token": The token to play stream. It's not mandatory if token security is disabled.
+						  <li> "autoplay": To start playing automatically if streams is available. Optional. Default value is true
+						  <li> "mute": To start playing with mute if streams is available. Optional. Default value is true
+						  <li> "playOrder": The order which technologies is used in playing. Optional. Default value is "webrtc,hls".
+						    Possible values are "hls,webrtc","webrtc","hls","vod","dash"
+						  <li> "playType": the order which play type is used in playing for VoD streams. Optional. Default value is "mp4,webm".
+						     Possible values are "webm,mp4"","mp4","webm"
+						</ul>
+						Sample: &nbsp;  <p style="font-family: 'Courier New', Courier, monospace;"> play.html?id=stream1&autoplay=true&playOrder=webrtc</p>
+					</p>
+
+				</div>
+
+				<div class="row">
+					<div class="d-flex w-100">
+						<a href="360_live.html?id=stream1" class="flex-column "><h5 class="mb-1">360 Embedded Player</h5></a>
+					</div>
+					<p class="mb-1">Play 360 degree WebRTC/HLS stream that is broadcasting to the Ant Media Server. Make sure that your stream is 360 degree.Otherwise view is distorted.
+						You can use the same parameters in Embedded Player
+					</p>
 				</div>
 				
 			</div>	
