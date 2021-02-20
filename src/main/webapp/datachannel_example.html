@@ -289,7 +289,7 @@
     var stop_button = document.getElementById("stop_button");
 
 
-    var token = "<%= request.getParameter("token") %>";
+    var token = getUrlParameter("token");
     var streamNameBox = document.getElementById("streamName");
     var imageSender = new BinaryDataSender();
     var imageReceiver = new BinaryDataReceiver();

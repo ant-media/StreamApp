@@ -132,7 +132,7 @@
     var localCanvasStream = canvas.captureStream(25);
 
 
-	var token = "<%= request.getParameter("token") %>";
+	var token = getUrlParameter("token");
 
 	var camera_checkbox = document.getElementById("camera_checkbox");
 	var screen_share_checkbox = document.getElementById("screen_share_checkbox");
