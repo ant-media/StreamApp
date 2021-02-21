@@ -10,7 +10,7 @@ export class StreamMerger{
       this.audioDestination = this.audioCtx.createMediaStreamDestination()
       this.autoMode = autoMode;
 
-      //3:4 portrait mode stream width height
+      //4:3 portrait mode stream width height
       this.pwidth = 0
       this.pheight = 0
 
@@ -60,7 +60,7 @@ export class StreamMerger{
       stream.Xindex = options.Xindex || 0;
       stream.Yindex = options.Yindex || 0;
       stream.portrait = false;
-      stream.aspectRatio = 16/9;
+      stream.aspectRatio = 4/3;
 
       options.x == undefined ? stream.x = (stream.width * stream.Xindex): stream.x = options.x;
       options.x == undefined ? stream.y = (stream.height * stream.Yindex): stream.y = options.y;
@@ -103,6 +103,7 @@ export class StreamMerger{
             stream.x += xoffset;
             stream.width = this.pwidth;
             stream.height = this.pheight;
+            console.log("Location offset from metadata x = " + stream.x + " y = " + stream.y);
           }
         }
       }
@@ -144,7 +145,7 @@ export class StreamMerger{
       let cropWidth = 0;
       let cropHeight = 0;
       let topWidth = 0;
-      let bottomWidth = 0;
+
       let remainingStreams = this.streams.length;
 
       let widthOffset = 0;
@@ -218,8 +219,6 @@ export class StreamMerger{
           tmp += (this.width) / (divider)
           console.log("Video width = " + stream.width + "Video height = " + stream.height);
 
-
-
           if(xindex == 0){
             cropHeight = cropHeight + stream.height;
             console.debug("CropHeight = " + cropHeight);
@@ -228,7 +227,7 @@ export class StreamMerger{
           xindex ++;
           if(yindex >= (yNumber)-1 && this.streams.length != 1){
             console.log("TopWidth = " + topWidth + " remainingStreams = " + remainingStreams);
-            widthOffset = (topWidth - (stream.width * remainingStreams )) / 2;
+            widthOffset = (topWidth - (this.vwidth * remainingStreams )) / 2;
             stream.x += widthOffset;
           }  
 
@@ -246,6 +245,7 @@ export class StreamMerger{
 
           this.vwidth = (this.width) / (divider + 1);
           this.vheight = (this.height) / (divider + 1);
+
           if(stream.portrait == true){
             stream.width = this.pwidth;
             stream.height = this.pheight;
@@ -344,6 +344,7 @@ export class StreamMerger{
         }
       }
       console.log("removed streamId = " + streamId);
+
       if(this.autoMode == true){
         this.resizeAndSortV2();
       }
