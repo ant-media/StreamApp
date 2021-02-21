@@ -10,11 +10,11 @@ export class StreamMerger{
       this.audioDestination = this.audioCtx.createMediaStreamDestination()
       this.autoMode = autoMode;
 
-      //9:16 portrait mode stream width height
+      //3:4 portrait mode stream width height
       this.pwidth = 0
       this.pheight = 0
 
-      //16:9 vertical mode stream width height
+      //4:3 vertical mode stream width height
       this.vwidth = 0
       this.wheight = 0;
 
@@ -54,8 +54,6 @@ export class StreamMerger{
       const stream = {}
       this.audioCtx.resume();
       stream.streamId = options.streamId;
-
-      let {width, height} = mediaStream.getVideoTracks()[0].getSettings();
 
       stream.width = options.width || 150;
       stream.height = options.height || 150;
