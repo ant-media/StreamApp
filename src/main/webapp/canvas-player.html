@@ -8,25 +8,36 @@
 	<script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
 
 	<style>
-		iframe {
-			width: 107% !important;
-			height: 100% !important;
-			border: 0px !important;
-			background: transparent;
-			z-index: 1;
-			left: -43px;
-			top: 0;
-			position: absolute;
-		}
-
 		video {
 			position: relative;
 			left: 0;
 			right: 0;
 			top: 0;
-			width: 100%;
-			height: 550px;
+			/* If you want to fit canvas-designer and video to fit perfectly
+			You need to do two things. 
+			First -> Make width 100% below 
+			Second -> Follow the instructions on #canvas-designer  
+			*/
+			width: 30%;
+			max-width: 640px;
+			height: auto;
 			z-index: 0;
+		}
+
+		#canvas-designer {
+			margin: 0px auto;
+			width: 100% !important;
+			
+			border-color: black !important;
+			border: 0 solid black !important;
+			height: 500px;
+			/*
+			If you want to fit canvas-designer and video to fit perfectly
+			comment out height 500px below and enable below two lines 
+			height: 100% !important; 
+			position: absolute;
+			*/
+			top: 0;
 		}
 
 		/* Everything but the jumbotron gets side spacing for mobile first views */
@@ -67,15 +78,7 @@
 			display:none;
 		}
 
-		#canvas-designer {
-			margin: 0px auto;
-			width: 100% !important;
-			height: 100% !important;
-			border-color: black !important;
-			border: 0 solid black !important;
-			position: absolute;
-			top: 0;
-		}
+		
 		.jumbotron {
 			padding: 0;
 			overflow: hidden;
@@ -244,44 +247,53 @@
 	function sendData(data) {
 		try {
 			var iceState = webRTCAdaptor.iceConnectionState(streamId);
-			if (iceState != null && iceState != "failed" && iceState != "disconnected" && isDataChannelEnabled) {
-				
-				if(data == "request"){
-					webRTCAdaptor.sendData($("#streamName").val(), "request");
-				}
-				else if (data == "clear"){
-					webRTCAdaptor.sendData($("#streamName").val(), "clear");
-				}
-				else{
-					webRTCAdaptor.sendData($("#streamName").val(), data);
-				}
+			if (iceState != null && iceState == "connected" && isDataChannelEnabled) {
+
+				webRTCAdaptor.sendData($("#streamName").val(),data);
 			}
 			else {
 				designer.undo('all');
-				alert("WebRTC Publishing is not active. Please click Start Publishing first or check your Data Channel option.")
+				alert("WebRTC playing is not active. Please click Start Playing first");
 			}
 		}
 		catch (exception) {
 			designer.undo('all');
 			console.error(exception);
-			alert("Message cannot be sent. Make sure you've enabled data channel on server web panel");
+			alert("Message cannot be sent. Make sure you've enabled data channel and choose the correct player distribution on server web panel");
 		}
 	}
 
-	function clearDraw() {
-		designer.clearCanvas();
-			sendData("clear");
+	function requestData() {
+		try {
+			var iceState = webRTCAdaptor.iceConnectionState(streamId);
+			if (iceState != null && iceState == "connected") {
+
+				webRTCAdaptor.sendData($("#streamName").val(),"request");
 		}
-
-	function startPlaying() {
-		streamId = streamNameBox.value;
-		webRTCAdaptor.play(streamNameBox.value, token);
+		else {
+			designer.undo('all');
+			alert("WebRTC playing is not active. Please click Start Playing first");
+		}
 	}
-
-	function stopPlaying() {
-		webRTCAdaptor.stop(streamId);
+	catch (exception) {
+		designer.undo('all');
+		console.error(exception);
+		alert("Message cannot be sent. Make sure you've enabled data channel and choose the correct player distribution on server web panel");
 	}
+}
 
+function startPlaying() {
+	streamId = streamNameBox.value;
+	webRTCAdaptor.play(streamNameBox.value, token);
+}
+
+function stopPlaying() {
+	webRTCAdaptor.stop(streamId);
+}
+
+function clearDraw() {
+	designer.clearCanvas();
+}
 
 var pc_config = {
 	'iceServers' : [ {
@@ -462,21 +474,18 @@ var webRTCAdaptor = new WebRTCAdaptor({
 					if (designer.pointsLength > 0) {
 						designer.undo('all');
 					}
-					sendData("request");
+					requestData();
 				}
 			}
 			else if (info == "data_received") {
 
-				if (obj.event.data == "request") {
-						designer.sync();
-				}
-				else if (obj.event.data == "clear") {
-					designer.clearCanvas();
+				if(obj.event.data == "request"){
 					designer.sync();
 				}
-				else {
+				else{
 					designer.syncData(JSON.parse(obj.event.data));
 				}
+				console.log(obj.event.data);
 			}
 			else if (info == "updated_stats") {
 				//obj is the PeerStats which has fields
@@ -576,6 +585,12 @@ var webRTCAdaptor = new WebRTCAdaptor({
 					+ " audio level: " + obj.audioLevel);}
 
 				else if (info == "pong") {
+					/*
+					var iceState = webRTCAdaptor.iceConnectionState(streamId);
+					if (iceState != null && iceState != "failed" && iceState != "disconnected") {
+						designer.sync();
+					}
+					*/
 					//ping/pong message are sent to and received from server to make the connection alive all the time
 					//It's especially useful when load balancer or firewalls close the websocket connection due to inactivity
 				}
