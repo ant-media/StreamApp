@@ -324,8 +324,18 @@ export class StreamMerger{
     
       if (this.streams.length === 0) done()
     }
-    updateIndex(){
-
+    muteStream(streamId){
+      for (let i = 0; i < this.streams.length; i++) {
+        const stream = this.streams[i]
+        if (streamId === stream.streamId) {
+          if (stream.element && stream.mute == false) {
+            stream.audioGainNode.gain.value = 0;
+          }
+          else if(stream.element && stream.mute == true){
+            stream.audioGainNode.gain.value = 1;
+          }
+        }
+      }
     }
 
     removeStream(streamId) { 
