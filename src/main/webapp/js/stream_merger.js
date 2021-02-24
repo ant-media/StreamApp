@@ -129,8 +129,7 @@ export class StreamMerger{
 
     /*
     * For automatic sorting, since webcams use default ratio as 4:3 the default canvas ratio is also 4:3
-    * Any ratio excep portrait mode 3:4 will be converted to either 4:3 or 3:4
-    * This is because the canvas size is also dynamic and it becomes ugly to add 16:9 dynamically when the other streams are 4:3 or 3:4
+    * This is because the canvas size is also dynamic
     * If you want to change the ratios you can change the hardcoded this.height, this.width
     */
     resizeAndSortV2(){
