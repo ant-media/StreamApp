@@ -324,15 +324,19 @@ export class StreamMerger{
     
       if (this.streams.length === 0) done()
     }
+
+    //Mutes or unmutes given streamId in merged stream
     muteStream(streamId){
       for (let i = 0; i < this.streams.length; i++) {
         const stream = this.streams[i]
         if (streamId === stream.streamId) {
           if (stream.element && stream.mute == false) {
             stream.audioGainNode.gain.value = 0;
+            stream.mute = true;
           }
           else if(stream.element && stream.mute == true){
             stream.audioGainNode.gain.value = 1;
+            stream.mute = false;
           }
         }
       }
