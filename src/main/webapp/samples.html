@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Ant Media Server WebRTC Publish</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="UTF-8">
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+
+<script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
+
+<style>
+/* Everything but the jumbotron gets side spacing for mobile first views */
+.header, .marketing, .footer {
+	padding: 30px;
+}
+
+.row {
+	padding-top: 15px;
+	padding-bottom: 15px;
+}
+
+/* Customize container */
+@media ( min-width : 768px) {
+	.container {
+		max-width: 730px;
+	}
+}
+
+/* Responsive: Portrait tablets and up */
+@media screen and (min-width: 768px) {
+	/* Remove the padding we set earlier */
+	.header, .marketing, .footer {
+		padding-right: 0;
+		padding-left: 0;
+	}
+}
+</style>
+</head>
+<body>
+	<div class="container">
+		<div class="header clearfix">
+			<div class="row">
+				<h1 class="col">WebRTC Samples</h1>
+				<nav class="col align-self-center">
+					<ul class="nav float-right">
+						<li><a href="http://antmedia.io">Contact</a></li>
+					</ul>
+				</nav>
+			</div>
+		</div>
+			<div class="container">
+				<div class="row">
+					<div class="d-flex w-100">
+						<a href="index.html" class="flex-column "><h5 class="mb-1">WebRTC Publish(Video Camera, Screen, Mic)</h5></a>
+					</div>
+					<p class="mb-1">Broadcast Video Camera and Microphone to the Ant Media Server. It also supports Screen capturing, bandwidth limitation and data channel.
+						Youc can play the stream with the sample below.
+					</p>
+				</div>
+
+				<div class="row">
+					<div class="d-flex w-100">
+						<a href="player.html" class="flex-column "><h5 class="mb-1">WebRTC Play</h5></a>
+					</div>
+					<p class="mb-1">Play WebRTC stream that is broadcasting to the Ant Media Server. You can play any stream(RTMP & WebRTC ingesting, Stream sources, IP Camera, etc.)</p>
+				</div>
+				
+				<div class="row">
+					<div class="d-flex w-100">
+						<a href="canvas-publish.html" class="flex-column "><h5 class="mb-1">WebRTC Publish with WhiteBoard</h5></a>
+					</div>
+					<p class="mb-1">Broadcast WebRTC stream to the Ant Media Server with synchronized Whiteboard. Whiteboard is synchronized with all players. Make sure that data channel is enabled on the server side. It's disabled by default. </p>
+				</div>
+
+				<div class="row">
+					<div class="d-flex w-100">
+						<a href="canvas-player.html" class="flex-column "><h5 class="mb-1">WebRTC Play with WhiteBoard</h5></a>
+					</div>
+					<p class="mb-1">Play WebRTC stream with synchronized Whiteboard. Make sure that data channel is enabled on the server side. It's disabled by default. </p>
+				</div>
+
+				<div class="row">
+					<div class="d-flex w-100">
+						<a href="audio_publish.html" class="flex-column "><h5 class="mb-1">WebRTC Audio Publish</h5></a>
+					</div>
+					<p class="mb-1">Broadcast only microphone stream(no video) to the Ant Media Server.</p>
+				</div>
+
+				<div class="row">
+					<div class="d-flex w-100">
+						<a href="audio_player.html" class="flex-column "><h5 class="mb-1">WebRTC Audio Play</h5></a>
+					</div>
+					<p class="mb-1">Play audio only stream that is broadcasting to the Ant Media Server</p>
+				</div>
+
+				<div class="row">
+					<div class="d-flex w-100">
+						<a href="datachannel.html" class="flex-column "><h5 class="mb-1">WebRTC Data Channel</h5></a>
+					</div>
+					<p class="mb-1">Send only data through WebRTC via Ant Media Server no video or audio. It works the same way with WebRTC Publish and Play which means all data is delivered to subscribers</p>
+				</div>
+				
+				<div class="row">
+					<div class="d-flex w-100">
+						<a href="conference.html" class="flex-column "><h5 class="mb-1">WebRTC Conference</h5></a>
+					</div>
+					<p class="mb-1">Reference WebRTC conference implementation</p>
+				</div>
+
+				<div class="row">
+					<div class="d-flex w-100">
+						<a href="merge_streams.html" class="flex-column "><h5 class="mb-1">Merge WebRTC Conference Streams</h5></a>
+					</div>
+					<p class="mb-1">Connect a WebRTC Conference Room, get all streams & merge them into a canvas & republish to the Ant Media Server.
+						This solution is great if you want to publish conferece room to large number of audience in a single stream. 
+					</p>
+				</div>
+				
+				<div class="row">
+					<div class="d-flex w-100">
+						<a href="publish_with_timestamp.html" class="flex-column "><h5 class="mb-1">WebRTC Publish with Timestamp</h5></a>
+					</div>
+					<p class="mb-1">Broadcast WebRTC camera stream by drawing current timestamp of the frame. It's used for measuring the E2E(End to End) latency.</p>
+				</div>
+
+				<div class="row">
+					<div class="d-flex w-100">
+						<a href="player_with_timestamp.html" class="flex-column "><h5 class="mb-1">WebRTC Player with Timestamp</h5></a>
+					</div>
+					<p class="mb-1">Play WebRTC stream by drawing current timestamp of the frame. It's used for measuring the E2E latency.</p>
+				</div>
+
+				<div class="row">
+					<div class="d-flex w-100">
+						<a href="peer.html" class="flex-column "><h5 class="mb-1">WebRTC Peer to Peer</h5></a>
+					</div>
+					<p class="mb-1">Connect two peers directly. Ant Media Server is only a signalling server to establish the connection. Video and Audio is not relayed through Ant Media Server</p>
+				</div>
+
+				<div class="row">
+					<div class="d-flex w-100">
+						<a href="webrtc-test-tool.html" class="flex-column "><h5 class="mb-1">WebRTC Test Tool</h5></a>
+					</div>
+					<p class="mb-1">Measure E2E(End to end) bitrate, RTT, packet lost, etc.</p>
+				</div>
+
+				<div class="row">
+					<div class="d-flex w-100">
+						<a href="play.html?id=stream1" class="flex-column "><h5 class="mb-1">Embedded Player</h5></a>
+					</div>
+					<p class="mb-1">Play WebRTC/HLS/DASH/VoD streams. Following parameters can be given as URL query
+						<ul style="font-family: 'Courier New', Courier, monospace;">
+						
+						  <li> "id": The stream id to play. It is mandatory
+						  <li> "token": The token to play stream. It's not mandatory if token security is disabled.
+						  <li> "autoplay": To start playing automatically if streams is available. Optional. Default value is true
+						  <li> "mute": To start playing with mute if streams is available. Optional. Default value is true
+						  <li> "playOrder": The order which technologies is used in playing. Optional. Default value is "webrtc,hls".
+						    Possible values are "hls,webrtc","webrtc","hls","vod","dash"
+						  <li> "playType": the order which play type is used in playing for VoD streams. Optional. Default value is "mp4,webm".
+						     Possible values are "webm,mp4"","mp4","webm"
+						</ul>
+						Sample: &nbsp;  <p style="font-family: 'Courier New', Courier, monospace;"> play.html?id=stream1&autoplay=true&playOrder=webrtc</p>
+					</p>
+
+				</div>
+
+				<div class="row">
+					<div class="d-flex w-100">
+						<a href="360_live.html?id=stream1" class="flex-column "><h5 class="mb-1">360 Embedded Player</h5></a>
+					</div>
+					<p class="mb-1">Play 360 degree WebRTC/HLS stream that is broadcasting to the Ant Media Server. Make sure that your stream is 360 degree.Otherwise view is distorted.
+						You can use the same parameters in Embedded Player
+					</p>
+				</div>
+				
+			</div>	
+		<footer class="footer text-center">
+			<p><a href="http://antmedia.io">Ant Media Server</a></p>
+		</footer>
+	</div>
+</body>
+
+</html>
