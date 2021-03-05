@@ -247,40 +247,34 @@
 	function sendData(data) {
 		try {
 			var iceState = webRTCAdaptor.iceConnectionState(streamId);
-			if (iceState != null && iceState == "connected" && isDataChannelEnabled) {
-
-				webRTCAdaptor.sendData($("#streamName").val(),data);
+			if (iceState != null && iceState != "failed" && iceState != "disconnected") {
+				
+				if(data == "request"){
+					webRTCAdaptor.sendData($("#streamName").val(), "request");
+				}
+				else if (data == "clear"){
+					webRTCAdaptor.sendData($("#streamName").val(), "clear");
+				}
+				else{
+					webRTCAdaptor.sendData($("#streamName").val(), data);
+				}
 			}
 			else {
 				designer.undo('all');
-				alert("WebRTC playing is not active. Please click Start Playing first");
+				alert("WebRTC Playing is not active. Please click Start Playing first or check your Data Channel option.")
 			}
 		}
 		catch (exception) {
 			designer.undo('all');
 			console.error(exception);
-			alert("Message cannot be sent. Make sure you've enabled data channel and choose the correct player distribution on server web panel");
+			alert("Message cannot be sent. Make sure you've enabled data channel on server web panel");
 		}
 	}
 
-	function requestData() {
-		try {
-			var iceState = webRTCAdaptor.iceConnectionState(streamId);
-			if (iceState != null && iceState == "connected") {
-
-				webRTCAdaptor.sendData($("#streamName").val(),"request");
-		}
-		else {
-			designer.undo('all');
-			alert("WebRTC playing is not active. Please click Start Playing first");
-		}
+	function clearDraw() {
+		designer.clearCanvas();
+		sendData("clear");
 	}
-	catch (exception) {
-		designer.undo('all');
-		console.error(exception);
-		alert("Message cannot be sent. Make sure you've enabled data channel and choose the correct player distribution on server web panel");
-	}
-}
 
 function startPlaying() {
 	streamId = streamNameBox.value;
@@ -289,10 +283,6 @@ function startPlaying() {
 
 function stopPlaying() {
 	webRTCAdaptor.stop(streamId);
-}
-
-function clearDraw() {
-	designer.clearCanvas();
 }
 
 var pc_config = {
@@ -466,26 +456,24 @@ var webRTCAdaptor = new WebRTCAdaptor({
 
 			}
 			else if (info == "data_channel_opened"){
-
-				isDataChannelEnabled = true;
-
-				var iceState = webRTCAdaptor.iceConnectionState(streamId);
-				if (iceState != null && iceState == "connected") {
-					if (designer.pointsLength > 0) {
-						designer.undo('all');
-					}
-					requestData();
+				if (designer.pointsLength > 0) {
+					designer.undo('all');
 				}
+				sendData("request");
+				designer.sync();
 			}
 			else if (info == "data_received") {
 
-				if(obj.event.data == "request"){
+				if (obj.event.data == "request") {
 					designer.sync();
 				}
-				else{
+				else if (obj.event.data == "clear") {
+					designer.clearCanvas();						
+					designer.sync();
+				}
+				else {
 					designer.syncData(JSON.parse(obj.event.data));
 				}
-				console.log(obj.event.data);
 			}
 			else if (info == "updated_stats") {
 				//obj is the PeerStats which has fields
