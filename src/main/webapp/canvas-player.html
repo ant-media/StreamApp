@@ -18,7 +18,7 @@
 			First -> Make width 100% below 
 			Second -> Follow the instructions on #canvas-designer  
 			*/
-			width: 30%;
+			width: 100%;
 			max-width: 640px;
 			height: auto;
 			z-index: 0;
@@ -27,13 +27,13 @@
 		#canvas-designer {
 			margin: 0px auto;
 			width: 100% !important;
-			
 			border-color: black !important;
 			border: 0 solid black !important;
-			height: 500px;
+			height: 100% !important; 
+			position: absolute;
 			/*
 			If you want to fit canvas-designer and video to fit perfectly
-			comment out height 500px below and enable below two lines 
+			comment out height 500px and z-index: 10000 below and enable below two lines 
 			height: 100% !important; 
 			position: absolute;
 			*/
@@ -82,7 +82,7 @@
 		.jumbotron {
 			padding: 0;
 			overflow: hidden;
-			width: 105%;
+			width: 100%;
 			margin: 0;
 			padding-bottom: 30px;
 		}
@@ -195,12 +195,11 @@
 	<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" crossorigin="anonymous"></script>
 	<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"  crossorigin="anonymous"></script>	
 
-	<script src="https://www.webrtc-experiment.com/Canvas-Designer/canvas-designer-widget.js"></script>
-
 </body>
 <script type="module">
 	import {WebRTCAdaptor} from "./js/webrtc_adaptor.js"
 	import {getUrlParameter} from "./js/fetch.stream.js"
+	import {CanvasDesigner} from "./js/canvas-designer-widget.js"
 
 
 	var token = getUrlParameter("token");
@@ -463,7 +462,6 @@ var webRTCAdaptor = new WebRTCAdaptor({
 				designer.sync();
 			}
 			else if (info == "data_received") {
-
 				if (obj.event.data == "request") {
 					designer.sync();
 				}

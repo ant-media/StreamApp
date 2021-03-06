@@ -26,7 +26,7 @@
 			First -> Make width 100% below 
 			Second -> Follow the instructions on #canvas-designer  
 			*/
-			width: 30%;
+			width: 100%;
 			height: auto;
 			z-index: 0;
 		}
@@ -34,17 +34,17 @@
 		#canvas-designer {
 			margin: 0px auto;
 			width: 100% !important;
-			height: 500px;
+			height: 100% !important; 
+			position: absolute !important;
 			/*
 			If you want to fit canvas-designer and video to fit perfectly
-			comment out height 500px below and enable below two lines 
+			comment out height 500px and z-index: 10000 below and enable below two lines 
 			height: 100% !important; 
 			position: absolute;
 			*/
 			border-color: black !important;
 			border: 0 solid black !important;
 			top: 0;
-			z-index: 10000;
 			clear: both;
 		}
 
@@ -96,7 +96,7 @@
 		.jumbotron {
 			padding: 0;
 			overflow: hidden;
-			width: 105%;
+			width: 100%;
 			margin: 0;
 			padding-bottom: 30px;
 		}
@@ -206,8 +206,6 @@
 									</div>
 
 								</div>
-
-								<!-- Row -->
 							</div>
 						</div>
 					</div>
@@ -217,10 +215,6 @@
 						</p>
 					</footer>
 
-
-					<!-- 1st step -->
-					<script src="js/canvas-designer-widget.js"></script>
-
 				</body>
 
 
@@ -228,6 +222,7 @@
 				<script type="module" lang="javascript">
 					import { WebRTCAdaptor } from "./js/webrtc_adaptor.js"
 					import { getUrlParameter } from "./js/fetch.stream.js"
+					import { CanvasDesigner } from "./js/canvas-designer-widget.js"
 
 
 					function init() {
@@ -462,31 +457,31 @@
 		audio: true
 	};
 
-		var appName = location.pathname.substring(0, location.pathname.lastIndexOf("/") + 1);
-		var path = location.hostname + ":" + location.port + appName + "websocket?rtmpForward=" + rtmpForward;
-		var websocketURL = "ws://" + path;
+	var appName = location.pathname.substring(0, location.pathname.lastIndexOf("/") + 1);
+	var path = location.hostname + ":" + location.port + appName + "websocket?rtmpForward=" + rtmpForward;
+	var websocketURL = "ws://" + path;
 
-		if (location.protocol.startsWith("https")) {
-			websocketURL = "wss://" + path;
+	if (location.protocol.startsWith("https")) {
+		websocketURL = "wss://" + path;
+	}
+
+	var webRTCAdaptor = null;
+	var selectedRadio = null;
+	var selectedAudio = null;
+
+
+	(function () {
+		var params = {},
+		r = /([^&=]+)=?([^&]*)/g;
+
+		function d(s) {
+			return decodeURIComponent(s.replace(/\+/g, ' '));
 		}
-
-		var webRTCAdaptor = null;
-		var selectedRadio = null;
-		var selectedAudio = null;
-
-
-		(function () {
-			var params = {},
-			r = /([^&=]+)=?([^&]*)/g;
-
-			function d(s) {
-				return decodeURIComponent(s.replace(/\+/g, ' '));
-			}
-			var match, search = window.location.search;
-			while (match = r.exec(search.substring(1)))
-				params[d(match[1])] = d(match[2]);
-			window.params = params;
-		})();
+		var match, search = window.location.search;
+		while (match = r.exec(search.substring(1)))
+			params[d(match[1])] = d(match[2]);
+		window.params = params;
+	})();
 
 	// here goes canvas designer
 	var designer = new CanvasDesigner();
@@ -598,7 +593,6 @@
 					designer.sync();
 				}
 				else if (info == "data_received") {
-
 					if (obj.event.data == "request") {
 						designer.sync();
 					}
