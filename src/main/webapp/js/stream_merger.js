@@ -10,6 +10,14 @@ export class StreamMerger{
       this.audioDestination = this.audioCtx.createMediaStreamDestination()
       this.autoMode = autoMode;
 
+      //4:3 portrait mode stream width height
+      this.pwidth = 0
+      this.pheight = 0
+
+      //4:3 vertical mode stream width height
+      this.vwidth = 0
+      this.wheight = 0;
+
       this.canvas = document.createElement('canvas');
       this.canvas.setAttribute('width', this.width);
       this.canvas.setAttribute('height', this.height);
@@ -51,6 +59,8 @@ export class StreamMerger{
       stream.height = options.height || 150;
       stream.Xindex = options.Xindex || 0;
       stream.Yindex = options.Yindex || 0;
+      stream.portrait = false;
+      stream.aspectRatio = 4/3;
 
       options.x == undefined ? stream.x = (stream.width * stream.Xindex): stream.x = options.x;
       options.x == undefined ? stream.y = (stream.height * stream.Yindex): stream.y = options.y;
@@ -74,11 +84,28 @@ export class StreamMerger{
         stream.audioSource.connect(stream.audioGainNode).connect(this.audioDestination) // Default is direct connect
       }
       stream.element = videoElement
-      this.streams.push(stream)
-      console.log("Added stream Id = " + stream.streamId);
+      this.streams.push(stream);
 
       if(this.autoMode == true){
         this.resizeAndSortV2();
+        /*
+        * To understand the incoming resolution we need to wait until the stream is rendered
+        * If the incoming stream is coming from mobile portrait mode default getUserMedia ratio is 3:4
+        */
+        videoElement.onloadedmetadata = () => {
+          console.debug("streamId = " + stream.streamId);
+          var pheight = mediaStream.getVideoTracks()[0].getSettings().height;
+          var pwidth = mediaStream.getVideoTracks()[0].getSettings().width;
+          if(pheight > pwidth){
+            console.debug("portrait mode");
+            let xoffset = ( stream.width - this.pwidth ) / 2;
+            stream.portrait = true;
+            stream.x += xoffset;
+            stream.width = this.pwidth;
+            stream.height = this.pheight;
+            console.log("Location offset from metadata x = " + stream.x + " y = " + stream.y);
+          }
+        }
       }
     }
 
@@ -100,6 +127,11 @@ export class StreamMerger{
       })
     }
 
+    /*
+    * For automatic sorting, since webcams use default ratio as 4:3 the default canvas ratio is also 4:3
+    * This is because the canvas size is also dynamic
+    * If you want to change the ratios you can change the hardcoded this.height, this.width
+    */
     resizeAndSortV2(){
       //Clears all of the canvas when sorted.
       this.ctx.clearRect(0, 0, this.width, this.height);
@@ -112,13 +144,16 @@ export class StreamMerger{
       let cropWidth = 0;
       let cropHeight = 0;
       let topWidth = 0;
-      let bottomWidth = 0;
+
       let remainingStreams = this.streams.length;
 
       let widthOffset = 0;
       let heightOffset = 0;
 
       let divider = 0;
+
+      var pcheight = 0;
+      var pcwidth = 0;
 
       //Default video size is 320x240, it protects aspect ratio, might be changed while adding streams.
       for(let i = 1; i <= 5; i++){
@@ -128,11 +163,17 @@ export class StreamMerger{
             yNumber = i - 1;
             this.height = 240 * yNumber;
             this.width = 320 * yNumber;
+
+            pcheight = 240 * yNumber;
+            pcwidth = 180* yNumber;
+          
           }
           else{
             yNumber = i;
             this.height = 240 * yNumber;
             this.width = 320 * yNumber;
+            pcheight = 240 * yNumber;
+            pcwidth = 180* yNumber;
           }
           break;
         }
@@ -152,13 +193,30 @@ export class StreamMerger{
 
         const stream = this.streams[i-1];
         if(extraStreams <= 0 || this.streams.length <= 3){
-          stream.width = (this.width) / (divider);
-          tmp += stream.width;
-          stream.height = (this.height) / (divider);
-          console.log("Video width = " + stream.width + "Video height = " + stream.height);
+          this.pwidth = (pcwidth) / (divider);
+          this.pheight = (pcheight) / (divider);
 
-          stream.x = stream.width * xindex;
-          stream.y = (stream.height * yindex) - heightOffset;
+          this.vwidth = (this.width) / (divider);
+          this.vheight = (this.height) / (divider);
+
+          if(stream.portrait == true){
+            stream.width = this.pwidth;
+            stream.height = this.pheight; 
+            
+            stream.x = this.vwidth * xindex;
+            stream.y = (this.vheight * yindex) - heightOffset;
+
+            let xoffset = ( this.vwidth - this.pwidth ) / 2;
+            stream.x += xoffset;
+          }
+          else{
+            stream.width = this.vwidth;
+            stream.height = this.vheight;
+            stream.x = this.vwidth * xindex;
+            stream.y = (this.vheight * yindex) - heightOffset;
+          }
+          tmp += (this.width) / (divider)
+          console.log("Video width = " + stream.width + "Video height = " + stream.height);
 
           if(xindex == 0){
             cropHeight = cropHeight + stream.height;
@@ -168,7 +226,7 @@ export class StreamMerger{
           xindex ++;
           if(yindex >= (yNumber)-1 && this.streams.length != 1){
             console.log("TopWidth = " + topWidth + " remainingStreams = " + remainingStreams);
-            widthOffset = (topWidth - (stream.width * remainingStreams )) / 2;
+            widthOffset = (topWidth - (this.vwidth * remainingStreams )) / 2;
             stream.x += widthOffset;
           }  
 
@@ -181,18 +239,36 @@ export class StreamMerger{
           } 
         }
         else{
-          stream.width = (this.width) / (divider + 1);
-          cropWidth = cropWidth + stream.width
+          this.pwidth = (pcwidth) / (divider + 1);
+          this.pheight = (pcheight) / (divider + 1);
 
-          stream.height = (this.height) / (divider + 1);
+          this.vwidth = (this.width) / (divider + 1);
+          this.vheight = (this.height) / (divider + 1);
+
+          if(stream.portrait == true){
+            stream.width = this.pwidth;
+            stream.height = this.pheight;
+            stream.x = this.vwidth * xindex;
+            stream.y = this.vheight * yindex;
+
+            let xoffset = ( this.vwidth - this.pwidth ) / 2;
+            stream.x += xoffset;  
+          }
+          else{
+            stream.width = (this.vwidth);
+            stream.height = (this.vheight);
+            stream.x = this.vwidth * xindex;
+            stream.y = this.vheight * yindex;
+          }
+          cropWidth = cropWidth + ((this.width) / (divider + 1))
+          
           console.log("Video Width = " + stream.width + "VideoHeight = " + stream.height);
 
           if(xindex == 0){
             cropHeight = cropHeight + stream.height;
             console.debug("CropHeight = " + cropHeight);
           }
-          stream.x = stream.width * xindex;
-          stream.y = stream.height * yindex;
+
           xindex ++;
           if( xindex > yNumber){
             heightOffset = ((this.height) / (divider)) - stream.height;
@@ -248,8 +324,22 @@ export class StreamMerger{
     
       if (this.streams.length === 0) done()
     }
-    updateIndex(){
 
+    //Mutes or unmutes given streamId in merged stream
+    muteStream(streamId){
+      for (let i = 0; i < this.streams.length; i++) {
+        const stream = this.streams[i]
+        if (streamId === stream.streamId) {
+          if (stream.element && stream.mute == false) {
+            stream.audioGainNode.gain.value = 0;
+            stream.mute = true;
+          }
+          else if(stream.element && stream.mute == true){
+            stream.audioGainNode.gain.value = 1;
+            stream.mute = false;
+          }
+        }
+      }
     }
 
     removeStream(streamId) { 
@@ -267,6 +357,7 @@ export class StreamMerger{
         }
       }
       console.log("removed streamId = " + streamId);
+
       if(this.autoMode == true){
         this.resizeAndSortV2();
       }
