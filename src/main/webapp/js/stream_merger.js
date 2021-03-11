@@ -37,6 +37,16 @@ export class StreamMerger{
       return this.result;
   }
 
+  editStream(streamId, portrait){
+    for (let i = 0; i < this.streams.length; i++) {
+      const stream = this.streams[i]
+      if (streamId === stream.streamId) {
+        stream.portrait = portrait
+        this.resizeAndSortV2();
+      }
+    }
+  }
+
   /*
   * Options
   * streamId = Id of the stream
@@ -88,24 +98,6 @@ export class StreamMerger{
 
       if(this.autoMode == true){
         this.resizeAndSortV2();
-        /*
-        * To understand the incoming resolution we need to wait until the stream is rendered
-        * If the incoming stream is coming from mobile portrait mode default getUserMedia ratio is 3:4
-        */
-        videoElement.onloadedmetadata = () => {
-          console.debug("streamId = " + stream.streamId);
-          var pheight = mediaStream.getVideoTracks()[0].getSettings().height;
-          var pwidth = mediaStream.getVideoTracks()[0].getSettings().width;
-          if(pheight > pwidth){
-            console.debug("portrait mode");
-            let xoffset = ( stream.width - this.pwidth ) / 2;
-            stream.portrait = true;
-            stream.x += xoffset;
-            stream.width = this.pwidth;
-            stream.height = this.pheight;
-            console.log("Location offset from metadata x = " + stream.x + " y = " + stream.y);
-          }
-        }
       }
     }
 
@@ -324,8 +316,6 @@ export class StreamMerger{
     
       if (this.streams.length === 0) done()
     }
-
-    //Mutes or unmutes given streamId in merged stream
     muteStream(streamId){
       for (let i = 0; i < this.streams.length; i++) {
         const stream = this.streams[i]

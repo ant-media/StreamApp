@@ -1424,6 +1424,41 @@ export class WebRTCAdaptor
 		return Promise.reject(errorDefinition);
 	};
 
+	getWidthAndHeight(streamId){
+
+		console.log("peerstatsgetstats = " + this.remotePeerConnectionStats[streamId]);
+
+		if (this.remotePeerConnectionStats[streamId] == null) {
+			this.remotePeerConnectionStats[streamId] = new PeerStats(streamId);
+		}
+		var timerId = setInterval(() =>{
+			this.remotePeerConnection[streamId].getStats(null).then(stats =>
+			{
+				var frameWidth = -1;
+				var frameHeight = -1;
+				console.debug("stats = " + stats)
+				stats.forEach(value => {
+					console.debug("stats type = " + value.type)
+					if (value.type == "track" && typeof value.kind != "undefined" && value.kind == "video") 
+					{
+						console.debug("stats width = " + value.frameWidth);
+						if (typeof value.frameWidth != "undefined") {
+							console.debug("frame width from adap = " + value.frameWidth);
+							frameWidth = value.frameWidth;
+						}
+						if (typeof value.frameHeight != "undefined") {
+							frameHeight = value.frameHeight;
+						}
+					}
+				});
+				this.remotePeerConnectionStats[streamId].frameWidth = frameWidth;
+				this.remotePeerConnectionStats[streamId].frameHeight = frameHeight;
+				this.callback("updated_sizes", this.remotePeerConnectionStats[streamId])
+			});
+			clearInterval(timerId)
+		},3000);
+	}
+
 	getStats(streamId)
 	{
 		console.log("peerstatsgetstats = " + this.remotePeerConnectionStats[streamId]);

@@ -373,9 +373,10 @@ video {
 					else if (info == "newStreamAvailable") {
 						if( noStream){
 							mergeStreams();
-						}
-						noStream = false;
+						}	
+						noStream = false;	
                         if (oldId != obj.streamId){
+							webRTCAdaptor.getWidthAndHeight(obj.streamId);
 							merger.addStream(obj.stream,{ Xindex : xindex, Yindex : yindex, streamId : obj.streamId});
 							if(xindex == 3){
 								yindex ++;
@@ -384,9 +385,18 @@ video {
 							xindex ++;
 							console.debug("adding stream id = " + obj.streamId);
                         }
-						oldId = obj.streamId;
-						   
+						oldId = obj.streamId;	   
 					} 
+					else if (info == "updated_sizes"){
+						console.log("info geldi this = " + obj.frameHeight + " " + obj.frameWidth)
+						var portrait = false;
+						if(obj.frameWidth < obj.frameHeight){
+							console.log("this is called");
+							portrait = true
+							merger.editStream(obj.streamId, portrait);
+						}
+					}
+					
 					else if (info == "publish_started") {
 						//stream is being published
 						console.debug("publish started to room: "
