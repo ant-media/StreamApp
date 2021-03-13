@@ -4,8 +4,6 @@ import java.io.File;
 import java.util.List;
 
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.bytedeco.ffmpeg.avcodec.AVPacket;
-import org.bytedeco.ffmpeg.avformat.AVFormatContext;
 import org.red5.server.adapter.MultiThreadedApplicationAdapter;
 import org.red5.server.api.scope.IScope;
 import org.red5.server.api.stream.IBroadcastStream;

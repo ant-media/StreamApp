@@ -232,12 +232,6 @@
     			<scope>provided</scope>
 		</dependency>
 		<dependency>
-			<groupId>org.bytedeco</groupId>
-			<artifactId>ffmpeg-platform</artifactId>
-			<version>${javacpp.ffmpeg.version}</version>
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
 			<version>${junit.version}</version>
