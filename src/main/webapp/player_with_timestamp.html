@@ -4,8 +4,8 @@
 <title>Ant Media Server WebRTC Player</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta charset="UTF-8">
-<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
-<script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
+<link rel="stylesheet" href="css/external/bootstrap4/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+<script src="js/external/adapter-latest.js"></script>
 
 <style>
 video, canvas {
@@ -52,7 +52,9 @@ video, canvas {
 	display:none;
 }
 .awsRekog{
+	/*
 	display:none;
+	*/
 }
 </style>
 </head>
@@ -81,11 +83,29 @@ video, canvas {
 				<input type="text" class="form-control"
 					id="streamName" placeholder="Type stream name">
 			</div>
-			<form>
-			<div class="col-sm-12 text-right" style="margin-bottom:10px">
-				<input type="radio" name = "options" id="AWSrekognition" class="btn btn-outline-primary btn-sm">Amazon Rekognition</input>
-				<input type="radio" name= "options" id="visionAPI" class="btn btn-outline-primary btn-sm">Google Vision API</input>
+
+			<div class="alert alert-warning" role="alert">
+				Sychronize your device with a Network Time Server
 			</div>
+
+			<a style="display:block;margin:10px" href="https://github.com/ant-media/Ant-Media-Server/wiki/How-to-Measure-E2E-Latency" >Guide: How to Measure E2E Latency</a>
+
+			<form>
+
+			<div class="form-check form-check-inline">
+				<input type="radio" checked name = "options" id="AWSrekognition" class="form-check-input"/>
+				<label class="form-check-label font-weight-light" for="AWSrekognition"> 
+					Amazon Rekognition
+				</label>
+			</div>
+
+			<div class="form-check form-check-inline">
+				<input type="radio"  name = "options" id="visionAPI" class="form-check-input"/>
+				<label class="form-check-label font-weight-light" for="visionAPI"> 
+					Google Vision
+				</label>
+			</div>
+
 			<div class="form-group col-sm-12 text-left visionAPI">
 				<div class="dropdown-divider"></div>
 				<label>Vision Token</label>
@@ -123,15 +143,12 @@ video, canvas {
 						id="playerOffset" placeholder="Enter Player offset">
 			</div>
 		</form>
-			<div class="alert alert-warning" role="alert">
-				Sychronize your device with a Network Time Server
-			</div>
+			
 
 			
 			<div id="latency_container" class="form-group" >Latency: <span id="latency">0</span></div>
 
-			<a style="display:block;margin:10px" href="https://github.com/ant-media/Ant-Media-Server/wiki/How-to-Measure-E2E-Latency" >How to Measure E2E Latency Guide & Accuracy Estimation</a>
-
+			
 				<div class="form-group">
 					<button class="btn btn-primary"
 						id="start_play_button">Start Playing</button>

@@ -4,9 +4,9 @@
 <title>Ant Media Server WebRTC Publish</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta charset="UTF-8">
-<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+<link rel="stylesheet" href="css/external/bootstrap4/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
 
-<script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
+<script src="js/external/adapter-latest.js"></script>
 
 <style>
 video {
@@ -82,11 +82,13 @@ video {
 					</div>
 				</div>
 			</div>
+
+			<span class="badge badge-warning"  style="font-size:14px; margin:15px;">Make sure Data channel is enabled on App Settings. Otherwise it does not work</span>
+
+
 			<div class="form-group">	
 				<button class="btn btn-primary" disabled
-					id="create_channel_button">Create Channel</button>
-				<button class="btn btn-primary" disabled
-					id="connect_channel_button">Connect Channel</button>
+					id="connect_channel_button">Join Channel</button>
 				<button class="btn btn-primary" disabled
 					id="disconnect_channel_button">Disconnect</button>
 			</div>			
@@ -136,8 +138,6 @@ video {
 	var isChannelCreator = false;
 	
 	//TODO: Migrate these methods to Jquery
-	var create_channel_button = document.getElementById("create_channel_button");
-	create_channel_button.addEventListener("click", createChannel, false);
 	var connect_channel_button = document.getElementById("connect_channel_button");
 	connect_channel_button.addEventListener("click", connectChannel, false);
 	var disconnect_channel_button = document.getElementById("disconnect_channel_button");
@@ -166,6 +166,10 @@ video {
 	}
 
 	function connectChannel() {
+
+		/*
+		It tries to connect to the channel. If channel does not exist, it creates
+		*/
 		isChannelCreator = false;
 		streamId = streamNameBox.value;
 		webRTCAdaptor.play(streamNameBox.value, token, "", [], subscriberId, subscriberCode);
@@ -278,7 +282,6 @@ video {
 				callback : (info, obj) => {
 					if (info == "initialized") {
 						console.log("initialized");
-						create_channel_button.disabled = false;
 						connect_channel_button.disabled = false;
 						disconnect_channel_button.disabled = true;
 						if (publishImmediately) {
@@ -288,21 +291,18 @@ video {
 					} else if (info == "publish_started") {
 						//stream is being published
 						console.log("publish started");
-						create_channel_button.disabled = true;
 						connect_channel_button.disabled = true;
 						disconnect_channel_button.disabled = false;
 						startAnimation();
 					} else if (info == "publish_finished") {
 						//stream is being finished
 						console.log("publish finished");
-						create_channel_button.disabled = false;
 						connect_channel_button.disabled = false;
 						disconnect_channel_button.disabled = true;
 					}
 					else if (info == "play_started") {
 						//joined the stream
 						console.log("play started");
-						create_channel_button.disabled = true;
 						connect_channel_button.disabled = true;
 						disconnect_channel_button.disabled = false;
 						webRTCAdaptor.getStreamInfo(streamId); 
@@ -310,7 +310,6 @@ video {
 					} else if (info == "play_finished") {
 						//leaved the stream
 						console.log("play finished");
-						create_channel_button.disabled = false;
 						connect_channel_button.disabled = false;
 						disconnect_channel_button.disabled = true;
 					}
@@ -375,7 +374,16 @@ video {
 					else if (error.indexOf("WebSocketNotConnected") != -1) {
 						errorMessage = "WebSocket Connection is disconnected.";
 					}
-					alert(errorMessage);
+					else if (error.indexOf("no_stream_exist" != -1)) {
+						/* if no stream exist, create the channel*/
+						createChannel();
+					}
+
+					if (error.indexOf("no_stream_exist") == -1) {
+						//show alert if it's not no_stream_exist
+						alert(errorMessage);
+					}
+					
 				}
 			});
 	}
