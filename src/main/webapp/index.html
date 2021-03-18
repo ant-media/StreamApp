@@ -639,8 +639,8 @@ video {
 								});
   							});
 						}
-						if (document.querySelector('input[name="audioSource"]')) {
-							document.querySelectorAll('input[name="audioSource"]').forEach((elem) => {
+						if (document.querySelector('input[name="audioDeviceSource"]')) {
+							document.querySelectorAll('input[name="audioDeviceSource"]').forEach((elem) => {
 								elem.addEventListener("change", function(event) {
 								var item = event.target;
 								switchAudioMode(item)
