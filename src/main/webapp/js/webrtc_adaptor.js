@@ -113,9 +113,7 @@ export class WebRTCAdaptor
 		}
 		else {
 			//just playing, it does not open any stream
-			if (this.webSocketAdaptor == null || this.webSocketAdaptor.isConnected() == false) {
-				this.webSocketAdaptor = new WebSocketAdaptor({websocket_url : this.websocket_url, webrtcadaptor : this, callback : this.callback, callbackError : this.callbackError, debug : this.debug});
-			}
+			this.checkWebSocketConnection();
 		}
 	}
 	setDesktopwithCameraSource(stream, streamId, audioStream, onEndedCallback) 
@@ -257,6 +255,7 @@ export class WebRTCAdaptor
 					}
 					this.gotStream(stream);
 				}
+				this.checkWebSocketConnection();
 			}, true)
 		}
 		else {
@@ -613,9 +612,7 @@ export class WebRTCAdaptor
 		this.localStream = stream;
 		this.localVideo.srcObject = stream;
 		
-		if (this.webSocketAdaptor == null || this.webSocketAdaptor.isConnected() == false) {
-			this.webSocketAdaptor = new WebSocketAdaptor({websocket_url : this.websocket_url, webrtcadaptor : this, callback : this.callback, callbackError : this.callbackError, debug: this.debug})
-		}
+		this.checkWebSocketConnection();
 		this.getDevices();
 	}
 	
@@ -795,23 +792,28 @@ export class WebRTCAdaptor
 	 */
 	updateLocalAudioStream(stream, onEndedCallback) 
 	{
-		var audioTrack = this.localStream.getAudioTracks()[0];
 		var newAudioTrack = stream.getAudioTracks()[0];
 		
-		if (audioTrack != null) 
+		if (this.localStream != null && this.localStream.getAudioTracks()[0] != null) 
 		{
+			var audioTrack = this.localStream.getAudioTracks()[0];
 			this.localStream.removeTrack(audioTrack);
 			audioTrack.stop();
+			this.localStream.addTrack(newAudioTrack);
 		}
+		else if(this.localStream != null){
+			this.localStream.addTrack(newAudioTrack);
+		}
+		else{
+			this.localStream = stream;
+		}
+		
 
-		
-		this.localStream.addTrack(newAudioTrack);
-		
-		
 		if (this.localVideo != null) 
 		{   //it can be null
 			this.localVideo.srcObject = this.localStream;
 		}
+
 		if (onEndedCallback != null) {
 			stream.getAudioTracks()[0].onended = function(event) {
 				onEndedCallback(event);
@@ -829,10 +831,21 @@ export class WebRTCAdaptor
 			this.desktopStream.getVideoTracks()[0].stop();
 		}
 
-		var videoTrack = this.localStream.getVideoTracks()[0];
-		this.localStream.removeTrack(videoTrack);
-		videoTrack.stop();
-		this.localStream.addTrack(stream.getVideoTracks()[0]);
+		var newVideoTrack = stream.getVideoTracks()[0];
+
+		if(this.localStream != null && this.localStream.getVideoTracks()[0] != null){
+			var videoTrack = this.localStream.getVideoTracks()[0];
+			this.localStream.removeTrack(videoTrack);
+			videoTrack.stop();
+			this.localStream.addTrack(newVideoTrack);
+		}
+		else if(this.localStream != null){
+			this.localStream.addTrack(newVideoTrack);
+		}
+		else{
+			this.localStream = stream;
+		}
+
 		this.localVideo.srcObject = this.localStream;
 
 		if (onEndedCallback != null) {
@@ -1620,6 +1633,13 @@ export class WebRTCAdaptor
 		//free the remote peer connection by initializing again
 		this.remotePeerConnection = new Array();
 		this.webSocketAdaptor.close();
+	}
+
+	checkWebSocketConnection()
+	{
+		if (this.webSocketAdaptor == null || this.webSocketAdaptor.isConnected() == false) {
+			this.webSocketAdaptor = new WebSocketAdaptor({websocket_url : this.websocket_url, webrtcadaptor : this, callback : this.callback, callbackError : this.callbackError, debug : this.debug});
+		}
 	}
 
 	peerMessage(streamId, definition, data) 
