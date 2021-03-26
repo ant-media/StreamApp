@@ -1637,9 +1637,11 @@ export class WebRTCAdaptor
 
 	checkWebSocketConnection()
 	{
-		if (this.webSocketAdaptor == null || this.webSocketAdaptor.isConnected() == false) {
+		if (this.webSocketAdaptor == null || 
+			((this.webSocketAdaptor.isConnected() == false) &&
+			 (this.webSocketAdaptor.wsConn.readyState !== 0))) {
 			this.webSocketAdaptor = new WebSocketAdaptor({websocket_url : this.websocket_url, webrtcadaptor : this, callback : this.callback, callbackError : this.callbackError, debug : this.debug});
-		}
+		}		
 	}
 
 	peerMessage(streamId, definition, data) 
