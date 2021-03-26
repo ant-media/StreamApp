@@ -371,15 +371,20 @@ export class WebRTCAdaptor
 	 */
 	closeStream() 
 	{
-		this.localStream.getVideoTracks().forEach(function(track) {
-			track.onended = null;
-			track.stop();
-		});
 
-		this.localStream.getAudioTracks().forEach(function(track) {
-			track.onended = null;
-			track.stop();
-		});
+		if (this.localStream) {
+			this.localStream.getVideoTracks().forEach(function(track) {
+				track.onended = null;
+				track.stop();
+			});
+
+			this.localStream.getAudioTracks().forEach(function(track) {
+				track.onended = null;
+				track.stop();
+			});
+		}
+		
+		
 		if (this.videoTrack !== null) {
 			this.videoTrack.stop();
 		}
