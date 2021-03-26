@@ -381,6 +381,7 @@ body {
 			document.getElementById("players").removeChild(player);
 		}
 		webRTCAdaptor.stop(streamId);
+		streamsList = streamsList.filter(item => item !== streamId);
 	}
 
 	function startAnimation() {
