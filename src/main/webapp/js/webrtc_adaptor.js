@@ -801,9 +801,10 @@ export class WebRTCAdaptor
 		
 		if (this.localStream != null && this.localStream.getAudioTracks()[0] != null) 
 		{
-			var audioTrack = this.localStream.getAudioTracks()[0];
-			this.localStream.removeTrack(audioTrack);
-			audioTrack.stop();
+			this.localStream.getAudioTracks().forEach(audio => {
+				this.localStream.removeTrack(audio);
+				audio.stop();
+			});
 			this.localStream.addTrack(newAudioTrack);
 		}
 		else if(this.localStream != null){
