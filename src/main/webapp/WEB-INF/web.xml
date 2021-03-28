@@ -33,6 +33,7 @@
 	<filter-mapping>
 		<filter-name>TokenFilter</filter-name>
 		<url-pattern>*.m3u8</url-pattern>
+		<url-pattern>*.ts</url-pattern>
 		<url-pattern>*.mp4</url-pattern>
 	</filter-mapping>
 	
