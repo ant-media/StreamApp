@@ -349,7 +349,11 @@
 		  player.ready(function(){
 			var player = this;
 			player.on('ended', function() {
-				tryToPlay(streamId, token, hlsExtension, subscriberId, subscriberCode);
+				console.log("Playing has been finished");
+				hideWebRTCElements();
+				setHLSElementsVisibility(false);
+				setPlaceHolderVisibility(true);
+				tryToPlay(streamId, token, hlsExtension, subscriberId, subscriberCode, hlsNoStreamCallback);
 	  		});
 		  });
 		}
@@ -519,3 +523,4 @@
 
 </body>
 </html>
+
