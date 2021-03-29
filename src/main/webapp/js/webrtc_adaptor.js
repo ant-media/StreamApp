@@ -216,12 +216,6 @@ export class WebRTCAdaptor
 			var media_audio_constraint = { audio: audioConstraint};
 			this.navigatorUserMedia(media_audio_constraint, audioStream => {
 
-				audioStream = this.setGainNodeStream(audioStream);
-				if (this.originalAudioTrackGainNode !== null) {
-					this.originalAudioTrackGainNode.stop();
-				}
-				this.originalAudioTrackGainNode = audioStream.getAudioTracks()[1];
-
 				//add callback if desktop is sharing
 				var onended = event => {
 					this.callback("screen_share_stopped");
@@ -229,6 +223,7 @@ export class WebRTCAdaptor
 				}
 
 				if(this.publishMode == "screen"){
+					audioStream = this.setGainNodeStream(audioStream);
 					this.updateVideoTrack(stream,streamId,mediaConstraints,onended,true);
 					if(audioTrack.length > 0 ){
 						var mixedStream = this.mixAudioStreams(stream, audioStream, streamId);
@@ -239,6 +234,7 @@ export class WebRTCAdaptor
 					}
 				}
 				else if(this.publishMode == "screen+camera" ){
+					audioStream = this.setGainNodeStream(audioStream);
 					if(audioTrack.length > 0 ){
 						var mixedStream = this.mixAudioStreams(stream, audioStream, streamId);
 						this.updateAudioTrack(mixedStream,streamId,null);
@@ -688,6 +684,11 @@ export class WebRTCAdaptor
 
   		// Get the audioTracks from the stream.
   		const audioTracks = stream.getAudioTracks();
+		if (this.originalAudioTrackGainNode !== null) {
+			this.originalAudioTrackGainNode.stop();
+		}
+		this.originalAudioTrackGainNode = audioTracks[0];
+
 
   		/**
    		* Create a new audio context and build a stream source,
@@ -724,9 +725,6 @@ export class WebRTCAdaptor
 
   		for (const videoTrack of videoTracks) {
     		controlledStream.addTrack(videoTrack);
-  		}
-		for (const audioTrack of audioTracks) {
-    		controlledStream.addTrack(audioTrack);
   		}
 
   		/**
