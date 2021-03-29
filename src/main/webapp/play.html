@@ -280,11 +280,16 @@
 				poster: "previews/"+preview+".png"
 			});
 
-		player.src({
-  			src: "streams/" + streamId + "." + extension + "?token=" + token + "&subscriberId="+subscriberId +"&subscriberCode="+subscriberCode,
-  			type: type,
-            withCredentials: true,
-		});
+			videojs.Hls.xhr.beforeRequest = function(options){
+      			options.uri = options.uri+"?token=" + token + "&subscriberId="+subscriberId +"&subscriberCode="+subscriberCode;
+		      	return options;
+    		};
+
+			player.src({
+  				src: "streams/" + streamId + "." + extension,
+  				type: type,
+            	withCredentials: true,
+			});
 		
 			player.poster("previews/"+preview+".png");
 
