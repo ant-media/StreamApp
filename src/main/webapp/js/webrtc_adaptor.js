@@ -250,9 +250,7 @@ export class WebRTCAdaptor
 					}
 				}
 				else{
-					if(audioConstraint != false && audioConstraint != undefined){
-						stream.addTrack(audioStream.getAudioTracks()[0]);
-					}
+					stream.addTrack(audioStream.getAudioTracks()[0]);
 					this.gotStream(stream);
 				}
 				this.checkWebSocketConnection();
@@ -801,10 +799,12 @@ export class WebRTCAdaptor
 		
 		if (this.localStream != null && this.localStream.getAudioTracks()[0] != null) 
 		{
+			const enabled = (this.localStream.getAudioTracks()[0]).enabled;
 			this.localStream.getAudioTracks().forEach(audio => {
 				this.localStream.removeTrack(audio);
 				audio.stop();
 			});
+			newAudioTrack.enabled = enabled;
 			this.localStream.addTrack(newAudioTrack);
 		}
 		else if(this.localStream != null){
