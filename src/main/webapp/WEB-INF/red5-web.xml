@@ -64,6 +64,10 @@
 			</list>
 		</property>
 	</bean>
+
+	<!--- S3 Recording info -->
+	<bean id="app.storageClient" class="io.antmedia.storage.AmazonS3StorageClient">
+	</bean>
 	
     <bean id="webrtc.adaptor"  
     	class="#{ T(io.antmedia.rest.RestServiceBase).isEnterprise() ? 'io.antmedia.enterprise.webrtc.WebRTCAdaptor' : 'io.antmedia.webrtc.MockWebRTCAdaptor' }"/>
