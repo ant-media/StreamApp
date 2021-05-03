@@ -29,6 +29,8 @@
 	<bean id="dataStoreFactory" class="io.antmedia.datastore.db.DataStoreFactory"/>
 
 	<context:component-scan base-package="io.antmedia.rest" />
+	<context:component-scan base-package="io.antmedia.plugin" />
+	
 	
 	<bean id="acceptOnlyStreamsInDataStore" class="io.antmedia.security.AcceptOnlyStreamsInDataStore"/>
 		
