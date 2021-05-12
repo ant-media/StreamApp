@@ -173,7 +173,7 @@ public class StreamApplication extends MultiThreadedApplicationAdapter implement
 		return appAdaptor.isServerShuttingDown();
 	}
 
-	public void startPublish(String streamName, long absoluteStartTimeMs) {
-		appAdaptor.startPublish(streamName,absoluteStartTimeMs);
+	public void startPublish(String streamName, long absoluteStartTimeMs, String publishType) {
+		appAdaptor.startPublish(streamName,absoluteStartTimeMs, publishType);
 	}
 }
