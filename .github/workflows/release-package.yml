@@ -3,7 +3,7 @@ name: publish Node.js Package
 on:
   push:
     branches:
-      - package_branch
+      - master
 
 jobs:
   build:
