@@ -50,6 +50,11 @@ video {
 .options {
 		display:none;
 	}
+#video-overlay {
+	margin: 0 auto;
+	display: none;
+	z-index: 9999999;
+}
 </style>
 </head>
 <body>
@@ -70,6 +75,9 @@ video {
 		<div class="jumbotron">
 
 			<div class="col-sm-12 form-group">
+				<div id='video-overlay'>
+					<img src="images/loading.gif" />
+				</div>
 				<video id="remoteVideo" autoplay controls playsinline ></video>
 			</div>
 			<div class="form-group col-sm-12 text-left">
@@ -321,9 +329,14 @@ video {
 
  					// Remove p character in stream resolution
  					dropdownSelectedItem = dropdownSelectedItem.replace('p', '');
-
+					let getVideo = document.getElementById("remoteVideo");
+					let overlay = document.getElementById('video-overlay');
+					getVideo.pause();
+					overlay.style.display = "block";
+					getVideo.style.display = "none";
  					// Call set stream resolution
     				webRTCAdaptor.forceStreamQuality(streamId, Number(dropdownSelectedItem));
+					setTimeout(function(){ getVideo.play();overlay.style.display = "none"; getVideo.style.display = "block"; }, 1750);
 					// Remove current active item
 					$('a.dropdown-item.active').removeClass("active"); 
 					// Add active in new item
