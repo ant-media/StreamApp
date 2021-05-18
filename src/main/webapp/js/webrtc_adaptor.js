@@ -616,6 +616,27 @@ export class WebRTCAdaptor
 		this.getDevices();
 	}
 	
+	toggleVideo(streamId, trackId, enabled) 
+	{
+		var jsCmd = {
+				command : "toggleVideo",
+				streamId: streamId,
+				trackId: trackId,
+				enabled: enabled,
+		};
+		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
+	}
+	toggleAudio(streamId, trackId, enabled)
+	{
+		var jsCmd = {
+				command : "toggleAudio",
+				streamId: streamId,
+				trackId: trackId,
+				enabled: enabled,
+		};
+		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
+	}
+	
 	switchDesktopCapture(streamId){
 		this.publishMode = "screen";
 
