@@ -610,7 +610,11 @@ export class WebRTCAdaptor
 		stream = this.setGainNodeStream(stream);
 
 		this.localStream = stream;
-		this.localVideo.srcObject = stream;
+		
+		/** If you want to stream without override your stream
+		if(this.localVideo){
+			this.localVideo.srcObject = stream;
+		}
 		
 		this.checkWebSocketConnection();
 		this.getDevices();
