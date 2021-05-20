@@ -51,9 +51,15 @@ video {
 		display:none;
 	}
 #video-overlay {
-	margin: 0 auto;
+	position: absolute;
+	left: 25%;
+	right: 25%;
+	top: 25%;
 	display: none;
 	z-index: 9999999;
+}
+#video-overlay img{
+	width: 25%;
 }
 </style>
 </head>
@@ -333,10 +339,9 @@ video {
 					let overlay = document.getElementById('video-overlay');
 					getVideo.pause();
 					overlay.style.display = "block";
-					getVideo.style.display = "none";
  					// Call set stream resolution
     				webRTCAdaptor.forceStreamQuality(streamId, Number(dropdownSelectedItem));
-					setTimeout(function(){ getVideo.play();overlay.style.display = "none"; getVideo.style.display = "block"; }, 2000);
+					setTimeout(function(){ getVideo.play();overlay.style.display = "none";}, 2000);
 					// Remove current active item
 					$('a.dropdown-item.active').removeClass("active"); 
 					// Add active in new item
