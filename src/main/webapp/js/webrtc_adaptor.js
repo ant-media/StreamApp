@@ -611,7 +611,7 @@ export class WebRTCAdaptor
 
 		this.localStream = stream;
 		
-		/** If you want to stream without override your stream
+		/** If you want to stream without override your stream */
 		if(this.localVideo){
 			this.localVideo.srcObject = stream;
 		}
