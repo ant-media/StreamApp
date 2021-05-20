@@ -616,6 +616,46 @@ export class WebRTCAdaptor
 		this.getDevices();
 	}
 	
+	/**
+	* Toggle video track on the server side.
+	*
+	* streamId is the id of the stream
+	* trackId is the id of the track. streamId is also one of the trackId of the stream. If you are having just a single track on your 
+	*         stream, you need to give streamId as trackId parameter as well.  
+	* enabled is the enable/disable video track. If it's true, server sends video track. If it's false, server does not send video
+	
+	*/
+	toggleVideo(streamId, trackId, enabled) 
+	{
+		var jsCmd = {
+				command : "toggleVideo",
+				streamId: streamId,
+				trackId: trackId,
+				enabled: enabled,
+		};
+		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
+	}
+	
+	/**
+	* Toggle audio track on the server side.
+	*
+	* streamId is the id of the stream
+	* trackId is the id of the track. streamId is also one of the trackId of the stream. If you are having just a single track on your 
+	*         stream, you need to give streamId as trackId parameter as well.  
+	* enabled is the enable/disable video track. If it's true, server sends audio track. If it's false, server does not send audio
+	*
+	*/
+	toggleAudio(streamId, trackId, enabled)
+	{
+		var jsCmd = {
+				command : "toggleAudio",
+				streamId: streamId,
+				trackId: trackId,
+				enabled: enabled,
+		};
+		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
+	}
+	
 	switchDesktopCapture(streamId){
 		this.publishMode = "screen";
 
