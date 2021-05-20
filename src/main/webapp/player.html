@@ -336,7 +336,7 @@ video {
 					getVideo.style.display = "none";
  					// Call set stream resolution
     				webRTCAdaptor.forceStreamQuality(streamId, Number(dropdownSelectedItem));
-					setTimeout(function(){ getVideo.play();overlay.style.display = "none"; getVideo.style.display = "block"; }, 1750);
+					setTimeout(function(){ getVideo.play();overlay.style.display = "none"; getVideo.style.display = "block"; }, 2000);
 					// Remove current active item
 					$('a.dropdown-item.active').removeClass("active"); 
 					// Add active in new item
