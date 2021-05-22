@@ -95,7 +95,6 @@ public class StreamApplication extends MultiThreadedApplicationAdapter implement
 
 	@Override
 	public void streamPublishStart(final IBroadcastStream stream) {
-		appAdaptor.streamPublishStart(stream);
 		super.streamPublishStart(stream);
 	}
 
@@ -172,5 +171,9 @@ public class StreamApplication extends MultiThreadedApplicationAdapter implement
 	
 	public boolean isServerShuttingDown() {
 		return appAdaptor.isServerShuttingDown();
-	};
+	}
+
+	public void startPublish(String streamName, long absoluteStartTimeMs, String publishType) {
+		appAdaptor.startPublish(streamName,absoluteStartTimeMs, publishType);
+	}
 }
