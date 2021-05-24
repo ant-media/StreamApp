@@ -35,7 +35,7 @@
 
  <style>
     #unmuteButton {
-        display: none;
+        display: block;
         position: fixed;
         bottom: 20px;
         left: 30px;
@@ -67,6 +67,11 @@
     Unmute
 </button>
 
+	<div id="video_info">
+		Stream will start playing automatically<br />when it is live
+	</div>
+
+<div id="video_container">
 <a-scene inspector="https://cdn.jsdelivr.net/npm/aframe-inspector@1.0.0/dist/aframe-inspector.min.js">
 
     <video id="remoteVideo" autoplay playsinline></video>
@@ -78,9 +83,11 @@
 
     <a-videosphere src="#remoteVideo" rotation="0 180 0" style="background-color: antiquewhite"></a-videosphere>
 </a-scene>
+</div>
+
 
 <script>
-    // This function unmutes the video stream.
+    // This function mutes or unmutes the video stream.
     // This is necessary because the browser doesn't allow videos to be played automatically and unmuted by default.
     // Exceptions are possible: https://developers.google.com/web/updates/2017/09/autoplay-policy-changes
 
@@ -91,7 +98,11 @@
         if (video.muted) {
             // Unmute the video and change the button's text
             video.muted = false;
-            document.getElementById("unmuteButton").style.display = "none";
+            document.getElementById("unmuteButton").innerText = "Mute";
+        }
+        else{
+        	 video.muted = true;
+        	 document.getElementById("unmuteButton").innerText = "Unmute";
         }
     }
 </script>
@@ -123,12 +134,16 @@
 
 	var subscriberId = getUrlParameter("subscriberId");
 	var subscriberCode = getUrlParameter("subscriberCode");
+
+	var placeHolder = document.getElementById("video_info");
 	
 	var streamId = getUrlParameter("id");
 	if (streamId == null) {
 		//check name variable for compatibility with older versions
 		streamId = getUrlParameter("name");
 	}
+
+	var mute = getUrlParameter("mute");
 
 	 var playType = getUrlParameter("playType") ;
 	 if (playType == null || playType=="mp4,webm"){
@@ -154,12 +169,22 @@
 		autoPlay = false;
 	}
 
+	if (mute == "true" || mute == null) {
+		mute = true;
+	}
+	else{
+		mute = false;
+	}
+
 	var webRTCAdaptor = null;
 	var streamsFolder = "streams";
 
 	var video = document.getElementById('remoteVideo');
 
 	function genericCallback(currentTech) {
+
+		placeHolder.innerHTML="Stream will start playing automatically<br/>when it is live";
+		setVideoElementsVisibility(false);
 
 		setTimeout(function() 
 		{
@@ -206,28 +231,31 @@
 
     function vodNoStreamCallback() 
     {
+	    placeHolder.innerHTML="Stream will start playing automatically<br/>when it is live";
 		setTimeout(function() 
 		{
 			if(playOrder.includes("vod")){
-				tryToVODPlay(streamId, token, subscriberId, subscriberCode, vodNoStreamCallback, playType);
+				tryToVODPlay(streamId, token, subscriberId, subscriberCode, vodNoStreamCallback, playType);	
 			}
 		}, 3000);
+	    	
     }
 
-	function playWebRTCVideo() {
-		document.getElementById("remoteVideo").play().then(function(value){
-		}).catch(function(error) {
-			console.log("User interaction needed to start playing");
-		});
-
+    function setPlaceHolderVisibility(show) {
+		placeHolder.style.display = show == true ? "block" : "none";
 	}
 
-	function initializePlayer(streamId, extension, token) {
-		startPlayer(streamId, extension, token)
+	function setVideoElementsVisibility(show){
+		document.getElementById("video_container").style.display= show == true ? "block" : "none";
+	}
+
+
+	function initializePlayer(streamId, extension, token, subscriberId, subscriberCode) {
+		startPlayer(streamId, extension, token, subscriberId, subscriberCode)
 	}	
-
-	window.initializePlayer = initializePlayer;
-
+	
+	window.initializePlayer = initializePlayer	
+	
 	function startPlayer(streamId, extension, token) {
 
   		if(Hls.isSupported() && extension == "m3u8") {
@@ -238,25 +266,58 @@
        	 	hls.loadSource('streams/' + streamId + "." + extension + '?token=' + token);
         	hls.attachMedia(video);
         	hls.on(Hls.Events.MEDIA_ATTACHED, function() {
-            	video.muted = true;
-            	video.play();
         	});
     	}
     	else if (video.canPlayType('application/vnd.apple.mpegurl')) {
         	video.src = 'streams/' + streamId + "." + extension + '?token=' + token;
         	video.addEventListener('canplay',function() {
-            	video.play();
         	});
     	}
 
     	else if (extension == "webm" || extension == "mp4") {
 	    	video.src = 'streams/' + streamId + "." + extension + '?token=' + token;
-        	video.play();
     	}
-	}
+
+    	var playPromise = video.play();
+ 
+  		 if (playPromise !== undefined) {
+    		playPromise.then(_ => {
+      		// Automatic playback started!
+      		// Show playing UI.
+      		// We can now safely pause video...
+      		document.getElementById("unmuteButton").innerText = "Mute";
+      		console.log("play started with volume");
+    		})
+    		.catch(error => {
+      		// Auto-play was prevented
+      		// Show paused UI.
+      		video.muted = true;
+        	video.play();
+          	document.getElementById("unmuteButton").innerText = "Unmute";
+    		});
+    		setPlaceHolderVisibility(false);
+    		setVideoElementsVisibility(true);
+    	}
+		//Check HLS player is finished. If finished page should be reload
+        if (typeof video.ready != "undefined" ) 
+        {
+		  video.ready(function(){
+			var video = this;
+			video.on('ended', function() {
+				console.log("Playing has been finished");
+				setPlaceHolderVisibility(true);
+				tryToPlay(streamId, token, hlsExtension, subscriberId, subscriberCode, hlsNoStreamCallback);
+	  		});
+		  });
+		}
+		else {
+          console.log("player ready is not available. List playing may not be continous");
+		}
+
+}
 
 	function initializeWebRTCPlayer(streamId, token, noStreamCallback) {
-
+		
 		var pc_config = {
 				'iceServers' : [ {
 					'urls' : 'stun:stun1.l.google.com:19302'
@@ -303,13 +364,16 @@
 				else if (info == "play_started") {
 				//joined the stream
 
-				var playPromise = video.play();
- 
+				setVideoElementsVisibility(true);
+				setPlaceHolderVisibility(false);
+
+				var playPromise = video.play(); 
   				if (playPromise !== undefined) {
     				playPromise.then(_ => {
       				// Automatic playback started!
       				// Show playing UI.
       				// We can now safely pause video...
+      				document.getElementById("unmuteButton").innerText = "Mute";
       				console.log("play started with volume");
     				})
     				.catch(error => {
@@ -317,13 +381,13 @@
       				// Show paused UI.
       				video.muted = true;
             		video.play();
-            		document.getElementById("unmuteButton").style.display = "block";
+            		document.getElementById("unmuteButton").innerText = "Unmute";
     				});
     			}
+
 				} else if (info == "play_finished") {
 					//leaved the stream
 					console.log("play finished");
-					//check that publish may start again
 					setTimeout(function(){
 						webRTCAdaptor.getStreamInfo(streamId);
 					}, 3000);
@@ -335,15 +399,7 @@
 					}
 				}
 				else if (info == "bitrateMeasurement") {
-
 					console.debug(description);	
-					if(description.audioBitrate + description.videoBitrate > description.targetBitrate) 
-					{
-						document.getElementById("networkWarning").style.display = "block";
-						setTimeout(function() {
-							document.getElementById("networkWarning").style.display = "none";
-						}, 3000);
-					}
 				}
 			},
 			callbackError : function(error) {
@@ -370,7 +426,7 @@
 	
 	
 	
-	 if (streamId != "undefined")
+	 if (typeof streamId != "undefined")
 	 {
 		
 		if (streamId.startsWith(streamsFolder)) 
@@ -379,7 +435,7 @@
 			* If streamId starts with streams, it's hls or mp4 file to be played
 			*/
 			var lastIndexOfDot = streamId.lastIndexOf(".")
-			streamPath = streamId.substring(streamsFolder.length+1, lastIndexOfDot);
+			var streamPath = streamId.substring(streamsFolder.length+1, lastIndexOfDot);
 			var extension = streamId.substring(lastIndexOfDot+1);
 			initializePlayer(streamPath, extension, token);
 		}
@@ -405,7 +461,7 @@
 		}
 	 }
 	 else {
-		 alert("No stream specified. Please add ?id={STREAM_ID}  to the url");
+		alert("No stream specified. Please add ?id={STREAM_ID}  to the url");
 	 }
 </script>
 
