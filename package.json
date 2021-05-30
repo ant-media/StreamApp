@@ -1,8 +1,8 @@
 {
-  "name": "@ant-media/streamapp",
-  "version": "1.1.0",
+  "name": "@ant-media/webrtc_adaptor",
+  "version": "1.2.0",
   "description": "",
-  "main": "index.js",
+  "main": "/src/main/webapp/js/webrtc_adaptor.js",
   "directories": {
     "doc": "doc"
   },
