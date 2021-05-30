@@ -4,6 +4,12 @@
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>Ant Media Server WebRTC/HLS Player</title>
 
+<script src="js/external/aframe.min.js"></script>
+
+<script src="js/external/hls.js"></script>
+<script src="js/external/aframe-video-controls.min.js"></script>
+ <script src="js/external/jquery-3.4.1.min.js"></script>
+
 <!-- videojs includes  -->
 <link href="css/external/video-js.css" rel="stylesheet">
 
@@ -23,6 +29,13 @@
 </head>
 <body>
 
+<a-scene>
+    <video id="remoteVideo" playsinline></video>
+    <a-entity distance="0.0" video-controls="src:#video"></a-entity>
+    <a-camera>
+    </a-camera>
+    <a-videosphere src="#remoteVideo" rotation="0 180 0" style="background-color: antiquewhite"></a-videosphere>
+</a-scene>
 
 	<div id="video_info">
 		Stream will start playing automatically<br />when it is live
@@ -48,6 +61,15 @@
 	<div id="networkWarning">Your connection isn't fast enough to play this stream!</div>
 	<img id="play_button" src="images/play.png" onclick="playWebRTCVideo()"
 		style="position: absolute; top: 30px; left: 30px; display: none;" />
+
+
+	<!-- Mute/Unmute Video Button -->
+	<button
+ 	   onclick="changeVideoMuteStatus()"
+    	id="unmuteButton"
+    	title="Mute/Unmute Video">
+    	Unmute
+	</button>
 
 
 	<script type="module">
@@ -103,6 +125,7 @@
 	var targetLatency = getUrlParameter("targetLatency"); 
 
 	var placeHolder = document.getElementById("video_info");
+	var player = document.getElementById("remoteVideo");
 
     if(targetLatency == "null"){
 		targetLatency = 3;
@@ -112,6 +135,7 @@
 	var dashExtension = "mpd";
 	var subscriberId = getUrlParameter("subscriberId");
 	var subscriberCode = getUrlParameter("subscriberCode");
+	var unMuteButton = document.getElementById("unmuteButton");
 	
 	var autoPlay = true;
 	if (pAutoplay == "false" || isMobile()) {
@@ -124,6 +148,47 @@
 	else{
 		mute = false;
 	}
+
+	var is360 = getUrlParameter("is360");
+
+	if(is360 == "false" || is360 == null){
+
+		var scene = document.querySelector('a-scene');
+		scene.parentNode.removeChild(scene);
+		is360 = false;
+	}
+	else{
+		setTimeout(function(){
+           $(".a-enter-vr-button").click();
+    	},3000);
+
+    	AFRAME.registerComponent('vr-mode-on',{
+        schema:{
+        	tagName:{type:'string',default:"video"}
+        	},
+            init:function(){
+                this.el.addEventListener("click",function() {
+                    $(".a-enter-vr-button").click();
+            });
+        }
+    	});
+	}
+
+	// This function mutes or unmutes the 360 video stream.
+    // This is necessary because the browser doesn't allow videos to be played automatically and unmuted by default.
+    // Exceptions are possible: https://developers.google.com/web/updates/2017/09/autoplay-policy-changes
+    function changeVideoMuteStatus() {
+        // Checks the current "mute" status of the video
+        if (player.muted) {
+            // Unmute the video and change the button's text
+            player.muted = false;
+            document.getElementById("unmuteButton").innerText = "Mute";
+        }
+        else{
+        	 player.muted = true;
+        	 document.getElementById("unmuteButton").innerText = "Unmute";
+        }
+    }
 
 	var webRTCAdaptor = null;
 	var streamsFolder = "streams";
@@ -213,19 +278,41 @@
 	function setPlaceHolderVisibility(show) {
 		placeHolder.style.display = show == true ? "block" : "none";
 	}
+	
+	function show360ElementsVisibility() {
+		unMuteButton.style.display = "block";
+		var scene = document.querySelector('a-scene');
+		if(scene == null){
+			document.body.innerHTML = document.body.innerHTML + "<a-scene><video id=\"remoteVideo\" playsinline></video><a-entity distance=\"0.0\" video-controls=\"src:#video\"></a-entity><a-camera></a-camera><a-videosphere src=\"#remoteVideo\" rotation=\"0 180 0\" style=\"background-color: antiquewhite\"></a-videosphere></a-scene>";
+		}
+	}
+	function hide360ElementsVisibility(){
+		var scene = document.querySelector('a-scene');
+		if(scene != null){
+			scene.parentNode.removeChild(scene);
+		}
+	}
 
 	function playWebRTCVideo() {
 		setWebRTCElementsVisibility(true);
+
+		if(is360){
+			unMuteButton.style.display = "block";
+		}
+
 		if(mute){
 			document.getElementById("remoteVideo").muted=true;
+			unMuteButton.innerText = "Unmute";
 		}
 		else{
 			document.getElementById("remoteVideo").muted=false;
+			unMuteButton.innerText = "Mute";
 		}
 		if(autoPlay){
 			document.getElementById("remoteVideo").play().then(function(value){
 				//autoplay started
 				document.getElementById("play_button").style.display="none";
+
 			}).catch(function(error) {
 				document.getElementById("play_button").style.display="block";
 				console.log("User interaction needed to start playing");
@@ -235,16 +322,16 @@
 
 
 	function initializePlayer(streamId, extension, token, subscriberId, subscriberCode) {
-
 		hideWebRTCElements();
 		startPlayer(streamId, extension, token, subscriberId, subscriberCode)
-
 	}	
 	
 	window.initializePlayer = initializePlayer	
 	window.playWebRTCVideo = playWebRTCVideo	
+	window.changeVideoMuteStatus = changeVideoMuteStatus	
 	
 	function startPlayer(streamId, extension, token, subscriberId, subscriberCode) {
+
 		var type;
 		var liveStream = false;
 		if (extension == "mp4") {
@@ -283,10 +370,12 @@
 			preview = streamId.substring(0, streamId.indexOf("_adaptive"));
 		}
 
-		// If it's not dash, play with videojs
-		if(extension != dashExtension){
+		var player = document.getElementById('remoteVideo');
 
-			var player = videojs('video-player', {
+		// If it's not dash, play with videojs
+		if(!is360 && extension != dashExtension){
+
+			player = videojs('video-player', {
 				poster: "previews/"+preview+".png"
 			});
 
@@ -310,8 +399,8 @@
 					player.play();
 				});
 			}
-		}else{
-            var player = dashjs.MediaPlayer().create();
+		}else if(!is360){
+            player = dashjs.MediaPlayer().create();
 
 			player.updateSettings({'streaming': {'lowLatencyEnabled': true}});
 
@@ -339,31 +428,103 @@
 
 			setInterval(function() {
 				console.log("live latency: " + player.getCurrentLiveLatency());
-				}, 2000);
-			
-
+			}, 2000);
 		}
-		//Check HLS player is finished. If finished page should be reload
-        if (typeof player.ready != "undefined" ) 
+		else if(is360 && extension == hlsExtension){
+			show360ElementsVisibility();
+
+			// We need to call again due to creating 360 video elements
+			player = document.getElementById('remoteVideo');
+			
+			if(mute){
+				player.muted = true;
+			}
+			else{
+				player.muted = false;
+			}
+
+			var hls = new Hls({
+         	   debug: false
+        	});
+
+       	 	hls.loadSource("streams/" + streamId + "." + extension + "?token=" + token + "&subscriberId="+subscriberId +"&subscriberCode="+subscriberCode);
+        	hls.attachMedia(player);
+        	hls.on(Hls.Events.MEDIA_ATTACHED, function() {
+        		player.play();
+        	});
+
+        	hls.on(Hls.Events.ERROR, function (event, data) {
+  			if (data.fatal) {
+   	 			console.log("There is an error with chunks");
+   	 			hide360ElementsVisibility();
+				tryToPlay(streamId, token, extension, subscriberId, subscriberCode, hlsNoStreamCallback);
+  			}
+			});
+		}
+		else{
+			show360ElementsVisibility();
+
+			// We need to call again due to creating 360 video elements
+			player = document.getElementById('remoteVideo');
+			
+			player.src = "streams/" + streamId + "." + extension + "?token=" + token + "&subscriberId="+subscriberId +"&subscriberCode="+subscriberCode;
+			
+			if(mute){
+				player.muted = true;
+			}
+			else{
+				player.muted = false;
+			}
+
+			if (autoPlay) {
+				player.play();
+			}
+		}
+
+		if(is360 && autoPlay){
+			document.getElementById("remoteVideo").play().then(function(value){
+				//autoplay started
+				document.getElementById("play_button").style.display="none";
+				unMuteButton.innerText = "Unmute";
+			}).catch(function(error) {
+				unMuteButton.innerText = "Mute";
+				document.getElementById("play_button").style.display="block";
+				console.log("User interaction needed to start playing");
+			});
+		}
+
+        if (!is360 && typeof player.ready != "undefined" ) 
         {
-		  player.ready(function(){
-			var player = this;
-			player.on('ended', function() {
-				console.log("Playing has been finished");
+        	setHLSElementsVisibility(true);
+		  	player.ready(function(){
+				var player = this;
+				player.on('ended', function() {
+					console.log("is360: "+ is360 +" Playing has been finished");
+					hideWebRTCElements();
+					setHLSElementsVisibility(false);
+					setPlaceHolderVisibility(true);
+					tryToPlay(streamId, token, extension, subscriberId, subscriberCode, hlsNoStreamCallback);
+	  			});
+		  });
+		}
+		else if(is360)
+		{
+			setHLSElementsVisibility(false);
+   			player.addEventListener("ended", (e) => {
+    	 		console.log("is360: "+ is360 +" Playing has been finished");
 				hideWebRTCElements();
 				setHLSElementsVisibility(false);
 				setPlaceHolderVisibility(true);
-				tryToPlay(streamId, token, hlsExtension, subscriberId, subscriberCode, hlsNoStreamCallback);
-	  		});
-		  });
+				hide360ElementsVisibility();
+				tryToPlay(streamId, token, extension, subscriberId, subscriberCode, hlsNoStreamCallback);
+   			});
 		}
 		else {
           console.log("player ready is not available. List playing may not be continous");
 		}
 		
-		setHLSElementsVisibility(true);
 		setWebRTCElementsVisibility(false);
-		setPlaceHolderVisibility(false);
+		setPlaceHolderVisibility(false);		
 	}
 
 
