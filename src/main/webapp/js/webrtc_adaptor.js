@@ -37,6 +37,7 @@ export class WebRTCAdaptor
 		this.debug = false;
 		this.viewerInfo = "";
 		this.onlyDataChannel = false;
+		this.streamId = null;
 
 		this.publishMode="camera"; //screen, screen+camera
 
@@ -184,15 +185,26 @@ export class WebRTCAdaptor
 		navigator.mediaDevices.enumerateDevices().then(devices => {
 			let deviceArray = new Array();
 			let checkAudio = false
+			let checkVideo = false
+			let deviceLabel;
 			devices.forEach(device => {	
 				if (device.kind == "audioinput" || device.kind == "videoinput") {
 					deviceArray.push(device);
 					if(device.kind=="audioinput"){
 						checkAudio = true;
 					}
+					if(device.kind=="videoinput"){
+						checkVideo = true;
+						deviceLabel = device.label;
+					}
 				}
 			});
 			this.callback("available_devices", deviceArray);
+
+			if(checkVideo && this.videoTrack != null  && this.videoTrack.readyState != "live"){
+				this.switchVideoCameraCapture(this.streamId, deviceLabel);
+			}
+
 			if(checkAudio == false && this.localStream == null){
 				console.log("Audio input not found")
 				console.log("Retrying to get user media without audio")
@@ -443,6 +455,8 @@ export class WebRTCAdaptor
 
 	publish(streamId, token, subscriberId, subscriberCode) 
 	{
+		this.streamId = streamId;
+
 		if (this.onlyDataChannel) {
 			var jsCmd = {
 				command : "publish",
