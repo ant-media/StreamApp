@@ -808,11 +808,12 @@ export class WebRTCAdaptor
 		
 		this.publishMode = "camera";
 
+				
 		if (typeof deviceId != "undefined" ) {
 			if(this.mediaConstraints.video !== true)
-				this.mediaConstraints.video.deviceId = deviceId;
+				this.mediaConstraints.video.deviceId = { exact: deviceId };
 			else 
-				this.mediaConstraints.video = { "deviceId": deviceId };
+				this.mediaConstraints.video = { deviceId: { exact: deviceId } };
 		}
 		this.setVideoCameraSource(streamId, this.mediaConstraints, null, true, deviceId);
 	}

@@ -1,7 +1,7 @@
 
 
 export class StreamMerger{
-  constructor(width, height, autoMode){
+  constructor(width, height, autoMode, aspectRatio){
       this.streams = [];
       this.width = width;
       this.height = height;
@@ -9,6 +9,10 @@ export class StreamMerger{
       this.audioCtx = new AudioContext();
       this.audioDestination = this.audioCtx.createMediaStreamDestination()
       this.autoMode = autoMode;
+
+      this.aspectRatio = aspectRatio;
+      this.stream_height = height;
+      this.stream_width = width;
 
       //4:3 portrait mode stream width height
       this.pwidth = 0
@@ -33,6 +37,18 @@ export class StreamMerger{
       this.started = false;
       this.fps = 30;
   }
+
+  changeAspectRatio(ratio){
+    this.aspectRatio = ratio;
+    console.log("Changing aspect ratio to: " + ratio);
+    this.resizeAndSortV2();
+  }
+  changeStreamSize(height){
+    this.stream_height = height;
+    console.log("Changing merged streams size to = " + height + "p");
+    this.resizeAndSortV2();
+  }
+
   getResult(){
       return this.result;
   }
@@ -130,11 +146,11 @@ export class StreamMerger{
     /*
     * For automatic sorting, since webcams use default ratio as 4:3 the default canvas ratio is also 4:3
     * This is because the canvas size is also dynamic
-    * If you want to change the ratios you can change the hardcoded this.height, this.width
     */
     resizeAndSortV2(){
       //Clears all of the canvas when sorted.
       this.ctx.clearRect(0, 0, this.width, this.height);
+      console.log("Sorting the streams");
 
       let xindex = 0;
       let yindex = 0;
@@ -161,19 +177,42 @@ export class StreamMerger{
           divider = i;
           if( i*(i-1) >= this.streams.length && this.streams.length > 2){
             yNumber = i - 1;
-            this.height = 240 * yNumber;
-            this.width = 320 * yNumber;
+            this.height = this.stream_height * yNumber;
+            if(this.aspectRatio == "16:9"){
+              let temp = (this.stream_height / 9) * 16;
+              this.width = temp * yNumber;
+            }else{
+              let temp = (this.stream_height / 3) * 4;
+              this.width= temp * yNumber;
+            }
 
-            pcheight = 240 * yNumber;
-            pcwidth = 180* yNumber;
-          
+            pcheight = this.stream_height * yNumber;
+            if(this.aspectRatio == "16:9"){
+              let temp = (this.stream_height / 16) * 9;
+              pcwidth = temp * yNumber;
+            }else{
+              let temp = (this.stream_height / 4) * 3;
+              pcwidth = temp * yNumber;
+            }
           }
           else{
             yNumber = i;
-            this.height = 240 * yNumber;
-            this.width = 320 * yNumber;
-            pcheight = 240 * yNumber;
-            pcwidth = 180* yNumber;
+            this.height = this.stream_height * yNumber;
+            if(this.aspectRatio == "16:9"){
+              let temp = (this.stream_height / 9) * 16;
+              this.width = temp * yNumber;
+            }else{
+              let temp = (this.stream_height / 3) * 4;
+              this.width= temp * yNumber;
+            }
+            pcheight = this.stream_height * yNumber;
+            if(this.aspectRatio == "16:9"){
+              let temp = (this.stream_height / 16) * 9;
+              pcwidth = temp * yNumber;
+            }else{
+              let temp = (this.stream_height / 4) * 3;
+              pcwidth = temp * yNumber;
+            }
           }
           break;
         }

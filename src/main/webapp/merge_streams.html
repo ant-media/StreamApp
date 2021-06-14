@@ -97,6 +97,31 @@ video {
 						<input type="text" class="form-control" value="mergedStream"
 							   id="streamId" placeholder="Type streamId here">
 					</div>
+					<label>Aspect Ratio   </label>
+					<div class="form-check form-check-inline">
+						<input type="radio" checked name = "options" id="narrow" class="form-check-input"/>
+						<label class="form-check-label font-weight-light" for="narrow"> 
+							4:3
+						</label>
+					</div>
+		
+					<div class="form-check form-check-inline">
+						<input type="radio"  name = "options" id="wide" class="form-check-input"/>
+						<label class="form-check-label font-weight-light" for="wide"> 
+							16:9
+						</label>
+					</div>
+					<div >
+						<label for="framework">Stream size</label>
+						<select id="framework">
+							<option value="120">120p</option>
+							<option value="240">240p</option>
+							<option value="360">360p</option>
+							<option value="480">480p</option>
+							<option value="720">720p</option>
+						</select>
+					</div>
+				
 					<div class="form-group">
 						<button class="btn btn-primary"
 							id="join_publish_button">Start</button>
@@ -138,7 +163,16 @@ video {
 	var streamId = getUrlParameter("streamId");
 	var roomName = getUrlParameter("roomName");
     var playOnly = true;
-	var merger = new StreamMerger(640,480, true);
+	var merger = new StreamMerger(320,240, true, "4:3");
+
+	var narrow = document.getElementById("narrow");
+	narrow.addEventListener("click", toggleRatio, false);
+
+	var wide = document.getElementById("wide");
+	wide.addEventListener("click", toggleRatio, false);
+
+	var sb = document.querySelector('#framework');
+	sb.addEventListener("click" , toggleResolution, false);
 
 	var join_publish_button = document.getElementById("join_publish_button");
 	join_publish_button.addEventListener("click", joinRoom, false);
@@ -172,7 +206,19 @@ video {
 
 	if(streamId != null){
 		streamNameBox.value = streamId;
-	}	
+	}
+	function toggleResolution(event){
+		merger.changeStreamSize(sb.value);
+	}
+	function toggleRatio(){
+		if(narrow.checked == true){
+			merger.changeAspectRatio("4:3");
+		}
+		else{
+			merger.changeAspectRatio("16:9");
+		}
+		
+	}
 
 	function sendNotificationEvent(eventType) {
 		if(isDataChannelOpen) {
