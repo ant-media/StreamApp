@@ -96,6 +96,7 @@ public class StreamApplication extends MultiThreadedApplicationAdapter implement
 	@Override
 	public void streamPublishStart(final IBroadcastStream stream) {
 		super.streamPublishStart(stream);
+		appAdaptor.streamPublishStart(stream);
 	}
 
 	public ApplicationContext getAppContx() {
