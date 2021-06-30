@@ -7,7 +7,6 @@
       href="css/external/bootstrap4/bootstrap.min.css"
       integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous"/>
     <script src="js/external/adapter-latest.js"></script>
-    <script src="js/webrtc_adaptor.js"></script>
     <style>
       .inbox_chat {
         height: 550px;
@@ -157,7 +156,6 @@
               <button
                 type="button"
                 class="btn btn-outline-primary btn-block"
-                onclick="start()"
                 id="start_button"
               >
                 Start
@@ -167,7 +165,6 @@
               <button
                 type="button"
                 class="btn btn-outline-primary btn-block"
-                onclick="stop()"
                 disabled
                 id="stop_button"
               >
@@ -204,16 +201,16 @@
               <button
                 type="button"
                 class="btn btn-outline-primary btn-block"
-                onclick="sendText()"
+                id="send_button"
               >
                 Send
               </button>
             </div>
             <div class="form-group col-sm-2">
               <button
+                id="send_image_button"
                 type="button"
                 class="btn btn-outline-primary btn-block"
-                onclick="document.getElementById('file-input').click();"
               >
                 Send Image
               </button>
@@ -221,7 +218,6 @@
                 id="file-input"
                 type="file"
                 name="name"
-                onchange="send_image()"
                 accept="image/x-png,image/gif,image/jpeg"
                 style="display: none"
               />
@@ -240,7 +236,29 @@
     ></script>
   </body>
 
-  <script>
+  <script type="module" lang="javascript">
+   	import {WebRTCAdaptor} from "./js/webrtc_adaptor.js"
+
+	  var connect_channel_button = document.getElementById("start_button");
+	  connect_channel_button.addEventListener("click", start);
+
+    var connect_channel_button = document.getElementById("stop_button");
+	  connect_channel_button.addEventListener("click", start);
+
+    var connect_channel_button = document.getElementById("send_button");
+	  connect_channel_button.addEventListener("click", sendText);
+
+    var connect_channel_button = document.getElementById("send_image_button");
+    connect_channel_button.addEventListener("click", browseImage);
+
+    var connect_channel_button = document.getElementById("file-input");
+	  connect_channel_button.addEventListener("change", send_image);
+
+    function browseImage() {
+      document.getElementById('file-input').click();
+    }
+
+
     function getUrlParameter(sParam) {
       var sPageURL = decodeURIComponent(window.location.search.substring(1)),
         sURLVariables = sPageURL.split("&"),
@@ -291,157 +309,17 @@
 
     var token = getUrlParameter("token");
     var streamNameBox = document.getElementById("streamName");
-    var imageSender = new BinaryDataSender();
-    var imageReceiver = new BinaryDataReceiver();
+
+    var streamId;
 
     var messageNumber = 0;
     var idBody = "browser";
 
-    function BinaryDataSender() {
-      this.sending = false;
-      this.endChunk = 0;
-      this.lastOffset = 0;
-      this.dataBytes = null;
-      this.CHUNK_SIZE_IN_BYTES = 10000;
-      this.headerText = null;
-      this.headerLength = 0;
-      this.textEncoder = new TextEncoder();
 
-      var thiz = this;
-
-      this.isDataSendingComplete = function () {
-        return thiz.lastOffset >= thiz.dataBytes.byteLength;
-      };
-
-      this.clear = function () {
-        thiz.sending = false;
-        thiz.lastOffset = 0;
-        thiz.endChunk = 0;
-        thiz.dataBytes = null;
-        thiz.headerText = null;
-        thiz.headerLength = 0;
-      };
-
-      this.startSending = function (dataBytesTemp, messageHeader) {
-        thiz.sending = true;
-        thiz.lastOffset = 0;
-        thiz.dataBytes = dataBytesTemp;
-        thiz.sendFirstChunk(messageHeader);
-      };
-
-      this.sendFirstChunk = function (messageHeader) {
-        thiz.headerText = messageHeader;
-
-        var encodedText = thiz.textEncoder.encode(messageHeader);
-        var encodedTextBuffer = encodedText.buffer;
-
-        thiz.headerLength = encodedTextBuffer.byteLength;
-        var totalMessageHeaderLength = thiz.headerLength + 8;
-
-        var remainingChunkSize =
-          thiz.CHUNK_SIZE_IN_BYTES - totalMessageHeaderLength;
-
-        thiz.endChunk =
-          thiz.lastOffset + remainingChunkSize > thiz.dataBytes.byteLength
-            ? thiz.dataBytes.byteLength
-            : thiz.lastOffset + remainingChunkSize;
-
-        // put length how much data will be sent in total
-        var buffer = new ArrayBuffer(totalMessageHeaderLength + thiz.endChunk);
-        var view = new Int32Array(buffer);
-        view[0] = thiz.dataBytes.byteLength;
-        view[1] = thiz.headerLength;
-        console.log(
-            "Total to be sent data length:",
-            view[0]
-          );
-          console.log(
-            "Message header length:",
-            view[0]
-          );
-        // copy encoded header text to buffer byte by byte
-        var bufferView = new Uint8Array(buffer, 0, buffer.byteLength);
-        bufferView.set(encodedText, 8);
-
-        // copy image slice
-        var imageSlice = thiz.dataBytes.slice(0, thiz.endChunk);
-        bufferView.set(new Uint8Array(imageSlice), totalMessageHeaderLength);
-
-        sendData(buffer);
-        thiz.lastOffset = thiz.endChunk;
-      };
-
-      this.sendLastChunk = function () {
-        thiz.endChunk =
-          thiz.lastOffset + thiz.CHUNK_SIZE_IN_BYTES > thiz.dataBytes.byteLength
-            ? thiz.dataBytes.byteLength
-            : thiz.lastOffset + thiz.CHUNK_SIZE_IN_BYTES;
-
-        var imageSlice = thiz.dataBytes.slice(thiz.lastOffset, thiz.endChunk);
-
-        sendData(imageSlice);
-        thiz.lastOffset = thiz.endChunk;
-
-      };
-    }
-
-    function BinaryDataReceiver() {
-      this.toBeReceivedTotalLength = 0;
-      this.receivedData = null;
-      this.headerText = null;
-      this.headerLength = 0;
-      this.textDecoder = new TextDecoder("utf-8");
-
-      var thiz = this;
-
-      this.clear = function () {
-        thiz.toBeReceivedTotalLength = 0;
-        thiz.receivedData = null;
-        thiz.headerText = null;
-        thiz.headerLength = 0;
-      };
-
-      this.isFirstPart = function () {
-        return thiz.receivedData === null;
-      };
-
-      this.isAllDataReceived = function () {
-        return thiz.receivedData.byteLength >= thiz.toBeReceivedTotalLength;
-      };
-
-      this.appendBuffer = function (buffer1, buffer2) {
-        var tmp = new Uint8Array(buffer1.byteLength + buffer2.byteLength);
-        tmp.set(new Uint8Array(buffer1), 0);
-        tmp.set(new Uint8Array(buffer2), buffer1.byteLength);
-        return tmp.buffer;
-      };
-
-      this.receiveDataChunk = function (dataChunk) {
-        // handle binary data
-        if (!thiz.isFirstPart()) {
-          thiz.receivedData = thiz.appendBuffer(thiz.receivedData, dataChunk);
-        } else {
-          var dataView = new DataView(dataChunk);
-          thiz.toBeReceivedTotalLength = dataView.getInt32(0,true);
-          thiz.headerLength = dataView.getInt32(4, true);
-          var totalHeaderLength = thiz.headerLength + 8;
-
-          var headerSlice = dataChunk.slice(8, totalHeaderLength);
-          var headerSliceView = new Uint8Array(headerSlice);
-          thiz.headerText = thiz.textDecoder.decode(headerSliceView);
-
-          console.log(
-            "Total to be received data length:",
-            thiz.toBeReceivedTotalLength
-          );
-          console.log(
-            "Total header length:",
-            thiz.headerLength
-          );
-          thiz.receivedData = dataChunk.slice(totalHeaderLength);
-        }
-      };
-    }
+    function sendImageData(dataBytesTemp, messageHeader) {
+        sendData(messageHeader);
+        sendData(dataBytesTemp);
+    };
 
     function createId() {
       return idBody + messageNumber;
@@ -461,39 +339,26 @@
         var date = new Date();
         var dateTime = date.getTime();
         var messageHeader = { messageId: createId(), messageDate: dateTime };
-        imageSender.startSending(arrayBuffer, JSON.stringify(messageHeader));
+        sendImageData(arrayBuffer, JSON.stringify(messageHeader));
 
-        send_image_chunkwise();
-
-        createImageMessage(imageBlobUrl, true, date.toLocaleTimeString());
+        createImageMessage(imageBlobUrl, true);
       };
 
       reader.readAsArrayBuffer(imageURL);
     }
 
-    async function send_image_chunkwise() {
-      while (!imageSender.isDataSendingComplete()) {
-        imageSender.sendLastChunk();
-        //await new Promise(r => setTimeout(r, 1));
-      }
-    }
-
-    function createImageMessage(imageURL, sentByUs, date) {
+    function createImageMessage(imageURL, sentByUs) {
       if (sentByUs) {
         $(
           '<div class="outgoing_msg row"><div class="col"> <div class="rounded float-right sent_img"><img class="img-fluid "  src =' +
             imageURL +
-            '><span class="time_date">' +
-            date +
-            "</span></div></div></div>"
+            '></div></div></div>'
         ).appendTo($("#all_messages"));
       } else {
         $(
           '<div class="incoming_msg row"><div class="col"><div class="rounded float-left received_img"><img class="img-fluid"  src =' +
             imageURL +
-            '><span class="time_date">' +
-            date +
-            "</span></div></div></div>"
+            '></div></div></div>'
         ).appendTo($("#all_messages"));
       }
     }
@@ -618,22 +483,13 @@
     }
 
     function handleImageData(data) {
-      imageReceiver.receiveDataChunk(data);
-
-      if (imageReceiver.isAllDataReceived()) {
-        var jsonHeader = JSON.parse(imageReceiver.headerText);
-
-        var date = new Date(jsonHeader.messageDate);
-
-        var bytes = new Uint8Array(imageReceiver.receivedData);
+        var bytes = new Uint8Array(data);
         var blob = new Blob([bytes.buffer]);
         console.log("Creating Image");
         var urlCreator = window.URL || window.webkitURL;
         var imageUrl = urlCreator.createObjectURL(blob);
 
-        createImageMessage(imageUrl, false, date.toLocaleTimeString());
-        imageReceiver.clear();
-      }
+        createImageMessage(imageUrl, false);
     }
 
     function sendData(data) {
@@ -724,7 +580,7 @@
                   " kbits/sec"
               );
             } else if (info == "data_received") {
-              var data = obj.event.data;
+              var data = obj.data;
 
               if (data instanceof ArrayBuffer) {
                 handleImageData(data);
@@ -813,7 +669,7 @@
             } else if (info == "ice_connection_state_changed") {
               console.log("iceConnectionState Changed: ", JSON.stringify(obj));
             } else if (info == "data_received") {
-              var data = obj.event.data;
+              var data = obj.data;
 
               if (data instanceof ArrayBuffer) {
                 handleImageData(data);
@@ -859,7 +715,7 @@
               imageSender.clear();
               imageReceiver.clear();
             } else if (info == "data_received") {
-              var data = obj.event.data;
+              var data = obj.data;
 
               if (data instanceof ArrayBuffer) {
                 handleImageData(data);
