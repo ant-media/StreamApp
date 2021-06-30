@@ -6,6 +6,14 @@
 import {PeerStats} from "./peer_stats.js"
 import {WebSocketAdaptor} from "./websocket_adaptor.js"
 
+class ReceivingMessage{
+		constructor(size) {
+		this.size = size;
+		this.received = 0;
+		this.data = new ArrayBuffer(size);
+	}
+}
+
 export class WebRTCAdaptor
 {
 	constructor(initialValues){
@@ -37,6 +45,8 @@ export class WebRTCAdaptor
 		this.debug = false;
 		this.viewerInfo = "";
 		this.onlyDataChannel = false;
+
+		this.receivingMessages = new Map();;
 
 		this.publishMode="camera"; //screen, screen+camera
 
@@ -1040,6 +1050,7 @@ export class WebRTCAdaptor
 		}
 	}
 
+
 	initDataChannel(streamId, dataChannel) 
 	{
 		dataChannel.onerror = (error) => {
@@ -1057,9 +1068,43 @@ export class WebRTCAdaptor
 		dataChannel.onmessage = (event) => {
 			var obj = {
 				streamId: streamId,
-				event: event,
+				data: event.data,
 			};
-			this.callback("data_received", obj);
+
+			var data = obj.data;
+
+			if(typeof data === 'string' || data instanceof String){
+				this.callback("data_received", obj);
+			}
+			else {
+				var length = data.length || data.size || data.byteLength;
+
+				var view = new Int32Array(data, 0, 1);
+				var token = view[0];
+
+				var msg = this.receivingMessages[token];
+				if(msg == undefined) {
+					var view = new Int32Array(data, 0, 2);
+					var size = view[1];
+					msg = new ReceivingMessage(size);
+					this.receivingMessages[token] = msg;
+					if(length > 8) {
+						console.error("something went wrong in msg receiving");
+					}
+					return;
+				}
+
+				var rawData = data.slice(4, length);
+
+				var dataView = new Uint8Array(msg.data);
+				dataView.set(new Uint8Array(rawData), msg.received, length-4);
+				msg.received += length-4;
+
+				if(msg.size == msg.received) {
+					obj.data = msg.data;
+					this.callback("data_received", obj);
+				}
+			}
 		};
 
 		dataChannel.onopen = () => {
@@ -1705,9 +1750,38 @@ export class WebRTCAdaptor
 		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
 	}
 
-	sendData(streamId, message) 
+	sendData(streamId, data) 
 	{
+		var CHUNK_SIZE = 16000;
 		var dataChannel = this.remotePeerConnection[streamId].dataChannel;
-		dataChannel.send(message);
+        var length = data.length || data.size || data.byteLength;
+		var sent = 0;
+
+		if(typeof data === 'string' || data instanceof String){
+			dataChannel.send(data);
+		}
+		else {
+			var token = Math.floor(Math.random() * 999999);
+			let header = new Int32Array(2);
+			header[0] = token;
+			header[1] = length;
+
+			dataChannel.send(header);
+
+			var sent = 0;
+			while(sent < length) {
+				var size = Math.min(length-sent, CHUNK_SIZE);
+				var buffer = new Uint8Array(size+4);
+				var tokenArray = new Int32Array(1);
+				tokenArray[0] = token;
+				buffer.set(new Uint8Array(tokenArray.buffer, 0, 4), 0);
+
+				var chunk = data.slice(sent, sent+size);
+				buffer.set(new Uint8Array(chunk), 4);
+				sent += size;
+
+				dataChannel.send(buffer);
+			}
+		}
 	}
 }
