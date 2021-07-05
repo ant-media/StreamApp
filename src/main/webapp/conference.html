@@ -361,8 +361,18 @@ body {
 			createRemoteVideo(obj.streamId);
 			video = document.getElementById("remoteVideo"+obj.streamId);
 		}
+		var audio = document.getElementById("remoteAudio"+obj.streamId);
 
-		video.srcObject = obj.stream;
+		if (audio == null) {
+			createRemoteVideo(obj.streamId);
+			audio = document.getElementById("remoteAudio"+obj.streamId);
+		}
+		if(obj.track.kind == "video"){
+			video.srcObject = obj.stream;
+			video.volume = 0;
+		}
+		else if(obj.track.kind == "audio")
+			audio.srcObject = obj.stream;
 	}
 
 	function createRemoteVideo(streamId) {
@@ -370,6 +380,7 @@ body {
 		player.className = "col-sm-3";
 		player.id = "player"+streamId;
 		player.innerHTML = '<video id="remoteVideo'+streamId+'"controls autoplay playsinline></video>';
+		player.innerHTML +='<audio id="remoteAudio'+streamId+'"controls autoplay playsinline hidden></audio>'
 		document.getElementById("players").appendChild(player);
 	}
 
