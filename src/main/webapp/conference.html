@@ -383,6 +383,16 @@ body {
 		webRTCAdaptor.stop(streamId);
 	}
 
+	function checkVideoTrackStatus(streamsList){
+		streamsList.forEach(function(item) {
+			var video = document.getElementById("remoteVideo"+item);
+			if(video != null && !video.srcObject.active){
+				removeRemoteVideo(item);
+				playVideo(item);
+			}
+		});
+	}
+
 	function startAnimation() {
 
 		$("#broadcastingInfo")
@@ -559,6 +569,9 @@ body {
 						}
 						//Lastly updates the current streamlist with the fetched one.
 						streamsList=obj.streams;
+
+						//Check video tracks active/inactive status
+						checkVideoTrackStatus(streamsList);
 					}
 					else if (info == "data_channel_opened") {
 						console.log("Data Channel open for stream id", obj );
