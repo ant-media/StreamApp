@@ -45,6 +45,7 @@ export class WebRTCAdaptor
 		this.debug = false;
 		this.viewerInfo = "";
 		this.onlyDataChannel = false;
+		this.streamId = null;
 
 		this.receivingMessages = new Map();;
 
@@ -194,20 +195,32 @@ export class WebRTCAdaptor
 		navigator.mediaDevices.enumerateDevices().then(devices => {
 			let deviceArray = new Array();
 			let checkAudio = false
+			let checkVideo = false
+			let videoDeviceLabel;
+			let audioDeviceLabel;
 			devices.forEach(device => {	
 				if (device.kind == "audioinput" || device.kind == "videoinput") {
 					deviceArray.push(device);
 					if(device.kind=="audioinput"){
 						checkAudio = true;
+						audioDeviceLabel = device.label;
+					}
+					if(device.kind=="videoinput"){
+						checkVideo = true;
+						videoDeviceLabel = device.label;
 					}
 				}
 			});
 			this.callback("available_devices", deviceArray);
-			if(checkAudio == false && this.localStream == null){
-				console.log("Audio input not found")
-				console.log("Retrying to get user media without audio")
-				this.openStream({video : true, audio : false}, this.mode)
+
+			if(checkVideo && this.videoTrack != null  && this.videoTrack.readyState != "live"){
+				this.switchVideoCameraCapture(this.streamId, videoDeviceLabel);
 			}
+
+			if(checkAudio  && this.originalAudioTrackGainNode != null && this.originalAudioTrackGainNode.readyState != "live"){
+				this.switchAudioInputSource(this.streamId, audioDeviceLabel);
+			}
+			
 		}).catch(err => {
 			console.error("Cannot get devices -> error name: " + err.name + ": " + err.message);
 		});
@@ -453,6 +466,8 @@ export class WebRTCAdaptor
 
 	publish(streamId, token, subscriberId, subscriberCode) 
 	{
+		this.streamId = streamId;
+
 		if (this.onlyDataChannel) {
 			var jsCmd = {
 				command : "publish",
