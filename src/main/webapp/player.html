@@ -289,7 +289,6 @@ video {
 	function handleImageData(data) {
         var bytes = new Uint8Array(data);
         var blob = new Blob([bytes.buffer]);
-        console.log("Creating Image");
         var urlCreator = window.URL || window.webkitURL;
         var imageUrl = urlCreator.createObjectURL(blob);
 
