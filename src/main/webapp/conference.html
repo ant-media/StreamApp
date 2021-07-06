@@ -369,7 +369,6 @@ body {
 		}
 		if(obj.track.kind == "video"){
 			video.srcObject = obj.stream;
-			video.volume = 0;
 		}
 		else if(obj.track.kind == "audio")
 			audio.srcObject = obj.stream;
@@ -379,7 +378,7 @@ body {
 		var player = document.createElement("div");
 		player.className = "col-sm-3";
 		player.id = "player"+streamId;
-		player.innerHTML = '<video id="remoteVideo'+streamId+'"controls autoplay playsinline></video>';
+		player.innerHTML = '<video id="remoteVideo'+streamId+'"controls autoplay playsinline muted></video>';
 		player.innerHTML +='<audio id="remoteAudio'+streamId+'"controls autoplay playsinline hidden></audio>'
 		document.getElementById("players").appendChild(player);
 	}
