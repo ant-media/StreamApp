@@ -4,8 +4,6 @@ import java.io.File;
 import java.util.List;
 
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.bytedeco.ffmpeg.avcodec.AVPacket;
-import org.bytedeco.ffmpeg.avformat.AVFormatContext;
 import org.red5.server.adapter.MultiThreadedApplicationAdapter;
 import org.red5.server.api.scope.IScope;
 import org.red5.server.api.stream.IBroadcastStream;
@@ -97,8 +95,8 @@ public class StreamApplication extends MultiThreadedApplicationAdapter implement
 
 	@Override
 	public void streamPublishStart(final IBroadcastStream stream) {
-		appAdaptor.streamPublishStart(stream);
 		super.streamPublishStart(stream);
+		appAdaptor.streamPublishStart(stream);
 	}
 
 	public ApplicationContext getAppContx() {
@@ -174,5 +172,9 @@ public class StreamApplication extends MultiThreadedApplicationAdapter implement
 	
 	public boolean isServerShuttingDown() {
 		return appAdaptor.isServerShuttingDown();
-	};
+	}
+
+	public void startPublish(String streamName, long absoluteStartTimeMs, String publishType) {
+		appAdaptor.startPublish(streamName,absoluteStartTimeMs, publishType);
+	}
 }

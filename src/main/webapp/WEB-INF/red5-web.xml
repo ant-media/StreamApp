@@ -12,6 +12,10 @@
 	<context:annotation-config />
 	<!-- Defines a properties file for dereferencing variables -->
 	<context:property-placeholder location="/WEB-INF/red5-web.properties"/>
+
+	<!--- S3 Recording info -->
+	<bean id="app.storageClient" class="io.antmedia.storage.AmazonS3StorageClient">
+	</bean>
 	
 	<bean id="app.settings" class="io.antmedia.AppSettings" />
 
@@ -64,6 +68,8 @@
 			</list>
 		</property>
 	</bean>
+
+	
 	
     <bean id="webrtc.adaptor"  
     	class="#{ T(io.antmedia.rest.RestServiceBase).isEnterprise() ? 'io.antmedia.enterprise.webrtc.WebRTCAdaptor' : 'io.antmedia.webrtc.MockWebRTCAdaptor' }"/>

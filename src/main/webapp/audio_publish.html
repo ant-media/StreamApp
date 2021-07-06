@@ -4,12 +4,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta charset="UTF-8">
 <link rel="stylesheet"
-	href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
-	integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u"
-	crossorigin="anonymous">
-<script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
+	href="css/external/bootstrap3/bootstrap.min.css"
+	integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+<script src="js/external/adapter-latest.js"></script>
 <script
-		src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+		src="js/external/jquery-3.4.1.min.js"></script>
 		
 
 <style>
@@ -190,10 +189,10 @@ body {
 	};
 
 	var appName = location.pathname.substring(0, location.pathname.lastIndexOf("/")+1);
-	var websocketURL = "ws://" + location.hostname + ":5080" + appName + "websocket";
+	var websocketURL = "ws://" + location.hostname + ":" + location.port + appName + "websocket";
 	
 	if (location.protocol.startsWith("https")) {
-		websocketURL = "wss://" + location.hostname + ":5443" + appName + "websocket";
+		websocketURL = "wss://" + location.hostname + ":" + location.port + appName + "websocket";
 	}
 	
 	

@@ -4,8 +4,8 @@
 <title>Ant Media Server WebRTC Stream Merger</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta charset="UTF-8">
-<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
-<script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
+<link rel="stylesheet" href="css/external/bootstrap4/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+<script src="js/external/adapter-latest.js"></script>
 
 <style>
 video {
@@ -16,6 +16,10 @@ video {
 /* Everything but the jumbotron gets side spacing for mobile first views */
 .header, .marketing, .footer {
 	padding: 15px;
+}
+
+.form-row {
+	padding-top: 15px;
 }
 
 /* Custom page header */
@@ -81,21 +85,49 @@ video {
 				<video id="localVideo" autoplay controls playsinline ></video>
 			</div>
 	
-				<div class="form-group">
-					<p>
-						<h10 class="text-muted">roomId</h10>
+				<div class="col-sm-12 form-group">
+					<div class="form-group text-left">
+						<label class="text-muted ">Conference Room Id</label>
 						<input type="text" class="form-control" value="room1"
 							   id="roomName" placeholder="Type room name">
-					</p>
-					<p>
-						<h10 class="col text-muted">streamId</h10>
+					</div>
+
+					<div class="form-group text-left">
+						<label class="text-muted">Stream Id</label>
 						<input type="text" class="form-control" value="mergedStream"
 							   id="streamId" placeholder="Type streamId here">
-					</p>
-					<button class="btn btn-primary"
-						id="join_publish_button">Start Playing</button>
-					<button class="btn btn-primary"
-						id="stop_publish_button">Stop Playing</button>
+					</div>
+					<label>Aspect Ratio   </label>
+					<div class="form-check form-check-inline">
+						<input type="radio" checked name = "options" id="narrow" class="form-check-input"/>
+						<label class="form-check-label font-weight-light" for="narrow"> 
+							4:3
+						</label>
+					</div>
+		
+					<div class="form-check form-check-inline">
+						<input type="radio"  name = "options" id="wide" class="form-check-input"/>
+						<label class="form-check-label font-weight-light" for="wide"> 
+							16:9
+						</label>
+					</div>
+					<div >
+						<label for="framework">Stream size</label>
+						<select id="framework">
+							<option value="120">120p</option>
+							<option value="240">240p</option>
+							<option value="360">360p</option>
+							<option value="480">480p</option>
+							<option value="720">720p</option>
+						</select>
+					</div>
+				
+					<div class="form-group">
+						<button class="btn btn-primary"
+							id="join_publish_button">Start</button>
+						<button class="btn btn-primary"
+							id="stop_publish_button">Stop</button>
+					</div>
 				</div>
 				<span class="badge badge-warning" id="bitrateInfo" style="font-size:14px;display:none"
 							style="display: none">Weak Network Connection</span>
@@ -131,7 +163,16 @@ video {
 	var streamId = getUrlParameter("streamId");
 	var roomName = getUrlParameter("roomName");
     var playOnly = true;
-	var merger = new StreamMerger(640,480, true);
+	var merger = new StreamMerger(320,240, true, "4:3");
+
+	var narrow = document.getElementById("narrow");
+	narrow.addEventListener("click", toggleRatio, false);
+
+	var wide = document.getElementById("wide");
+	wide.addEventListener("click", toggleRatio, false);
+
+	var sb = document.querySelector('#framework');
+	sb.addEventListener("click" , toggleResolution, false);
 
 	var join_publish_button = document.getElementById("join_publish_button");
 	join_publish_button.addEventListener("click", joinRoom, false);
@@ -165,7 +206,19 @@ video {
 
 	if(streamId != null){
 		streamNameBox.value = streamId;
-	}	
+	}
+	function toggleResolution(event){
+		merger.changeStreamSize(sb.value);
+	}
+	function toggleRatio(){
+		if(narrow.checked == true){
+			merger.changeAspectRatio("4:3");
+		}
+		else{
+			merger.changeAspectRatio("16:9");
+		}
+		
+	}
 
 	function sendNotificationEvent(eventType) {
 		if(isDataChannelOpen) {

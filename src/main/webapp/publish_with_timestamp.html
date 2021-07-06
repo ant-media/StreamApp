@@ -2,11 +2,10 @@
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta charset="UTF-8">
-<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+<link rel="stylesheet" href="css/external/bootstrap4/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
 
-<script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
-<script
-		src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+<script src="js/external/adapter-latest.js"></script>
+<script src="js/external/jquery.min.js"></script>
 
 <style>
     video, canvas {
@@ -81,9 +80,12 @@
             </div>
             
             <div class="alert alert-warning" role="alert">
-				Sychronize your device with a Network Time Server.<br/>
-				Typical accuracy is tens of milliseconds. 
+				Sychronize your device with a Network Time Server.
 			</div>
+
+			<a style="display:block;margin:10px" href="https://github.com/ant-media/Ant-Media-Server/wiki/How-to-Measure-E2E-Latency" >Guide: How to Measure E2E Latency</a>
+
+
             <div class="form-group">	
                 <button class="btn btn-primary" disabled
                 id="start_publish_button">Start Publishing</button>
@@ -133,7 +135,7 @@
     var localCanvasStream = canvas.captureStream(25);
 
 
-	var token = "<%= request.getParameter("token") %>";
+	var token = getUrlParameter("token");
 
 	var camera_checkbox = document.getElementById("camera_checkbox");
 	var screen_share_checkbox = document.getElementById("screen_share_checkbox");

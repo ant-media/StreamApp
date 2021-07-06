@@ -4,29 +4,40 @@
 	<title>Ant Media Server WebRTC Player</title>
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<meta charset="UTF-8">
-	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
-	<script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
+	<link rel="stylesheet" href="css/external/bootstrap4/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+	<script src="js/external/adapter-latest.js"></script>
 
 	<style>
-		iframe {
-			width: 107% !important;
-			height: 100% !important;
-			border: 0px !important;
-			background: transparent;
-			z-index: 1;
-			left: -43px;
-			top: 0;
-			position: absolute;
-		}
-
 		video {
 			position: relative;
 			left: 0;
 			right: 0;
 			top: 0;
-			width: 100%;
-			height: 550px;
+			/* If you want to fit canvas-designer and video to fit perfectly
+			You need to do two things. 
+			First -> Make width 100% below 
+			Second -> Follow the instructions on #canvas-designer  
+			*/
+			width: 30%;
+			max-width: 640px;
+			height: auto;
 			z-index: 0;
+		}
+
+		#canvas-designer {
+			margin: 0px auto;
+			width: 100% !important;
+			
+			border-color: black !important;
+			border: 0 solid black !important;
+			height: 500px;
+			/*
+			If you want to fit canvas-designer and video to fit perfectly
+			comment out height 500px below and enable below two lines 
+			height: 100% !important; 
+			position: absolute;
+			*/
+			top: 0;
 		}
 
 		/* Everything but the jumbotron gets side spacing for mobile first views */
@@ -67,15 +78,7 @@
 			display:none;
 		}
 
-		#canvas-designer {
-			margin: 0px auto;
-			width: 100% !important;
-			height: 100% !important;
-			border-color: black !important;
-			border: 0 solid black !important;
-			position: absolute;
-			top: 0;
-		}
+		
 		.jumbotron {
 			padding: 0;
 			overflow: hidden;
@@ -110,7 +113,7 @@
 
 				<div class="jumbotron">
 
-					<video id="localVideo" autoplay muted controls playsinline></video>
+					<video id="remoteVideo" autoplay muted controls playsinline></video>
 					<div id="canvas-designer"></div>
 					<br>
 
