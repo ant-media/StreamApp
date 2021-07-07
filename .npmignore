@@ -1,0 +1,13 @@
+.git
+.github
+.settings
+codesigning.asc.enc
+mvn-settings.xml
+package.json
+pom.xml
+redeploy.sh
+.classpath
+.gitignore
+.project
+.travis.yml
+doc
