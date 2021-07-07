@@ -1,4 +1,4 @@
-function CanvasDesigner() {
+export function CanvasDesigner() {
     var designer = this;
     designer.iframe = null;
 

@@ -4,10 +4,12 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<meta charset="UTF-8">
 	<link rel="stylesheet"
-		  href="css/external//bootstrap3/bootstrap.min.css"
-		  integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
-	<script src="js/external/adapter-latest.js"></script>
-	<script src="js/external/jquery.min.js"></script>
+		  href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
+		  integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u"
+		  crossorigin="anonymous">
+	<script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
+	<script
+			src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
 
 	<style>
 video {
@@ -97,14 +99,12 @@ body {
 	</div>
 
 	<div class="jumbotron">
-		<div id="players">
-			<div class="col-sm-3">
-				<video id="localVideo" autoplay muted controls playsinline></video>
-				<div style="margin-top:10px;" class="col-sm-8 col-sm-offset-2">Microphone Gain: <input type=range id=volume_change_input min=0 max=1 value=1 step=0.01></div>
-			</div>
+		<div class="container" style="padding: 40px 15px; text-align: center">
+			<video id="localVideo" autoplay muted controls playsinline width="480"></video>
+			<video id="conferenceVideo" autoplay controls playsinline width="480"></video>
+			<div style="margin-top:10px;" class="col-sm-8 col-sm-offset-2">Microphone Gain: <input type=range
+					id=volume_change_input min=0 max=1 value=1 step=0.01></div>
 		</div>
-
-
 
 		<div class="row">
 			<div class="col-sm-6 col-sm-offset-3">
@@ -235,7 +235,6 @@ body {
 	var isDataChannelOpen = false;
 	var isMicMuted = false;
 	var isCameraOff = false;
-	var roomTimerId = -1;
 
 	function switchVideoMode(chbx){
 		if(chbx.value == "screen") {
@@ -333,12 +332,7 @@ body {
 
 	function leaveRoom() {
 		webRTCAdaptor.leaveFromRoom(roomNameBox.value);
-
-		for (var node in document.getElementById("players").childNodes) {
-			if(node.tagName == 'DIV' && node.id != "localVideo") {
-				document.getElementById("players").removeChild(node);
-			}
-		}
+		webRTCAdaptor.stop(roomNameBox.value);
 	}
 
 	function publish(streamName, token) {
@@ -351,37 +345,9 @@ body {
 	}
 
 	function playVideo(obj) {
-		var room = roomOfStream[obj.streamId];
-		console.log("new stream available with id: "
-				+ obj.streamId + "on the room:" + room);
-
-		var video = document.getElementById("remoteVideo"+obj.streamId);
-
-		if (video == null) {
-			createRemoteVideo(obj.streamId);
-			video = document.getElementById("remoteVideo"+obj.streamId);
-		}
+		var video = document.getElementById("conferenceVideo");
 
 		video.srcObject = obj.stream;
-	}
-
-	function createRemoteVideo(streamId) {
-		var player = document.createElement("div");
-		player.className = "col-sm-3";
-		player.id = "player"+streamId;
-		player.innerHTML = '<video id="remoteVideo'+streamId+'"controls autoplay playsinline></video>';
-		document.getElementById("players").appendChild(player);
-	}
-
-	function removeRemoteVideo(streamId) {
-		var video = document.getElementById("remoteVideo"+streamId);
-		if (video != null) {
-			var player = document.getElementById("player" + streamId);
-			video.srcObject = null;
-			document.getElementById("players").removeChild(player);
-		}
-		webRTCAdaptor.stop(streamId);
-		streamsList = streamsList.filter(item => item !== streamId);
 	}
 
 	function startAnimation() {
@@ -436,6 +402,8 @@ body {
 		websocketURL = "wss://" + path;
 	}
 
+	var playTimerId = -1;
+
 	var webRTCAdaptor = new WebRTCAdaptor(	
 			{
 				websocket_url : websocketURL,
@@ -445,6 +413,7 @@ body {
 				localVideoId : "localVideo",
 				isPlayMode : playOnly,
 				debug : true,
+				isMCU : true,
 				callback : (info, obj) => {
 					if (info == "initialized") {
 						console.log("initialized");
@@ -474,21 +443,25 @@ body {
 							publish(obj.streamId, token);
 						}
 						
-						if (obj.streams != null) {
-							obj.streams.forEach(function(item) {
-								console.log("Stream joined with ID: "+item);
-								webRTCAdaptor.play(item, token,
-										roomNameBox.value);
-							});
-							streamsList = obj.streams;
+						playTimerId = setInterval(function () {
+							webRTCAdaptor.getStreamInfo(roomNameBox.value);
+						}, 1000);
+					}
+					else if (info == "play_started") {
+						//joined the stream
+						console.log("play started");
+						if (playTimerId != null)
+						{
+							clearInterval(playTimerId);
 						}
-						roomTimerId = setInterval(() => {			
-							webRTCAdaptor.getRoomInfo(roomNameBox.value, publishStreamId);
-						}, 5000);
 					}
 					else if (info == "newStreamAvailable") {
 						playVideo(obj);
 					} 
+					else if (info == "streamInformation") {
+						console.log("stream information");
+						webRTCAdaptor.play(roomNameBox.value, token);
+					}
 					else if (info == "publish_started") {
 						//stream is being published
 						console.debug("publish started to room: "
@@ -514,21 +487,11 @@ body {
 					else if (info == "leavedFromRoom") {
 						var room = obj.ATTR_ROOM_NAME;
 						console.debug("leaved from the room:" + room);
-						if (roomTimerId != null)
-						{
-							clearInterval(roomTimerId);
-						}
 
 						join_publish_button.disabled = false;
 						stop_publish_button.disabled = true;
 						
-						if (streamsList != null) {
-							streamsList.forEach(function(item) {
-								removeRemoteVideo(item);
-							});
-						}
-						// we need to reset streams list
-						streamsList = new Array();
+						
 					} 
 					else if (info == "closed") {
 						//console.log("Connection closed");
@@ -541,26 +504,6 @@ body {
 						console.log("play_finished");
 						removeRemoteVideo(obj.streamId);
 					} 
-					else if (info == "streamInformation") {
-						streamInformation(obj);
-					} 
-					else if (info == "roomInformation") {
-						//Checks if any new stream has added, if yes, plays.
-						for(let str of obj.streams){
-							if(!streamsList.includes(str)){
-								webRTCAdaptor.play(str, token,
-										roomNameBox.value);
-							}
-						}
-						// Checks if any stream has been removed, if yes, removes the view and stops webrtc connection.
-						for(let str of streamsList){
-							if(!obj.streams.includes(str)){
-								removeRemoteVideo(str);
-							}
-						}
-						//Lastly updates the current streamlist with the fetched one.
-						streamsList=obj.streams;
-					}
 					else if (info == "data_channel_opened") {
 						console.log("Data Channel open for stream id", obj );
 						isDataChannelOpen = true;
@@ -575,10 +518,6 @@ body {
 				},
 				callbackError : function(error, message) {
 					//some of the possible errors, NotFoundError, SecurityError,PermissionDeniedError
-
-					if(error.indexOf("publishTimeoutError") != -1 && roomTimerId != null){
-						clearInterval(roomTimerId);
-					}
 
 					console.log("error callback: " + JSON.stringify(error));
 					var errorMessage = JSON.stringify(error);
@@ -607,6 +546,7 @@ body {
 						errorMessage = "Fatal Error: WebSocket not supported in this browser";
 					} else if (error.indexOf("no_stream_exist") != -1) {
 						//TODO: removeRemoteVideo(error.streamId);
+						return;
 					} else if(error.indexOf("data_channel_error") != -1) {
 						errorMessage = "There was a error during data channel communication";
 					} else if (error.indexOf("ScreenSharePermissionDenied") != -1) {
