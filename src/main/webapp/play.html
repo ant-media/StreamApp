@@ -74,7 +74,7 @@
 
 	<script type="module">
     /**
-    * This page accepts 4 arguments. 
+    * This page accepts following arguments. 
     * 1. "id": the stream id to play.It is mandatory
     * 2. "token": the token to play stream. It's mandatory if token security is enabled on server side.
     * 3. "autoplay": To start playing automatically if streams is available. Optional. Default value is true
@@ -84,6 +84,7 @@
     * 6. "playType": the order which play type is used in playing. Optional. Default value is "mp4,webm".
     *     possible values are "webm,mp4"","mp4","webm"
     * 7. "targetLatency": To define target latency for the DASH player. Optional. Default value is 3.
+    * 8. "is360": To play the stream in 360. Default value is false. 
     */
 
 
@@ -639,7 +640,7 @@
 	
 	
 	
-	 if (streamId != "undefined")
+	 if (typeof streamId != "undefined")
 	 {
 		
 		if (streamId.startsWith(streamsFolder)) 

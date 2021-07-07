@@ -61,6 +61,14 @@ video {
 #video-overlay img{
 	width: 25%;
 }
+
+.message_area {
+	height: 300px;
+	overflow-y: auto;
+	border-style: groove;
+	border-width: thin;
+	background-color: white;
+}
 </style>
 </head>
 <body>
@@ -104,13 +112,19 @@ video {
 				</div>
 				<div class="dropdown-divider"></div>
 				<label>Data Channel Messages</label>
-				<textarea class="form-control" id="dataMessagesTextarea" style="font-size:10px" rows="8"></textarea>
+				<div id="all-messages" class="message_area"></div>
 				<div class="form-row">
-					<div class="form-group col-sm-10">
+					<div class="form-group col-sm-8">
 						<input type="text" class="form-control" id="dataTextbox" placeholder="Write your message to send publisher/players">
 					</div>
 					<div class="form-group col-sm-2">
 					<button type="button" id="send" class="btn btn-outline-primary btn-block">Send</button>
+					</div>
+					<div class="form-group col-sm-2">
+						<button id="send-image-button" type="button" class="btn btn-outline-primary btn-block">
+							Image
+						</button>
+						<input id="file-input" type="file" name="name" accept="image/x-png,image/gif,image/jpeg" style="display: none" />
 					</div>
 				</div>
 				
@@ -214,7 +228,7 @@ video {
             if (iceState != null && iceState != "failed" && iceState != "disconnected") {
             
 				webRTCAdaptor.sendData($("#streamName").val(), $("#dataTextbox").val());
-				$("#dataMessagesTextarea").append("Sent: " + $("#dataTextbox").val() + "\r\n");
+				$("#all-messages").append("Sent: " + $("#dataTextbox").val() + "<br>");
 				$("#dataTextbox").val("");
 			}
 			else {
@@ -226,6 +240,60 @@ video {
 			alert("Message cannot be sent. Make sure you've enabled data channel and choose the correct player distribution on server web panel");
 		}
 	}
+
+	var file_input = document.getElementById("file-input");
+	file_input.addEventListener("change", send_image);
+
+	var connect_channel_button = document.getElementById("send-image-button");
+    connect_channel_button.addEventListener("click", ()=>file_input.click());
+
+	function send_image() {
+      var imageURL = file_input.files[0];
+
+      var reader = new FileReader();
+      reader.onload = function (e) {
+        var arrayBuffer = this.result;
+        var bytes = new Uint8Array(arrayBuffer);
+        var blob = new Blob([bytes.buffer]);
+        var urlCreator = window.URL || window.webkitURL;
+        var imageBlobUrl = urlCreator.createObjectURL(blob);
+
+		$('<img src =' + imageBlobUrl +' style="width:100px;"><br>').appendTo($("#all-messages"));
+        sendBinaryData(arrayBuffer);
+
+      };
+
+      reader.readAsArrayBuffer(imageURL);
+    }
+
+	function sendBinaryData(data) {
+      try {
+        var iceState = webRTCAdaptor.iceConnectionState(streamNameBox.value);
+        if (
+          iceState != null &&
+          iceState != "failed" &&
+          iceState != "disconnected"
+        ) {
+          webRTCAdaptor.sendData(streamNameBox.value, data);
+        } else {
+          alert("WebRTC connection is not active. Please click start first");
+        }
+      } catch (exception) {
+        console.error(exception);
+        alert(
+          "Message cannot be sent. Make sure you've enabled data channel on server web panel"
+        );
+      }
+    }
+
+	function handleImageData(data) {
+        var bytes = new Uint8Array(data);
+        var blob = new Blob([bytes.buffer]);
+        var urlCreator = window.URL || window.webkitURL;
+        var imageUrl = urlCreator.createObjectURL(blob);
+
+		$('<img src =' + imageUrl +' style="width:100px;"><br>').appendTo($("#all-messages"));
+    }
 	
 	function startPlaying() {
 		streamId = streamNameBox.value;
@@ -450,8 +518,13 @@ video {
 				 
 			}
 			else if (info == "data_received") {
-				console.log("Data received: " + obj.event.data + " type: " + obj.event.type + " for stream: " + obj.streamId);
-				$("#dataMessagesTextarea").append("Received: " + obj.event.data + "\r\n");
+				var data = obj.data;
+				if (data instanceof ArrayBuffer) {
+                	handleImageData(data);
+              	}
+			  	else {
+					$("#all-messages").append("Received: " + data + "<br>");
+			  	}
 			}
 			else if (info == "bitrateMeasurement") {
 
