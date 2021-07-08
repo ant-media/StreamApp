@@ -39,7 +39,6 @@ export class WebRTCAdaptor
 		this.bandwidth = 900; //default bandwidth kbps
 		this.isMultiPeer = false; //used for multiple peer client
 		this.multiPeerStreamId = null;   //used for multiple peer client
-		this.isWebSocketTriggered = false;
 		this.webSocketAdaptor = null;
 		this.isPlayMode = false;
 		this.debug = false;
@@ -1725,7 +1724,7 @@ export class WebRTCAdaptor
 
 	checkWebSocketConnection()
 	{
-		if (this.webSocketAdaptor == null || this.webSocketAdaptor.isWebSocketTriggered == false) {
+		if (this.webSocketAdaptor == null || (this.webSocketAdaptor.isConnected() == false && this.webSocketAdaptor.isConnecting() == false)) {
 			this.webSocketAdaptor = new WebSocketAdaptor({websocket_url : this.websocket_url, webrtcadaptor : this, callback : this.callback, callbackError : this.callbackError, debug : this.debug});
 		}
 	}
