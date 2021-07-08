@@ -1,6 +1,8 @@
-export class WebSocketAdaptor {
+export class WebSocketAdaptor 
+{
     constructor(initialValues){
         
+        this.debug = false;
         for(var key in initialValues) {
 			if(initialValues.hasOwnProperty(key)) {
 				this[key] = initialValues[key];
@@ -8,15 +10,16 @@ export class WebSocketAdaptor {
         }
         this.wsConn = new WebSocket(this.websocket_url);
 
-        this.isWebSocketTriggered = true;
+        this.connecting = true;
 
         this.connected = false;
 
         this.pingTimerId = -1;
 
         this.wsConn.onopen = () => {
-            if (true) {
-                console.log("websocket connected");
+            if (this.debug) 
+            {
+                console.debug("websocket connected");
             }
     
             this.pingTimerId = setInterval(() => {
@@ -24,6 +27,7 @@ export class WebSocketAdaptor {
             }, 3000);
     
             this.connected = true;
+            this.connecting = false;
             this.callback("initialized");
         }
 
@@ -52,13 +56,15 @@ export class WebSocketAdaptor {
             } else if (obj.command == "takeConfiguration") {
 
                 if (this.debug) {
-                    console.log("received remote description type for stream id: " + obj.streamId + " type: " + obj.type );
+                    console.debug("received remote description type for stream id: " + obj.streamId + " type: " + obj.type );
                 }
                 this.webrtcadaptor.takeConfiguration(obj.streamId, obj.sdp, obj.type);
 
             }
             else if (obj.command == "stop") {
-                console.debug("Stop command received");
+            	if (this.debug){
+                	console.debug("Stop command received");
+                }
                 this.webrtcadaptor.closePeerConnection(obj.streamId);
             }
             else if (obj.command == "error") {
@@ -92,14 +98,21 @@ export class WebSocketAdaptor {
         }
 
         this.wsConn.onerror = (error) => {
-            console.log(" error occured: " + JSON.stringify(error));
+        	this.connecting = false;
+        	this.connected = false;
+        	if (this.debug) {
+            	console.debug(" error occured: " + JSON.stringify(error));
+            }
             this.clearPingTimer();
             this.callbackError(error)
         }
 
         this.wsConn.onclose = (event) => {
+        	this.connecting = false;
             this.connected = false;
-            console.log("connection closed.");
+            if (this.debug) {
+            	console.debug("connection closed.");
+            }
             this.clearPingTimer();
             this.callback("closed", event);
         }
@@ -133,10 +146,16 @@ export class WebSocketAdaptor {
             return;
         }
         this.wsConn.send(text);
-        console.log("sent message:" +text);
+        if (this.debug) {
+        	console.debug("sent message:" +text);
+        }
     }
 
     isConnected(){
         return this.connected;
+    }
+    
+    isConnecting() {
+    	return this.connecting;
     }
 }
