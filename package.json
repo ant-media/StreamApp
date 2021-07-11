@@ -1,6 +1,6 @@
 {
   "name": "@ant-media/webrtc_adaptor",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "",
   "main": "/src/main/webapp/js/webrtc_adaptor.js",
   "directories": {
