@@ -226,12 +226,6 @@ export class WebRTCAdaptor
 			var media_audio_constraint = { audio: audioConstraint};
 			this.navigatorUserMedia(media_audio_constraint, audioStream => {
 
-				audioStream = this.setGainNodeStream(audioStream);
-				if (this.originalAudioTrackGainNode !== null) {
-					this.originalAudioTrackGainNode.stop();
-				}
-				this.originalAudioTrackGainNode = audioStream.getAudioTracks()[1];
-
 				//add callback if desktop is sharing
 				var onended = event => {
 					this.callback("screen_share_stopped");
@@ -239,6 +233,7 @@ export class WebRTCAdaptor
 				}
 
 				if(this.publishMode == "screen"){
+					audioStream = this.setGainNodeStream(audioStream);
 					this.updateVideoTrack(stream,streamId,mediaConstraints,onended,true);
 					if(audioTrack.length > 0 ){
 						var mixedStream = this.mixAudioStreams(stream, audioStream, streamId);
@@ -249,6 +244,7 @@ export class WebRTCAdaptor
 					}
 				}
 				else if(this.publishMode == "screen+camera" ){
+					audioStream = this.setGainNodeStream(audioStream);
 					if(audioTrack.length > 0 ){
 						var mixedStream = this.mixAudioStreams(stream, audioStream, streamId);
 						this.updateAudioTrack(mixedStream,streamId,null);
@@ -260,9 +256,7 @@ export class WebRTCAdaptor
 					}
 				}
 				else{
-					if(audioConstraint != false && audioConstraint != undefined){
-						stream.addTrack(audioStream.getAudioTracks()[0]);
-					}
+					stream.addTrack(audioStream.getAudioTracks()[0]);
 					this.gotStream(stream);
 				}
 				this.checkWebSocketConnection();
@@ -381,15 +375,20 @@ export class WebRTCAdaptor
 	 */
 	closeStream() 
 	{
-		this.localStream.getVideoTracks().forEach(function(track) {
-			track.onended = null;
-			track.stop();
-		});
 
-		this.localStream.getAudioTracks().forEach(function(track) {
-			track.onended = null;
-			track.stop();
-		});
+		if (this.localStream) {
+			this.localStream.getVideoTracks().forEach(function(track) {
+				track.onended = null;
+				track.stop();
+			});
+
+			this.localStream.getAudioTracks().forEach(function(track) {
+				track.onended = null;
+				track.stop();
+			});
+		}
+		
+		
 		if (this.videoTrack !== null) {
 			this.videoTrack.stop();
 		}
@@ -736,6 +735,11 @@ export class WebRTCAdaptor
 
   		// Get the audioTracks from the stream.
   		const audioTracks = stream.getAudioTracks();
+		if (this.originalAudioTrackGainNode !== null) {
+			this.originalAudioTrackGainNode.stop();
+		}
+		this.originalAudioTrackGainNode = audioTracks[0];
+
 
   		/**
    		* Create a new audio context and build a stream source,
@@ -772,9 +776,6 @@ export class WebRTCAdaptor
 
   		for (const videoTrack of videoTracks) {
     		controlledStream.addTrack(videoTrack);
-  		}
-		for (const audioTrack of audioTracks) {
-    		controlledStream.addTrack(audioTrack);
   		}
 
   		/**
@@ -848,9 +849,12 @@ export class WebRTCAdaptor
 		
 		if (this.localStream != null && this.localStream.getAudioTracks()[0] != null) 
 		{
-			var audioTrack = this.localStream.getAudioTracks()[0];
-			this.localStream.removeTrack(audioTrack);
-			audioTrack.stop();
+			const enabled = (this.localStream.getAudioTracks()[0]).enabled;
+			this.localStream.getAudioTracks().forEach(audio => {
+				this.localStream.removeTrack(audio);
+				audio.stop();
+			});
+			newAudioTrack.enabled = enabled;
 			this.localStream.addTrack(newAudioTrack);
 		}
 		else if(this.localStream != null){
@@ -1725,8 +1729,9 @@ export class WebRTCAdaptor
 	checkWebSocketConnection()
 	{
 		if (this.webSocketAdaptor == null || (this.webSocketAdaptor.isConnected() == false && this.webSocketAdaptor.isConnecting() == false)) {
+
 			this.webSocketAdaptor = new WebSocketAdaptor({websocket_url : this.websocket_url, webrtcadaptor : this, callback : this.callback, callbackError : this.callbackError, debug : this.debug});
-		}
+		}		
 	}
 
 	peerMessage(streamId, definition, data) 
