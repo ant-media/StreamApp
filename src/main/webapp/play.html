@@ -82,7 +82,7 @@
     * 5. "playOrder": the order which technologies is used in playing. Optional. Default value is "webrtc,hls".
     *     possible values are "hls,webrtc","webrtc","hls","vod","dash"
     * 6. "playType": the order which play type is used in playing. Optional. Default value is "mp4,webm".
-    *     possible values are "webm,mp4"","mp4","webm"
+    *     possible values are "webm,mp4"","mp4","webm","mov"
     * 7. "targetLatency": To define target latency for the DASH player. Optional. Default value is 3.
     * 8. "is360": To play the stream in 360. Default value is false. 
     */
@@ -118,6 +118,9 @@
 	 }
 	 else if(playType == "webm"){
 	 	playType=["webm"];
+	 }
+	 else if(playType == "mov"){
+	 	playType=["mov"];
 	 }
 	   
 	var token = getUrlParameter("token");
