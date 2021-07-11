@@ -1,0 +1,25 @@
+{
+  "name": "@ant-media/webrtc_adaptor",
+  "version": "1.2.0",
+  "description": "",
+  "main": "/src/main/webapp/js/webrtc_adaptor.js",
+  "directories": {
+    "doc": "doc"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ant-media/StreamApp.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ant-media/StreamApp/issues"
+  },
+  "homepage": "https://github.com/ant-media/StreamApp#readme"
+}
