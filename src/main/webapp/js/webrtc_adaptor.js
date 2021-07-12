@@ -39,12 +39,12 @@ export class WebRTCAdaptor
 		this.bandwidth = 900; //default bandwidth kbps
 		this.isMultiPeer = false; //used for multiple peer client
 		this.multiPeerStreamId = null;   //used for multiple peer client
+		this.isWebSocketTriggered = false;
 		this.webSocketAdaptor = null;
 		this.isPlayMode = false;
 		this.debug = false;
 		this.viewerInfo = "";
 		this.onlyDataChannel = false;
-		this.isMCU = false;
 
 		this.receivingMessages = new Map();;
 
@@ -226,6 +226,12 @@ export class WebRTCAdaptor
 			var media_audio_constraint = { audio: audioConstraint};
 			this.navigatorUserMedia(media_audio_constraint, audioStream => {
 
+				audioStream = this.setGainNodeStream(audioStream);
+				if (this.originalAudioTrackGainNode !== null) {
+					this.originalAudioTrackGainNode.stop();
+				}
+				this.originalAudioTrackGainNode = audioStream.getAudioTracks()[1];
+
 				//add callback if desktop is sharing
 				var onended = event => {
 					this.callback("screen_share_stopped");
@@ -233,7 +239,6 @@ export class WebRTCAdaptor
 				}
 
 				if(this.publishMode == "screen"){
-					audioStream = this.setGainNodeStream(audioStream);
 					this.updateVideoTrack(stream,streamId,mediaConstraints,onended,true);
 					if(audioTrack.length > 0 ){
 						var mixedStream = this.mixAudioStreams(stream, audioStream, streamId);
@@ -244,7 +249,6 @@ export class WebRTCAdaptor
 					}
 				}
 				else if(this.publishMode == "screen+camera" ){
-					audioStream = this.setGainNodeStream(audioStream);
 					if(audioTrack.length > 0 ){
 						var mixedStream = this.mixAudioStreams(stream, audioStream, streamId);
 						this.updateAudioTrack(mixedStream,streamId,null);
@@ -256,7 +260,9 @@ export class WebRTCAdaptor
 					}
 				}
 				else{
-					stream.addTrack(audioStream.getAudioTracks()[0]);
+					if(audioConstraint != false && audioConstraint != undefined){
+						stream.addTrack(audioStream.getAudioTracks()[0]);
+					}
 					this.gotStream(stream);
 				}
 				this.checkWebSocketConnection();
@@ -375,20 +381,15 @@ export class WebRTCAdaptor
 	 */
 	closeStream() 
 	{
+		this.localStream.getVideoTracks().forEach(function(track) {
+			track.onended = null;
+			track.stop();
+		});
 
-		if (this.localStream) {
-			this.localStream.getVideoTracks().forEach(function(track) {
-				track.onended = null;
-				track.stop();
-			});
-
-			this.localStream.getAudioTracks().forEach(function(track) {
-				track.onended = null;
-				track.stop();
-			});
-		}
-		
-		
+		this.localStream.getAudioTracks().forEach(function(track) {
+			track.onended = null;
+			track.stop();
+		});
 		if (this.videoTrack !== null) {
 			this.videoTrack.stop();
 		}
@@ -493,7 +494,7 @@ export class WebRTCAdaptor
 		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
 	}
 
-	joinRoom(roomName, streamId) 
+	joinRoom(roomName, streamId, mode) 
 	{
 		this.roomName = roomName;
 
@@ -501,7 +502,7 @@ export class WebRTCAdaptor
 				command : "joinRoom",
 				room: roomName,
 				streamId: streamId,
-				mcu: this.isMCU,
+				mode: mode,
 		}
 		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
 	}
@@ -620,11 +621,7 @@ export class WebRTCAdaptor
 		stream = this.setGainNodeStream(stream);
 
 		this.localStream = stream;
-		
-		/** If you want to stream without override your stream */
-		if(this.localVideo){
-			this.localVideo.srcObject = stream;
-		}
+		this.localVideo.srcObject = stream;
 		
 		this.checkWebSocketConnection();
 		this.getDevices();
@@ -739,11 +736,6 @@ export class WebRTCAdaptor
 
   		// Get the audioTracks from the stream.
   		const audioTracks = stream.getAudioTracks();
-		if (this.originalAudioTrackGainNode !== null) {
-			this.originalAudioTrackGainNode.stop();
-		}
-		this.originalAudioTrackGainNode = audioTracks[0];
-
 
   		/**
    		* Create a new audio context and build a stream source,
@@ -780,6 +772,9 @@ export class WebRTCAdaptor
 
   		for (const videoTrack of videoTracks) {
     		controlledStream.addTrack(videoTrack);
+  		}
+		for (const audioTrack of audioTracks) {
+    		controlledStream.addTrack(audioTrack);
   		}
 
   		/**
@@ -853,12 +848,9 @@ export class WebRTCAdaptor
 		
 		if (this.localStream != null && this.localStream.getAudioTracks()[0] != null) 
 		{
-			const enabled = (this.localStream.getAudioTracks()[0]).enabled;
-			this.localStream.getAudioTracks().forEach(audio => {
-				this.localStream.removeTrack(audio);
-				audio.stop();
-			});
-			newAudioTrack.enabled = enabled;
+			var audioTrack = this.localStream.getAudioTracks()[0];
+			this.localStream.removeTrack(audioTrack);
+			audioTrack.stop();
 			this.localStream.addTrack(newAudioTrack);
 		}
 		else if(this.localStream != null){
@@ -1732,10 +1724,9 @@ export class WebRTCAdaptor
 
 	checkWebSocketConnection()
 	{
-		if (this.webSocketAdaptor == null || (this.webSocketAdaptor.isConnected() == false && this.webSocketAdaptor.isConnecting() == false)) {
-
+		if (this.webSocketAdaptor == null || this.webSocketAdaptor.isConnected() == false) {
 			this.webSocketAdaptor = new WebSocketAdaptor({websocket_url : this.websocket_url, webrtcadaptor : this, callback : this.callback, callbackError : this.callbackError, debug : this.debug});
-		}		
+		}
 	}
 
 	peerMessage(streamId, definition, data) 
