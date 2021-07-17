@@ -1,0 +1,12 @@
+/*
+This file can be used to have common css features. 
+In addition, we use it to show an info in the samples that is not supported in community edition. 
+Related css class is added in packaging
+*/
+
+/*
+ enterprise-feature message is not displayed in enterprise, it appears in community edition.
+ It's default value is display:none. It's a single line PLEASE DON'T or take a look at
+ show_enterprise_feature_message.sh
+*/
+.enterprise-feature{display:none;}

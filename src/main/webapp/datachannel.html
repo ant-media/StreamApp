@@ -4,10 +4,10 @@
 <title>Ant Media Server WebRTC Publish</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta charset="UTF-8">
-<link rel="stylesheet" href="css/external/bootstrap4/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+<link rel="stylesheet" href="css/external/bootstrap4/bootstrap.min.css">
 
 <script src="js/external/adapter-latest.js"></script>
-
+<link rel="stylesheet" href="css/common.css" />
 <style>
 video {
 	width: 100%;
@@ -65,6 +65,11 @@ video {
 		</div>
 
 		<div class="jumbotron">
+			<div class="alert alert-primary text-center enterprise-feature" role="alert" style="margin-top:-2em">
+				WebRTC Data Channel is an Enterprise Edition. <br/>
+			<a href="https://antmedia.io">Try Enterprise Edition for free at antmedia.io</a> <br/><br/>
+			<a href="https://github.com/ant-media/Ant-Media-Server/wiki#community-edition--enterprise-edition" style="font-size:12px">Comparison between Community and Enterprise</a>		 
+			</div>
 			<div class="form-group col-sm-12 text-left">
 				<input type="text" class="form-control"
 						id="streamName" name="streamIdTextBox" placeholder="Type stream name">
