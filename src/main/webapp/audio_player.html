@@ -4,8 +4,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta charset="UTF-8">
 <link rel="stylesheet"
-	href="css/external/bootstrap3/bootstrap.min.css"
-	integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+	href="css/external/bootstrap4/bootstrap.min.css"
+	 >
+<link rel="stylesheet" href="css/common.css" />
 <script src="js/external/adapter-latest.js"></script>
 <style>
 video {
@@ -82,18 +83,23 @@ body {
 
 	<div class="container">
 		<div class="header clearfix">
-			<nav>
-				<ul class="nav navbar-pills pull-right">
-					<li><a href="http://antmedia.io">Contact</a></li>
-				</ul>
-			</nav>
-			<h3 class="text-muted">WebRTC Play</h3>
+			<div class="row">
+				<h3 class="col text-muted">WebRTC Audio Play</h3>
+				<nav class="col align-self-center">
+					<ul class="nav float-right">
+						<li><a href="http://antmedia.io">Contact</a></li>
+					</ul>
+				</nav>
+			</div>
 		</div>
 
 
-
 		<div class="jumbotron">
-
+			<div class="alert alert-primary text-center enterprise-feature" role="alert" style="margin-top:-2em">
+			WebRTC Audio Playback is an Enterprise Edition. <br/>
+			<a href="https://antmedia.io">Try Enterprise Edition for free at antmedia.io</a> <br/><br/>
+			<a href="https://github.com/ant-media/Ant-Media-Server/wiki#community-edition--enterprise-edition" style="font-size:12px">Comparison between Community and Enterprise</a>		 
+			</div>
 			<p>
 			<!--  
 				<video id="remoteVideo" autoplay controls></video>
@@ -105,9 +111,9 @@ body {
 					id="streamName" placeholder="Type stream name">
 			</p>
 			<p>
-				<button class="btn btn-info"
+				<button class="btn btn-primary"
 					id="start_play_button">Start Playing</button>
-				<button class="btn btn-info"
+				<button class="btn btn-primary"
 					id="stop_play_button">Stop Playing</button>
 
 			</p>

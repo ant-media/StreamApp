@@ -29,7 +29,7 @@
 </head>
 <body>
 
-<a-scene>
+<a-scene style="display: none;">
     <video id="remoteVideo" playsinline></video>
     <a-entity distance="0.0" video-controls="src:#video"></a-entity>
     <a-camera>
@@ -155,13 +155,8 @@
 
 	var is360 = getUrlParameter("is360");
 
-	if(is360 == "false" || is360 == null){
+	if(is360 == "true"){
 
-		var scene = document.querySelector('a-scene');
-		scene.parentNode.removeChild(scene);
-		is360 = false;
-	}
-	else{
 		setTimeout(function(){
            $(".a-enter-vr-button").click();
     	},3000);
@@ -176,6 +171,11 @@
             });
         }
     	});
+	}
+	else {
+		hide360ElementsVisibility();
+		is360 = false;
+		
 	}
 
 	// This function mutes or unmutes the 360 video stream.
@@ -285,16 +285,10 @@
 	
 	function show360ElementsVisibility() {
 		unMuteButton.style.display = "block";
-		var scene = document.querySelector('a-scene');
-		if(scene == null){
-			document.body.innerHTML = document.body.innerHTML + "<a-scene><video id=\"remoteVideo\" playsinline></video><a-entity distance=\"0.0\" video-controls=\"src:#video\"></a-entity><a-camera></a-camera><a-videosphere src=\"#remoteVideo\" rotation=\"0 180 0\" style=\"background-color: antiquewhite\"></a-videosphere></a-scene>";
-		}
+		document.querySelector('a-scene').style.display = "block";
 	}
 	function hide360ElementsVisibility(){
-		var scene = document.querySelector('a-scene');
-		if(scene != null){
-			scene.parentNode.removeChild(scene);
-		}
+		document.querySelector('a-scene').style.display = "none";
 	}
 
 	function playWebRTCVideo() {

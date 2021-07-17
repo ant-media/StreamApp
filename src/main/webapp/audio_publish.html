@@ -4,8 +4,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta charset="UTF-8">
 <link rel="stylesheet"
-	href="css/external/bootstrap3/bootstrap.min.css"
-	integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+	href="css/external/bootstrap4/bootstrap.min.css"
+	 >
+<link rel="stylesheet" href="css/common.css" />	
 <script src="js/external/adapter-latest.js"></script>
 <script
 		src="js/external/jquery-3.4.1.min.js"></script>
@@ -86,30 +87,37 @@ body {
 	<div class="container">
 
 		<div class="header clearfix">
-			<nav>
-				<ul class="nav navbar-pills pull-right">
-					<li><a href="http://antmedia.io">Contact</a></li>
-				</ul>
-			</nav>
-			<h3 class="text-muted">WebRTC Publish</h3>
+			<div class="row">
+				<h3 class="col text-muted">WebRTC Audio Publish</h3>
+				<nav class="col align-self-center">
+					<ul class="nav float-right">
+						<li><a href="http://antmedia.io">Contact</a></li>
+					</ul>
+				</nav>
+			</div>
 		</div>
 
 		<div class="jumbotron">
 
+			<div class="alert alert-primary text-center enterprise-feature" role="alert" style="margin-top:-2em">
+			WebRTC Audio Publish is an Enterprise Edition. <br/>
+			<a href="https://antmedia.io">Try Enterprise Edition for free at antmedia.io</a> <br/><br/>
+			<a href="https://github.com/ant-media/Ant-Media-Server/wiki#community-edition--enterprise-edition" style="font-size:12px">Comparison between Community and Enterprise</a>		 
+			</div>
 			<p>
 				<audio id="localVideo" autoplay controls muted></audio>
 			</p>
 
-			<div style="margin-top:10px; margin-bottom:20px;" class="col-sm-6 col-sm-offset-3">Microphone Gain: <br><input type=range id="volume_change_input" min=0 max=1 value=1 step=0.01></div>
+			<div style="margin-top:10px; margin-bottom:20px;">Microphone Gain: <br><input type=range id="volume_change_input" min=0 max=1 value=1 step=0.01></div>
 
 			<p>
 				<input type="text" class="form-control" value="stream1"
 					id="streamName" placeholder="Type stream name">
 			</p>
 			<p>
-				<button class="btn btn-info" disabled
+				<button class="btn btn-primary" disabled
 					id="start_publish_button">Start Publishing</button>
-				<button class="btn btn-info" disabled
+				<button class="btn btn-primary" disabled
 					id="stop_publish_button">Stop Publishing</button>
 			</p>
 
