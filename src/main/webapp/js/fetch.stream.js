@@ -14,7 +14,7 @@ if (!String.prototype.endsWith)
 }
 
 export function tryToPlay(name, token, type, subscriberId, subscriberCode, noStreamCallback) {
-	fetch("streams/"+ name +"_adaptive."+type, {method:'HEAD'})
+	fetch("streams/"+ name +"_adaptive."+type+"?token=" + token + "&subscriberId="+subscriberId +"&subscriberCode="+subscriberCode, {method:'HEAD'})
 	.then(function(response) {
 		if (response.status == 200) {
 			// adaptive m3u8 & mpd exists,play it
@@ -23,7 +23,7 @@ export function tryToPlay(name, token, type, subscriberId, subscriberCode, noStr
 		else 
 		{
 			//adaptive not exists, try mpd or m3u8 exists.
-			fetch("streams/"+ name +"."+type, {method:'HEAD'})
+			fetch("streams/"+ name +"."+type+"?token=" + token + "&subscriberId="+subscriberId +"&subscriberCode="+subscriberCode, {method:'HEAD'})
 			.then(function(response) {
 				if (response.status == 200) {
 					initializePlayer(name, type, token, subscriberId, subscriberCode);
@@ -58,14 +58,14 @@ export function tryToVODPlay(name, token, subscriberId, subscriberCode, noStream
 		secondPlayType = playType[1];
 	}
 
-	fetch("streams/"+ name +"."+firstPlayType, {method:'HEAD'})
+	fetch("streams/"+ name +"."+firstPlayType+"?token=" + token + "&subscriberId="+subscriberId +"&subscriberCode="+subscriberCode, {method:'HEAD'})
 		.then(function(response) {
 			if (response.status == 200) {
 				//firstPlayType exists, play it
 				initializePlayer(name, firstPlayType, token, subscriberId, subscriberCode)
 			}
 			else if(secondPlayType  != null){
-				fetch("streams/"+ name +"."+secondPlayType, {method:'HEAD'})
+				fetch("streams/"+ name +"."+secondPlayType+"?token=" + token + "&subscriberId="+subscriberId +"&subscriberCode="+subscriberCode, {method:'HEAD'})
 				.then(function(response) {
 				if (response.status == 200) {
 					//secondPlayType exists, play it
