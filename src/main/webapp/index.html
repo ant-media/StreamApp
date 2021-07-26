@@ -513,6 +513,7 @@ video {
 				localVideoId : "localVideo",
 				debug:debug,
 				bandwidth:maxVideoBitrateKbps,
+				dataChannelEnabled : true,
 				callback : (info, obj) => {
 					if (info == "initialized") {
 						console.log("initialized");
