@@ -44,7 +44,6 @@ export class WebRTCAdaptor
 		this.debug = false;
 		this.viewerInfo = "";
 		this.onlyDataChannel = false;
-		this.isMCU = false;
 
 		this.receivingMessages = new Map();;
 
@@ -493,7 +492,7 @@ export class WebRTCAdaptor
 		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
 	}
 
-	joinRoom(roomName, streamId) 
+	joinRoom(roomName, streamId, mode) 
 	{
 		this.roomName = roomName;
 
@@ -501,7 +500,7 @@ export class WebRTCAdaptor
 				command : "joinRoom",
 				room: roomName,
 				streamId: streamId,
-				mcu: this.isMCU,
+				mode: mode,
 		}
 		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
 	}

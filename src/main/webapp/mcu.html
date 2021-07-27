@@ -182,6 +182,8 @@ body {
 	var token = getUrlParameter("token");
 	var streamId = getUrlParameter("streamId");
 	var playOnly = getUrlParameter("playOnly");
+	var audioOnly = getUrlParameter("audioOnly");
+
 	if(playOnly == null) {
 		playOnly = false;
 	}
@@ -328,8 +330,8 @@ body {
 	}
 
 	function joinRoom() {
-
-		webRTCAdaptor.joinRoom(roomNameBox.value, streamId);
+		var mode = audioOnly ? "amcu" : "mcu";
+		webRTCAdaptor.joinRoom(roomNameBox.value, streamId, mode);
 	}
 
 	function leaveRoom() {
@@ -391,7 +393,7 @@ body {
 	};
 
 	var mediaConstraints = {
-		video : true,
+		video : !audioOnly,
 		audio : true
 	};
 
@@ -415,7 +417,6 @@ body {
 				localVideoId : "localVideo",
 				isPlayMode : playOnly,
 				debug : true,
-				isMCU : true,
 				callback : (info, obj) => {
 					if (info == "initialized") {
 						console.log("initialized");
