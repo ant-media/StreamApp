@@ -43,9 +43,18 @@ export class WebRTCAdaptor
 		this.isPlayMode = false;
 		this.debug = false;
 		this.viewerInfo = "";
+		/**
+		 * This is used when only data is brodcasted with the same way video and/or audio.
+	     * The difference is that no video or audio is sent when this field is true 
+		 */
 		this.onlyDataChannel = false;
+		
+		/**
+		 * While publishing and playing streams data channel is enabled by default
+		 */
+		this.dataChannelEnabled = true;
 
-		this.receivingMessages = new Map();;
+		this.receivingMessages = new Map();
 
 		this.publishMode="camera"; //screen, screen+camera
 
