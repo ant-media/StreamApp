@@ -43,9 +43,18 @@ export class WebRTCAdaptor
 		this.isPlayMode = false;
 		this.debug = false;
 		this.viewerInfo = "";
+		/**
+		 * This is used when only data is brodcasted with the same way video and/or audio.
+	     * The difference is that no video or audio is sent when this field is true 
+		 */
 		this.onlyDataChannel = false;
+		
+		/**
+		 * While publishing and playing streams data channel is enabled by default
+		 */
+		this.dataChannelEnabled = true;
 
-		this.receivingMessages = new Map();;
+		this.receivingMessages = new Map();
 
 		this.publishMode="camera"; //screen, screen+camera
 
@@ -1150,42 +1159,45 @@ export class WebRTCAdaptor
 				this.onTrack(event, closedStreamId);
 			}
 
-			if (dataChannelMode == "publish") {
-				//open data channel if it's publish mode peer connection 
-				const dataChannelOptions = {
-						ordered: true,
-				};
-				if (this.remotePeerConnection[streamId].createDataChannel) {
-					var dataChannel = this.remotePeerConnection[streamId].createDataChannel(streamId, dataChannelOptions);
-					this.initDataChannel(streamId, dataChannel);
-				}
-				else {
-				    console.warn("CreateDataChannel is not supported");
-				}
+			if (this.dataChannelEnabled){
+				// skip initializing data channel if it is disabled
+				if (dataChannelMode == "publish") {
+					//open data channel if it's publish mode peer connection 
+					const dataChannelOptions = {
+							ordered: true,
+					};
+					if (this.remotePeerConnection[streamId].createDataChannel) {
+						var dataChannel = this.remotePeerConnection[streamId].createDataChannel(streamId, dataChannelOptions);
+						this.initDataChannel(streamId, dataChannel);
+					}
+					else {
+						console.warn("CreateDataChannel is not supported");
+					}
 
-			} else if(dataChannelMode == "play") {
-				//in play mode, server opens the data channel 
-				this.remotePeerConnection[streamId].ondatachannel = ev => {
-					this.initDataChannel(streamId, ev.channel);
-				};
-			}
-			else {
-				//for peer mode do both for now
-				const dataChannelOptions = {
-						ordered: true,
-				};
-
-				if (this.remotePeerConnection[streamId].createDataChannel) 
-				{
-					var dataChannelPeer = this.remotePeerConnection[streamId].createDataChannel(streamId, dataChannelOptions);
-					this.initDataChannel(streamId, dataChannelPeer);
-	
+				} else if(dataChannelMode == "play") {
+					//in play mode, server opens the data channel 
 					this.remotePeerConnection[streamId].ondatachannel = ev => {
 						this.initDataChannel(streamId, ev.channel);
 					};
 				}
 				else {
-				    console.warn("CreateDataChannel is not supported");
+					//for peer mode do both for now
+					const dataChannelOptions = {
+							ordered: true,
+					};
+
+					if (this.remotePeerConnection[streamId].createDataChannel) 
+					{
+						var dataChannelPeer = this.remotePeerConnection[streamId].createDataChannel(streamId, dataChannelOptions);
+						this.initDataChannel(streamId, dataChannelPeer);
+		
+						this.remotePeerConnection[streamId].ondatachannel = ev => {
+							this.initDataChannel(streamId, ev.channel);
+						};
+					}
+					else {
+						console.warn("CreateDataChannel is not supported");
+					}
 				}
 			}
 
