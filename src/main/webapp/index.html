@@ -81,7 +81,7 @@ video {
 
 			<div class="form-group col-sm-12 text-left">
 				<input type="text" class="form-control"
-						id="streamName" name="streamIdTextBox" placeholder="Type stream name">
+						id="streamId" name="streamIdTextBox" placeholder="Type stream ID">
 			</div>
 			<div class="col-sm-12 text-right">
 				<button type="button" id="options" class="btn btn-outline-primary btn-sm" >Options</button>
@@ -182,15 +182,15 @@ video {
     function init () {
 	  var id = getUrlParameter("id");
 	  if(typeof id != "undefined") {
-		$("#streamName").val(id);
+		$("#streamId").val(id);
 	  }
 	  else {
 		id = getUrlParameter("name");
 		if (typeof id != "undefined") {
-			$("#streamName").val(id);
+			$("#streamId").val(id);
 		} 
 		else {
-			$("#streamName").val("stream1");
+			$("#streamId").val("stream1");
 		}
 	  }
 	  
@@ -200,7 +200,7 @@ video {
 		if(bitrateBoxValue == "unlimited" || bitrateBoxValue == NaN){
 			maxVideoBitrateKbps = "unlimited"
 			console.log("input bitrate: " + maxVideoBitrateKbps);
-			webRTCAdaptor.changeBandwidth(maxVideoBitrateKbps,  $("#streamName").val());
+			webRTCAdaptor.changeBandwidth(maxVideoBitrateKbps,  $("#streamId").val());
 		}
 		else{
 			var bitrate = parseInt(bitrateBoxValue);
@@ -213,7 +213,7 @@ video {
 			console.log("input bitrate: " + maxVideoBitrateKbps);
 			$("#maxBandwidthTextBox").val(maxVideoBitrateKbps)
 			if (webRTCAdaptor != null) {
-				webRTCAdaptor.changeBandwidth(maxVideoBitrateKbps,  $("#streamName").val());
+				webRTCAdaptor.changeBandwidth(maxVideoBitrateKbps,  $("#streamId").val());
 			}
 		}
 	  })
@@ -225,6 +225,7 @@ video {
 	var maxVideoBitrateKbps = 900;
 	var subscriberId = getUrlParameter("subscriberId");
 	var subscriberCode = getUrlParameter("subscriberCode");
+	var streamName = getUrlParameter("streamName");
 	
 	//TODO: Migrate these methods to Jquery
 	var start_publish_button = document.getElementById("start_publish_button");
@@ -236,9 +237,9 @@ video {
 	var send = document.getElementById("send");
 	send.addEventListener("click", sendData, false);
 	
-	document.getElementById("streamName").defaultValue = "Goofy"
-	var streamNameBox = document.getElementById("streamName");
-	streamNameBox.value = "stream1";
+	document.getElementById("streamId").defaultValue = "Goofy"
+	var streamIdBox = document.getElementById("streamId");
+	streamIdBox.value = "stream1";
 	
 	/**
 	 * If publishing stops for any reason, it tries to republish again.
@@ -323,13 +324,13 @@ video {
 
 	function sendBinaryData(data) {
       try {
-        var iceState = webRTCAdaptor.iceConnectionState(streamNameBox.value);
+        var iceState = webRTCAdaptor.iceConnectionState(streamIdBox.value);
         if (
           iceState != null &&
           iceState != "failed" &&
           iceState != "disconnected"
         ) {
-          webRTCAdaptor.sendData(streamNameBox.value, data);
+          webRTCAdaptor.sendData(streamIdBox.value, data);
         } else {
           alert("WebRTC connection is not active. Please click start first");
         }
@@ -351,8 +352,8 @@ video {
     }
 
 	function startPublishing() {
-		streamId = streamNameBox.value;
-		webRTCAdaptor.publish(streamId, token, subscriberId, subscriberCode);
+		streamId = streamIdBox.value;
+		webRTCAdaptor.publish(streamId, token, subscriberId, subscriberCode, streamName);
 	}
 
 	function stopPublishing() {
@@ -422,7 +423,7 @@ video {
 			var iceState = webRTCAdaptor.iceConnectionState(streamId);
             if (iceState != null && iceState != "failed" && iceState != "disconnected") {
             
-				webRTCAdaptor.sendData($("#streamName").val(), $("#dataTextbox").val());
+				webRTCAdaptor.sendData($("#streamId").val(), $("#dataTextbox").val());
 				$("#all-messages").append("Sent: " + $("#dataTextbox").val() + "<br>");
 				$("#dataTextbox").val("");
 			}
@@ -520,7 +521,7 @@ video {
 						start_publish_button.disabled = false;
 						stop_publish_button.disabled = true;
 						if (publishImmediately) {
-							webRTCAdaptor.publish(streamId, token)
+							webRTCAdaptor.publish(streamId, token, subscriberId, subscriberCode, streamName)
 						}
 						
 					} else if (info == "publish_started") {
