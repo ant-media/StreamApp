@@ -95,6 +95,11 @@ export class WebRTCAdaptor
 		this.localVideo = document.getElementById(this.localVideoId);
 		this.remoteVideo = document.getElementById(this.remoteVideoId);
 
+		//A dummy stream created to replace the tracks when camera is turned off.
+		this.dummyCanvas =document.createElement("canvas");
+		this.dummyCanvas.getContext('2d').fillRect(0, 0, 320, 240);
+		this.replacementStream = this.dummyCanvas.captureStream();
+
 		// It should be compatible with previous version
 		if(this.mediaConstraints.video == "camera") {
 			this.publishMode="camera";
@@ -1289,31 +1294,35 @@ export class WebRTCAdaptor
 	}
 
 
-	turnOffLocalCamera() 
-	{
-		if (this.remotePeerConnection != null) {
+	turnOffLocalCamera(streamId) 
+	 {
+		 this.dummyCanvas.getContext('2d').fillRect(0, 0, 320, 240);
+		 this.replacementStream = this.dummyCanvas.captureStream();
+		 if (this.remotePeerConnection != null) {
+			 this.updateVideoTrack(this.replacementStream, streamId, this.mediaConstraints, null, true);
+		 }
+		 else {
+			 this.callbackError("NoActiveConnection");
+		 }
+	 }
 
-			var track = this.localStream.getVideoTracks()[0];
-			track.enabled = false;
-		}
-		else {
-			this.callbackError("NoActiveConnection");
-		}
-	}
-
-	turnOnLocalCamera() 
-	{
-		//If it started in playOnly mode and wants to turn on the camera
-		if(this.localStream == null){
-			this.navigatorUserMedia(this.mediaConstraints, stream =>{
-				this.gotStream(stream);
-			}, false);
-		}
-		else if (this.remotePeerConnection != null) {
-			var track = this.localStream.getVideoTracks()[0];
-			track.enabled = true;
-		}
-	}
+	 turnOnLocalCamera(streamId) 
+	 {
+		 if(this.localStream == null){
+			 this.navigatorUserMedia(this.mediaConstraints, stream =>{
+				 this.gotStream(stream);
+			 }, false);
+		 }
+		 //This method will get the camera track and replace it with dummy track
+		 else if (this.remotePeerConnection != null) {
+			 this.navigatorUserMedia(this.mediaConstraints, stream =>{
+				 this.updateVideoTrack(stream, streamId, this.mediaConstraints, null, true);
+			 }, false);
+		 }
+		 else {
+			 this.callbackError("NoActiveConnection");
+		 }
+	 }
 
 	muteLocalMic() 
 	{

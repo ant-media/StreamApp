@@ -258,14 +258,14 @@ body {
 	}
 
 	function turnOffLocalCamera() {
-		webRTCAdaptor.turnOffLocalCamera();
+		webRTCAdaptor.turnOffLocalCamera(publishStreamId);
 		isCameraOff = true;
 		handleCameraButtons();
 		sendNotificationEvent("CAM_TURNED_OFF");
 	}
 
 	function turnOnLocalCamera() {
-		webRTCAdaptor.turnOnLocalCamera();
+		webRTCAdaptor.turnOnLocalCamera(publishStreamId);
 		isCameraOff = false;
 		handleCameraButtons();
 		sendNotificationEvent("CAM_TURNED_ON");
@@ -336,7 +336,7 @@ body {
 
 	function joinRoom() {
 
-		webRTCAdaptor.joinRoom(roomNameBox.value, streamId, "legacy");
+		webRTCAdaptor.joinRoom(roomNameBox.value, streamId);
 	}
 
 	function leaveRoom() {
@@ -463,7 +463,6 @@ body {
 				localVideoId : "localVideo",
 				isPlayMode : playOnly,
 				debug : true,
-				dataChannelEnabled : true,
 				callback : (info, obj) => {
 					if (info == "initialized") {
 						console.log("initialized");
