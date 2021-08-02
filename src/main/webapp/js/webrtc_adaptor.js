@@ -1381,6 +1381,8 @@ export class WebRTCAdaptor
 				.then(configuration =>
 						{
 					console.log("created answer for stream id: " + streamId);
+					//support for stereo
+          			configuration.sdp = configuration.sdp.replace("useinbandfec=1", "useinbandfec=1; stereo=1");
 					this.gotDescription(configuration, streamId);
 						})
 						.catch((error) =>
