@@ -336,7 +336,7 @@ body {
 
 	function joinRoom() {
 
-		webRTCAdaptor.joinRoom(roomNameBox.value, streamId);
+		webRTCAdaptor.joinRoom(roomNameBox.value, streamId, "legacy");
 	}
 
 	function leaveRoom() {
@@ -463,6 +463,7 @@ body {
 				localVideoId : "localVideo",
 				isPlayMode : playOnly,
 				debug : true,
+				dataChannelEnabled : true,
 				callback : (info, obj) => {
 					if (info == "initialized") {
 						console.log("initialized");
@@ -643,4 +644,3 @@ body {
 	
 </script>
 </html>
-
