@@ -1323,10 +1323,11 @@ export class WebRTCAdaptor
 
 		 //We need to send black frames within a time interval, because when the user turn off the camera,
 		//player can't connect to the sender since there is no data flowing. Sending a black frame in each 3 seconds resolves it.
-		this.blackFrameTimer = setInterval(() => {			
-			this.initializeDummyFrame();
-		}, 3000);
-
+		if(this.blackFrameTimer == null || typeof this.blackFrameTimer == undefined){
+			this.blackFrameTimer = setInterval(() => {			
+				this.initializeDummyFrame();
+			}, 3000);
+		}
 	 }
 
 	 turnOnLocalCamera(streamId) 
