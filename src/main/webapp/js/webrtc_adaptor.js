@@ -1309,7 +1309,7 @@ export class WebRTCAdaptor
 		
 		 if (this.remotePeerConnection != null) {
 			 let choosenId;
-			 if(streamId != null || typeof streamId != undefined){
+			 if(streamId != null || typeof streamId != "undefined"){
 				choosenId = streamId;
 			 }
 			 else{
@@ -1323,7 +1323,7 @@ export class WebRTCAdaptor
 
 		 //We need to send black frames within a time interval, because when the user turn off the camera,
 		//player can't connect to the sender since there is no data flowing. Sending a black frame in each 3 seconds resolves it.
-		if(this.blackFrameTimer == null || typeof this.blackFrameTimer == undefined){
+		if(this.blackFrameTimer == null){
 			this.blackFrameTimer = setInterval(() => {			
 				this.initializeDummyFrame();
 			}, 3000);
@@ -1334,6 +1334,7 @@ export class WebRTCAdaptor
 	 {
 		if(this.blackFrameTimer != null){
 			clearInterval(this.blackFrameTimer);
+			this.blackFrameTimer = null;
 		}
 		 if(this.localStream == null){
 			 this.navigatorUserMedia(this.mediaConstraints, stream =>{
