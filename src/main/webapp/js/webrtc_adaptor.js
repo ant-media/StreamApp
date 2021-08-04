@@ -99,10 +99,7 @@ export class WebRTCAdaptor
 		this.remoteVideo = document.getElementById(this.remoteVideoId);
 
 		//A dummy stream created to replace the tracks when camera is turned off.
-		//We need to initialize first black frame here to be ready to send it immediately when turnoff clicked
 		this.dummyCanvas =document.createElement("canvas");
-		this.dummyCanvas.getContext('2d').fillRect(0, 0, 320, 240);
-		this.replacementStream = this.dummyCanvas.captureStream();
 
 		// It should be compatible with previous version
 		if(this.mediaConstraints.video == "camera") {
@@ -1300,17 +1297,16 @@ export class WebRTCAdaptor
 			console.error("Cannot set local description. Error is: " + error);
 		});
 	}
-
+	initializeDummyFrame(){
+		this.dummyCanvas.getContext('2d').fillRect(0, 0, 320, 240);
+		this.replacementStream = this.dummyCanvas.captureStream();
+	}
 
 	turnOffLocalCamera(streamId) 
 	 {
-		//We need to send black frames within a time interval, because when the user turn off the camera,
-		//player can't connect to the sender since there is no data flowing. Sending a black frame in each 3 seconds resolves it.
-		this.blackFrameTimer = setInterval(() => {			
-			this.dummyCanvas.getContext('2d').fillRect(0, 0, 320, 240);
-		 	this.replacementStream = this.dummyCanvas.captureStream();
-		}, 3000);
-
+		 //Initialize the first dummy frame for switching.
+		this.initializeDummyFrame();
+		
 		 if (this.remotePeerConnection != null) {
 			 let choosenId;
 			 if(streamId != null || typeof streamId != undefined){
@@ -1324,6 +1320,13 @@ export class WebRTCAdaptor
 		 else {
 			 this.callbackError("NoActiveConnection");
 		 }
+
+		 //We need to send black frames within a time interval, because when the user turn off the camera,
+		//player can't connect to the sender since there is no data flowing. Sending a black frame in each 3 seconds resolves it.
+		this.blackFrameTimer = setInterval(() => {			
+			this.initializeDummyFrame();
+		}, 3000);
+
 	 }
 
 	 turnOnLocalCamera(streamId) 
