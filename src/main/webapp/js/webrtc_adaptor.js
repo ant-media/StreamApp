@@ -464,7 +464,7 @@ export class WebRTCAdaptor
 		}
 	}
 
-	publish(streamId, token, subscriberId, subscriberCode) 
+	publish(streamId, token, subscriberId, subscriberCode, streamName) 
 	{
 		this.publishStreamId =streamId;
 		if (this.onlyDataChannel) {
@@ -474,6 +474,7 @@ export class WebRTCAdaptor
 				token : token,
 				subscriberId: typeof subscriberId !== undefined ? subscriberId : "" ,
 				subscriberCode: typeof subscriberCode !== undefined ? subscriberCode : "",
+				streamName : typeof streamName !== undefined ? streamName : "" ,
 				video: false,
 				audio: false,
 			};
@@ -488,6 +489,7 @@ export class WebRTCAdaptor
 					token : token,
 					subscriberId: typeof subscriberId !== undefined ? subscriberId : "" ,
 					subscriberCode: typeof subscriberCode !== undefined ? subscriberCode : "",
+					streamName : typeof streamName !== undefined ? streamName : "" ,
 					video: this.localStream.getVideoTracks().length > 0 ? true : false,
 					audio: this.localStream.getAudioTracks().length > 0 ? true : false,
 				};
@@ -501,6 +503,7 @@ export class WebRTCAdaptor
 					token : token,
 					subscriberId: typeof subscriberId !== undefined ? subscriberId : "" ,
 					subscriberCode: typeof subscriberCode !== undefined ? subscriberCode : "",
+					streamName : typeof streamName !== undefined ? streamName : "" ,
 					video: this.localStream.getVideoTracks().length > 0 ? true : false,
 					audio: this.localStream.getAudioTracks().length > 0 ? true : false,
 			};
