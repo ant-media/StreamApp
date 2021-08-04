@@ -43,6 +43,9 @@ export class WebRTCAdaptor
 		this.isPlayMode = false;
 		this.debug = false;
 		this.viewerInfo = "";
+		this.publishStreamId = null;
+		this.blackFrameTimer = null;
+
 		/**
 		 * This is used when only data is brodcasted with the same way video and/or audio.
 	     * The difference is that no video or audio is sent when this field is true 
@@ -97,8 +100,6 @@ export class WebRTCAdaptor
 
 		//A dummy stream created to replace the tracks when camera is turned off.
 		this.dummyCanvas =document.createElement("canvas");
-		this.dummyCanvas.getContext('2d').fillRect(0, 0, 320, 240);
-		this.replacementStream = this.dummyCanvas.captureStream();
 
 		// It should be compatible with previous version
 		if(this.mediaConstraints.video == "camera") {
@@ -465,6 +466,7 @@ export class WebRTCAdaptor
 
 	publish(streamId, token, subscriberId, subscriberCode) 
 	{
+		this.publishStreamId =streamId;
 		if (this.onlyDataChannel) {
 			var jsCmd = {
 				command : "publish",
@@ -1296,10 +1298,20 @@ export class WebRTCAdaptor
 
 	turnOffLocalCamera(streamId) 
 	 {
-		 this.dummyCanvas.getContext('2d').fillRect(0, 0, 320, 240);
-		 this.replacementStream = this.dummyCanvas.captureStream();
+		//We need to send black frames within a time interval, because when the user turn off the camera,
+		//player can't connect to the sender since there is no data flowing. Sending a black frame in each 3 seconds resolves it.
+		this.blackFrameTimer = setInterval(() => {			
+			this.dummyCanvas.getContext('2d').fillRect(0, 0, 320, 240);
+		 	this.replacementStream = this.dummyCanvas.captureStream();
+		}, 3000);
+
 		 if (this.remotePeerConnection != null) {
-			 this.updateVideoTrack(this.replacementStream, streamId, this.mediaConstraints, null, true);
+			 if(streamId != null || streamId != undefined){
+				this.updateVideoTrack(this.replacementStream, streamId, this.mediaConstraints, null, true);
+			 }
+			 else{
+				this.updateVideoTrack(this.replacementStream, this.publishStreamId, this.mediaConstraints, null, true);
+			 }
 		 }
 		 else {
 			 this.callbackError("NoActiveConnection");
@@ -1308,6 +1320,9 @@ export class WebRTCAdaptor
 
 	 turnOnLocalCamera(streamId) 
 	 {
+		if(this.blackFrameTimer != null){
+			clearInterval(this.blackFrameTimer);
+		}
 		 if(this.localStream == null){
 			 this.navigatorUserMedia(this.mediaConstraints, stream =>{
 				 this.gotStream(stream);
@@ -1316,7 +1331,12 @@ export class WebRTCAdaptor
 		 //This method will get the camera track and replace it with dummy track
 		 else if (this.remotePeerConnection != null) {
 			 this.navigatorUserMedia(this.mediaConstraints, stream =>{
-				 this.updateVideoTrack(stream, streamId, this.mediaConstraints, null, true);
+				if(streamId != null || streamId != undefined){
+					this.updateVideoTrack(stream, streamId, this.mediaConstraints, null, true);
+				 }
+				 else{
+					this.updateVideoTrack(stream, this.publishStreamId, this.mediaConstraints, null, true);
+				 }
 			 }, false);
 		 }
 		 else {
