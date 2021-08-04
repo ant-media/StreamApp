@@ -99,7 +99,10 @@ export class WebRTCAdaptor
 		this.remoteVideo = document.getElementById(this.remoteVideoId);
 
 		//A dummy stream created to replace the tracks when camera is turned off.
+		//We need to initialize first black frame here to be ready to send it immediately when turnoff clicked
 		this.dummyCanvas =document.createElement("canvas");
+		this.dummyCanvas.getContext('2d').fillRect(0, 0, 320, 240);
+		this.replacementStream = this.dummyCanvas.captureStream();
 
 		// It should be compatible with previous version
 		if(this.mediaConstraints.video == "camera") {
@@ -1309,12 +1312,14 @@ export class WebRTCAdaptor
 		}, 3000);
 
 		 if (this.remotePeerConnection != null) {
-			 if(streamId != null || streamId != undefined){
-				this.updateVideoTrack(this.replacementStream, streamId, this.mediaConstraints, null, true);
+			 let choosenId;
+			 if(streamId != null || typeof streamId != undefined){
+				choosenId = streamId;
 			 }
 			 else{
-				this.updateVideoTrack(this.replacementStream, this.publishStreamId, this.mediaConstraints, null, true);
+				choosenId = this.publishStreamId;
 			 }
+			 this.updateVideoTrack(this.replacementStream, choosenId, this.mediaConstraints, null, true);
 		 }
 		 else {
 			 this.callbackError("NoActiveConnection");
@@ -1334,12 +1339,14 @@ export class WebRTCAdaptor
 		 //This method will get the camera track and replace it with dummy track
 		 else if (this.remotePeerConnection != null) {
 			 this.navigatorUserMedia(this.mediaConstraints, stream =>{
-				if(streamId != null || streamId != undefined){
-					this.updateVideoTrack(stream, streamId, this.mediaConstraints, null, true);
+				let choosenId;
+			 	if(streamId != null || typeof streamId != undefined){
+					choosenId = streamId;
 				 }
 				 else{
-					this.updateVideoTrack(stream, this.publishStreamId, this.mediaConstraints, null, true);
+					choosenId = this.publishStreamId;
 				 }
+				 this.updateVideoTrack(stream, choosenId, this.mediaConstraints, null, true);
 			 }, false);
 		 }
 		 else {
