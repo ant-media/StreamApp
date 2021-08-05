@@ -43,6 +43,9 @@ export class WebRTCAdaptor
 		this.isPlayMode = false;
 		this.debug = false;
 		this.viewerInfo = "";
+		this.publishStreamId = null;
+		this.blackFrameTimer = null;
+
 		/**
 		 * This is used when only data is brodcasted with the same way video and/or audio.
 	     * The difference is that no video or audio is sent when this field is true 
@@ -94,6 +97,9 @@ export class WebRTCAdaptor
 
 		this.localVideo = document.getElementById(this.localVideoId);
 		this.remoteVideo = document.getElementById(this.remoteVideoId);
+
+		//A dummy stream created to replace the tracks when camera is turned off.
+		this.dummyCanvas =document.createElement("canvas");
 
 		// It should be compatible with previous version
 		if(this.mediaConstraints.video == "camera") {
@@ -460,6 +466,7 @@ export class WebRTCAdaptor
 
 	publish(streamId, token, subscriberId, subscriberCode, streamName) 
 	{
+		this.publishStreamId =streamId;
 		if (this.onlyDataChannel) {
 			var jsCmd = {
 				command : "publish",
@@ -1290,33 +1297,67 @@ export class WebRTCAdaptor
 			console.error("Cannot set local description. Error is: " + error);
 		});
 	}
-
-
-	turnOffLocalCamera() 
-	{
-		if (this.remotePeerConnection != null) {
-
-			var track = this.localStream.getVideoTracks()[0];
-			track.enabled = false;
-		}
-		else {
-			this.callbackError("NoActiveConnection");
-		}
+	initializeDummyFrame(){
+		this.dummyCanvas.getContext('2d').fillRect(0, 0, 320, 240);
+		this.replacementStream = this.dummyCanvas.captureStream();
 	}
 
-	turnOnLocalCamera() 
-	{
-		//If it started in playOnly mode and wants to turn on the camera
-		if(this.localStream == null){
-			this.navigatorUserMedia(this.mediaConstraints, stream =>{
-				this.gotStream(stream);
-			}, false);
+	turnOffLocalCamera(streamId) 
+	 {
+		 //Initialize the first dummy frame for switching.
+		this.initializeDummyFrame();
+		
+		 if (this.remotePeerConnection != null) {
+			 let choosenId;
+			 if(streamId != null || typeof streamId != "undefined"){
+				choosenId = streamId;
+			 }
+			 else{
+				choosenId = this.publishStreamId;
+			 }
+			 this.updateVideoTrack(this.replacementStream, choosenId, this.mediaConstraints, null, true);
+		 }
+		 else {
+			 this.callbackError("NoActiveConnection");
+		 }
+
+		 //We need to send black frames within a time interval, because when the user turn off the camera,
+		//player can't connect to the sender since there is no data flowing. Sending a black frame in each 3 seconds resolves it.
+		if(this.blackFrameTimer == null){
+			this.blackFrameTimer = setInterval(() => {			
+				this.initializeDummyFrame();
+			}, 3000);
 		}
-		else if (this.remotePeerConnection != null) {
-			var track = this.localStream.getVideoTracks()[0];
-			track.enabled = true;
+	 }
+
+	 turnOnLocalCamera(streamId) 
+	 {
+		if(this.blackFrameTimer != null){
+			clearInterval(this.blackFrameTimer);
+			this.blackFrameTimer = null;
 		}
-	}
+		 if(this.localStream == null){
+			 this.navigatorUserMedia(this.mediaConstraints, stream =>{
+				 this.gotStream(stream);
+			 }, false);
+		 }
+		 //This method will get the camera track and replace it with dummy track
+		 else if (this.remotePeerConnection != null) {
+			 this.navigatorUserMedia(this.mediaConstraints, stream =>{
+				let choosenId;
+			 	if(streamId != null || typeof streamId != undefined){
+					choosenId = streamId;
+				 }
+				 else{
+					choosenId = this.publishStreamId;
+				 }
+				 this.updateVideoTrack(stream, choosenId, this.mediaConstraints, null, true);
+			 }, false);
+		 }
+		 else {
+			 this.callbackError("NoActiveConnection");
+		 }
+	 }
 
 	muteLocalMic() 
 	{
