@@ -39,14 +39,26 @@ export class WebRTCAdaptor
 		this.bandwidth = 900; //default bandwidth kbps
 		this.isMultiPeer = false; //used for multiple peer client
 		this.multiPeerStreamId = null;   //used for multiple peer client
-		this.isWebSocketTriggered = false;
 		this.webSocketAdaptor = null;
 		this.isPlayMode = false;
 		this.debug = false;
 		this.viewerInfo = "";
+		this.publishStreamId = null;
+		this.blackFrameTimer = null;
+
+		/**
+		 * This is used when only data is brodcasted with the same way video and/or audio.
+	     * The difference is that no video or audio is sent when this field is true 
+		 */
 		this.onlyDataChannel = false;
 
-		this.receivingMessages = new Map();;
+		
+		/**
+		 * While publishing and playing streams data channel is enabled by default
+		 */
+		this.dataChannelEnabled = true;
+
+		this.receivingMessages = new Map();
 
 		this.publishMode="camera"; //screen, screen+camera
 
@@ -86,6 +98,9 @@ export class WebRTCAdaptor
 
 		this.localVideo = document.getElementById(this.localVideoId);
 		this.remoteVideo = document.getElementById(this.remoteVideoId);
+
+		//A dummy stream created to replace the tracks when camera is turned off.
+		this.dummyCanvas =document.createElement("canvas");
 
 		// It should be compatible with previous version
 		if(this.mediaConstraints.video == "camera") {
@@ -451,8 +466,9 @@ export class WebRTCAdaptor
 		}
 	}
 
-	publish(streamId, token, subscriberId, subscriberCode) 
+	publish(streamId, token, subscriberId, subscriberCode, streamName) 
 	{
+		this.publishStreamId =streamId;
 		if (this.onlyDataChannel) {
 			var jsCmd = {
 				command : "publish",
@@ -460,6 +476,7 @@ export class WebRTCAdaptor
 				token : token,
 				subscriberId: typeof subscriberId !== undefined ? subscriberId : "" ,
 				subscriberCode: typeof subscriberCode !== undefined ? subscriberCode : "",
+				streamName : typeof streamName !== undefined ? streamName : "" ,
 				video: false,
 				audio: false,
 			};
@@ -474,6 +491,7 @@ export class WebRTCAdaptor
 					token : token,
 					subscriberId: typeof subscriberId !== undefined ? subscriberId : "" ,
 					subscriberCode: typeof subscriberCode !== undefined ? subscriberCode : "",
+					streamName : typeof streamName !== undefined ? streamName : "" ,
 					video: this.localStream.getVideoTracks().length > 0 ? true : false,
 					audio: this.localStream.getAudioTracks().length > 0 ? true : false,
 				};
@@ -487,6 +505,7 @@ export class WebRTCAdaptor
 					token : token,
 					subscriberId: typeof subscriberId !== undefined ? subscriberId : "" ,
 					subscriberCode: typeof subscriberCode !== undefined ? subscriberCode : "",
+					streamName : typeof streamName !== undefined ? streamName : "" ,
 					video: this.localStream.getVideoTracks().length > 0 ? true : false,
 					audio: this.localStream.getAudioTracks().length > 0 ? true : false,
 			};
@@ -1143,42 +1162,45 @@ export class WebRTCAdaptor
 				this.onTrack(event, closedStreamId);
 			}
 
-			if (dataChannelMode == "publish") {
-				//open data channel if it's publish mode peer connection 
-				const dataChannelOptions = {
-						ordered: true,
-				};
-				if (this.remotePeerConnection[streamId].createDataChannel) {
-					var dataChannel = this.remotePeerConnection[streamId].createDataChannel(streamId, dataChannelOptions);
-					this.initDataChannel(streamId, dataChannel);
-				}
-				else {
-				    console.warn("CreateDataChannel is not supported");
-				}
+			if (this.dataChannelEnabled){
+				// skip initializing data channel if it is disabled
+				if (dataChannelMode == "publish") {
+					//open data channel if it's publish mode peer connection 
+					const dataChannelOptions = {
+							ordered: true,
+					};
+					if (this.remotePeerConnection[streamId].createDataChannel) {
+						var dataChannel = this.remotePeerConnection[streamId].createDataChannel(streamId, dataChannelOptions);
+						this.initDataChannel(streamId, dataChannel);
+					}
+					else {
+						console.warn("CreateDataChannel is not supported");
+					}
 
-			} else if(dataChannelMode == "play") {
-				//in play mode, server opens the data channel 
-				this.remotePeerConnection[streamId].ondatachannel = ev => {
-					this.initDataChannel(streamId, ev.channel);
-				};
-			}
-			else {
-				//for peer mode do both for now
-				const dataChannelOptions = {
-						ordered: true,
-				};
-
-				if (this.remotePeerConnection[streamId].createDataChannel) 
-				{
-					var dataChannelPeer = this.remotePeerConnection[streamId].createDataChannel(streamId, dataChannelOptions);
-					this.initDataChannel(streamId, dataChannelPeer);
-	
+				} else if(dataChannelMode == "play") {
+					//in play mode, server opens the data channel 
 					this.remotePeerConnection[streamId].ondatachannel = ev => {
 						this.initDataChannel(streamId, ev.channel);
 					};
 				}
 				else {
-				    console.warn("CreateDataChannel is not supported");
+					//for peer mode do both for now
+					const dataChannelOptions = {
+							ordered: true,
+					};
+
+					if (this.remotePeerConnection[streamId].createDataChannel) 
+					{
+						var dataChannelPeer = this.remotePeerConnection[streamId].createDataChannel(streamId, dataChannelOptions);
+						this.initDataChannel(streamId, dataChannelPeer);
+		
+						this.remotePeerConnection[streamId].ondatachannel = ev => {
+							this.initDataChannel(streamId, ev.channel);
+						};
+					}
+					else {
+						console.warn("CreateDataChannel is not supported");
+					}
 				}
 			}
 
@@ -1268,33 +1290,67 @@ export class WebRTCAdaptor
 			console.error("Cannot set local description. Error is: " + error);
 		});
 	}
-
-
-	turnOffLocalCamera() 
-	{
-		if (this.remotePeerConnection != null) {
-
-			var track = this.localStream.getVideoTracks()[0];
-			track.enabled = false;
-		}
-		else {
-			this.callbackError("NoActiveConnection");
-		}
+	initializeDummyFrame(){
+		this.dummyCanvas.getContext('2d').fillRect(0, 0, 320, 240);
+		this.replacementStream = this.dummyCanvas.captureStream();
 	}
 
-	turnOnLocalCamera() 
-	{
-		//If it started in playOnly mode and wants to turn on the camera
-		if(this.localStream == null){
-			this.navigatorUserMedia(this.mediaConstraints, stream =>{
-				this.gotStream(stream);
-			}, false);
+	turnOffLocalCamera(streamId) 
+	 {
+		 //Initialize the first dummy frame for switching.
+		this.initializeDummyFrame();
+		
+		 if (this.remotePeerConnection != null) {
+			 let choosenId;
+			 if(streamId != null || typeof streamId != "undefined"){
+				choosenId = streamId;
+			 }
+			 else{
+				choosenId = this.publishStreamId;
+			 }
+			 this.updateVideoTrack(this.replacementStream, choosenId, this.mediaConstraints, null, true);
+		 }
+		 else {
+			 this.callbackError("NoActiveConnection");
+		 }
+
+		 //We need to send black frames within a time interval, because when the user turn off the camera,
+		//player can't connect to the sender since there is no data flowing. Sending a black frame in each 3 seconds resolves it.
+		if(this.blackFrameTimer == null){
+			this.blackFrameTimer = setInterval(() => {			
+				this.initializeDummyFrame();
+			}, 3000);
 		}
-		else if (this.remotePeerConnection != null) {
-			var track = this.localStream.getVideoTracks()[0];
-			track.enabled = true;
+	 }
+
+	 turnOnLocalCamera(streamId) 
+	 {
+		if(this.blackFrameTimer != null){
+			clearInterval(this.blackFrameTimer);
+			this.blackFrameTimer = null;
 		}
-	}
+		 if(this.localStream == null){
+			 this.navigatorUserMedia(this.mediaConstraints, stream =>{
+				 this.gotStream(stream);
+			 }, false);
+		 }
+		 //This method will get the camera track and replace it with dummy track
+		 else if (this.remotePeerConnection != null) {
+			 this.navigatorUserMedia(this.mediaConstraints, stream =>{
+				let choosenId;
+			 	if(streamId != null || typeof streamId != undefined){
+					choosenId = streamId;
+				 }
+				 else{
+					choosenId = this.publishStreamId;
+				 }
+				 this.updateVideoTrack(stream, choosenId, this.mediaConstraints, null, true);
+			 }, false);
+		 }
+		 else {
+			 this.callbackError("NoActiveConnection");
+		 }
+	 }
 
 	muteLocalMic() 
 	{
@@ -1362,6 +1418,8 @@ export class WebRTCAdaptor
 				.then(configuration =>
 						{
 					console.log("created answer for stream id: " + streamId);
+					//support for stereo
+          			configuration.sdp = configuration.sdp.replace("useinbandfec=1", "useinbandfec=1; stereo=1");
 					this.gotDescription(configuration, streamId);
 						})
 						.catch((error) =>

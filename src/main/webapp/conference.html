@@ -4,11 +4,11 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<meta charset="UTF-8">
 	<link rel="stylesheet"
-		  href="css/external//bootstrap3/bootstrap.min.css"
-		  integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+		  href="css/external//bootstrap4/bootstrap.min.css"
+		   >
 	<script src="js/external/adapter-latest.js"></script>
-	<script src="js/external/jquery.min.js"></script>
-
+	<script src="js/external/jquery-3.4.1.min.js"></script>
+	<link rel="stylesheet" href="css/common.css" />
 	<style>
 video {
 	width: 100%;
@@ -86,45 +86,50 @@ body {
 </head>
 <body>
 <div class="container">
-
+	
 	<div class="header clearfix">
-		<nav>
-			<ul class="nav navbar-pills pull-right">
-				<li><a href="http://antmedia.io">Contact</a></li>
-			</ul>
-		</nav>
-		<h3 class="text-muted">WebRTC Conference</h3>
+		<div class="row">
+			<h3 class="col text-muted">WebRTC Conference</h3>
+			<nav class="col align-self-center">
+				<ul class="nav float-right">
+					<li><a href="http://antmedia.io">Contact</a></li>
+				</ul>
+			</nav>
+		</div>
 	</div>
 
 	<div class="jumbotron">
+		<div class="alert alert-primary text-center enterprise-feature" role="alert" style="margin-top:-2em">
+				WebRTC Conference is an Enterprise Edition. <br/>
+			<a href="https://antmedia.io">Try Enterprise Edition for free at antmedia.io</a> <br/><br/>
+			<a href="https://github.com/ant-media/Ant-Media-Server/wiki#community-edition--enterprise-edition" style="font-size:12px">Comparison between Community and Enterprise</a>		 
+			</div>
 		<div id="players">
 			<div class="col-sm-3">
 				<video id="localVideo" autoplay muted controls playsinline></video>
-				<div style="margin-top:10px;" class="col-sm-8 col-sm-offset-2">Microphone Gain: <input type=range id=volume_change_input min=0 max=1 value=1 step=0.01></div>
+				<div style="margin-top:10px;" class="col-sm-8 offset-sm-2">Microphone Gain: <input type=range id=volume_change_input min=0 max=1 value=1 step=0.01></div>
 			</div>
 		</div>
 
-
-
 		<div class="row">
-			<div class="col-sm-6 col-sm-offset-3">
+			<div class="col-sm-8 offset-sm-2">
 				<p>
 					<input type="text" class="form-control" value="room1"
 						   id="roomName" placeholder="Type room name">
 				</p>
 				<p>
-					<button class="btn btn-info" disabled
+					<button class="btn btn-primary" disabled
 							id="join_publish_button">Join Room</button>
-					<button class="btn btn-info" disabled
+					<button class="btn btn-primary" disabled
 							id="stop_publish_button">Leave Room</button>
 				</p>
 
 				<div style="padding:10px">
-					<button id="turn_off_camera_button" class="btn btn-default"  >Turn off Camera</button>
-					<button id="turn_on_camera_button" disabled class="btn btn-default"  >Turn on Camera</button>
+					<button id="turn_off_camera_button" class="btn btn-outline-primary"  >Turn off Camera</button>
+					<button id="turn_on_camera_button" disabled class="btn btn-outline-primary"  >Turn on Camera</button>
 
-					<button id="mute_mic_button" class="btn btn-default"  >Mute Local Mic</button>
-					<button id="unmute_mic_button" disabled  class="btn btn-default"  >Unmute Local Mic</button>
+					<button id="mute_mic_button" class="btn btn-outline-primary">Mute Local Mic</button>
+					<button id="unmute_mic_button" disabled  class="btn btn-outline-primary">Unmute Local Mic</button>
 				</div>
 
 				<div class="form-check form-check-inline" >
@@ -134,14 +139,15 @@ body {
 					<label class="form-check-label" for="camera_checkbox" style="font-weight:normal">
 							Camera
 					</label>
-	
+			    </div>
+				<div class="form-check form-check-inline" >
 					<input class="form-check-input video-source" disabled name="videoSource"  type="radio" value="screen" 
 					id="screen_share_checkbox">
 					<label class="form-check-label" for="screen_share_checkbox" style="font-weight:normal">
 							Screen
 					</label>
-			
-				
+				</div>
+				<div class="form-check form-check-inline" >
 					<input class="form-check-input video-source" disabled name="videoSource" type="radio" value="screen+camera" 
 						id="screen_share_with_camera_checkbox">
 					<label class="form-check-label" for="screen_share_with_camera_checkbox" style="font-weight:normal">
@@ -150,9 +156,11 @@ body {
 					<div class="form-check form-check-inline"></div>
 						<a id="browser_screen_share_doesnt_support" href="https://caniuse.com/#search=getDisplayMedia">Your browser doesn't support screen share. You can see supported browsers in this link </a>
 				</div>
-				<span class="label label-success" id="broadcastingInfo"
-					  style="font-size: 14px; display: none" style="display: none">Publishing</span>
+				<br/>
+				<div class="badge badge-success" id="broadcastingInfo"
+					  style="font-size: 14px; display: none" style="display: none">Publishing</div>
 			</div>
+			
 		</div>
 
 
@@ -250,14 +258,14 @@ body {
 	}
 
 	function turnOffLocalCamera() {
-		webRTCAdaptor.turnOffLocalCamera();
+		webRTCAdaptor.turnOffLocalCamera(publishStreamId);
 		isCameraOff = true;
 		handleCameraButtons();
 		sendNotificationEvent("CAM_TURNED_OFF");
 	}
 
 	function turnOnLocalCamera() {
-		webRTCAdaptor.turnOnLocalCamera();
+		webRTCAdaptor.turnOnLocalCamera(publishStreamId);
 		isCameraOff = false;
 		handleCameraButtons();
 		sendNotificationEvent("CAM_TURNED_ON");
@@ -328,7 +336,7 @@ body {
 
 	function joinRoom() {
 
-		webRTCAdaptor.joinRoom(roomNameBox.value, streamId);
+		webRTCAdaptor.joinRoom(roomNameBox.value, streamId, "legacy");
 	}
 
 	function leaveRoom() {
@@ -455,6 +463,7 @@ body {
 				localVideoId : "localVideo",
 				isPlayMode : playOnly,
 				debug : true,
+				dataChannelEnabled : true,
 				callback : (info, obj) => {
 					if (info == "initialized") {
 						console.log("initialized");
@@ -635,4 +644,3 @@ body {
 	
 </script>
 </html>
-

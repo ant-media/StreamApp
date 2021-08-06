@@ -1,3 +1,4 @@
+
 export class WebSocketAdaptor 
 {
     constructor(initialValues){
@@ -8,14 +9,17 @@ export class WebSocketAdaptor
 				this[key] = initialValues[key];
 			}
         }
-        this.wsConn = new WebSocket(this.websocket_url);
+        
+		this.initWebSocketConnection();
 
-        this.connecting = true;
+     }
 
+    initWebSocketConnection(callbackConnected)  {
+		this.connecting = true;
         this.connected = false;
-
         this.pingTimerId = -1;
 
+		this.wsConn = new WebSocket(this.websocket_url);
         this.wsConn.onopen = () => {
             if (this.debug) 
             {
@@ -29,6 +33,10 @@ export class WebSocketAdaptor
             this.connected = true;
             this.connecting = false;
             this.callback("initialized");
+
+			if (typeof callbackConnected != "undefined") {
+				callbackConnected();
+			}
         }
 
         this.wsConn.onmessage = (event) => {
@@ -100,11 +108,10 @@ export class WebSocketAdaptor
         this.wsConn.onerror = (error) => {
         	this.connecting = false;
         	this.connected = false;
-        	if (this.debug) {
-            	console.debug(" error occured: " + JSON.stringify(error));
-            }
+            console.info(" error occured: " + JSON.stringify(error));
+            
             this.clearPingTimer();
-            this.callbackError(error)
+            this.callbackError("WebSocketNotConnected", error)
         }
 
         this.wsConn.onclose = (event) => {
@@ -116,7 +123,8 @@ export class WebSocketAdaptor
             this.clearPingTimer();
             this.callback("closed", event);
         }
-    }
+
+	}
 
     clearPingTimer(){
         if (this.pingTimerId != -1) {
@@ -138,11 +146,14 @@ export class WebSocketAdaptor
     close() {
         this.wsConn.close();
     }
+	
+    send(text) {
 
-    send(text){
-
-        if (this.wsConn.readyState == 0 || this.wsConn.readyState == 2 || this.wsConn.readyState == 3) {
-            this.callbackError("WebSocketNotConnected");
+        if (this.connecting == false && this.connected == false) {
+			//try to reconnect
+			this.initWebSocketConnection(() => {
+				this.send(text);
+			});
             return;
         }
         this.wsConn.send(text);
