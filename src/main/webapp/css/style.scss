@@ -118,7 +118,7 @@ $primary-border-color: #f0f0f0;
 }
 
 @mixin background-image($name, $posx, $posy) {
-    background-image: url("/img/#{$name}.jpg");
+    background-image: url("/images/#{$name}.jpg");
     background-size: cover;
     background-repeat: no-repeat;
     background-position: $posx $posy;
@@ -837,7 +837,7 @@ address {
 
         &:after {
             content: '';
-            background-image: url('../img/icons/amblem-dark.svg') !important;
+            background-image: url('../images/icons/amblem-dark.svg') !important;
             background-repeat: no-repeat;
             background-size: 1rem;
             background-position: center right;
@@ -889,7 +889,7 @@ address {
 
     &:after {
         content: '';
-        background-image: url('../img/icons/amblem.svg');
+        background-image: url('../images/icons/amblem.svg');
         background-repeat: no-repeat;
         background-size: 1rem;
         background-position: center right;
@@ -972,7 +972,7 @@ address {
 
     body {
         height: 100%;
-        background-image: url(../img/login/login-bg.jpg);
+        background-image: url(../images/login/login-bg.jpg);
         background-repeat: no-repeat;
         background-size: cover;
         background-position: center center;
@@ -1369,7 +1369,7 @@ address {
                     }
 
                     .person {
-                        height: 39vh;
+                        height: 34vh;
 
                         @media (max-width: 575.98px) {
                             height: 27vh;
@@ -1464,6 +1464,7 @@ address {
                 }
             }
         }
+
 
         .me-small-screen {
             position: fixed;
