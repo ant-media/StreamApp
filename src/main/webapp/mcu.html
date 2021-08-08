@@ -152,9 +152,11 @@ body {
 					<div class="form-check form-check-inline"></div>
 						<a id="browser_screen_share_doesnt_support" href="https://caniuse.com/#search=getDisplayMedia">Your browser doesn't support screen share. You can see supported browsers in this link </a>
 				</div>
-				<span class="label label-success" id="broadcastingInfo"
-					  style="font-size: 14px; display: none" style="display: none">Publishing</span>
+				<br/>
+				<div class="badge badge-success" id="broadcastingInfo"
+					  style="font-size: 14px; display: none" style="display: none">Publishing</div>
 			</div>
+			
 		</div>
 
 
@@ -182,6 +184,8 @@ body {
 	var token = getUrlParameter("token");
 	var streamId = getUrlParameter("streamId");
 	var playOnly = getUrlParameter("playOnly");
+	var audioOnly = getUrlParameter("audioOnly");
+
 	if(playOnly == null) {
 		playOnly = false;
 	}
@@ -328,8 +332,8 @@ body {
 	}
 
 	function joinRoom() {
-
-		webRTCAdaptor.joinRoom(roomNameBox.value, streamId);
+		var mode = audioOnly ? "amcu" : "mcu";
+		webRTCAdaptor.joinRoom(roomNameBox.value, streamId, mode);
 	}
 
 	function leaveRoom() {
@@ -391,7 +395,7 @@ body {
 	};
 
 	var mediaConstraints = {
-		video : true,
+		video : !audioOnly,
 		audio : true
 	};
 
@@ -415,7 +419,6 @@ body {
 				localVideoId : "localVideo",
 				isPlayMode : playOnly,
 				debug : true,
-				isMCU : true,
 				callback : (info, obj) => {
 					if (info == "initialized") {
 						console.log("initialized");
