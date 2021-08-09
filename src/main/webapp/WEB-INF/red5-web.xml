@@ -37,7 +37,7 @@
 	
 	
 	<bean id="acceptOnlyStreamsInDataStore" class="io.antmedia.security.AcceptOnlyStreamsInDataStore"/>
-	<bean id="acceptOnlyStreamsWithWebhook" class="io.antmedia.security.AcceptOnlyStreamsInDataStore"/>
+	<bean id="acceptOnlyStreamsWithWebhook" class="io.antmedia.security.AcceptOnlyStreamsWithWebhook"/>
 	
 	<bean id="hls.viewerstats" class="io.antmedia.statistic.HlsViewerStats" />
 	
