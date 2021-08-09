@@ -37,7 +37,8 @@
 	
 	
 	<bean id="acceptOnlyStreamsInDataStore" class="io.antmedia.security.AcceptOnlyStreamsInDataStore"/>
-		
+	<bean id="acceptOnlyStreamsWithWebhook" class="io.antmedia.security.AcceptOnlyStreamsInDataStore"/>
+	
 	<bean id="hls.viewerstats" class="io.antmedia.statistic.HlsViewerStats" />
 	
 	<bean id="token.service"
@@ -62,6 +63,7 @@
 		<property name="streamPublishSecurityList">
 			<list>
 				<ref bean="acceptOnlyStreamsInDataStore"/>
+				<ref bean="acceptOnlyStreamsWithWebhook"/>
 			  	<ref bean="token.service"/>
 				<bean class="io.antmedia.security.ExpireStreamPublishSecurity" >
 					<property name="dataStoreFactory"  ref="dataStoreFactory"/>
