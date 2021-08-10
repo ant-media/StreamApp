@@ -1,6 +1,6 @@
 
 <!doctype html>
-  <html lang="tr" class="room">
+  <html lang="en" class="room">
 
   <head>
 
@@ -13,7 +13,7 @@
     <meta name="description" content="Ant Media Video Call">
     <meta name="author" content="Ant Media">
     <meta name="title" content="Ant Media | Video Call">
-    <meta property="og:locale" content="tr_TR">
+    <meta property="og:locale" content="en_US">
     <meta property="og:type" content="website">
     <meta property="og:title" content="Ant Media | Video Call">
     <meta property="og:description" content="Ant Media Video Call">
@@ -37,11 +37,11 @@
       <div class="container-fluid">
         <div class="row">
           <div class="col-3 col-sm-4">
-            <div class="logo"><img class="logo-full" src="images/ant-media-video-call.svg"><img class="logo-compact" src="images/ant-media-amblem.svg"></div>
+            <div class="logo"><img class="logo-full" src="images/ant-media-video-call.svg"><img class="logo-compact" src="images/ant-media-emblem.svg"></div>
           </div>
           <div class="offset-4 col-5 col-sm-4">
             <div class="icons">
-              <span><a href="#" data-toggle="modal" data-target="#exampleModal" onClick="getWindowLocation()" ><img src="images/icons/share.svg"></a></span>
+              <span><a href="#" data-toggle="modal" data-target="#shareUrlLocationModal" onClick="getWindowLocation()" ><img src="images/icons/share.svg"></a></span>
               <!--<span><a href="javascript:;"><img src="images/icons/settings.svg"></a></span>-->
             </div>
           </div>
@@ -103,7 +103,7 @@
               <ul id="chat">
               </ul>
               <div class="footer">
-                <form class="form-inline">
+                <form id="messageBoxForm" class="form-inline">
                   <div class="input-group">
                     <input type="text" id="dataTextbox" class="form-control" placeholder="Type your message">
                     <a class="send"><img src="images/icons/send.svg"></a>
@@ -113,12 +113,12 @@
             </div>
 
             <!-- Share Modal -->
-            <div class="modal fade modal-share" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+            <div class="modal fade modal-share" id="shareUrlLocationModal" tabindex="-1" role="dialog" aria-labelledby="shareUrlLocationModalLabel"
             aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered" role="document">
               <div class="modal-content">
                 <div class="modal-header">
-                  <h5 class="modal-title" id="exampleModalLabel">Send an invitation to your conference</h5>
+                  <h5 class="modal-title" id="shareUrlLocationModalLabel">Send an invitation to your conference</h5>
                   <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <img src="images/icons/close.svg">
                   </button>
@@ -140,7 +140,7 @@
         </div>
 
         <script src="js/external/jquery-3.3.1.slim.min.js"></script>
-        <script src="js/external/jquery.min.js"></script>
+        <script src="js/external/jquery-3.4.1.min.js"></script>
         <script src="js/external/popper.min.js"></script>
         <script src="js/external/bootstrap.min.js"></script>
         <script src="js/main.js"></script>
@@ -224,124 +224,129 @@
     webRTCAdaptor.switchDesktopCapture(publishStreamId);
   }
 
-  function turnOffLocalCamera() {
-    webRTCAdaptor.turnOffLocalCamera();
-    isCameraOff = true;
-    handleCameraButtons();
-    sendNotificationEvent("CAM_TURNED_OFF");
+  function sendData() {
+    try {
+      var iceState = webRTCAdaptor.iceConnectionState(publishStreamId);
+      if (iceState != null && iceState != "failed" && iceState != "disconnected") {
+        if($("#dataTextbox").val().length != 0){
+          webRTCAdaptor.sendData(publishStreamId, $("#dataTextbox").val());
+          $("#chat").append("<li class=\"me\"><div class=\"entete\"><h3>"+formatAMPM(new Date)+", Today &nbsp</h3><h2> "+streamName+" </h2><span class=\"status me-dot\"></span></div><div class=\"triangle\"></div><div class=\"message\">"+$("#dataTextbox").val()+"</div></li>");
+          $("#dataTextbox").val("");
+        }
+      }
+      else {
+        alert("WebRTC publishing is not active. Please click Start Publishing first")
+      }
+    }
+    catch (exception) {
+      console.error(exception);
+      alert("Message cannot be sent. Make sure you've enabled data channel on server web panel");
+    }
   }
 
-  function turnOnLocalCamera() {
-    webRTCAdaptor.turnOnLocalCamera();
-    isCameraOff = false;
-    handleCameraButtons();
-    sendNotificationEvent("CAM_TURNED_ON");
+  $("#messageBoxForm").submit(function() {
+    sendData();
+    return false;
+  });
+
+  function formatAMPM(date) {
+    var hours = date.getHours();
+    var minutes = date.getMinutes();
+    var ampm = hours >= 12 ? 'pm' : 'am';
+    hours = hours % 12;
+    hours = hours ? hours : 12; // the hour '0' should be '12'
+    minutes = minutes < 10 ? '0'+minutes : minutes;
+    var strTime = hours + ':' + minutes + ' ' + ampm;
+    return strTime;
   }
 
-  function muteLocalMic(){
-    webRTCAdaptor.muteLocalMic();
-    isMicMuted = true;
-    handleMicButtons();
-    sendNotificationEvent("MIC_MUTED");
-  }
+  function getStreamName(streamId){
+   var remoteStreamName = "Guest";
 
-  function unmuteLocalMic() {
-    webRTCAdaptor.unmuteLocalMic();
-    isMicMuted = false;
-    handleMicButtons();
-    sendNotificationEvent("MIC_UNMUTED");
-  }
-
-  function sendNotificationEvent(eventType) {
-    if(isDataChannelOpen) {
-     var notEvent = { streamId: publishStreamId, eventType:eventType };
-
-     webRTCAdaptor.sendData(publishStreamId, JSON.stringify(notEvent));
-   }	else {
-     console.log("Could not send the notification because data channel is not open.");
-   }
+   streamDetailsList.forEach((item) => {
+    if(item.streamId == streamId && item.streamName != null){
+      remoteStreamName = item.streamName
+    }
+  });
+   return remoteStreamName;
  }
 
- function sendData() {
-  try {
-    var iceState = webRTCAdaptor.iceConnectionState(publishStreamId);
-    if (iceState != null && iceState != "failed" && iceState != "disconnected") {
-
-      webRTCAdaptor.sendData(publishStreamId, $("#dataTextbox").val());
-      $("#chat").append("<li class=\"me\"><div class=\"entete\"><h3>"+formatAMPM(new Date)+", Today &nbsp</h3><h2> "+streamName+" </h2><span class=\"status me-dot\"></span></div><div class=\"triangle\"></div><div class=\"message\">"+$("#dataTextbox").val()+"</div></li>");
-      $("#dataTextbox").val("");
-    }
-    else {
-      alert("WebRTC publishing is not active. Please click Start Publishing first")
-    }
-  }
-  catch (exception) {
-    console.error(exception);
-    alert("Message cannot be sent. Make sure you've enabled data channel on server web panel");
-  }
+ function turnOffLocalCamera() {
+  webRTCAdaptor.turnOffLocalCamera(publishStreamId);
+  isCameraOff = true;
+  handleCameraButtons();
+  sendNotificationEvent("CAM_TURNED_OFF");
 }
 
-function formatAMPM(date) {
-  var hours = date.getHours();
-  var minutes = date.getMinutes();
-  var ampm = hours >= 12 ? 'pm' : 'am';
-  hours = hours % 12;
-  hours = hours ? hours : 12; // the hour '0' should be '12'
-  minutes = minutes < 10 ? '0'+minutes : minutes;
-  var strTime = hours + ':' + minutes + ' ' + ampm;
-  return strTime;
+function turnOnLocalCamera() {
+  webRTCAdaptor.turnOnLocalCamera(publishStreamId);
+  isCameraOff = false;
+  handleCameraButtons();
+  sendNotificationEvent("CAM_TURNED_ON");
 }
 
-function getStreanName(streamId){
- var remoteStreamName = "Guest";
+function muteLocalMic(){
+  webRTCAdaptor.muteLocalMic();
+  isMicMuted = true;
+  handleMicButtons();
+  sendNotificationEvent("MIC_MUTED");
+}
 
- streamDetailsList.forEach((item) => {
-  if(item.streamId == streamId && item.streamName != null){
-    remoteStreamName = item.streamName
+function unmuteLocalMic() {
+  webRTCAdaptor.unmuteLocalMic();
+  isMicMuted = false;
+  handleMicButtons();
+  sendNotificationEvent("MIC_UNMUTED");
+}
+
+function sendNotificationEvent(eventType) {
+  if(isDataChannelOpen) {
+    var notEvent = { streamId: publishStreamId, eventType:eventType };
+
+    webRTCAdaptor.sendData(publishStreamId, JSON.stringify(notEvent));
+  } else {
+    console.log("Could not send the notification because data channel is not open.");
   }
-});
- return remoteStreamName;
 }
 
 function handleCameraButtons() {
   if(isCameraOff) {
-   turn_off_camera_button.disabled = true;
-   turn_on_camera_button.disabled = false;
- } else {
-   turn_off_camera_button.disabled = false;
-   turn_on_camera_button.disabled = true;
- }
+    turn_off_camera_button.disabled = true;
+    turn_on_camera_button.disabled = false;
+  } else {
+    turn_off_camera_button.disabled = false;
+    turn_on_camera_button.disabled = true;
+  }
 }
 
 function handleMicButtons() {
   if(isMicMuted) {
-   mute_mic_button.disabled = true;
-   unmute_mic_button.disabled = false;
- } else {
-   mute_mic_button.disabled = false;
-   unmute_mic_button.disabled = true;
- }
+    mute_mic_button.disabled = true;
+    unmute_mic_button.disabled = false;
+  } else {
+    mute_mic_button.disabled = false;
+    unmute_mic_button.disabled = true;
+  }
 }
 
 function handleNotificationEvent(obj) {
-  console.log("Received data : ", obj.event.data);
-  var notificationEvent = JSON.parse(obj.event.data);
+  console.log("Received data : ", obj.data);
+  var notificationEvent = JSON.parse(obj.data);
   if(notificationEvent != null && typeof(notificationEvent) == "object") {
     var eventStreamId = notificationEvent.streamId;
-    var eventTyp = notificationEvent.eventType;
+    var eventType = notificationEvent.eventType;
 
-    if(eventTyp == "CAM_TURNED_OFF") {
-     console.log("Camera turned off for : ", eventStreamId);
-   } else if (eventTyp == "CAM_TURNED_ON"){
-     console.log("Camera turned on for : ", eventStreamId);
-   } else if (eventTyp == "MIC_MUTED"){
-     console.log("Microphone muted for : ", eventStreamId);
-   } else if (eventTyp == "MIC_UNMUTED"){
-     console.log("Microphone unmuted for : ", eventStreamId);
-   }
- }
+    if(eventType == "CAM_TURNED_OFF") {
+      console.log("Camera turned off for : ", eventStreamId);
+    } else if (eventType == "CAM_TURNED_ON"){
+      console.log("Camera turned on for : ", eventStreamId);
+    } else if (eventType == "MIC_MUTED"){
+      console.log("Microphone muted for : ", eventStreamId);
+    } else if (eventType == "MIC_UNMUTED"){
+      console.log("Microphone unmuted for : ", eventStreamId);
+    }
+  }
 }
-
 function joinRoom() {
   webRTCAdaptor.joinRoom(roomName, publishStreamId);
 }
@@ -435,7 +440,7 @@ function generateStreamCol(streamId){
   const div = document.createElement('div');
   div.className = "col";
   div.id="streamId"+streamId;
-  div.innerHTML = "<div class=\"person\"><video id=\"remoteVideo"+streamId+"\" class=\"screen\" autoplay muted playsinline></video> </div>"
+  div.innerHTML = "<div class=\"person\"><video id=\"remoteVideo"+streamId+"\" class=\"screen\" autoplay playsinline></video> </div>"
   document.getElementById('players').appendChild(div);
 }
 
@@ -488,9 +493,23 @@ var sdpConstraints = {
 };
 
 var mediaConstraints = {
-  video : true,
-  audio : true
-};
+  video: {
+    width: { max: 640 },
+    height: { max: 480 }
+  },
+  audio: true
+}
+
+function checkTrackStatus(streamIdList){
+  streamIdList.forEach(function(item) {
+    var video = document.getElementById("remoteVideo"+item);
+    if(video != null && !video.srcObject.active){
+      removeRemoteVideo(item);
+      playVideo(item);
+    }
+  });
+}
+
 
 var appName = location.pathname.substring(0, location.pathname
  .lastIndexOf("/") + 1);
@@ -513,7 +532,7 @@ var webRTCAdaptor = new WebRTCAdaptor(
   callback : (info, obj) => {
    if (info == "initialized") {
     console.log("initialized");
-    webRTCAdaptor.joinRoom("room1", publishStreamId);
+    webRTCAdaptor.joinRoom(roomName, publishStreamId);
   } 
   else if (info == "joinedTheRoom") {
     var room = obj.ATTR_ROOM_NAME;
@@ -525,9 +544,9 @@ var webRTCAdaptor = new WebRTCAdaptor(
 
     if(playOnly) {
       isCameraOff = true;
-     handleCameraButtons();
-   }
-   else {
+      handleCameraButtons();
+    }
+    else {
      publish(obj.streamId, token, subscriberId, subscriberCode, streamName);
    }
 
@@ -609,6 +628,9 @@ else if (info == "roomInformation") {
 	//Lastly updates the current streamlist with the fetched one.
   streamIdList=obj.streams;
   streamDetailsList = obj.streamList;
+
+  //Check video tracks active/inactive status
+  checkTrackStatus(streamIdList);
 }
 else if (info == "data_channel_opened") {
   console.log("Data Channel open for stream id", obj );
@@ -619,12 +641,12 @@ else if (info == "data_channel_closed") {
   isDataChannelOpen = false;
 } 
 else if(info == "data_received") {
- try {
-  handleNotificationEvent(obj);
-} catch(e) {
-  var remoteStreamName = getStreanName(obj.streamId);
-  $("#chat").append("<li class=\"you\"><div class=\"entete\"><h3>"+formatAMPM(new Date)+", Today &nbsp</h3><h2> "+remoteStreamName+"&nbsp</h2><span class=\"status you-dot\"></span></div><div class=\"triangle\"></div><div class=\"message\">"+obj.data+"</div></li>");
-}
+  try {
+    handleNotificationEvent(obj);
+  } catch(e) {
+    var remoteStreamName = getStreamName(obj.streamId);
+    $("#chat").append("<li class=\"you\"><div class=\"entete\"><h3>"+formatAMPM(new Date)+", Today &nbsp</h3><h2> "+remoteStreamName+"&nbsp</h2><span class=\"status you-dot\"></span></div><div class=\"triangle\"></div><div class=\"message\">"+obj.data+"</div></li>");
+  }
 }
 },
 callbackError : function(error, message) {
