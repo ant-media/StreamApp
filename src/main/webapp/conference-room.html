@@ -1,7 +1,5 @@
-
 <!doctype html>
   <html lang="en" class="room">
-
   <head>
 
     <meta charset="utf-8">
@@ -140,10 +138,8 @@
         </div>
 
         <script src="js/external/jquery-3.3.1.slim.min.js"></script>
-        <script src="js/external/jquery-3.4.1.min.js"></script>
         <script src="js/external/popper.min.js"></script>
         <script src="js/external/bootstrap.min.js"></script>
-        <script src="js/main.js"></script>
 
       </body>
 
@@ -170,6 +166,7 @@
     var roomName = getUrlParameter("roomName");
     var subscriberId = getUrlParameter("subscriberId");
     var subscriberCode = getUrlParameter("subscriberCode");
+    var isChatActive = false;
 
     if(roomName == null){
       roomName="room1";
@@ -180,10 +177,48 @@
       streamName="Guest";
     }
 
-
     if(playOnly == null) {
       playOnly = false;
     }
+
+    // camera and microphone on off
+    $(document).ready(function() {
+      $( ".camera-on" ).click(function() {
+        $( this ).removeClass( "active" );
+        $(this).next().addClass( "active" );
+      });
+      $( ".camera-off" ).click(function() {
+        $( this ).removeClass( "active" );
+        $(this).prev().addClass( "active" );
+      });
+      $( ".microphone-on" ).click(function() {
+        $( this ).removeClass( "active" );
+        $(this).next().addClass( "active" );
+      });
+      $( ".microphone-off" ).click(function() {
+        $( this ).removeClass( "active" );
+        $(this).prev().addClass( "active" );
+      });
+    });
+
+    // chat on off
+    $(document).ready(function() {
+      $( ".chat-on" ).click(function() {
+        $( ".chat-active"  ).toggleClass( "active" );
+        $( ".chat"  ).toggleClass( "active" );
+        if(isChatActive){
+          isChatActive = false;
+        }
+        else{
+          isChatActive = true;
+        }
+      });
+      $( ".chat-close" ).click(function() {
+        $( ".chat-active"  ).removeClass( "active" );
+        $( ".chat"  ).removeClass( "active" );
+        isChatActive = false;
+      });
+    });
 
     var fullscreen_button = document.getElementById("fullscreen_button");
     fullscreen_button.addEventListener("click", fullscreenLocalCamera,false)
@@ -208,6 +243,7 @@
     var isDataChannelOpen = false;
     var isMicMuted = false;
     var isCameraOff = false;
+    var isChatActive = false;
     var roomTimerId = -1;
 
     function fullscreenLocalCamera() {
@@ -411,7 +447,7 @@ function createRemoteVideo(streamId) {
   if(streamIdList.length >= 1 && document.getElementsByClassName('publisher-screen')[0] != null ){
     document.getElementsByClassName('publisher-screen')[0].className = "me-small-screen";
     document.getElementsByClassName('persons')[0].className = "persons";
-    document.getElementsByClassName('viewer-content')[0].className = "publisher-content";
+    document.getElementsByClassName('viewer-content')[0].className = "publisher-content chat-active";
   }
 
   if(streamIdList.length == 1){
@@ -432,6 +468,10 @@ function createRemoteVideo(streamId) {
 
   if(streamIdList.length > 4){
     document.getElementsByClassName('publisher-content')[0].className = "publisher-content chat-active multi-user";
+  }
+
+  if(isChatActive){
+    document.getElementsByClassName('publisher-content')[0].classList.add("active");
   }
 
 }
@@ -455,14 +495,16 @@ function removeRemoteVideo(streamId) {
     streamIdList.splice(streamIdIndex, 1);
 
     if(streamIdList.length == 0){
-      document.getElementsByClassName('publisher-content')[0].className = "viewer-content";
+      document.getElementsByClassName('publisher-content')[0].className = "viewer-content chat-active";
       document.getElementsByClassName('me-small-screen')[0].className = "publisher-screen";
       document.getElementsByClassName('persons')[0].className = "persons d-none";
+      if(isChatActive){
+        document.getElementsByClassName('viewer-content')[0].classList.add("active");
+      }
     }
 
     if(streamIdList.length == 1){
       document.getElementsByClassName('publisher-content')[0].className = "publisher-content chat-active one-user";
-
     }
     
     if(streamIdList.length == 2){
@@ -476,7 +518,12 @@ function removeRemoteVideo(streamId) {
     if(streamIdList.length == 4){
       document.getElementsByClassName('publisher-content')[0].className = "publisher-content chat-active four-user";
     }
-  }
+
+    if(document.getElementsByClassName('publisher-content')[0] != null && isChatActive){
+     document.getElementsByClassName('publisher-content')[0].classList.add("active");
+   }
+
+ }
 }
 
 
