@@ -1758,7 +1758,9 @@ export class WebRTCAdaptor
 	}
 	disableStats(streamId) 
 	{
-		clearInterval(this.remotePeerConnectionStats[streamId].timerId);
+		if(this.remotePeerConnectionStats[streamId] != null || typeof this.remotePeerConnectionStats[streamId] != 'undefined'){
+			clearInterval(this.remotePeerConnectionStats[streamId].timerId);
+		}
 	}
 
 	enableStats(streamId) 
