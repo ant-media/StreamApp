@@ -805,8 +805,6 @@ export class WebRTCAdaptor
 			controlledStream.addTrack(videoTrack);
 		}
 
-		console.log("controlled = " + controlledStream)
-
   		/**
    		* Use the stream that went through the gainNode. This
    		* is the same stream but with altered input volume levels.
