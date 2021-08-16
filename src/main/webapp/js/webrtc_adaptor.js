@@ -113,7 +113,12 @@ export class WebRTCAdaptor
 		else if(this.mediaConstraints.video == "screen+camera") {
 			this.publishMode="screen+camera";
 		}
-		
+
+		 /*
+		 * Media constraints get 3 values which are = "never", true , false
+		 * never means you can't start video or audio after you start publishing
+		 * Otherwise it can be started.
+		 */
 		let video = this.mediaConstraints.video;
 		let audio = this.mediaConstraints.audio;
 		//Used since never values are string and not boolean, to not break getUserMedia
