@@ -115,7 +115,7 @@ export class WebRTCAdaptor
 		}
 
 		 //Used since never values are string and not boolean, to not break getUserMedia
-		 this.tmpConstraints = {video: true, audio : true}
+		 this.tmpConstraints = this.mediaConstraints;
 
 		 if(this.mediaConstraints.audio == "never"){
 			 this.mediaConstraints.audio = false;
@@ -123,6 +123,7 @@ export class WebRTCAdaptor
 		 }
 		 if(this.mediaConstraints.video == "never"){
 			 this.mediaConstraints.video = false;
+			 this.tmpConstraints.video = "never"
 		 }
 
 		 if(this.mediaConstraints.video == "never" && this.mediaConstraints.audio == "never"){
@@ -139,18 +140,8 @@ export class WebRTCAdaptor
 			// Get devices only in publish mode.
 			this.getDevices();
 			this.trackDeviceChange();
-
-			if (typeof this.mediaConstraints.video != "undefined" && this.mediaConstraints.video != false)
-			{
-				this.openStream(this.mediaConstraints, this.mode);	
-			}
-			else {
-				// get only audio
-				var media_audio_constraint = { audio: this.mediaConstraints.audio };
-				this.navigatorUserMedia(media_audio_constraint , stream => {
-					this.gotStream(stream);
-				}, true)
-			}
+			
+			this.openStream(this.mediaConstraints, this.mode);	
 		}
 		else {
 			//just playing, it does not open any stream
@@ -346,43 +337,61 @@ export class WebRTCAdaptor
 				this.smallVideoTrack.stop();
 			return stream;
 		}
-		
-		// Check Media Constraint video value screen or screen + camera
-		if(this.publishMode == "screen+camera" || this.publishMode == "screen"){
-			navigator.mediaDevices.getDisplayMedia(mediaConstraints)
-			.then(stream =>{
-				resetTrack(stream);
-				this.prepareStreamTracks(mediaConstraints,audioConstraint,stream, streamId);
+		if(this.tmpConstraints.video != "never" ){
+			console.log("tmpvideo = " + this.tmpConstraints.video)
+			if(this.tmpConstraints.video != false){
+				// Check Media Constraint video value screen or screen + camera
+				if(this.publishMode == "screen+camera" || this.publishMode == "screen"){
+					navigator.mediaDevices.getDisplayMedia(mediaConstraints)
+					.then(stream =>{
+						resetTrack(stream);
+						this.prepareStreamTracks(mediaConstraints,audioConstraint,stream, streamId);
 
-			})
-			.catch(error => {
-				if (error.name === "NotAllowedError") {
-					console.debug("Permission denied error");
-					this.callbackError("ScreenSharePermissionDenied");
+					})
+					.catch(error => {
+						if (error.name === "NotAllowedError") {
+							console.debug("Permission denied error");
+							this.callbackError("ScreenSharePermissionDenied");
 
-					// Redirect Default Stream Camera
-					if(this.localStream == null){
+							// Redirect Default Stream Camera
+							if(this.localStream == null){
 
-						var mediaConstraints = {
-							video : true,
-							audio : true
-						};
+								var mediaConstraints = {
+									video : true,
+									audio : true
+								};
 
-						this.openStream(mediaConstraints);
-					}
-					else{
-						this.switchVideoCameraCapture(streamId);
-					}
+								this.openStream(mediaConstraints);
+							}
+							else{
+								this.switchVideoCameraCapture(streamId);
+							}
 
+						}
+					});
 				}
-			});
+				// If mediaConstraints only user camera
+				else  {
+					this.navigatorUserMedia(mediaConstraints, (stream =>{
+						resetTrack(stream);
+						this.prepareStreamTracks(mediaConstraints,audioConstraint,stream, streamId);
+					}),true);
+				}
+			}
+			else{
+				this.initializeDummyFrame();
+				if(this.blackFrameTimer == null){
+					this.blackFrameTimer = setInterval(() => {			
+						this.initializeDummyFrame();
+					}, 3000);
+				}
+				this.prepareStreamTracks(mediaConstraints,audioConstraint,this.replacementStream, streamId);
+			}
 		}
-		// If mediaConstraints only user camera
-		else {
-			this.navigatorUserMedia(mediaConstraints, (stream =>{
-				resetTrack(stream);
-				this.prepareStreamTracks(mediaConstraints,audioConstraint,stream, streamId);
-			}),true);
+		else{
+			console.warn("Video set to never use");
+			const tmpStream = new MediaStream();
+			this.prepareStreamTracks(mediaConstraints,audioConstraint,tmpStream, streamId);
 		}
 	}
 
@@ -1350,59 +1359,70 @@ export class WebRTCAdaptor
 
 	turnOffLocalCamera(streamId) 
 	 {
-		 //Initialize the first dummy frame for switching.
-		this.initializeDummyFrame();
-		
-		 if (this.remotePeerConnection != null) {
-			 let choosenId;
-			 if(streamId != null || typeof streamId != "undefined"){
-				choosenId = streamId;
-			 }
-			 else{
-				choosenId = this.publishStreamId;
-			 }
-			 this.updateVideoTrack(this.replacementStream, choosenId, this.mediaConstraints, null, true);
-		 }
-		 else {
-			 this.callbackError("NoActiveConnection");
-		 }
+		if(this.tmpConstraints != "never"){
+			//Initialize the first dummy frame for switching.
+			this.initializeDummyFrame();
+			
+			if (this.remotePeerConnection != null) {
+				let choosenId;
+				if(streamId != null || typeof streamId != "undefined"){
+					choosenId = streamId;
+				}
+				else{
+					choosenId = this.publishStreamId;
+				}
+				this.updateVideoTrack(this.replacementStream, choosenId, this.mediaConstraints, null, true);
+			}
+			else {
+				this.callbackError("NoActiveConnection");
+			}
 
-		 //We need to send black frames within a time interval, because when the user turn off the camera,
-		//player can't connect to the sender since there is no data flowing. Sending a black frame in each 3 seconds resolves it.
-		if(this.blackFrameTimer == null){
-			this.blackFrameTimer = setInterval(() => {			
-				this.initializeDummyFrame();
-			}, 3000);
+			//We need to send black frames within a time interval, because when the user turn off the camera,
+			//player can't connect to the sender since there is no data flowing. Sending a black frame in each 3 seconds resolves it.
+			if(this.blackFrameTimer == null){
+				this.blackFrameTimer = setInterval(() => {			
+					this.initializeDummyFrame();
+				}, 3000);
+			}
+		}
+		else{
+			console.warn("Video set to never use")
 		}
 	 }
 
 	 turnOnLocalCamera(streamId) 
 	 {
-		if(this.blackFrameTimer != null){
-			clearInterval(this.blackFrameTimer);
-			this.blackFrameTimer = null;
+		if(this.tmpConstraints.video != "never"){
+			this.mediaConstraints.video = true;
+			if(this.blackFrameTimer != null){
+				clearInterval(this.blackFrameTimer);
+				this.blackFrameTimer = null;
+			}
+			if(this.localStream == null){
+				this.navigatorUserMedia(this.mediaConstraints, stream =>{
+					this.gotStream(stream);
+				}, false);
+			}
+			//This method will get the camera track and replace it with dummy track
+			else if (this.remotePeerConnection != null) {
+				this.navigatorUserMedia(this.mediaConstraints, stream =>{
+					let choosenId;
+					if(streamId != null || typeof streamId != undefined){
+						choosenId = streamId;
+					}
+					else{
+						choosenId = this.publishStreamId;
+					}
+					this.updateVideoTrack(stream, choosenId, this.mediaConstraints, null, true);
+				}, false);
+			}
+			else {
+				this.callbackError("NoActiveConnection");
+			}
 		}
-		 if(this.localStream == null){
-			 this.navigatorUserMedia(this.mediaConstraints, stream =>{
-				 this.gotStream(stream);
-			 }, false);
-		 }
-		 //This method will get the camera track and replace it with dummy track
-		 else if (this.remotePeerConnection != null) {
-			 this.navigatorUserMedia(this.mediaConstraints, stream =>{
-				let choosenId;
-			 	if(streamId != null || typeof streamId != undefined){
-					choosenId = streamId;
-				 }
-				 else{
-					choosenId = this.publishStreamId;
-				 }
-				 this.updateVideoTrack(stream, choosenId, this.mediaConstraints, null, true);
-			 }, false);
-		 }
-		 else {
-			 this.callbackError("NoActiveConnection");
-		 }
+		else{
+			console.warn("Video set to never use")
+		}
 	 }
 
 	muteLocalMic() 
@@ -1427,6 +1447,7 @@ export class WebRTCAdaptor
 	unmuteLocalMic(streamId) 
 	{
 		if(this.tmpConstraints.audio != "never"){
+			this.mediaConstraints.audio = true;
 			if (this.remotePeerConnection != null) {
 				//If we started the call with constraints.audio = false , we need to get the audio track
 				//Because dummy track is given. constraints.audio = never makes audio completely disabled
