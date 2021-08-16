@@ -113,9 +113,11 @@ export class WebRTCAdaptor
 		else if(this.mediaConstraints.video == "screen+camera") {
 			this.publishMode="screen+camera";
 		}
-
-		 //Used since never values are string and not boolean, to not break getUserMedia
-		 this.tmpConstraints = this.mediaConstraints;
+		
+		let video = this.mediaConstraints.video;
+		let audio = this.mediaConstraints.audio;
+		//Used since never values are string and not boolean, to not break getUserMedia
+		this.tmpConstraints = {video: video, audio: audio};
 
 		 if(this.mediaConstraints.audio == "never"){
 			 this.mediaConstraints.audio = false;
