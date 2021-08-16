@@ -46,6 +46,8 @@ export class WebRTCAdaptor
 		this.publishStreamId = null;
 		this.blackFrameTimer = null;
 
+		this.dummyAudioInitialized = false;
+
 		/**
 		 * This is used when only data is brodcasted with the same way video and/or audio.
 	     * The difference is that no video or audio is sent when this field is true 
@@ -111,6 +113,21 @@ export class WebRTCAdaptor
 		else if(this.mediaConstraints.video == "screen+camera") {
 			this.publishMode="screen+camera";
 		}
+
+		 //Used since never values are string and not boolean, to not break getUserMedia
+		 this.tmpConstraints = {video: true, audio : true}
+
+		 if(this.mediaConstraints.audio == "never"){
+			 this.mediaConstraints.audio = false;
+			 this.tmpConstraints.audio = "never"
+		 }
+		 if(this.mediaConstraints.video == "never"){
+			 this.mediaConstraints.video = false;
+		 }
+
+		 if(this.mediaConstraints.video == "never" && this.mediaConstraints.audio == "never"){
+			 this.onlyDataChannel = true;
+		 }
 				
 		//Check browser support for screen share function
 		this.checkBrowserScreenShareSupported();
@@ -281,6 +298,11 @@ export class WebRTCAdaptor
 				stream.addTrack(audioStream.getAudioTracks()[0]);
 			}
 			this.gotStream(stream);
+
+			if(this.tmpConstraints.audio != "never"){
+				this.initializeSilentTrack();
+				console.log("Replacing audio stream with dummy single packet track = " + this.replacementAudioStream)
+			}
 		}
 	}
 
@@ -1297,6 +1319,25 @@ export class WebRTCAdaptor
 			console.error("Cannot set local description. Error is: " + error);
 		});
 	}
+
+	//Initialize a signal for sound and then stop it, we stop it to prevent data flow, there will be a single packet only
+	initializeSilentTrack(){
+		this.replacementAudioStream = new MediaStream();
+		let ctx = new AudioContext();
+		let oscillator = ctx.createOscillator();
+		oscillator.frequency.setValueAtTime(3000, ctx.currentTime);
+		let dst = oscillator.connect(ctx.createMediaStreamDestination());
+		oscillator.start();
+
+		dst.stream.getAudioTracks().forEach( (track) => {
+			this.replacementAudioStream.addTrack(track);
+			console.log("audio destination add track = " + track);
+		});
+		this.updateAudioTrack(this.replacementAudioStream,this.publishStreamId);
+		oscillator.stop();
+		this.dummyAudioInitialized = true;
+	}
+
 	initializeDummyFrame(){
 		this.dummyCanvas.getContext('2d').fillRect(0, 0, 320, 240);
 		this.replacementStream = this.dummyCanvas.captureStream();
@@ -1361,27 +1402,57 @@ export class WebRTCAdaptor
 
 	muteLocalMic() 
 	{
-		if (this.remotePeerConnection != null) {
-			var track = this.localStream.getAudioTracks()[0];
-			track.enabled = false;
+		if(this.tmpConstraints.audio != "never"){
+			if (this.remotePeerConnection != null) {
+				var track = this.localStream.getAudioTracks()[0];
+				track.enabled = false;
+			}
+			else {
+				this.callbackError("NoActiveConnection");
+			}
 		}
-		else {
-			this.callbackError("NoActiveConnection");
+		else{
+			console.warn("Audio set to never use");
 		}
 	}
 
 	/**
 	 * if there is audio it calls callbackError with "AudioAlreadyActive" parameter
 	 */
-	unmuteLocalMic() 
+	unmuteLocalMic(streamId) 
 	{
-		if (this.remotePeerConnection != null) {
-			var track = this.localStream.getAudioTracks()[0];
-			track.enabled = true;
-		}
-		else {
-			this.callbackError("NoActiveConnection");
-		}
+		if(this.tmpConstraints.audio != "never"){
+			if (this.remotePeerConnection != null) {
+				//If we started the call with constraints.audio = false , we need to get the audio track
+				//Because dummy track is given. constraints.audio = never makes audio completely disabled
+			   if(this.dummyAudioInitialized){
+				   this.navigatorUserMedia({audio:true}, stream =>{
+					   let choosenId;
+						if(streamId != null && typeof streamId != "undefined"){
+						   choosenId = streamId;
+						}
+						else{
+						   choosenId = this.publishStreamId;
+						}
+						var track = this.localStream.getAudioTracks()[0];
+						track.enabled = true;
+						this.updateAudioTrack(stream, choosenId);
+					}, false);
+				   this.dummyAudioInitialized = false;
+			   }
+			   else{
+				   var track = this.localStream.getAudioTracks()[0];
+					track.enabled = true;
+			   }
+				
+			}
+			else {
+				this.callbackError("NoActiveConnection");
+			}
+		 }
+		 else{
+			console.warn("Audio set to never use");
+		 }
 	}
 
 	takeConfiguration(idOfStream, configuration, typeOfConfiguration)
