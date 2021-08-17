@@ -967,7 +967,9 @@ export class WebRTCAdaptor
 			this.localStream = stream;
 		}
 
-		this.localVideo.srcObject = this.localStream;
+		if (this.localVideo) {
+			this.localVideo.srcObject = this.localStream;
+		}
 
 		if (onEndedCallback != null) {
 			stream.getVideoTracks()[0].onended = function(event) {
