@@ -3,11 +3,9 @@
 <title>Ant Media Server WebRTC Conference Room</title>
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<meta charset="UTF-8">
-	<link rel="stylesheet"
-		href="css/external//bootstrap4/bootstrap.min.css"
-		>
+	<link rel="stylesheet" href="css/external//bootstrap4/bootstrap.min.css">
 	<script src="js/external/adapter-latest.js"></script>
-	<script src="js/external/jquery.min.js"></script>
+	<script src="js/external/jquery-3.4.1.min.js"></script>
 	<link rel="stylesheet" href="css/common.css" />
 	<style>
 video {
@@ -22,6 +20,9 @@ body {
 	padding-bottom: 20px;
 }
 
+.options {
+		display:none;
+	}
 /* Everything but the jumbotron gets side spacing for mobile first views */
 .header, .marketing, .footer {
 	padding-right: 15px;
@@ -81,6 +82,14 @@ body {
 	.jumbotron {
 		border-bottom: 0;
 	}
+}
+
+.message_area {
+	height: 300px;
+	overflow-y: auto;
+	border-style: groove;
+	border-width: thin;
+	background-color: white;
 }
 </style>
 </head>
@@ -155,6 +164,25 @@ body {
 				</div>
 				<span class="label label-success" id="broadcastingInfo"
 					  style="font-size: 14px; display: none" style="display: none">Publishing</span>
+
+
+
+					<div class="col-sm-12 text-right">
+						<button type="button" id="options" class="btn btn-outline-primary btn-sm">Options</button>
+					</div>
+					<div class="form-group col-sm-12 text-left options">
+						<div class="dropdown-divider"></div>
+						<label>Data Channel Messages</label>
+						<div id="all-messages" class="message_area"></div>
+						<div class="form-row">
+							<div class="form-group col-sm-10">
+								<input type="text" class="form-control" id="dataTextbox" placeholder="Write your message to send publisher/players">
+							</div>
+							<div class="form-group col-sm-2">
+							<button type="button" id="send" class="btn btn-outline-primary btn-block">Send</button>
+							</div>
+						</div>
+					</div>
 			</div>
 		</div>
 
@@ -218,6 +246,11 @@ body {
 	mute_mic_button.addEventListener("click", muteLocalMic,false)
 	var unmute_mic_button = document.getElementById("unmute_mic_button");
 	unmute_mic_button.addEventListener("click", unmuteLocalMic,false)
+	var options = document.getElementById("options");
+	options.addEventListener("click", toggleOptions, false);
+	var send = document.getElementById("send");
+	send.addEventListener("click", sendData, false);
+	
 
 	//Handles radio buttons for screen share feature
 	if (document.querySelector('input[name="videoSource"]')) {
@@ -239,6 +272,11 @@ body {
 	var isMicMuted = false;
 	var isCameraOff = false;
 	var roomTimerId = -1;
+
+
+	function toggleOptions() {
+		$(".options").toggle();
+	}
 
 	function switchVideoMode(chbx){
 		if(chbx.value == "screen") {
@@ -290,6 +328,28 @@ body {
 		}
 	}
 
+	function sendData() {
+		try {
+			var iceState = webRTCAdaptor.iceConnectionState(streamId);
+            if (iceState != null && iceState != "failed" && iceState != "disconnected") {
+            
+				var msg = $("#dataTextbox").val();
+				var notEvent = { streamId: publishStreamId, eventType:"CHAT_MESSAGE", message:msg };
+
+				webRTCAdaptor.sendData(streamId, JSON.stringify(notEvent));
+				$("#all-messages").append("Sent: " + msg+ "<br>");
+				$("#dataTextbox").val("");
+			}
+			else {
+				alert("WebRTC playing is not active. Please click Start Playing first")
+			}
+		}
+		catch (exception) {
+			console.error(exception);
+			alert("Message cannot be sent. Make sure you've enabled data channel and choose the correct player distribution on server web panel");
+		}
+	}
+
 	function handleCameraButtons() {
 		if(isCameraOff) {
 			turn_off_camera_button.disabled = true;
@@ -310,9 +370,9 @@ body {
 		}
 	}
 
-	function handleNotificationEvent(obj) {
-		console.log("Received data : ", obj.event.data);
-		var notificationEvent = JSON.parse(obj.event.data);
+	function handleNotificationEvent(data) {
+		console.log("Received data : ", data.data);
+		var notificationEvent = JSON.parse(data.data);
 		if(notificationEvent != null && typeof(notificationEvent) == "object") {
 		  var eventStreamId = notificationEvent.streamId;
 		  var eventTyp = notificationEvent.eventType;
@@ -325,8 +385,10 @@ body {
 					console.log("Microphone muted for : ", eventStreamId);
 			} else if (eventTyp == "MIC_UNMUTED"){
 					console.log("Microphone unmuted for : ", eventStreamId);
+			} else if (eventTyp == "CHAT_MESSAGE"){
+				$("#all-messages").append("Received: " + notificationEvent.message + "<br>");
 			}
-	  }
+		}
 	}
 
 	function joinRoom() {
@@ -335,7 +397,8 @@ body {
 	}
 
 	function leaveRoom() {
-		webRTCAdaptor.stop(streamId);
+		webRTCAdaptor.leaveFromRoom("roomNameBox.value");
+		//webRTCAdaptor.stop(streamId);
 
 		/*
 		for (var node in document.getElementById("players").childNodes) {
@@ -383,12 +446,11 @@ body {
 		video.srcObject.addTrack(obj.track)
 
 		obj.track.onended = event => {
+			video.srcObject.removeTrack(event.currentTarget);
 			if(video.srcObject.getTracks().length == 0) {
 				removeRemoteVideo(index);
 			}
 		};
-
-		console.log(index + " --->" +video.id);
 	}
 
 	function createRemoteVideo(streamId) {
@@ -554,6 +616,7 @@ body {
 						}
 						// we need to reset streams list
 						streamsList = new Array();
+						isPlaying = false;
 					} 
 					else if (info == "closed") {
 						//console.log("Connection closed");
@@ -565,6 +628,7 @@ body {
 					else if (info == "play_finished") {
 						console.log("play_finished");
 						removeRemoteVideo(obj.streamId);
+						isPlaying = false;
 					} 
 					else if (info == "streamInformation") {
 						streamInformation(obj);
@@ -575,8 +639,8 @@ body {
 						//tempList.push("!"+roomNameBox.value);
 
 						if(!isPlaying) {
-							//webRTCAdaptor.play(roomNameBox.value, token, roomNameBox.value, tempList);	
-							//isPlaying = true;
+							webRTCAdaptor.play(roomNameBox.value, token, roomNameBox.value, tempList);	
+							isPlaying = true;
 						}
 					}
 					else if (info == "data_channel_opened") {
