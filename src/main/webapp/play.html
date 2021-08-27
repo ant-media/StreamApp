@@ -460,19 +460,22 @@
 			}
 
 
-			if (!is360 && typeof player.ready != "undefined") {
+			if (!is360) {
 				setHLSElementsVisibility(true);
-				player.ready(function () {
-					var player = this;
-					player.on('ended', function () {
-						console.log("is360: " + is360 + " Playing has been finished");
-						hideWebRTCElements();
-						setHLSElementsVisibility(false);
-						setPlaceHolderVisibility(true);
-						tryToPlay(streamId, token, extension, subscriberId, subscriberCode, hlsNoStreamCallback);
-					});
-				});
 				setWebRTCElementsVisibility(false);
+				if (typeof player.ready != "undefined") {
+					player.ready(function () {
+						var player = this;
+						player.on('ended', function () {
+							console.log("is360: " + is360 + " Playing has been finished");
+							hideWebRTCElements();
+							setHLSElementsVisibility(false);
+							setPlaceHolderVisibility(true);
+							tryToPlay(streamId, token, extension, subscriberId, subscriberCode, hlsNoStreamCallback);
+						});
+					});
+				}
+				
 			}
 			else if (is360) {
 				setHLSElementsVisibility(false);

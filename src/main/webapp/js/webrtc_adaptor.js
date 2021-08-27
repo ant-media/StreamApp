@@ -917,7 +917,9 @@ export class WebRTCAdaptor
 			this.localStream = stream;
 		}
 
-		this.localVideo.srcObject = this.localStream;
+		if (this.localVideo) {
+			this.localVideo.srcObject = this.localStream;
+		}
 
 		if (onEndedCallback != null) {
 			stream.getVideoTracks()[0].onended = function(event) {
@@ -1338,7 +1340,7 @@ export class WebRTCAdaptor
 		 else if (this.remotePeerConnection != null) {
 			 this.navigatorUserMedia(this.mediaConstraints, stream =>{
 				let choosenId;
-			 	if(streamId != null || typeof streamId != undefined){
+			 	if(streamId != null || typeof streamId != "undefined"){
 					choosenId = streamId;
 				 }
 				 else{
@@ -1751,7 +1753,9 @@ export class WebRTCAdaptor
 	}
 	disableStats(streamId) 
 	{
-		clearInterval(this.remotePeerConnectionStats[streamId].timerId);
+		if(this.remotePeerConnectionStats[streamId] != null || typeof this.remotePeerConnectionStats[streamId] != 'undefined'){
+			clearInterval(this.remotePeerConnectionStats[streamId].timerId);
+		}
 	}
 
 	enableStats(streamId) 
