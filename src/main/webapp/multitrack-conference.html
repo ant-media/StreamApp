@@ -214,6 +214,7 @@ body {
 	if(playOnly == null) {
 		playOnly = false;
 	}
+	var streamName = getUrlParameter("streamName");
 
 	var volume_change_input = document.getElementById("volume_change_input");
 	volume_change_input.addEventListener("change", changeVolume);
@@ -409,9 +410,9 @@ body {
 		*/
 	}
 
-	function publish(streamName, token) {
-		publishStreamId = streamName;
-		webRTCAdaptor.publish(streamName, token);
+	function publish(streamId, token) {
+		publishStreamId = streamId;
+		webRTCAdaptor.publish(publishStreamId, token, "", "", streamName, roomNameBox.value);
 	}
 
 	function streamInformation(obj) {
