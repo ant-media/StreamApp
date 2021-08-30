@@ -63,7 +63,7 @@
       <div class="container-fluid">
         <div class="row">
           <div class="col-sm-12 col-md-3">
-            <div class="room-name">Board Meeting</div>
+            <div class="room-name"><span id="date"></span> | <span id="roomName"></span></div>
           </div>
           <div class="col-sm-12 col-md-6">
             <div class="icons">
@@ -143,7 +143,6 @@
 
       </body>
 
-
       <script type="module">
        import {WebRTCAdaptor} from "./js/webrtc_adaptor.js"
        import {getUrlParameter} from "./js/fetch.stream.js" 
@@ -157,7 +156,7 @@
     * 5. "streamName": Stream name of stream
     * 6. "subscriberId": It's experimental. 
     * 7. "subscriberCode": It's experimental. 
-    */
+    */  
 
     var token = getUrlParameter("token");
     var publishStreamId = getUrlParameter("streamId");
@@ -180,6 +179,15 @@
     if(playOnly == null) {
       playOnly = false;
     }
+
+    var dateSpan = document.getElementById("date");
+    dateSpan.innerHTML = formatAMPM(new Date);
+    setInterval(() => {      
+     dateSpan.innerHTML = formatAMPM(new Date);
+   }, 60000);
+    
+    var roomNameSpan = document.getElementById("roomName");
+    roomNameSpan.innerHTML = roomName;
 
     // camera and microphone on off
     $(document).ready(function() {
@@ -338,7 +346,6 @@ function unmuteLocalMic() {
 function sendNotificationEvent(eventType) {
   if(isDataChannelOpen) {
     var notEvent = { streamId: publishStreamId, eventType:eventType };
-
     webRTCAdaptor.sendData(publishStreamId, JSON.stringify(notEvent));
   } else {
     console.log("Could not send the notification because data channel is not open.");
@@ -685,7 +692,9 @@ else if (info == "data_channel_opened") {
 } 
 else if (info == "data_channel_closed") {
   console.log("Data Channel closed for stream id", obj );
-  isDataChannelOpen = false;
+  if(streamIdList.length == 0){
+    isDataChannelOpen = false;
+  }
 } 
 else if(info == "data_received") {
   try {

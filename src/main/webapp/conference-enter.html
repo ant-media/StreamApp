@@ -33,17 +33,13 @@
       <div class="row h-100 justify-content-center align-items-center">
         <form class="col-md-auto col-md-6">
           <div class="logo"><img src="images/ant-media-logo.svg"></div>
-          <div class="logo-text">VIDEO CALL</div>
-          <p>Estimate the cost of your Ultra Low Latency Streaming Project at Scale</p>
-          <div class="form-group">
-            <label for="formGroupExampleInput">Room Name</label>
-            <input type="text" class="form-control" id="roomNameInput" value="room1">
-          </div>
+          <div class="logo-text">CONFERENCE CALL</div>
+          <p>Start a video conference call now with Ant Media!</p>
           <div class="form-group">
             <label for="formGroupExampleInput">Your Name</label>
             <input type="text" class="form-control" id="streamNameInput" value="Guest">
           </div>
-          <a id="enterButton"  href="" class="btn btn-primary">Create</a>
+          <a id="enterButton"  href="" class="btn btn-primary">Login</a>
         </form>   
       </div>
     </div>
@@ -58,24 +54,42 @@
 
 <script type="text/javascript">
 
-  roomName = document.getElementById("roomNameInput");
-  streamName = document.getElementById("streamNameInput");
+  var getUrlParameter = function getUrlParameter(sParam) {
+    var sPageURL = decodeURIComponent(window.location.search.substring(1)),
+    sURLVariables = sPageURL.split('&'),
+    sParameterName,
+    i;
 
-  roomName.addEventListener('input', e => { 
-    var url = "conference-room.html?roomName="+roomName.value+"&streamName="+streamName.value;
-    document.getElementById('enterButton').href = url;
-  });
+    for (i = 0; i < sURLVariables.length; i++) {
+      sParameterName = sURLVariables[i].split('=');
+
+      if (sParameterName[0] === sParam) {
+        return sParameterName[1] === undefined ? true : sParameterName[1];
+      }
+    }
+  }
+
+  var roomName =  getUrlParameter('roomName');
+
+  if(roomName == null){
+    roomName = "room1";
+  }
+
+  var streamName = document.getElementById("streamNameInput");
 
   streamName.addEventListener('input', e => { 
-    var url = "conference-room.html?roomName="+roomName.value+"&streamName="+streamName.value;
+    var url = "conference-room.html?roomName="+roomName+"&streamName="+streamName.value;
     document.getElementById('enterButton').href = url;
   });
 
   function generateRandom(){
     streamName.value = "Guest"+ Math.floor(Math.random() * 100000)
-    var url = "conference-room.html?roomName="+roomName.value+"&streamName="+streamName.value;
+    var url = "conference-room.html?roomName="+roomName+"&streamName="+streamName.value;
     document.getElementById('enterButton').href = url;
   }
+
+  var url = "conference-room.html?roomName="+roomName+"&streamName="+streamName.value;
+  document.getElementById('enterButton').href = url;
 
 </script>
 
