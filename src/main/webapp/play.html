@@ -145,6 +145,17 @@
 		var placeHolder = document.getElementById("video_info");
 		var player = document.getElementById("remoteVideo");
 
+
+		//This function creates a-scene elements only if is360 parameter is true.
+		//This makes a-scene doesn't run in the background if it is not needed.
+		function createVrVideo() {
+			var vrScene = document.createElement("a-scene");
+			vrScene.style.display="none";
+			vrScene.innerHTML = '<a-videosphere src="#remoteVideo" rotation="0 180 0" style="background-color: antiquewhite"></a-videosphere>';
+			var remoteVideoNode = document.getElementById("remoteVideo");
+			remoteVideoNode.parentNode.insertBefore(vrScene,remoteVideoNode.nextSibling);
+		}
+
 		// This function mutes or unmutes the 360 video stream.
 		// This is necessary because the browser doesn't allow videos to be played automatically and unmuted by default.
 		// Exceptions are possible: https://developers.google.com/web/updates/2017/09/autoplay-policy-changes
