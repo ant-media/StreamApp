@@ -527,6 +527,8 @@
 				websocketURL = "wss://" + path;
 			}
 
+			var iceConnected = false;
+
 			//webRTCAdaptor is a global variable
 			webRTCAdaptor = new WebRTCAdaptor({
 				websocket_url: websocketURL,
@@ -539,6 +541,7 @@
 				callback: function (info, description) {
 					if (info == "initialized") {
 						console.log("initialized");
+						iceConnected = false;
 						webRTCAdaptor.getStreamInfo(streamId);
 					}
 					else if (info == "streamInformation") {
@@ -557,10 +560,23 @@
 						setHLSElementsVisibility(false);
 						hideWebRTCElements();
 						setPlaceHolderVisibility(true);
+						//if play_finished event is received, it has two meanings
+						//1. stream is really finished 
+						//2. ice connection cannot be established and server reports play_finished event
 						//check that publish may start again
-						setTimeout(function () {
-							webRTCAdaptor.getStreamInfo(streamId);
-						}, 3000);
+						if (iceConnected) 
+						{
+							//webrtc connection was successful and try to play again with webrtc
+							setTimeout(function () {
+								webRTCAdaptor.getStreamInfo(streamId);
+							}, 3000);
+						}
+						else {
+							//webrtc connection was not succesfull, switch the next play type(playOrder) if available 
+							if (typeof noStreamCallback != "undefined") {
+								noStreamCallback();
+							}
+						}
 					}
 					else if (info == "closed") {
 						//console.log("Connection closed");
@@ -580,6 +596,13 @@
 							setTimeout(function () {
 								document.getElementById("networkWarning").style.display = "none";
 							}, 3000);
+						}
+					}
+					else if (info == "ice_connection_state_changed") {
+						console.debug("ice connection state changed to " + description.state);
+						if (description.state == "connected" || description.state == "completed") {
+							//it means the ice connection has been established
+							iceConnected = true;
 						}
 					}
 

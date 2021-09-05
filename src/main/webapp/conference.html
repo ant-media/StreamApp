@@ -105,22 +105,24 @@ body {
 			<a href="https://github.com/ant-media/Ant-Media-Server/wiki#community-edition--enterprise-edition" style="font-size:12px">Comparison between Community and Enterprise</a>		 
 			</div>
 		<div id="players" class="row">
-			<div class="col-sm-3">
+			<div class="col-sm-3" >
 				<video id="localVideo" autoplay muted controls playsinline></video>
-				<div style="margin-top:10px;" class="col-sm-8 offset-sm-2">Microphone Gain: <input type=range id=volume_change_input min=0 max=1 value=1 step=0.01></div>
+				<div style="margin-top:10px;display: none;"  class="col-sm-8 offset-sm-2">Microphone Gain: <input type=range id=volume_change_input min=0 max=1 value=1 step=0.01></div>
 			</div>
 		</div>
 
-		<div class="row">
+		<div class="row" style="padding: 15px;">
 			<div class="col-sm-8 offset-sm-2">
-				<div style="padding:5px" class="form-check form-check-inline col-sm-6" >
+				<div style="padding:5px" class="form-check form-check-inline col-sm-10" >
 					<input type="text" class="form-control" value="room1"
 						   id="roomName" placeholder="Type room name">
 				</div>
-				<div style="padding:5px">  
+				<div style="padding-top:5px;padding-bottom: 25px;">  
 					<input type="checkbox" class="form-check-input" id="enableMCU">
 					<label for="enableMCU" class="form-check-label">Enable MCU</label>
-					<a href=" https://antmedia.io/mcu-conference/" target="_blank" class=""><span  style="margin-left:20px">What is MCU?</span></a>
+					<a href=" https://antmedia.io/mcu-conference/" target="_blank" style="font-size: 12px;">(What is MCU and How to use?)</a>
+					<span class="badge badge-warning"  style="font-size:10px; margin:5px;">Make sure you have one Adaptive Bitrate on the server side. Otherwise MCU does not work</span>
+
 				</div>
 				<div style="padding:5px">
 					<button class="btn btn-primary" disabled
