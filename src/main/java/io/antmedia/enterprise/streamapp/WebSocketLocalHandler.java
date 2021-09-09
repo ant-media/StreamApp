@@ -25,7 +25,7 @@ import io.antmedia.websocket.WebSocketCommunityHandler;
 import io.antmedia.websocket.WebSocketConstants;
 
 
-@ServerEndpoint(value="/websocket", configurator=DefaultServerEndpointConfigurator.class)
+@ServerEndpoint(value="/websocket", configurator=AMSEndpointConfigurator.class)
 public class WebSocketLocalHandler {
 
 	WebSocketCommunityHandler handler;
