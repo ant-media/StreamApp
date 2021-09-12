@@ -108,7 +108,7 @@ body {
 	</div>
 
 	<div class="jumbotron">
-		<div id="players">
+		<div id="players class="row"">
 			<div class="col-sm-3">
 				<video id="localVideo" autoplay muted controls playsinline></video>
 				<div style="margin-top:10px;" class="col-sm-8 col-sm-offset-2">Microphone Gain: <input type=range id=volume_change_input min=0 max=1 value=1 step=0.01></div>
@@ -162,6 +162,7 @@ body {
 					<div class="form-check form-check-inline"></div>
 						<a id="browser_screen_share_doesnt_support" href="https://caniuse.com/#search=getDisplayMedia">Your browser doesn't support screen share. You can see supported browsers in this link </a>
 				</div>
+				<br/>
 				<div class="badge badge-success" id="broadcastingInfo"
 					  style="font-size: 14px; display: none" style="display: none">Publishing</div>
 
