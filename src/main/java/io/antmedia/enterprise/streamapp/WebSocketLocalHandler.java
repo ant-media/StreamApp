@@ -34,7 +34,7 @@ public class WebSocketLocalHandler {
 
 	@OnOpen
 	public void onOpen(Session session, EndpointConfig config) {
-		logger.info("Web Socket opened");
+		logger.info("Web Socket opened session:{}", session.getId());
 		//increase max text buffer size - Chrome 90 requires
 		session.setMaxTextMessageBufferSize(8192 * 10);
 	}
