@@ -29,12 +29,18 @@ import io.antmedia.websocket.WebSocketConstants;
 public class WebSocketLocalHandler {
 
 	WebSocketCommunityHandler handler;
+	private String userAgent = "N/A";
 
 	protected static Logger logger = LoggerFactory.getLogger(WebSocketLocalHandler.class);
 
 	@OnOpen
 	public void onOpen(Session session, EndpointConfig config) {
-		logger.info("Web Socket opened session:{}", session.getId());
+		if(config.getUserProperties().containsKey(AMSEndpointConfigurator.USER_AGENT)) {
+			userAgent = (String) config.getUserProperties().get(AMSEndpointConfigurator.USER_AGENT);
+		}
+		
+		logger.info("Web Socket opened session:{} user-agent:{}", session.getId(), userAgent);
+		
 		//increase max text buffer size - Chrome 90 requires
 		session.setMaxTextMessageBufferSize(8192 * 10);
 	}
@@ -98,6 +104,8 @@ public class WebSocketLocalHandler {
 			else {
 				handler = new WebSocketCommunityHandler(context, session);
 			}
+			
+			handler.setUserAgent(userAgent);
 		} catch (Exception e) {
 			logger.error("WebSocket handler cannot be created");
 			logger.error(ExceptionUtils.getMessage(e));

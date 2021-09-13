@@ -9,14 +9,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class AMSEndpointConfigurator extends DefaultServerEndpointConfigurator {
-	private static final String USER_AGENT = "user-agent";
+	public static final String USER_AGENT = "user-agent";
 	protected static Logger logger = LoggerFactory.getLogger(AMSEndpointConfigurator.class);
 
 	@Override
 	public void modifyHandshake(ServerEndpointConfig sec, HandshakeRequest request, HandshakeResponse response) {
 		super.modifyHandshake(sec, request, response);
 		if(request.getHeaders().containsKey(USER_AGENT)) {
-			logger.info("WebSocket user-agent:{}", request.getHeaders().get(USER_AGENT).toString());
+			String userAgent = request.getHeaders().get(USER_AGENT).toString();
+			sec.getUserProperties().put(USER_AGENT, userAgent);
 		}
 	}
 }
