@@ -46,6 +46,9 @@ export class WebRTCAdaptor
 		this.publishStreamId = null;
 		this.blackFrameTimer = null;
 
+		var threshold = 0.08;
+		this.soundMeters = new Array();
+
 		/**
 		 * This is used when only data is brodcasted with the same way video and/or audio.
 	     * The difference is that no video or audio is sent when this field is true 
@@ -748,6 +751,42 @@ export class WebRTCAdaptor
 		});
 
 		return composedStream;
+	}
+
+	enableAudioLevel(stream, streamId) {
+
+		const soundMeter = new SoundMeter(this.audioContext);
+
+		// Put variables in global scope to make them available to the
+		// browser console.
+		soundMeter.connectToSource(stream, function(e) {
+		if (e) {
+			alert(e);
+			return;
+		}
+		console.log("Added sound meter for stream: " + streamId + " = " + soundMeter.instant.toFixed(2));
+		});
+
+		this.soundMeters[streamId] = soundMeter;
+	}
+
+	findDominantSpeaker(streamsList){
+		var tmpMax = 0;
+		var tmpStreamId = null;
+		
+		for(let i = 0; i < streamsList.length; i++){
+			let nextStreamId = streamsList[i];
+			let tmpValue = this.soundMeters[nextStreamId].instant.toFixed(2); 
+			if( tmpValue > threshold ){
+				if(tmpValue > tmpMax){
+					tmpMax = tmpValue;
+					tmpStreamId = nextStreamId;
+				}
+			}
+		}
+		if(tmpStreamId != null){
+			this.callback("dominantSpeaker" , tmpStreamId);
+		}
 	}
 
 	setGainNodeStream(stream){

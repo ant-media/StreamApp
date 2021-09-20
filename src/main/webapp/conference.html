@@ -513,6 +513,10 @@ body {
 						roomTimerId = setInterval(() => {			
 							webRTCAdaptor.getRoomInfo(roomNameBox.value, publishStreamId);
 						}, 5000);
+
+						dominantSpeakerFinderId = setInterval(() => {			
+							webRTCAdaptor.findDominantSpeaker(streamsList);
+						}, 300);
 					}
 					else if (info == "newStreamAvailable") {
 						playVideo(obj);
@@ -565,6 +569,9 @@ body {
 									+ JSON.stringify(obj));
 						}
 					} 
+					else if ( info == "dominantSpeaker"){
+						console.log("Dominant speaker = " + obj);
+					}
 					else if (info == "play_finished") {
 						console.log("play_finished");
 						removeRemoteVideo(obj.streamId);
