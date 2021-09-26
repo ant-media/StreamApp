@@ -770,24 +770,15 @@ export class WebRTCAdaptor
 		this.soundMeters[streamId] = soundMeter;
 	}
 
-	findDominantSpeaker(streamsList){
-		var tmpMax = 0;
-		var tmpStreamId = null;
-		
+	getSoundLevelList(streamsList){
 		for(let i = 0; i < streamsList.length; i++){
-			let nextStreamId = streamsList[i];
-			let tmpValue = this.soundMeters[nextStreamId].instant.toFixed(2); 
-			if( tmpValue > threshold ){
-				if(tmpValue > tmpMax){
-					tmpMax = tmpValue;
-					tmpStreamId = nextStreamId;
-				}
-			}
+			this.soundLevelList[streamsList[i]] = this.soundMeters[streamsList[i]].instant.toFixed(2); 
+
+			console.log(streamsList[i] + " = " +this.soundLevelList[streamsList[i]])
 		}
-		if(tmpStreamId != null){
-			this.callback("dominantSpeaker" , tmpStreamId);
-		}
+		this.callback("gotSoundList" , this.soundLevelList);
 	}
+	
 
 	setGainNodeStream(stream){
 
@@ -1293,7 +1284,10 @@ export class WebRTCAdaptor
 		{
 			clearInterval(this.remotePeerConnectionStats[streamId].timerId);
 			delete this.remotePeerConnectionStats[streamId];
-		}			
+		}
+		if(this.soundMeters[streamId] != null){
+			delete this.soundMeters[streamId];
+		}				
 	}
 
 	signallingState(streamId) 

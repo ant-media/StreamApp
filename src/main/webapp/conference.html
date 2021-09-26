@@ -323,6 +323,29 @@ body {
 			unmute_mic_button.disabled = true;
 		}
 	}
+	function findDominantSpeaker(streamSoundList){
+		var tmpMax = 0;
+		var tmpStreamId = null;
+		var threshold = 0.04;
+		
+		for(let i = 0; i < streamsList.length; i++){
+			let nextStreamId = streamsList[i];
+			let tmpValue = streamSoundList[nextStreamId]
+			if( tmpValue > threshold ){
+				if(tmpValue > tmpMax){
+					tmpMax = tmpValue;
+					tmpStreamId = nextStreamId;
+				}
+			}
+		}
+		console.log("Dominant Speaker = " + tmpStreamId);
+
+		var c=document.getElementById("canvas"+tmpStreamId);
+		var ctx=c.getContext("2d");
+		ctx.rect(20,20,150,100);
+		ctx.strokeStyle="#00000";
+		ctx.stroke();
+	}
 
 	function handleNotificationEvent(obj) {
 		console.log("Received data : ", obj.event.data);
@@ -380,6 +403,18 @@ body {
 		}
 
 		video.srcObject = obj.stream;
+		var canvas = document.createElement("canvas");
+		var canvasContext = canvas.getContext("2d");
+		canvas.id = "canvas"+streamId;
+		document.getElementById("players").appendChild(canvas);
+
+		setInterval(() => {
+				//draw screen to canvas
+				canvas.width = video.videoWidth;
+				canvas.height = video.videoHeight;
+				canvasContext.drawImage(video, 0, 0, canvas.width, canvas.height);
+		},66);
+		webRTCAdaptor.enableAudioLevel(obj.stream, obj.streamId)
 	}
 
 	function createRemoteVideo(streamId) {
@@ -528,13 +563,16 @@ body {
 						join_publish_button.disabled = true;
 						stop_publish_button.disabled = false;
 						startAnimation();
-					} 
+					}
 					else if (info == "publish_finished") {
 						//stream is being finished
 						console.debug("publish finished");
 					} 
 					else if (info == "screen_share_stopped") {
 						console.log("screen share stopped");
+					}
+					else if (info == "gotSoundList"){
+						findDominantSpeaker(obj);
 					}
 					else if (info == "browser_screen_share_supported") {
 						screen_share_checkbox.disabled = false;
