@@ -5,6 +5,7 @@
 
 import {PeerStats} from "./peer_stats.js"
 import {WebSocketAdaptor} from "./websocket_adaptor.js"
+import {SoundMeter} from "./soundmeter.js" 
 
 class ReceivingMessage{
 		constructor(size) {
@@ -48,6 +49,7 @@ export class WebRTCAdaptor
 
 		var threshold = 0.08;
 		this.soundMeters = new Array();
+		this.soundLevelList = new Array();
 
 		/**
 		 * This is used when only data is brodcasted with the same way video and/or audio.

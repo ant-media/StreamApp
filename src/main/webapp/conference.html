@@ -15,6 +15,7 @@ video {
 	max-width: 320px;
 	height: 100%;
 	max-height: 240px;
+	z-index: 1;
 }
 /* Space out content a bit */
 body {
@@ -232,6 +233,8 @@ body {
 	unmute_mic_button.addEventListener("click", unmuteLocalMic,false)
 	var mcuChbx = document.getElementById("enableMCU");
 
+	var dominantSpeakerFinderId = null;
+	var checkSpeakingStreamIds = new Array();
 
 	//Handles radio buttons for screen share feature
 	if (document.querySelector('input[name="videoSource"]')) {
@@ -338,13 +341,18 @@ body {
 				}
 			}
 		}
-		console.log("Dominant Speaker = " + tmpStreamId);
-
-		var c=document.getElementById("canvas"+tmpStreamId);
-		var ctx=c.getContext("2d");
-		ctx.rect(20,20,150,100);
-		ctx.strokeStyle="#00000";
-		ctx.stroke();
+		if(tmpStreamId != null){
+			if(checkSpeakingStreamIds[tmpStreamId] == null || typeof checkSpeakingStreamIds[tmpStreamId] == "undefined"){
+				var icon = document.getElementById("audio"+tmpStreamId);
+				icon.style.visibility="visible";
+				checkSpeakingStreamIds[tmpStreamId] = true;
+				setTimeout(()=> {
+					var icon = document.getElementById("audio"+tmpStreamId);
+					icon.style.visibility="hidden";
+					checkSpeakingStreamIds[tmpStreamId] = null;
+				},1000)
+			}
+		}
 	}
 
 	function handleNotificationEvent(obj) {
@@ -403,17 +411,7 @@ body {
 		}
 
 		video.srcObject = obj.stream;
-		var canvas = document.createElement("canvas");
-		var canvasContext = canvas.getContext("2d");
-		canvas.id = "canvas"+streamId;
-		document.getElementById("players").appendChild(canvas);
 
-		setInterval(() => {
-				//draw screen to canvas
-				canvas.width = video.videoWidth;
-				canvas.height = video.videoHeight;
-				canvasContext.drawImage(video, 0, 0, canvas.width, canvas.height);
-		},66);
 		webRTCAdaptor.enableAudioLevel(obj.stream, obj.streamId)
 	}
 
@@ -421,7 +419,7 @@ body {
 		var player = document.createElement("div");
 		player.className = "col-sm-3";
 		player.id = "player"+streamId;
-		player.innerHTML = '<video id="remoteVideo'+streamId+'"controls autoplay playsinline></video>';
+		player.innerHTML = '<video id="remoteVideo'+streamId+'"controls autoplay playsinline></video>' + '<img id="audio'+streamId+'"src="images/audio.png" style="visibility: hidden;"></image>';
 		document.getElementById("players").appendChild(player);
 	}
 
@@ -549,12 +547,19 @@ body {
 							webRTCAdaptor.getRoomInfo(roomNameBox.value, publishStreamId);
 						}, 5000);
 
-						dominantSpeakerFinderId = setInterval(() => {			
+						if(streamsList.length > 0){
+							dominantSpeakerFinderId = setInterval(() => {			
 							webRTCAdaptor.findDominantSpeaker(streamsList);
 						}, 300);
+						}
 					}
 					else if (info == "newStreamAvailable") {
 						playVideo(obj);
+						if(dominantSpeakerFinderId == null){
+							dominantSpeakerFinderId = setInterval(() => {			
+							webRTCAdaptor.getSoundLevelList(streamsList);
+							}, 300);
+						}
 					} 
 					else if (info == "publish_started") {
 						//stream is being published
@@ -587,7 +592,9 @@ body {
 						if (roomTimerId != null)
 						{
 							clearInterval(roomTimerId);
+							clearInterval(dominantSpeakerFinderId);
 						}
+						dominantSpeakerFinderId = null;
 
 						join_publish_button.disabled = false;
 						stop_publish_button.disabled = true;
