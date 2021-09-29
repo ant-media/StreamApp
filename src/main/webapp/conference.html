@@ -549,7 +549,7 @@ body {
 						if(streamsList.length > 0){
 							dominantSpeakerFinderId = setInterval(() => {			
 							webRTCAdaptor.getSoundLevelList(streamsList);
-						}, 300);
+						}, 200);
 						}
 					}
 					else if (info == "newStreamAvailable") {
@@ -557,7 +557,7 @@ body {
 						if(dominantSpeakerFinderId == null){
 							dominantSpeakerFinderId = setInterval(() => {			
 							webRTCAdaptor.getSoundLevelList(streamsList);
-							}, 300);
+							}, 200);
 						}
 					} 
 					else if (info == "publish_started") {
@@ -613,9 +613,6 @@ body {
 									+ JSON.stringify(obj));
 						}
 					} 
-					else if ( info == "dominantSpeaker"){
-						console.log("Dominant speaker = " + obj);
-					}
 					else if (info == "play_finished") {
 						console.log("play_finished");
 						removeRemoteVideo(obj.streamId);
