@@ -4,7 +4,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<meta charset="UTF-8">
 	<link rel="stylesheet"
-		  href="css/external//bootstrap4/bootstrap.min.css"
+		  href="css/external/bootstrap4/bootstrap.min.css"
 		   >
 	<script src="js/external/adapter-latest.js"></script>
 	<script src="js/external/jquery-3.4.1.min.js"></script>
@@ -15,7 +15,6 @@ video {
 	max-width: 320px;
 	height: 100%;
 	max-height: 240px;
-	z-index: 1;
 }
 /* Space out content a bit */
 body {
@@ -549,7 +548,7 @@ body {
 
 						if(streamsList.length > 0){
 							dominantSpeakerFinderId = setInterval(() => {			
-							webRTCAdaptor.findDominantSpeaker(streamsList);
+							webRTCAdaptor.getSoundLevelList(streamsList);
 						}, 300);
 						}
 					}

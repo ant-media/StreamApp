@@ -775,8 +775,6 @@ export class WebRTCAdaptor
 	getSoundLevelList(streamsList){
 		for(let i = 0; i < streamsList.length; i++){
 			this.soundLevelList[streamsList[i]] = this.soundMeters[streamsList[i]].instant.toFixed(2); 
-
-			console.log(streamsList[i] + " = " +this.soundLevelList[streamsList[i]])
 		}
 		this.callback("gotSoundList" , this.soundLevelList);
 	}
