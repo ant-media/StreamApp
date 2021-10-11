@@ -108,7 +108,7 @@ body {
 	</div>
 
 	<div class="jumbotron">
-		<div id="players class="row"">
+		<div id="players">
 			<div class="col-sm-3">
 				<video id="localVideo" autoplay muted controls playsinline></video>
 				<div style="margin-top:10px;" class="col-sm-8 col-sm-offset-2">Microphone Gain: <input type=range id=volume_change_input min=0 max=1 value=1 step=0.01></div>
@@ -162,7 +162,6 @@ body {
 					<div class="form-check form-check-inline"></div>
 						<a id="browser_screen_share_doesnt_support" href="https://caniuse.com/#search=getDisplayMedia">Your browser doesn't support screen share. You can see supported browsers in this link </a>
 				</div>
-				<br/>
 				<div class="badge badge-success" id="broadcastingInfo"
 					  style="font-size: 14px; display: none" style="display: none">Publishing</div>
 
@@ -212,9 +211,16 @@ body {
 	var token = getUrlParameter("token");
 	var streamId = getUrlParameter("streamId");
 	var playOnly = getUrlParameter("playOnly");
+	var dcOnly = getUrlParameter("dcOnly");
+
 	if(playOnly == null) {
 		playOnly = false;
 	}
+
+	if(dcOnly == null) {
+		dcOnly = false;
+	}
+
 	var streamName = getUrlParameter("streamName");
 
 	var volume_change_input = document.getElementById("volume_change_input");
@@ -513,8 +519,8 @@ body {
 	};
 
 	var mediaConstraints = {
-		video : true,
-		audio : true
+		video : !dcOnly,
+		audio : !dcOnly
 	};
 
 	var appName = location.pathname.substring(0, location.pathname
@@ -535,6 +541,7 @@ body {
 				sdp_constraints : sdpConstraints,
 				localVideoId : "localVideo",
 				isPlayMode : playOnly,
+				onlyDataChannel : dcOnly,
 				debug : true,
 				callback : (info, obj) => {
 					if (info == "initialized") {
