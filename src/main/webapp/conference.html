@@ -106,7 +106,7 @@ body {
 			</div>
 		<div id="players" class="row">
 			<div class="col-sm-3" >
-				<video id="localVideo" autoplay muted controls playsinline></video>
+				<video style="margin-top:23px;" id="localVideo" autoplay muted controls playsinline></video>
 				<div style="margin-top:10px;display: none;"  class="col-sm-8 offset-sm-2">Microphone Gain: <input type=range id=volume_change_input min=0 max=1 value=1 step=0.01></div>
 			</div>
 		</div>
@@ -418,7 +418,7 @@ body {
 		var player = document.createElement("div");
 		player.className = "col-sm-3";
 		player.id = "player"+streamId;
-		player.innerHTML = '<video id="remoteVideo'+streamId+'"controls autoplay playsinline></video>' + '<img id="audio'+streamId+'"src="images/audio.png" style="visibility: hidden;"></image>';
+		player.innerHTML = '<img id="audio'+streamId+'"src="images/audio.png" style="visibility: hidden;"></image>' + '<video id="remoteVideo'+streamId+'"controls autoplay playsinline></video>';
 		document.getElementById("players").appendChild(player);
 	}
 
