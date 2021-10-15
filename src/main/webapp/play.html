@@ -26,6 +26,9 @@
 
 	<div id="video_info">
 		Stream will start playing automatically<br />when it is live
+		<div>
+			<img id="logo" src="images/logo.png" ></image>
+		</div>
 	</div>
 
 	<!-- HLS Player -->
@@ -166,7 +169,7 @@
 
 		function genericCallback(currentTech) {
 
-			placeHolder.innerHTML = "Stream will start playing automatically<br/>when it is live";
+			placeHolder.innerHTML = "Stream will start playing automatically<br/>when it is live" + '<div><img id="logo" src="images/logo.png" ></image></div>';
 			setTimeout(function () {
 				var index = playOrder.indexOf(currentTech);
 				if (index == -1 || index == (playOrder.length - 1)) {
@@ -211,7 +214,7 @@
 		}
 
 		function vodNoStreamCallback() {
-			placeHolder.innerHTML = "Stream will start playing automatically<br/>when it is live";
+			placeHolder.innerHTML = "Stream will start playing automatically<br/>when it is live" + '<div><img id="logo" src="images/logo.png" ></image></div>';
 			setTimeout(function () {
 				if (playOrder.includes("vod")) {
 					tryToVODPlay(streamId, token, subscriberId, subscriberCode, vodNoStreamCallback, playType);
