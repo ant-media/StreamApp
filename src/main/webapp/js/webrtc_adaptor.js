@@ -695,6 +695,10 @@ export class WebRTCAdaptor
 		if (typeof this.mediaConstraints.audio != "undefined" && this.mediaConstraints.audio != false) {
 			audioConstraint = this.mediaConstraints.audio;
 		}
+		
+		if(typeof this.mediaConstraints.video != "undefined" && this.mediaConstraints.video != false){
+			this.mediaConstraints.video = true
+		}
 
 		this.getUserMedia(this.mediaConstraints, audioConstraint, streamId);
 	}
