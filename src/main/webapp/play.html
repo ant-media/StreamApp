@@ -169,11 +169,24 @@
 			placeHolder.innerHTML = "Stream will start playing automatically<br/>when it is live";
 			setTimeout(function () {
 				var index = playOrder.indexOf(currentTech);
-				if (index == -1 || index == (playOrder.length - 1)) {
-					index = 0;
+				
+				if(currentTech == "webrtc"){
+					if(!iceConnected){
+						if (index == -1 || index == (playOrder.length - 1)) {
+							index = 0;
+						}
+						else {
+							index++;
+						}
+					}
 				}
-				else {
-					index++;
+				else{
+					if (index == -1 || index == (playOrder.length - 1)) {
+						index = 0;
+					}
+					else {
+						index++;
+					}
 				}
 
 				var tech = playOrder[index];
