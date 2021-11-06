@@ -468,15 +468,15 @@ var webRTCAdaptor = new WebRTCAdaptor({
 				designer.sync();
 			}
 			else if (info == "data_received") {
-				if (obj.event.data == "request") {
+				if (obj.data == "request") {
 					designer.sync();
 				}
-				else if (obj.event.data == "clear") {
+				else if (obj.data == "clear") {
 					designer.clearCanvas();						
 					designer.sync();
 				}
 				else {
-					designer.syncData(JSON.parse(obj.event.data));
+					designer.syncData(JSON.parse(obj.data));
 				}
 			}
 			else if (info == "updated_stats") {
