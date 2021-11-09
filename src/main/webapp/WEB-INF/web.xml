@@ -135,6 +135,11 @@
 		<extension>m4s</extension>
 		<mime-type>video/iso.segment</mime-type>
 	</mime-mapping>
+	
+	<mime-mapping>
+		<extension>mjs</extension>
+		<mime-type>text/javascript</mime-type>
+	</mime-mapping>
 
 	<filter>
 		<filter-name>RestJWTAuthenticationFilter</filter-name>
