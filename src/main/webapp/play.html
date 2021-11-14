@@ -144,6 +144,8 @@
 		var unMuteButton = document.getElementById("unmuteButton");
 		var placeHolder = document.getElementById("video_info");
 		var player = document.getElementById("remoteVideo");
+		
+		var iceConnected = false;
 
 
 		//This function creates a-scene elements only if is360 parameter is true.
@@ -551,7 +553,7 @@
 				websocketURL = "wss://" + path;
 			}
 
-			var iceConnected = false;
+			iceConnected = false;
 
 			//webRTCAdaptor is a global variable
 			webRTCAdaptor = new WebRTCAdaptor({
