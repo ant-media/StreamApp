@@ -1,9 +1,8 @@
 name: publish Node.js Package
 
 on:
-  push:
-    branches:
-      - master
+  release:
+    types: [published]
 
 jobs:
   build:
@@ -27,8 +26,7 @@ jobs:
           scope: '@ant-media'
       - run: yarn install
       - run: git config --global user.email "$GITHUB_ACTOR@users.noreply.github.com" && git config --global user.name "$GITHUB_ACTOR"
-      - run: yarn version --minor
-      - run: git push --tags && git push
+      - run: yarn version --new-version $(echo ${{github.event.release.tag_name}} | cut -d v -f 2)
       - run: yarn publish
         env:
           NODE_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
