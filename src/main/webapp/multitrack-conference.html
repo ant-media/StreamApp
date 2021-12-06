@@ -338,13 +338,13 @@ body {
 
 	function sendData() {
 		try {
-			var iceState = webRTCAdaptor.iceConnectionState(streamId);
+			var iceState = webRTCAdaptor.iceConnectionState(publishStreamId);
             if (iceState != null && iceState != "failed" && iceState != "disconnected") {
             
 				var msg = $("#dataTextbox").val();
 				var notEvent = { streamId: publishStreamId, eventType:"CHAT_MESSAGE", message:msg };
 
-				webRTCAdaptor.sendData(streamId, JSON.stringify(notEvent));
+				webRTCAdaptor.sendData(publishStreamId, JSON.stringify(notEvent));
 				$("#all-messages").append("Sent: " + msg+ "<br>");
 				$("#dataTextbox").val("");
 			}
@@ -439,7 +439,7 @@ body {
 			index = obj.track.id.replace("ARDAMSa", "");
 		}
 
-		if(index == room) {
+		if(index == room || index == publishStreamId) {
 			return;
 		}
 
