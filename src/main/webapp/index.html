@@ -226,6 +226,7 @@ video {
 	var subscriberId = getUrlParameter("subscriberId");
 	var subscriberCode = getUrlParameter("subscriberCode");
 	var streamName = getUrlParameter("streamName");
+	var mainTrack = getUrlParameter("mainTrack");
 	
 	//TODO: Migrate these methods to Jquery
 	var start_publish_button = document.getElementById("start_publish_button");
@@ -353,7 +354,7 @@ video {
 
 	function startPublishing() {
 		streamId = streamIdBox.value;
-		webRTCAdaptor.publish(streamId, token, subscriberId, subscriberCode, streamName);
+		webRTCAdaptor.publish(streamId, token, subscriberId, subscriberCode, streamName, mainTrack);
 	}
 
 	function stopPublishing() {
