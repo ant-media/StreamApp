@@ -172,7 +172,7 @@ body {
 			'iceServers' : [ {
 				'urls' : 'stun:stun1.l.google.com:19302'
 			} ],
-			sdpSemantics: 'plan-b'
+			sdpSemantics: 'unified-plan'
 		};
 
 	var sdpConstraints = {
@@ -317,7 +317,7 @@ body {
 	
 	function createRemoteVideo(streamId) {
 		var player = document.createElement("div");
-		player.className = "col-sm-3";
+		player.className = "col-sm-12";
 		player.id = "player"+streamId;
 		player.innerHTML = '<video id="remoteVideo'+streamId+'"controls autoplay playsinline></video>'+streamId;
 		document.getElementById("players").appendChild(player);
