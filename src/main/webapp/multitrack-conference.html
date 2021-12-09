@@ -431,13 +431,7 @@ body {
 		console.log("new stream available with id: "
 				+ obj.streamId + "on the room:" + room);
 		
-		var index;			
-		if(obj.track.kind == "video") {
-			index = obj.track.id.replace("ARDAMSv", "");
-		}
-		else if(obj.track.kind == "audio") {
-			index = obj.track.id.replace("ARDAMSa", "");
-		}
+		var index = obj.trackId.substring("ARDAMSx".length);
 
 		if(index == room || index == publishStreamId) {
 			return;
@@ -454,8 +448,13 @@ body {
 		video.srcObject.addTrack(obj.track)
 
 		obj.track.onmute = event => {
-			video.srcObject.removeTrack(event.currentTarget);
-			if(video.srcObject.getTracks().length == 0) {
+			var remove = true;
+			video.srcObject.getTracks().forEach(function(item) {
+				if(!item.muted) {
+					remove = false;
+				}
+			});
+			if(remove) {
 				removeRemoteVideo(index);
 			}
 		};
@@ -510,6 +509,8 @@ body {
 				'urls' : 'stun:stun1.l.google.com:19302'
 			} ],
 			sdpSemantics: 'unified-plan'
+			//sdpSemantics: 'plan-b'
+
 		};
 
 	var sdpConstraints = {

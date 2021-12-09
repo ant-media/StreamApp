@@ -45,6 +45,8 @@ export class WebRTCAdaptor
 		this.viewerInfo = "";
 		this.publishStreamId = null;
 		this.blackFrameTimer = null;
+		this.idMapping = new Array();
+
 
 		/**
 		 * This is used when only data is brodcasted with the same way video and/or audio.
@@ -1021,7 +1023,8 @@ export class WebRTCAdaptor
 			var dataObj = {
 					stream: event.streams[0],
 					track: event.track,
-					streamId: streamId
+					streamId: streamId,
+					trackId: this.idMapping[streamId][event.transceiver.mid],
 			}
 			this.callback("newStreamAvailable", dataObj);
 		}
@@ -1169,6 +1172,10 @@ export class WebRTCAdaptor
 			}
 			this.remotePeerConnection[streamId].ontrack = event => {
 				this.onTrack(event, closedStreamId);
+			}
+
+			this.remotePeerConnection[streamId].onnegotiationneeded = event => {
+				console.log("onnegotiationneeded");
 			}
 
 			if (this.dataChannelEnabled){
@@ -1386,7 +1393,7 @@ export class WebRTCAdaptor
 		}
 	}
 
-	takeConfiguration(idOfStream, configuration, typeOfConfiguration)
+	takeConfiguration(idOfStream, configuration, typeOfConfiguration, idMapping)
 	{
 		var streamId = idOfStream
 		var type = typeOfConfiguration;
@@ -1397,6 +1404,8 @@ export class WebRTCAdaptor
 		if(isTypeOffer) {
 			dataChannelMode = "play";
 		}
+
+		this.idMapping[streamId] = idMapping;
 
 		this.initPeerConnection(streamId, dataChannelMode);
 
