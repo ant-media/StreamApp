@@ -855,6 +855,10 @@ export class WebRTCAdaptor
 
 	switchDesktopCaptureWithCamera(streamId) 
 	{
+		if(typeof this.mediaConstraints.video != "undefined" && this.mediaConstraints.video != false){
+			this.mediaConstraints.video = true
+		}
+		
 		this.publishMode = "screen+camera";
 
 		var audioConstraint = false;
