@@ -104,25 +104,32 @@ body {
 			<a href="https://antmedia.io">Try Enterprise Edition for free at antmedia.io</a> <br/><br/>
 			<a href="https://github.com/ant-media/Ant-Media-Server/wiki#community-edition--enterprise-edition" style="font-size:12px">Comparison between Community and Enterprise</a>		 
 			</div>
-		<div id="players">
-			<div class="col-sm-3">
+		<div id="players" class="row">
+			<div class="col-sm-3" >
 				<video id="localVideo" autoplay muted controls playsinline></video>
-				<div style="margin-top:10px;" class="col-sm-8 offset-sm-2">Microphone Gain: <input type=range id=volume_change_input min=0 max=1 value=1 step=0.01></div>
+				<div style="margin-top:10px;display: none;"  class="col-sm-8 offset-sm-2">Microphone Gain: <input type=range id=volume_change_input min=0 max=1 value=1 step=0.01></div>
 			</div>
 		</div>
 
-		<div class="row">
+		<div class="row" style="padding: 15px;">
 			<div class="col-sm-8 offset-sm-2">
-				<p>
+				<div style="padding:5px" class="form-check form-check-inline col-sm-10" >
 					<input type="text" class="form-control" value="room1"
 						   id="roomName" placeholder="Type room name">
-				</p>
-				<p>
+				</div>
+				<div style="padding-top:5px;padding-bottom: 25px;">  
+					<input type="checkbox" class="form-check-input" id="enableMCU">
+					<label for="enableMCU" class="form-check-label">Enable MCU</label>
+					<a href=" https://antmedia.io/mcu-conference/" target="_blank" style="font-size: 12px;">(What is MCU and How to use?)</a>
+					<span class="badge badge-warning"  style="font-size:10px; margin:5px;">Make sure you have one Adaptive Bitrate on the server side. Otherwise MCU does not work</span>
+
+				</div>
+				<div style="padding:5px">
 					<button class="btn btn-primary" disabled
 							id="join_publish_button">Join Room</button>
 					<button class="btn btn-primary" disabled
 							id="stop_publish_button">Leave Room</button>
-				</p>
+				</div>
 
 				<div style="padding:10px">
 					<button id="turn_off_camera_button" class="btn btn-outline-primary"  >Turn off Camera</button>
@@ -223,6 +230,8 @@ body {
 	mute_mic_button.addEventListener("click", muteLocalMic,false)
 	var unmute_mic_button = document.getElementById("unmute_mic_button");
 	unmute_mic_button.addEventListener("click", unmuteLocalMic,false)
+	var mcuChbx = document.getElementById("enableMCU");
+
 
 	//Handles radio buttons for screen share feature
 	if (document.querySelector('input[name="videoSource"]')) {
@@ -316,8 +325,8 @@ body {
 	}
 
 	function handleNotificationEvent(obj) {
-		console.log("Received data : ", obj.event.data);
-		var notificationEvent = JSON.parse(obj.event.data);
+		console.log("Received data : ", obj.data);
+		var notificationEvent = JSON.parse(obj.data);
 		if(notificationEvent != null && typeof(notificationEvent) == "object") {
 		  var eventStreamId = notificationEvent.streamId;
 		  var eventTyp = notificationEvent.eventType;
@@ -335,8 +344,8 @@ body {
 	}
 
 	function joinRoom() {
-
-		webRTCAdaptor.joinRoom(roomNameBox.value, streamId, "legacy");
+		var mode = mcuChbx.checked ? "mcu" : "legacy";
+		webRTCAdaptor.joinRoom(roomNameBox.value, streamId, mode);
 	}
 
 	function leaveRoom() {

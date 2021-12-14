@@ -144,6 +144,19 @@
 		var unMuteButton = document.getElementById("unmuteButton");
 		var placeHolder = document.getElementById("video_info");
 		var player = document.getElementById("remoteVideo");
+		
+		var iceConnected = false;
+
+
+		//This function creates a-scene elements only if is360 parameter is true.
+		//This makes a-scene doesn't run in the background if it is not needed.
+		function createVrVideo() {
+			var vrScene = document.createElement("a-scene");
+			vrScene.style.display="none";
+			vrScene.innerHTML = '<a-videosphere src="#remoteVideo" rotation="0 180 0" style="background-color: antiquewhite"></a-videosphere>';
+			var remoteVideoNode = document.getElementById("remoteVideo");
+			remoteVideoNode.parentNode.insertBefore(vrScene,remoteVideoNode.nextSibling);
+		}
 
 		// This function mutes or unmutes the 360 video stream.
 		// This is necessary because the browser doesn't allow videos to be played automatically and unmuted by default.
@@ -169,11 +182,24 @@
 			placeHolder.innerHTML = "Stream will start playing automatically<br/>when it is live";
 			setTimeout(function () {
 				var index = playOrder.indexOf(currentTech);
-				if (index == -1 || index == (playOrder.length - 1)) {
-					index = 0;
+				
+				if(currentTech == "webrtc"){
+					if(!iceConnected){
+						if (index == -1 || index == (playOrder.length - 1)) {
+							index = 0;
+						}
+						else {
+							index++;
+						}
+					}
 				}
-				else {
-					index++;
+				else{
+					if (index == -1 || index == (playOrder.length - 1)) {
+						index = 0;
+					}
+					else {
+						index++;
+					}
 				}
 
 				var tech = playOrder[index];
@@ -460,19 +486,22 @@
 			}
 
 
-			if (!is360 && typeof player.ready != "undefined") {
+			if (!is360) {
 				setHLSElementsVisibility(true);
-				player.ready(function () {
-					var player = this;
-					player.on('ended', function () {
-						console.log("is360: " + is360 + " Playing has been finished");
-						hideWebRTCElements();
-						setHLSElementsVisibility(false);
-						setPlaceHolderVisibility(true);
-						tryToPlay(streamId, token, extension, subscriberId, subscriberCode, hlsNoStreamCallback);
-					});
-				});
 				setWebRTCElementsVisibility(false);
+				if (typeof player.ready != "undefined") {
+					player.ready(function () {
+						var player = this;
+						player.on('ended', function () {
+							console.log("is360: " + is360 + " Playing has been finished");
+							hideWebRTCElements();
+							setHLSElementsVisibility(false);
+							setPlaceHolderVisibility(true);
+							tryToPlay(streamId, token, extension, subscriberId, subscriberCode, hlsNoStreamCallback);
+						});
+					});
+				}
+				
 			}
 			else if (is360) {
 				setHLSElementsVisibility(false);
@@ -524,6 +553,8 @@
 				websocketURL = "wss://" + path;
 			}
 
+			iceConnected = false;
+
 			//webRTCAdaptor is a global variable
 			webRTCAdaptor = new WebRTCAdaptor({
 				websocket_url: websocketURL,
@@ -536,6 +567,7 @@
 				callback: function (info, description) {
 					if (info == "initialized") {
 						console.log("initialized");
+						iceConnected = false;
 						webRTCAdaptor.getStreamInfo(streamId);
 					}
 					else if (info == "streamInformation") {
@@ -554,10 +586,23 @@
 						setHLSElementsVisibility(false);
 						hideWebRTCElements();
 						setPlaceHolderVisibility(true);
+						//if play_finished event is received, it has two meanings
+						//1. stream is really finished 
+						//2. ice connection cannot be established and server reports play_finished event
 						//check that publish may start again
-						setTimeout(function () {
-							webRTCAdaptor.getStreamInfo(streamId);
-						}, 3000);
+						if (iceConnected) 
+						{
+							//webrtc connection was successful and try to play again with webrtc
+							setTimeout(function () {
+								webRTCAdaptor.getStreamInfo(streamId);
+							}, 3000);
+						}
+						else {
+							//webrtc connection was not succesfull, switch the next play type(playOrder) if available 
+							if (typeof noStreamCallback != "undefined") {
+								noStreamCallback();
+							}
+						}
 					}
 					else if (info == "closed") {
 						//console.log("Connection closed");
@@ -577,6 +622,13 @@
 							setTimeout(function () {
 								document.getElementById("networkWarning").style.display = "none";
 							}, 3000);
+						}
+					}
+					else if (info == "ice_connection_state_changed") {
+						console.debug("ice connection state changed to " + description.state);
+						if (description.state == "connected" || description.state == "completed") {
+							//it means the ice connection has been established
+							iceConnected = true;
 						}
 					}
 

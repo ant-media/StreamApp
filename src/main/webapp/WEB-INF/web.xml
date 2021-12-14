@@ -32,9 +32,7 @@
 	</filter>
 	<filter-mapping>
 		<filter-name>TokenFilter</filter-name>
-		<url-pattern>*.m3u8</url-pattern>
-		<url-pattern>*.ts</url-pattern>
-		<url-pattern>*.mp4</url-pattern>
+		<url-pattern>/streams/*</url-pattern>
 	</filter-mapping>
 	
 	<filter>
@@ -44,8 +42,7 @@
 	</filter>
 	<filter-mapping>
 		<filter-name>HttpForwardFilter</filter-name>
-		<url-pattern>*.m3u8</url-pattern>
-		<url-pattern>*.mp4</url-pattern>
+		<url-pattern>/streams/*</url-pattern>
 	</filter-mapping>
 
 	<filter>
@@ -55,7 +52,7 @@
 	</filter>
 	<filter-mapping>
 		<filter-name>HlsStatisticsFilter</filter-name>
-		<url-pattern>*.m3u8</url-pattern>
+		<url-pattern>/streams/*</url-pattern>
 	</filter-mapping>
 	<filter>
 		<filter-name>CorsFilter</filter-name>
@@ -137,6 +134,11 @@
 	<mime-mapping>
 		<extension>m4s</extension>
 		<mime-type>video/iso.segment</mime-type>
+	</mime-mapping>
+	
+	<mime-mapping>
+		<extension>mjs</extension>
+		<mime-type>text/javascript</mime-type>
 	</mime-mapping>
 
 	<filter>
