@@ -205,26 +205,42 @@ export class WebRTCAdaptor
 			this.getDevices();
 		}
 	}
-	getDevices(){
+
+
+	/**
+	 * Returns available audio or video input devices
+	 */
+	getDevices() {
 		navigator.mediaDevices.enumerateDevices().then(devices => {
 			let deviceArray = new Array();
-			let checkAudio = false
+			let checkAudio = false;
 			devices.forEach(device => {	
 				if (device.kind == "audioinput" || device.kind == "videoinput") {
 					deviceArray.push(device);
-					if(device.kind=="audioinput"){
+					if(device.kind == "audioinput") {
 						checkAudio = true;
 					}
 				}
 			});
-			this.callback("available_devices", deviceArray);
-			if(checkAudio == false && this.localStream == null){
-				console.log("Audio input not found")
-				console.log("Retrying to get user media without audio")
-				this.openStream({video : true, audio : false}, this.mode)
+
+			// Fail early, otherwise causes and endless loop of calling getDevices()
+			if(deviceArray.length === 0) {
+				throw new Error("No devices found");
 			}
-		}).catch(err => {
-			console.error("Cannot get devices -> error name: " + err.name + ": " + err.message);
+
+			this.callback("available_devices", deviceArray);
+			if(checkAudio == false && this.localStream == null) {
+				if(this.debug) {
+					console.log("Audio input not found");
+					console.log("Retrying to get user media without audio");
+				}
+				this.openStream({video: true, audio: false}, this.mode);
+			}
+		}).catch(error => {
+			if(this.debug) {
+				console.error("Cannot get devices -> error name: " + error.name + ": " + error.message);
+			}
+			this.callbackError(error.name, error.message);
 		});
 	}
 
