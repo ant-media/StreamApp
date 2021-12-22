@@ -20,6 +20,12 @@
 		<listener-class>org.red5.logging.ContextLoggingListener
 		</listener-class>
 	</listener>
+	
+	<context-param>
+        <param-name>logbackDisableServletContainerInitializer</param-name>
+        <param-value>true</param-value>
+    </context-param>
+	
 
 	<listener>
 		<listener-class>io.antmedia.filter.TokenSessionFilter</listener-class>
