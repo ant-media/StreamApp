@@ -663,6 +663,11 @@ body {
 					else if(info == "data_received") {
 						handleNotificationEvent(obj);
 					}
+					else if(info == "session_restored"){
+						handleCameraButtons();
+						startAnimation();
+						console.log(info + "notification received");
+					}
 				},
 				callbackError : function(error, message) {
 					//some of the possible errors, NotFoundError, SecurityError,PermissionDeniedError

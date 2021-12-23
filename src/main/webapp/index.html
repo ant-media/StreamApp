@@ -727,6 +727,12 @@ video {
 						$(":radio[value=" + selectedRadio + "]").prop("checked", true);
 						$(":radio[value=" + selectedAudio + "]").prop("checked", true);
 					}
+					else if(info == "session_restored"){
+						start_publish_button.disabled = true;
+						stop_publish_button.disabled = false;
+						startAnimation();
+						console.log(info + "notification received");
+					}
 					else {
 						console.log( info + " notification received");
 					}
