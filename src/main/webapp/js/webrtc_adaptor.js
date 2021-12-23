@@ -758,58 +758,60 @@ export class WebRTCAdaptor
 	}
 
 	setGainNodeStream(stream){
+		if(this.mediaConstraints.audio != false && typeof this.mediaConstraints.audio != "undefined"){
+			// Get the videoTracks from the stream.
+			const videoTracks = stream.getVideoTracks();
 
-		// Get the videoTracks from the stream.
-  		const videoTracks = stream.getVideoTracks();
+			// Get the audioTracks from the stream.
+			const audioTracks = stream.getAudioTracks();
 
-  		// Get the audioTracks from the stream.
-  		const audioTracks = stream.getAudioTracks();
+			/**
+			* Create a new audio context and build a stream source,
+			* stream destination and a gain node. Pass the stream into 
+			* the mediaStreamSource so we can use it in the Web Audio API.
+			*/
+			this.audioContext = new AudioContext();
+			let mediaStreamSource = this.audioContext.createMediaStreamSource(stream);
+			let mediaStreamDestination = this.audioContext.createMediaStreamDestination();
+			this.soundOriginGainNode = this.audioContext.createGain();
 
-  		/**
-   		* Create a new audio context and build a stream source,
-   		* stream destination and a gain node. Pass the stream into 
-   		* the mediaStreamSource so we can use it in the Web Audio API.
-   		*/
-  		this.audioContext = new AudioContext();
-  		let mediaStreamSource = this.audioContext.createMediaStreamSource(stream);
-  		let mediaStreamDestination = this.audioContext.createMediaStreamDestination();
-  		this.soundOriginGainNode = this.audioContext.createGain();
+			/**
+			* Connect the stream to the gainNode so that all audio
+			* passes through the gain and can be controlled by it.
+			* Then pass the stream from the gain to the mediaStreamDestination
+			* which can pass it back to the RTC client.
+			*/
+			mediaStreamSource.connect(this.soundOriginGainNode);
+			this.soundOriginGainNode.connect(mediaStreamDestination);
 
-  		/**
-   		* Connect the stream to the gainNode so that all audio
-   		* passes through the gain and can be controlled by it.
-   		* Then pass the stream from the gain to the mediaStreamDestination
-   		* which can pass it back to the RTC client.
-   		*/
-  		mediaStreamSource.connect(this.soundOriginGainNode);
-  		this.soundOriginGainNode.connect(mediaStreamDestination);
+			if(this.currentVolume == null){
+				this.soundOriginGainNode.gain.value = 1;
+			}
+			else{
+				this.soundOriginGainNode.gain.value = this.currentVolume;
+			}
 
-  		if(this.currentVolume == null){
-  			this.soundOriginGainNode.gain.value = 1;
-  		}
-  		else{
-  			this.soundOriginGainNode.gain.value = this.currentVolume;
-  		}
+			/**
+			* The mediaStreamDestination.stream outputs a MediaStream object
+			* containing a single AudioMediaStreamTrack. Add the video track
+			* to the new stream to rejoin the video with the controlled audio.
+			*/
+			const controlledStream = mediaStreamDestination.stream;
 
-  		/**
-   		* The mediaStreamDestination.stream outputs a MediaStream object
-   		* containing a single AudioMediaStreamTrack. Add the video track
-   		* to the new stream to rejoin the video with the controlled audio.
-   		*/
-  		const controlledStream = mediaStreamDestination.stream;
+			for (const videoTrack of videoTracks) {
+				controlledStream.addTrack(videoTrack);
+			}
+			for (const audioTrack of audioTracks) {
+				controlledStream.addTrack(audioTrack);
+			}
 
-  		for (const videoTrack of videoTracks) {
-    		controlledStream.addTrack(videoTrack);
-  		}
-		for (const audioTrack of audioTracks) {
-    		controlledStream.addTrack(audioTrack);
-  		}
-
-  		/**
-   		* Use the stream that went through the gainNode. This
-   		* is the same stream but with altered input volume levels.
-   		*/
-   		return controlledStream;
+			/**
+			* Use the stream that went through the gainNode. This
+			* is the same stream but with altered input volume levels.
+			*/
+			return controlledStream;
+		}
+		return stream;
 	}
 
 	switchAudioInputSource(streamId, deviceId) 
