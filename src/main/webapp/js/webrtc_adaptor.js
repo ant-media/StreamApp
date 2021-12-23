@@ -643,8 +643,9 @@ export class WebRTCAdaptor
 		stream = this.setGainNodeStream(stream);
 
 		this.localStream = stream;
-		this.localVideo.srcObject = stream;
-		
+		if (this.localVideo) {
+			this.localVideo.srcObject = stream;
+		}
 		this.checkWebSocketConnection();
 		this.getDevices();
 	}
