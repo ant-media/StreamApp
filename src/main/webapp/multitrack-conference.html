@@ -419,7 +419,7 @@ body {
 
 	function publish(streamId, token) {
 		publishStreamId = streamId;
-		webRTCAdaptor.publish(publishStreamId, token, "", "", streamName, roomNameBox.value);
+		webRTCAdaptor.publish(publishStreamId, token, "", "", streamName, roomNameBox.value,"{someKey:somveValue}");
 	}
 
 	function streamInformation(obj) {

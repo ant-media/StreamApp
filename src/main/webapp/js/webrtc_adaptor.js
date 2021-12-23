@@ -468,7 +468,7 @@ export class WebRTCAdaptor
 		}
 	}
 
-	publish(streamId, token, subscriberId, subscriberCode, streamName, mainTrack) 
+	publish(streamId, token, subscriberId, subscriberCode, streamName, mainTrack, metaData) 
 	{
 		this.publishStreamId =streamId;
 		if (this.onlyDataChannel) {
@@ -482,6 +482,7 @@ export class WebRTCAdaptor
 				mainTrack : typeof mainTrack !== undefined ? mainTrack : "" ,
 				video: false,
 				audio: false,
+				metaData: metaData,
 			};
 		}
 		//If it started with playOnly mode and wants to publish now
@@ -498,6 +499,7 @@ export class WebRTCAdaptor
 					mainTrack : typeof mainTrack !== undefined ? mainTrack : "" ,				
 					video: this.localStream.getVideoTracks().length > 0 ? true : false,
 					audio: this.localStream.getAudioTracks().length > 0 ? true : false,
+					metaData: metaData,
 				};
 				this.webSocketAdaptor.send(JSON.stringify(jsCmd));
 			}), false);
@@ -513,6 +515,7 @@ export class WebRTCAdaptor
 					mainTrack : typeof mainTrack !== undefined ? mainTrack : "" ,
 					video: this.localStream.getVideoTracks().length > 0 ? true : false,
 					audio: this.localStream.getAudioTracks().length > 0 ? true : false,
+					metaData: metaData,
 			};
 		}
 		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
@@ -602,6 +605,16 @@ export class WebRTCAdaptor
 		var jsCmd = {
 				command : "getStreamInfo",
 				streamId: streamId,
+		};
+		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
+	}
+	
+	upateStreamMetaData(streamId, metaData) 
+	{
+		var jsCmd = {
+				command : "updateStreamMetaData",
+				streamId: streamId,
+				metaData: metaData,
 		};
 		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
 	}
