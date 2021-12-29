@@ -8,7 +8,7 @@ before_install:
   -in codesigning.asc.enc -out codesigning.asc -d
 - sudo apt-get update
 - sudo apt-get install openjfx
-- gpg --fast-import codesigning.asc
+- gpg2 --batch --fast-import codesigning.asc
 # get parent project
 - (if [ $(git ls-remote https://github.com/ant-media/ant-media-server-parent.git $TRAVIS_BRANCH  | wc -l) == "1" ];  
     then 
