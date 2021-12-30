@@ -1,4 +1,4 @@
-dist: xenial
+dist: focal
 language: java
 jdk:
 - openjdk11
@@ -8,7 +8,7 @@ before_install:
   -in codesigning.asc.enc -out codesigning.asc -d
 - sudo apt-get update
 - sudo apt-get install openjfx
-- gpg --fast-import codesigning.asc
+- gpg2 --batch --fast-import codesigning.asc
 # get parent project
 - (if [ $(git ls-remote https://github.com/ant-media/ant-media-server-parent.git $TRAVIS_BRANCH  | wc -l) == "1" ];  
     then 
@@ -19,18 +19,6 @@ before_install:
       git clone --depth=1 https://github.com/ant-media/ant-media-server-parent.git;  
   fi)
 - cd ant-media-server-parent
-- mvn clean install -DskipTests -Dmaven.javadoc.skip=true -Dgpg.skip=true --quiet
-- cd ..
-# get common project
-- (if [ $(git ls-remote https://github.com/ant-media/Ant-Media-Server-Common.git $TRAVIS_BRANCH  | wc -l) == "1" ];  
-    then 
-      echo " $TRAVIS_BRANCH branch found";  
-      git clone --depth=1 -b $TRAVIS_BRANCH https://github.com/ant-media/Ant-Media-Server-Common.git;  
-    else
-      echo "branch not found"; 
-      git clone --depth=1 https://github.com/ant-media/Ant-Media-Server-Common.git;  
-  fi)
-- cd Ant-Media-Server-Common
 - mvn clean install -DskipTests -Dmaven.javadoc.skip=true -Dgpg.skip=true --quiet
 - cd ..
   
