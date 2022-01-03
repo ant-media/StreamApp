@@ -21,6 +21,31 @@ body {
 	padding-top: 20px;
 	padding-bottom: 20px;
 }
+#notification {
+    position:relative;
+    top:0px;
+    width:100%;
+    z-index:105;
+    text-align:center;
+    font-weight:normal;
+    font-size:14px;
+    font-weight:bold;
+    color:white;
+    background-color:#ff4800;
+    padding:5px;
+}
+#notification span.dismiss {
+    border:2px solid #FFF;
+    padding:0 5px;
+    cursor:pointer;
+    float:right;
+    margin-right:10px;
+}
+#notification a {
+    color:white;
+    text-decoration:none;
+    font-weight:bold
+}
 
 /* Everything but the jumbotron gets side spacing for mobile first views */
 .header, .marketing, .footer {
@@ -138,6 +163,10 @@ body {
 					<button id="mute_mic_button" class="btn btn-outline-primary">Mute Local Mic</button>
 					<button id="unmute_mic_button" disabled  class="btn btn-outline-primary">Unmute Local Mic</button>
 				</div>
+				
+				<div id="notification" style="display: none;">
+					<span class="dismiss"><a title="dismiss this notification">x</a></span>
+				</div>
 
 				<div class="form-check form-check-inline" >
 
@@ -243,6 +272,9 @@ body {
   		});
 	}
 
+	var mutedAlertPresent = false;
+	$("#notification").append('Are you talking? Microphone is muted');
+
 	var roomNameBox = document.getElementById("roomName");
 
 	var roomOfStream = new Array();
@@ -285,13 +317,15 @@ body {
 		isMicMuted = true;
 		handleMicButtons();
 		sendNotificationEvent("MIC_MUTED");
+		webRTCAdaptor.enableAudioLevelWhenMuted()
 	}
 
 	function unmuteLocalMic() {
 		webRTCAdaptor.unmuteLocalMic();
 		isMicMuted = false;
-    handleMicButtons();
+    	handleMicButtons();
 		sendNotificationEvent("MIC_UNMUTED");
+		webRTCAdaptor.disableAudioLevelWhenMuted();
 	}
 
 	function sendNotificationEvent(eventType) {
@@ -602,6 +636,17 @@ body {
 					} 
 					else if(info == "data_received") {
 						handleNotificationEvent(obj);
+					}
+					else if (info == "speaking_but_muted") {
+						if(!mutedAlertPresent){
+							mutedAlertPresent = true
+							$("#notification").fadeIn("slow");
+							$(".dismiss").click(function(){
+								$("#notification").fadeOut("slow");
+								mutedAlertPresent = false;
+							});
+						}
+						
 					}
 				},
 				callbackError : function(error, message) {
