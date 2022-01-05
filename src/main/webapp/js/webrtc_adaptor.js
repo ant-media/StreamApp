@@ -859,15 +859,26 @@ export class WebRTCAdaptor
 		}
 		
 		this.publishMode = "camera";
-
-				
-		if (typeof deviceId != "undefined" ) {
-			if(this.mediaConstraints.video !== true)
-				this.mediaConstraints.video.deviceId = { exact: deviceId };
-			else 
-				this.mediaConstraints.video = { deviceId: { exact: deviceId } };
-		}
-		this.setVideoCameraSource(streamId, this.mediaConstraints, null, true, deviceId);
+		
+		navigator.mediaDevices.enumerateDevices().then(devices => {
+			for(let i = 0; i < devices.length; i++) {	
+				if (devices[i].kind == "videoinput") {
+					//Adjust video source only if there is a matching device id with the given one.
+					//It creates problems if we don't check that since video can be just true to select default cam and it is like that in many cases.
+					if(devices[i].deviceId == deviceId){
+						if(this.mediaConstraints.video !== true)
+							this.mediaConstraints.video.deviceId = { exact: deviceId };
+						else 
+							this.mediaConstraints.video = { deviceId: { exact: deviceId } };
+						this.setVideoCameraSource(streamId, this.mediaConstraints, null, true, deviceId);
+						break;
+					}
+				}
+			};
+			//If no matching device found don't adjust the media constraints let it be true instead of a device ID
+			console.debug("Given deviceId = " + deviceId + " - Media constraints video property = " + this.mediaConstraints.video);
+			this.setVideoCameraSource(streamId, this.mediaConstraints, null, true, deviceId);
+		})
 	}
 
 	switchDesktopCaptureWithCamera(streamId) 
