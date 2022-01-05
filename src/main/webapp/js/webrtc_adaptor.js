@@ -721,7 +721,7 @@ export class WebRTCAdaptor
 		navigator.mediaDevices.getUserMedia({video:false, audio:true})
 		.then((stream) => {
 		this.mutedAudioStream = stream;
-		const soundMeter = window.soundMeter = new SoundMeter(this.audioContext);
+		const soundMeter = new SoundMeter(this.audioContext);
 		soundMeter.connectToSource(this.mutedAudioStream, (e) => {
 			if (e) {
 				alert(e);
