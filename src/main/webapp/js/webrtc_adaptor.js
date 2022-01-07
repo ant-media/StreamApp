@@ -211,11 +211,15 @@ export class WebRTCAdaptor
 		navigator.mediaDevices.enumerateDevices().then(devices => {
 			let deviceArray = new Array();
 			let checkAudio = false
+			let checkVideo = false
 			devices.forEach(device => {	
 				if (device.kind == "audioinput" || device.kind == "videoinput") {
 					deviceArray.push(device);
 					if(device.kind=="audioinput"){
 						checkAudio = true;
+					}
+					if(device.kind=="videoinput"){
+						checkVideo = true;
 					}
 				}
 			});
@@ -223,7 +227,18 @@ export class WebRTCAdaptor
 			if(checkAudio == false && this.localStream == null){
 				console.log("Audio input not found")
 				console.log("Retrying to get user media without audio")
-				this.openStream({video : true, audio : false}, this.mode)
+				if(this.inputDeviceNotFoundLimit < 2){
+					if(checkVideo != false){
+						this.openStream({video : true, audio : false}, this.mode)
+						this.inputDeviceNotFoundLimit++;
+					}else{
+						console.log("Video input not found")
+						alert("There is no video or audio input")
+					}
+				}
+				else{
+					alert("No input device found, publish is not possible");
+				}
 			}
 		}).catch(err => {
 			console.error("Cannot get devices -> error name: " + err.name + ": " + err.message);
