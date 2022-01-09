@@ -1401,8 +1401,7 @@ export class WebRTCAdaptor
 	muteLocalMic() 
 	{
 		if (this.remotePeerConnection != null) {
-			var track = this.localStream.getAudioTracks()[0];
-			track.enabled = false;
+			this.localStream.getAudioTracks().forEach(track => track.enabled = false);
 		}
 		else {
 			this.callbackError("NoActiveConnection");
@@ -1415,8 +1414,7 @@ export class WebRTCAdaptor
 	unmuteLocalMic() 
 	{
 		if (this.remotePeerConnection != null) {
-			var track = this.localStream.getAudioTracks()[0];
-			track.enabled = true;
+			this.localStream.getAudioTracks().forEach(track => track.enabled = false);
 		}
 		else {
 			this.callbackError("NoActiveConnection");
