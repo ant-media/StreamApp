@@ -982,14 +982,19 @@ export class WebRTCAdaptor
 	 * This method sets Video Input Source. 
 	 * It calls updateVideoTrack function for the update local video stream.
 	 */
-	setVideoCameraSource(streamId, mediaConstraints, onEndedCallback, stopDesktop) 
-	{
-		this.navigatorUserMedia(mediaConstraints, stream => {
-			stream = this.setGainNodeStream(stream);
-			this.updateVideoTrack(stream, streamId, mediaConstraints, onEndedCallback, stopDesktop);
-			this.updateAudioTrack(stream, streamId, mediaConstraints, onEndedCallback);
-		}, true);
-	}
+	 setVideoCameraSource(streamId, mediaConstraints, onEndedCallback, stopDesktop) 
+	 {
+		 this.navigatorUserMedia(mediaConstraints, stream => {
+			 //Why did we update also the audio track here?
+			 //Seems redundant and creates issue in Android while switching cam after mic switch, 
+			 //therefore commended out.
+			 
+			 //stream = this.setGainNodeStream(stream);
+			 //this.updateAudioTrack(stream, streamId, mediaConstraints, onEndedCallback);
+ 
+			 this.updateVideoTrack(stream, streamId, mediaConstraints, onEndedCallback, stopDesktop);
+		 }, true);
+	 }
 	
 	updateAudioTrack (stream, streamId, onEndedCallback) 
 	{
