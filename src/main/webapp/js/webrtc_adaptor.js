@@ -862,7 +862,16 @@ export class WebRTCAdaptor
 		this.setAudioInputSource(streamId, this.mediaConstraints, null, true, deviceId);
 	}
 
-	switchVideoCameraCapture(streamId, deviceId) 
+
+	/**
+	 * 
+	 * @param {*} streamId Id of the stream to be changed.
+	 * @param {*} deviceId Id of the device which will use as a media device
+	 * @param {*} onEndedCallback callback for when the switching video state is completed, can be used to understand if it is loading or not
+	 * 
+	 * This method is used to switch to video capture. 
+	 */
+	switchVideoCameraCapture(streamId, deviceId, onEndedCallback) 
 	{
 		//stop the track because in some android devices need to close the current camera stream
 		var videoTrack = this.localStream.getVideoTracks()[0];
@@ -882,7 +891,7 @@ export class WebRTCAdaptor
 			else 
 				this.mediaConstraints.video = { deviceId: { exact: deviceId } };
 		}
-		this.setVideoCameraSource(streamId, this.mediaConstraints, null, true, deviceId);
+		this.setVideoCameraSource(streamId, this.mediaConstraints,  onEndedCallback, true, deviceId);
 	}
 
 	switchDesktopCaptureWithCamera(streamId) 
@@ -982,14 +991,19 @@ export class WebRTCAdaptor
 	 * This method sets Video Input Source. 
 	 * It calls updateVideoTrack function for the update local video stream.
 	 */
-	setVideoCameraSource(streamId, mediaConstraints, onEndedCallback, stopDesktop) 
-	{
-		this.navigatorUserMedia(mediaConstraints, stream => {
-			stream = this.setGainNodeStream(stream);
-			this.updateVideoTrack(stream, streamId, mediaConstraints, onEndedCallback, stopDesktop);
-			this.updateAudioTrack(stream, streamId, mediaConstraints, onEndedCallback);
-		}, true);
-	}
+	 setVideoCameraSource(streamId, mediaConstraints, onEndedCallback, stopDesktop) 
+	 {
+		 this.navigatorUserMedia(mediaConstraints, stream => {
+			 //Why did we update also the audio track here?
+			 //Seems redundant and creates issue in Android while switching cam after mic switch, 
+			 //therefore commended out.
+			 
+			 //stream = this.setGainNodeStream(stream);
+			 //this.updateAudioTrack(stream, streamId, mediaConstraints, onEndedCallback);
+ 
+			 this.updateVideoTrack(stream, streamId, mediaConstraints, onEndedCallback, stopDesktop);
+		 }, true);
+	 }
 	
 	updateAudioTrack (stream, streamId, onEndedCallback) 
 	{
