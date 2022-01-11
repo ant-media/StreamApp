@@ -829,9 +829,6 @@ export class WebRTCAdaptor
 			for (const videoTrack of videoTracks) {
 				controlledStream.addTrack(videoTrack);
 			}
-			for (const audioTrack of audioTracks) {
-				controlledStream.addTrack(audioTrack);
-			}
 
 			/**
 			* Use the stream that went through the gainNode. This
