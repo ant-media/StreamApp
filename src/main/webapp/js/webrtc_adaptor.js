@@ -670,7 +670,8 @@ export class WebRTCAdaptor
 
 	gotStream(stream)
 	{
-		stream = this.setGainNodeStream(stream);
+		//NOTE: I couldn't find a possible reason that we call setGainNode here, it creates problems by adding the second audio track therefore commenting it out. Tahir.
+		//stream = this.setGainNodeStream(stream);
 
 		this.localStream = stream;
 		this.localVideo.srcObject = stream;
@@ -907,6 +908,10 @@ export class WebRTCAdaptor
 
 	switchDesktopCaptureWithCamera(streamId) 
 	{
+		if(typeof this.mediaConstraints.video != "undefined" && this.mediaConstraints.video != false){
+			this.mediaConstraints.video = true
+		}
+
 		this.publishMode = "screen+camera";
 
 		var audioConstraint = false;
