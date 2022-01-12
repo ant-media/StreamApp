@@ -670,7 +670,8 @@ export class WebRTCAdaptor
 
 	gotStream(stream)
 	{
-		stream = this.setGainNodeStream(stream);
+		//NOTE: I couldn't find a possible reason that we call setGainNode here, it creates problems by adding the second audio track therefore commenting it out. Tahir.
+		//stream = this.setGainNodeStream(stream);
 
 		this.localStream = stream;
 		this.localVideo.srcObject = stream;
@@ -882,20 +883,35 @@ export class WebRTCAdaptor
 		   console.warn("There is no video track in local stream");
 		}
 		
-		this.publishMode = "camera";
+		this.publishMode = "camera";		
+		navigator.mediaDevices.enumerateDevices().then(devices => {
+			for(let i = 0; i < devices.length; i++) {	
+				if (devices[i].kind == "videoinput") {
+					//Adjust video source only if there is a matching device id with the given one.
+					//It creates problems if we don't check that since video can be just true to select default cam and it is like that in many cases.
+					if(devices[i].deviceId == deviceId){
+						if(this.mediaConstraints.video !== true)
+							this.mediaConstraints.video.deviceId = { exact: deviceId };
+						else 
+							this.mediaConstraints.video = { deviceId: { exact: deviceId } };
+						this.setVideoCameraSource(streamId, this.mediaConstraints, null, true, deviceId);
+						break;
+					}
+				}
+			};
+			//If no matching device found don't adjust the media constraints let it be true instead of a device ID
+			console.debug("Given deviceId = " + deviceId + " - Media constraints video property = " + this.mediaConstraints.video);
+			this.setVideoCameraSource(streamId, this.mediaConstraints, null, true, deviceId);
+		})
 
-				
-		if (typeof deviceId != "undefined" ) {
-			if(this.mediaConstraints.video !== true)
-				this.mediaConstraints.video.deviceId = { exact: deviceId };
-			else 
-				this.mediaConstraints.video = { deviceId: { exact: deviceId } };
-		}
-		this.setVideoCameraSource(streamId, this.mediaConstraints,  onEndedCallback, true, deviceId);
 	}
 
 	switchDesktopCaptureWithCamera(streamId) 
 	{
+		if(typeof this.mediaConstraints.video != "undefined" && this.mediaConstraints.video != false){
+			this.mediaConstraints.video = true
+		}
+
 		this.publishMode = "screen+camera";
 
 		var audioConstraint = false;

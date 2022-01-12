@@ -371,13 +371,23 @@
 						return options;
 					};
 
-					player.src({
+					if( token != null || typeof token != "undefined"){
+						player.src({
+						src: "streams/" + streamId + "." + extension + "?token=" + token,
+						type: type,
+						withCredentials: true,
+
+						});
+					}
+					else{
+						player.src({
 						src: "streams/" + streamId + "." + extension,
 						type: type,
 						withCredentials: true,
 
-					});
-
+						});
+					}
+					
 					player.poster("previews/" + preview + ".png");
 
 					if (mute) {
