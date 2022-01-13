@@ -24,6 +24,10 @@
 
 <body>
 
+	<div id='video-overlay'>
+		<img src="images/loading.gif" />
+	</div>
+
 	<div id="video_info">
 		Stream will start playing automatically<br />when it is live
 	</div>
@@ -644,6 +648,14 @@
 							iceConnected = true;
 						}
 					}
+					else if(info == "resolutionChangeInfo"){
+					console.log("Resolution is changed to "+description["streamHeight"]);
+					let getVideo = document.getElementById("remoteVideo");
+					let overlay = document.getElementById('video-overlay');
+					getVideo.pause();
+					overlay.style.display = "block";
+					setTimeout(function(){ getVideo.play();overlay.style.display = "none";}, 2000);
+			}
 
 				},
 				callbackError: function (error) {
@@ -706,6 +718,7 @@
 				alert("No stream specified. Please add ?id={STREAM_ID}  to the url");
 			}
 		}
+
 
 		main();
 	</script>
