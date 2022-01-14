@@ -70,24 +70,28 @@
               <span><a href="javascript:;" id="fullscreen_button"><img src="images/icons/fullscreen.svg"></a></span>
               <span>
                 <a href="javascript:;" id="turn_off_camera_button" class="camera-on active"><img
-                  src="images/icons/camera-on.svg"></a>
-                  <a href="javascript:;" id="turn_on_camera_button" class="camera-off"><img
-                    src="images/icons/camera-off.svg"></a>
-                  </span>
-                  <span>
-                    <a href="javascript:;" id="mute_mic_button" class="microphone-on active"><img
-                      src="images/icons/microphone-on.svg"></a>
-                      <a href="javascript:;" id="unmute_mic_button" class="microphone-off"><img
-                        src="images/icons/microphone-off.svg"></a>
-                      </span>
-                      <span><a href="javascript:;" id="screen_share_button"><img src="images/icons/screen-share.svg"></a></span>
-                      <span><a href="#" class="chat-on"><img src="images/icons/chat.svg"></a></span>
-                      <span><a href="conference-enter.html"><img src="images/icons/close-call.svg"></a></span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </footer>
+                    src="images/icons/camera-on.svg"></a>
+                <a href="javascript:;" id="turn_on_camera_button" class="camera-off"><img src="images/icons/camera-off.svg"></a>
+              </span>
+              <span>
+                <a href="javascript:;" id="mute_mic_button" class="microphone-on active"><img
+                    src="images/icons/microphone-on.svg"></a>
+                <a href="javascript:;" id="unmute_mic_button" class="microphone-off"><img
+                    src="images/icons/microphone-off.svg"></a>
+              </span>
+              <span>
+                <a href="javascript:;" id="screen_share_on_button" class="screen-off active"><img
+                    src="images/icons/screen-share-off.svg"></a>
+                <a href="javascript:;" id="screen_share_off_button" class="screen-on"><img
+                    src="images/icons/screen-share-on.svg"></a>
+              </span>
+              <span><a href="#" class="chat-on"><img src="images/icons/chat.svg"></a></span>
+              <span><a href="conference-enter.html"><img src="images/icons/close-call.svg"></a></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
 
             <div class="chat">
 
@@ -166,6 +170,7 @@
     var subscriberId = getUrlParameter("subscriberId");
     var subscriberCode = getUrlParameter("subscriberCode");
     var isChatActive = false;
+    var isPlaying = false;
 
     if(roomName == null){
       roomName="room1";
@@ -192,20 +197,28 @@
     // camera and microphone on off
     $(document).ready(function() {
       $( ".camera-on" ).click(function() {
-        $( this ).removeClass( "active" );
+        $(this).removeClass( "active" );
         $(this).next().addClass( "active" );
       });
       $( ".camera-off" ).click(function() {
-        $( this ).removeClass( "active" );
+        $(this).removeClass( "active" );
         $(this).prev().addClass( "active" );
       });
       $( ".microphone-on" ).click(function() {
-        $( this ).removeClass( "active" );
+        $(this).removeClass( "active" );
         $(this).next().addClass( "active" );
       });
       $( ".microphone-off" ).click(function() {
-        $( this ).removeClass( "active" );
+        $(this).removeClass( "active" );
         $(this).prev().addClass( "active" );
+      });
+      $( ".screen-on" ).click(function() {
+        $(this).removeClass( "active" );
+        $(this).prev().addClass( "active" );
+      });
+      $( ".screen-off" ).click(function() {
+        $(this).removeClass( "active" );
+        $(this).next().addClass( "active" );
       });
     });
 
@@ -239,8 +252,10 @@
     mute_mic_button.addEventListener("click", muteLocalMic,false)
     var unmute_mic_button = document.getElementById("unmute_mic_button");
     unmute_mic_button.addEventListener("click", unmuteLocalMic,false)
-    var screen_share_button = document.getElementById("screen_share_button");
-    screen_share_button.addEventListener("click", screenShareLocalCamera,false)
+    var screen_share_on_button = document.getElementById("screen_share_on_button");
+    screen_share_on_button.addEventListener("click", startScreenShare,false);
+    var screen_share_off_button = document.getElementById("screen_share_off_button");
+    screen_share_off_button.addEventListener("click", stopScreenShare,false);
     var send = document.getElementsByClassName('send')[0];
     send.addEventListener("click", sendData, false);
 
@@ -251,6 +266,7 @@
     var isDataChannelOpen = false;
     var isMicMuted = false;
     var isCameraOff = false;
+    var isScreenSharing = false;
     var isChatActive = false;
     var roomTimerId = -1;
 
@@ -264,9 +280,22 @@
       localVideo.msRequestFullScreen();
   }
 
-  function screenShareLocalCamera() {
+  function startScreenShare() {
     webRTCAdaptor.switchDesktopCapture(publishStreamId);
+    isScreenSharing = true;
+    handleScreenShareButtons();
   }
+
+  function stopScreenShare() {
+    if(isScreenSharing) {
+      isScreenSharing = false;
+      handleScreenShareButtons();
+      if(!isCameraOff) {
+        webRTCAdaptor.switchVideoCameraCapture(publishStreamId);
+      }
+    }
+  }
+
 
   function sendData() {
     try {
@@ -352,6 +381,17 @@ function sendNotificationEvent(eventType) {
   }
 }
 
+
+function handleScreenShareButtons() {
+  if(isScreenSharing) {
+    screen_share_off_button.classList.add("active");
+    screen_share_on_button.classList.remove("active");
+  } else {
+    screen_share_on_button.classList.add("active");
+    screen_share_off_button.classList.remove("active");
+  }
+}
+
 function handleCameraButtons() {
   if(isCameraOff) {
     turn_off_camera_button.disabled = true;
@@ -405,7 +445,7 @@ function leaveRoom() {
 }
 
 function publish(publishStreamId, token, subscriberId, subscriberCode, streamName) {
-  webRTCAdaptor.publish(publishStreamId, token, subscriberId, subscriberCode, streamName);
+  webRTCAdaptor.publish(publishStreamId, token, subscriberId, subscriberCode, streamName, roomName,"{someKey:somveValue}");
 }
 
 function streamInformation(obj) {
@@ -417,17 +457,11 @@ function playVideo(obj) {
   var room = roomName;
   console.log("new stream available with id: " + obj.streamId + "on the room:" + room);
 
-  var index;      
-  if(obj.track.kind == "video") {
-    index = obj.track.id.replace("ARDAMSv", "");
-  }
-  else if(obj.track.kind == "audio") {
-    index = obj.track.id.replace("ARDAMSa", "");
-  }
+  var index = obj.trackId.substring("ARDAMSx".length);
 
-  if(index == room) {
-    return;
-  }
+	if(index == room || index == publishStreamId) {
+		return;
+	}
 
   var video = document.getElementById("remoteVideo"+index);
   var videoColumn = document.getElementById("streamId"+index);
@@ -439,12 +473,17 @@ function playVideo(obj) {
   }
 
   video.srcObject.addTrack(obj.track)
-
-  obj.track.onended = event => {
-    if(video.srcObject != null && video.srcObject.getTracks().length == 0) {
-      removeRemoteVideo(index);
-    }
-  };
+  obj.track.onmute = event => {
+			var remove = true;
+			video.srcObject.getTracks().forEach(function(item) {
+				if(!item.muted) {
+					remove = false;
+				}
+			});
+			if(remove) {
+				removeRemoteVideo(index);
+			}
+		};
 }
 
 function createRemoteVideo(streamId) {
@@ -484,10 +523,17 @@ function createRemoteVideo(streamId) {
 }
 
 function generateStreamCol(streamId){
+  console.log("******** "+streamId);
+  var streamDetails = streamDetailsList.filter(element => {
+    return element.streamId === streamId;
+  });
   const div = document.createElement('div');
   div.className = "col";
   div.id="streamId"+streamId;
-  div.innerHTML = "<div class=\"person\"><video id=\"remoteVideo"+streamId+"\" class=\"screen\" autoplay playsinline></video> </div>"
+  div.innerHTML = "<div class=\"person\">"
+    +"<video id=\"remoteVideo"+streamId+"\" class=\"screen\" autoplay controls playsinline></video>"
+    +"<div class=\"overlay\">"+streamDetails[0].streamName+"</div>"
+    + "</div>"
   document.getElementById('players').appendChild(div);
 }
 
@@ -590,163 +636,153 @@ var webRTCAdaptor = new WebRTCAdaptor(
   } 
   else if (info == "joinedTheRoom") {
     var room = obj.ATTR_ROOM_NAME;
-    roomOfStream[obj.streamId] = room;
-    console.log("joined the room: "+ roomOfStream[obj.streamId]);
-    console.log(obj)
+		roomOfStream[obj.streamId] = room;
+		console.log("joined the room: "+ roomOfStream[obj.streamId]);
+    console.debug(obj)
 
-    publishStreamId = obj.streamId
+		publishStreamId = obj.streamId;
+    streamIdList = obj.streams;
+    streamDetailsList = obj.streamList;
+		console.debug(streamIdList);
 
-    if(playOnly) {
-      isCameraOff = true;
-      handleCameraButtons();
+		if(playOnly) {
+			isCameraOff = true;
+			handleCameraButtons();
+			webRTCAdaptor.play(roomName, token, roomName, streamIdList);	
+		}
+		else {
+      publish(obj.streamId, token, subscriberId, subscriberCode, streamName);
     }
-    else {
-     publish(obj.streamId, token, subscriberId, subscriberCode, streamName);
-   }
 
-   if (obj.streams != null) {
-     obj.streams.forEach(function(item) {
-      console.log("Stream joined with ID: "+item);
-      webRTCAdaptor.play(item, token, roomName);
-    });
-     streamIdList = obj.streams;
-     streamDetailsList = obj.streamList;
-
-   }
-   roomTimerId = setInterval(() => {			
-     webRTCAdaptor.getRoomInfo(roomName, publishStreamId);
-   }, 5000);
- }
- else if (info == "newStreamAvailable") {
-  playVideo(obj);          
-} 
-else if (info == "publish_started") {
-	//stream is being published
-  console.debug("publish started to room: "
-    + roomOfStream[obj.streamId]);
-} 
-else if (info == "publish_finished") {
-	//stream is being finished
-  console.debug("publish finished");
-} 
-else if (info == "screen_share_stopped") {
-  console.log("screen share stopped");
-}
-else if (info == "browser_screen_share_supported") {
-  screen_share_button.disabled = false;
-  console.log("browser screen share supported");
-} 
-else if (info == "leavedFromRoom") {
-  var room = obj.ATTR_ROOM_NAME;
-  console.debug("leaved from the room:" + room);
-  if (roomTimerId != null)
-  {
-   clearInterval(roomTimerId);
- }
-
- if (streamIdList != null) {
-   streamIdList.forEach(function(item) {
-    removeRemoteVideo(item);
-  });
- }
-	// we need to reset streams list
-  streamIdList = new Array();
-  streamDetailsList = new Array();
-} 
-else if (info == "closed") {
-  if (typeof obj != "undefined") {
-   console.log("Connecton closed: "
-     + JSON.stringify(obj));
- }
-} 
-else if (info == "play_finished") {
-  console.log("play_finished");
-  removeRemoteVideo(obj.streamId);
-} 
-else if (info == "streamInformation") {
-  streamInformation(obj);
-} 
-else if (info == "roomInformation") {
-	//Checks if any new stream has added, if yes, plays.
-  for(let str of obj.streams){
-   if(!streamIdList.includes(str)){
-    webRTCAdaptor.play(str, token, roomName);
+    roomTimerId = setInterval(() => {			
+      webRTCAdaptor.getRoomInfo(roomName, publishStreamId);
+    }, 5000);
   }
-}
-	// Checks if any stream has been removed, if yes, removes the view and stops webrtc connection.
-  for(let str of streamIdList){
-   if(!obj.streams.includes(str)){
-    removeRemoteVideo(str);
-  }
-}
-	//Lastly updates the current streamlist with the fetched one.
-  streamIdList=obj.streams;
-  streamDetailsList = obj.streamList;
+  else if (info == "newStreamAvailable") {
+    playVideo(obj);          
+  } 
+  else if (info == "publish_started") {
+	  //stream is being published
+		console.debug("publish started to room: "
+			+ roomOfStream[obj.streamId]);
 
-  //Check video tracks active/inactive status
-  checkTrackStatus(streamIdList);
-}
-else if (info == "data_channel_opened") {
-  console.log("Data Channel open for stream id", obj );
-  isDataChannelOpen = true;
-} 
-else if (info == "data_channel_closed") {
-  console.log("Data Channel closed for stream id", obj );
-  if(streamIdList.length == 0){
+		webRTCAdaptor.getRoomInfo(roomName, publishStreamId);
+	} 
+  else if (info == "publish_finished") {
+	  //stream is being finished
+    console.debug("publish finished");
+  } 
+  else if (info == "screen_share_stopped") {
+    console.log("screen share stopped");
+  }
+  else if (info == "browser_screen_share_supported") {
+    screen_share_on_button.disabled = false;
+		console.log("browser screen share supported");
+  } 
+  else if (info == "leavedFromRoom") {
+    var room = obj.ATTR_ROOM_NAME;
+		console.debug("leaved from the room:" + room);
+		if (roomTimerId != null)
+		{
+			clearInterval(roomTimerId);
+		}
+						
+		if (streamsList != null) {
+			streamsList.forEach(function(item) {
+			  removeRemoteVideo(item);
+		  });
+		}
+		// we need to reset streams list
+		streamsList = new Array();
+    streamDetailsList = new Array();
+		isPlaying = false;
+  } 
+  else if (info == "closed") {
+    if (typeof obj != "undefined") {
+    console.log("Connecton closed: "
+      + JSON.stringify(obj));
+    }
+  } 
+  else if (info == "play_finished") {
+    console.log("play_finished");
+    removeRemoteVideo(obj.streamId);
+    isPlaying = false;
+  } 
+  else if (info == "streamInformation") {
+    streamInformation(obj);
+  } 
+  else if (info == "roomInformation") {
+    var tempList = obj.streams;
+		tempList.push("!"+publishStreamId);
+		if(!isPlaying) {
+			webRTCAdaptor.play(roomName, token, roomName, tempList);	
+			isPlaying = true;
+		}
+    //Lastly updates the current streamlist with the fetched one.
+    streamIdList=obj.streams;
+    streamDetailsList = obj.streamList;
+
+    //Check video tracks active/inactive status
+    checkTrackStatus(streamIdList);
+  }
+  else if (info == "data_channel_opened") {
+    console.log("Data Channel open for stream id", obj );
+    isDataChannelOpen = true;
+  } 
+  else if (info == "data_channel_closed") {
+    console.log("Data Channel closed for stream id", obj );
     isDataChannelOpen = false;
+  } 
+  else if(info == "data_received") {
+    try {
+      handleNotificationEvent(obj);
+    } catch(e) {
+      var remoteStreamName = getStreamName(obj.streamId);
+      $("#chat").append("<li class=\"you\"><div class=\"entete\"><h3>"+formatAMPM(new Date)+", Today &nbsp</h3><h2> "+remoteStreamName+"&nbsp</h2><span class=\"status you-dot\"></span></div><div class=\"triangle\"></div><div class=\"message\">"+obj.data+"</div></li>");
+    }
   }
-} 
-else if(info == "data_received") {
-  try {
-    handleNotificationEvent(obj);
-  } catch(e) {
-    var remoteStreamName = getStreamName(obj.streamId);
-    $("#chat").append("<li class=\"you\"><div class=\"entete\"><h3>"+formatAMPM(new Date)+", Today &nbsp</h3><h2> "+remoteStreamName+"&nbsp</h2><span class=\"status you-dot\"></span></div><div class=\"triangle\"></div><div class=\"message\">"+obj.data+"</div></li>");
-  }
-}
 },
 callbackError : function(error, message) {
 	//some of the possible errors, NotFoundError, SecurityError,PermissionDeniedError
+  if(error.indexOf("publishTimeoutError") != -1 && roomTimerId != null){
+    clearInterval(roomTimerId);
+  }
 
- if(error.indexOf("publishTimeoutError") != -1 && roomTimerId != null){
-  clearInterval(roomTimerId);
-}
+  console.log("error callback: " + JSON.stringify(error));
+  var errorMessage = JSON.stringify(error);
+  if (typeof message != "undefined") {
+    errorMessage = message;
+  }
+  var errorMessage = JSON.stringify(error);
+  if (error.indexOf("NotFoundError") != -1) {
+    errorMessage = "Camera or Mic are not found or not allowed in your device.";
+  } else if (error.indexOf("NotReadableError") != -1
+  || error.indexOf("TrackStartError") != -1) {
+    errorMessage = "Camera or Mic is being used by some other process that does not not allow these devices to be read.";
+  } else if (error.indexOf("OverconstrainedError") != -1
+  || error.indexOf("ConstraintNotSatisfiedError") != -1) {
+    errorMessage = "There is no device found that fits your video and audio constraints. You may change video and audio constraints."
+  } else if (error.indexOf("NotAllowedError") != -1
+  || error.indexOf("PermissionDeniedError") != -1) {
+    errorMessage = "You are not allowed to access camera and mic.";
+    stopScreenShare();
+  } else if (error.indexOf("TypeError") != -1) {
+    errorMessage = "Video/Audio is required.";
+  } else if (error.indexOf("UnsecureContext") != -1) {
+    errorMessage = "Fatal Error: Browser cannot access camera and mic because of unsecure context. Please install SSL and access via https";
+  } else if (error.indexOf("WebSocketNotSupported") != -1) {
+    errorMessage = "Fatal Error: WebSocket not supported in this browser";
+  } else if (error.indexOf("no_stream_exist") != -1) {
+    //TODO: removeRemoteVideo(error.streamId);
+  } else if(error.indexOf("data_channel_error") != -1) {
+    errorMessage = "There was a error during data channel communication";
+  } else if (error.indexOf("ScreenSharePermissionDenied") != -1) {
+    errorMessage = "You are not allowed to access screen share";
+    stopScreenShare();
+  } 
 
-console.log("error callback: " + JSON.stringify(error));
-var errorMessage = JSON.stringify(error);
-if (typeof message != "undefined") {
-  errorMessage = message;
-}
-var errorMessage = JSON.stringify(error);
-if (error.indexOf("NotFoundError") != -1) {
-  errorMessage = "Camera or Mic are not found or not allowed in your device.";
-} else if (error.indexOf("NotReadableError") != -1
- || error.indexOf("TrackStartError") != -1) {
-  errorMessage = "Camera or Mic is being used by some other process that does not not allow these devices to be read.";
-} else if (error.indexOf("OverconstrainedError") != -1
- || error.indexOf("ConstraintNotSatisfiedError") != -1) {
-  errorMessage = "There is no device found that fits your video and audio constraints. You may change video and audio constraints."
-} else if (error.indexOf("NotAllowedError") != -1
- || error.indexOf("PermissionDeniedError") != -1) {
-  errorMessage = "You are not allowed to access camera and mic.";
-  screen_share_button.checked = false;
-} else if (error.indexOf("TypeError") != -1) {
-  errorMessage = "Video/Audio is required.";
-} else if (error.indexOf("UnsecureContext") != -1) {
-  errorMessage = "Fatal Error: Browser cannot access camera and mic because of unsecure context. Please install SSL and access via https";
-} else if (error.indexOf("WebSocketNotSupported") != -1) {
-  errorMessage = "Fatal Error: WebSocket not supported in this browser";
-} else if (error.indexOf("no_stream_exist") != -1) {
-	//TODO: removeRemoteVideo(error.streamId);
-} else if(error.indexOf("data_channel_error") != -1) {
-  errorMessage = "There was a error during data channel communication";
-} else if (error.indexOf("ScreenSharePermissionDenied") != -1) {
-  errorMessage = "You are not allowed to access screen share";
-  screen_share_button.checked = false;
-} 
-
-alert(errorMessage);
-}
+  alert(errorMessage);
+  }
 });
 
 function getWindowLocation(){
