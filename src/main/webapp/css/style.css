@@ -2266,11 +2266,15 @@ address {
   display: flex;
   align-items: center; }
 
+.screen-on,
+.screen-off,
 .camera-on,
 .microphone-on,
 .camera-off,
 .microphone-off {
   display: none; }
+  .screen-on.active,
+  .screen-off.active,
   .camera-on.active,
   .microphone-on.active,
   .camera-off.active,
@@ -2559,7 +2563,6 @@ address {
     overflow: hidden;
     height: 400px;
     margin-bottom: 30px;
-    background-color: black;
     box-shadow: 0px 0px 14px 0px rgba(0, 0, 0, 0.15); }
     @media (max-width: 1429.98px) {
       .room .publisher-content .persons .person {
@@ -2581,7 +2584,7 @@ address {
       position: absolute;
       width: 100%;
       height: 100%;
-      z-index: 1; }
+      z-index: 0; }
       .room .publisher-content .persons .person video source {
         display: none; }
   .room .publisher-content .me-small-screen {
@@ -2889,5 +2892,15 @@ address {
   margin-left: 333px;
   margin-top: 5px;
   display: inline-block; }
+  
+.overlay {
+    position:absolute;
+    top:10%;
+    left:50%;
+    height: fit-content;
+    transform:translate(-50%, -50%);
+    color: white; background: #666666; opacity: .5;
+    z-index:100;
+}
 
 /*# sourceMappingURL=style.css.map */
