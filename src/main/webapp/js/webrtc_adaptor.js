@@ -1444,7 +1444,7 @@ export class WebRTCAdaptor
 	unmuteLocalMic() 
 	{
 		if (this.remotePeerConnection != null) {
-			this.localStream.getAudioTracks().forEach(track => track.enabled = false);
+			this.localStream.getAudioTracks().forEach(track => track.enabled = true);
 		}
 		else {
 			this.callbackError("NoActiveConnection");
