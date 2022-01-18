@@ -523,16 +523,14 @@ function createRemoteVideo(streamId) {
 }
 
 function generateStreamCol(streamId){
-  console.log("******** "+streamId);
-  var streamDetails = streamDetailsList.filter(element => {
-    return element.streamId === streamId;
-  });
+  var streamName = getStreamName(streamId);
+  console.log(streamId+" ==> "+streamName);
   const div = document.createElement('div');
   div.className = "col";
   div.id="streamId"+streamId;
   div.innerHTML = "<div class=\"person\">"
     +"<video id=\"remoteVideo"+streamId+"\" class=\"screen\" autoplay controls playsinline></video>"
-    +"<div class=\"overlay\">"+streamDetails[0].streamName+"</div>"
+    +"<div class=\"overlay\">"+streamName+"</div>"
     + "</div>"
   document.getElementById('players').appendChild(div);
 }
