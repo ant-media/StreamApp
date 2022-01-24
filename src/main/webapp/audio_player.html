@@ -106,10 +106,10 @@ body {
 				-->
 				<audio id="remoteVideo" autoplay controls></audio>
 			</p>
-			<p>
-				<input type="text" class="form-control" value="stream1"
-					id="streamName" placeholder="Type stream name">
-			</p>
+			<div class="form-group col-sm-12 text-left">
+				<input type="text" class="form-control"
+						id="streamName" name="streamIdTextBox" placeholder="Type stream ID">
+			</div>
 			<p>
 				<button class="btn btn-primary"
 					id="start_play_button">Start Playing</button>
@@ -124,10 +124,28 @@ body {
 			</p>
 		</footer>
 	</div>
+	<script src="js/external/jquery-3.4.1.min.js"  crossorigin="anonymous"></script>
 
 </body>
 <script type="module">
 	import {WebRTCAdaptor} from "./js/webrtc_adaptor.js"
+	import {getUrlParameter} from "./js/fetch.stream.js" 
+	
+    
+	  var id = getUrlParameter("id");
+	  if(typeof id != "undefined") {
+		$("#streamName").val(id);
+	  }
+	  else {
+		id = getUrlParameter("name");
+		if (typeof id != "undefined") {
+			$("#streamName").val(id);
+		} 
+		else {
+			$("#streamName").val("stream1");
+		}
+	  }
+    
 
 	var start_publish_button = document.getElementById("start_play_button");
 	start_publish_button.addEventListener("click", startPlaying, false);

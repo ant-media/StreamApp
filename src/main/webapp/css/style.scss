@@ -954,7 +954,8 @@ address {
     align-items: center;
 }
 
-
+.screen-on,
+.screen-off,
 .camera-on,
 .microphone-on,
 .camera-off,
@@ -1883,4 +1884,20 @@ address {
     margin-left: 333px;
     margin-top: 5px;
     display: inline-block;
+}
+
+.overlay {
+
+    position:absolute;
+
+    top:10%;
+
+    left:50%;
+
+    height: fit-content;
+    transform:translate(-50%, -50%);
+
+    color: white; background: #666666; opacity: .5;
+    z-index:100;
+
 }

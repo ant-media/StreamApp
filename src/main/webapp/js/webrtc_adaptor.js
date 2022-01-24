@@ -46,6 +46,12 @@ export class WebRTCAdaptor
 		this.viewerInfo = "";
 		this.publishStreamId = null;
 		this.blackFrameTimer = null;
+		this.idMapping = new Array();
+
+
+		var threshold = 0.08;
+		this.soundMeters = new Array();
+		this.soundLevelList = new Array();
 
 		/**
 		 * This is used when only data is brodcasted with the same way video and/or audio.
@@ -488,7 +494,7 @@ export class WebRTCAdaptor
 		}
 	}
 
-	publish(streamId, token, subscriberId, subscriberCode, streamName, mainTrack) 
+	publish(streamId, token, subscriberId, subscriberCode, streamName, mainTrack, metaData) 
 	{
 		this.publishStreamId =streamId;
 		if (this.onlyDataChannel) {
@@ -502,6 +508,7 @@ export class WebRTCAdaptor
 				mainTrack : typeof mainTrack !== undefined ? mainTrack : "" ,
 				video: false,
 				audio: false,
+				metaData: metaData,
 			};
 		}
 		//If it started with playOnly mode and wants to publish now
@@ -518,6 +525,7 @@ export class WebRTCAdaptor
 					mainTrack : typeof mainTrack !== undefined ? mainTrack : "" ,				
 					video: this.localStream.getVideoTracks().length > 0 ? true : false,
 					audio: this.localStream.getAudioTracks().length > 0 ? true : false,
+					metaData: metaData,
 				};
 				this.webSocketAdaptor.send(JSON.stringify(jsCmd));
 			}), false);
@@ -533,6 +541,7 @@ export class WebRTCAdaptor
 					mainTrack : typeof mainTrack !== undefined ? mainTrack : "" ,
 					video: this.localStream.getVideoTracks().length > 0 ? true : false,
 					audio: this.localStream.getAudioTracks().length > 0 ? true : false,
+					metaData: metaData,
 			};
 		}
 		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
@@ -626,6 +635,16 @@ export class WebRTCAdaptor
 		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
 	}
 	
+	upateStreamMetaData(streamId, metaData) 
+	{
+		var jsCmd = {
+				command : "updateStreamMetaData",
+				streamId: streamId,
+				metaData: metaData,
+		};
+		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
+	}
+	
 	getRoomInfo(roomName,streamId) 
 	{
 		var jsCmd = {
@@ -662,11 +681,13 @@ export class WebRTCAdaptor
 
 	gotStream(stream)
 	{
-		stream = this.setGainNodeStream(stream);
+		//NOTE: I couldn't find a possible reason that we call setGainNode here, it creates problems by adding the second audio track therefore commenting it out. Tahir.
+		//stream = this.setGainNodeStream(stream);
 
 		this.localStream = stream;
-		this.localVideo.srcObject = stream;
-		
+		if (this.localVideo) {
+			this.localVideo.srcObject = stream;
+		}
 		this.checkWebSocketConnection();
 		this.getDevices();
 	}
@@ -818,6 +839,31 @@ export class WebRTCAdaptor
 		return composedStream;
 	}
 
+	enableAudioLevel(stream, streamId) {
+
+		const soundMeter = new SoundMeter(this.audioContext);
+
+		// Put variables in global scope to make them available to the
+		// browser console.
+		soundMeter.connectToSource(stream, function(e) {
+		if (e) {
+			alert(e);
+			return;
+		}
+		console.log("Added sound meter for stream: " + streamId + " = " + soundMeter.instant.toFixed(2));
+		});
+
+		this.soundMeters[streamId] = soundMeter;
+	}
+
+	getSoundLevelList(streamsList){
+		for(let i = 0; i < streamsList.length; i++){
+			this.soundLevelList[streamsList[i]] = this.soundMeters[streamsList[i]].instant.toFixed(2); 
+		}
+		this.callback("gotSoundList" , this.soundLevelList);
+	}
+	
+
 	setGainNodeStream(stream){
 		if(this.mediaConstraints.audio != false && typeof this.mediaConstraints.audio != "undefined"){
 			// Get the videoTracks from the stream.
@@ -895,7 +941,16 @@ export class WebRTCAdaptor
 		this.setAudioInputSource(streamId, this.mediaConstraints, null, true, deviceId);
 	}
 
-	switchVideoCameraCapture(streamId, deviceId) 
+
+	/**
+	 * 
+	 * @param {*} streamId Id of the stream to be changed.
+	 * @param {*} deviceId Id of the device which will use as a media device
+	 * @param {*} onEndedCallback callback for when the switching video state is completed, can be used to understand if it is loading or not
+	 * 
+	 * This method is used to switch to video capture. 
+	 */
+	switchVideoCameraCapture(streamId, deviceId, onEndedCallback) 
 	{
 		//stop the track because in some android devices need to close the current camera stream
 		var videoTrack = this.localStream.getVideoTracks()[0];
@@ -906,20 +961,35 @@ export class WebRTCAdaptor
 		   console.warn("There is no video track in local stream");
 		}
 		
-		this.publishMode = "camera";
+		this.publishMode = "camera";		
+		navigator.mediaDevices.enumerateDevices().then(devices => {
+			for(let i = 0; i < devices.length; i++) {	
+				if (devices[i].kind == "videoinput") {
+					//Adjust video source only if there is a matching device id with the given one.
+					//It creates problems if we don't check that since video can be just true to select default cam and it is like that in many cases.
+					if(devices[i].deviceId == deviceId){
+						if(this.mediaConstraints.video !== true)
+							this.mediaConstraints.video.deviceId = { exact: deviceId };
+						else 
+							this.mediaConstraints.video = { deviceId: { exact: deviceId } };
+						this.setVideoCameraSource(streamId, this.mediaConstraints, null, true, deviceId);
+						break;
+					}
+				}
+			};
+			//If no matching device found don't adjust the media constraints let it be true instead of a device ID
+			console.debug("Given deviceId = " + deviceId + " - Media constraints video property = " + this.mediaConstraints.video);
+			this.setVideoCameraSource(streamId, this.mediaConstraints, null, true, deviceId);
+		})
 
-				
-		if (typeof deviceId != "undefined" ) {
-			if(this.mediaConstraints.video !== true)
-				this.mediaConstraints.video.deviceId = { exact: deviceId };
-			else 
-				this.mediaConstraints.video = { deviceId: { exact: deviceId } };
-		}
-		this.setVideoCameraSource(streamId, this.mediaConstraints, null, true, deviceId);
 	}
 
 	switchDesktopCaptureWithCamera(streamId) 
 	{
+		if(typeof this.mediaConstraints.video != "undefined" && this.mediaConstraints.video != false){
+			this.mediaConstraints.video = true
+		}
+
 		this.publishMode = "screen+camera";
 
 		var audioConstraint = false;
@@ -1015,14 +1085,19 @@ export class WebRTCAdaptor
 	 * This method sets Video Input Source. 
 	 * It calls updateVideoTrack function for the update local video stream.
 	 */
-	setVideoCameraSource(streamId, mediaConstraints, onEndedCallback, stopDesktop) 
-	{
-		this.navigatorUserMedia(mediaConstraints, stream => {
-			stream = this.setGainNodeStream(stream);
-			this.updateVideoTrack(stream, streamId, mediaConstraints, onEndedCallback, stopDesktop);
-			this.updateAudioTrack(stream, streamId, mediaConstraints, onEndedCallback);
-		}, true);
-	}
+	 setVideoCameraSource(streamId, mediaConstraints, onEndedCallback, stopDesktop) 
+	 {
+		 this.navigatorUserMedia(mediaConstraints, stream => {
+			 //Why did we update also the audio track here?
+			 //Seems redundant and creates issue in Android while switching cam after mic switch, 
+			 //therefore commended out.
+			 
+			 //stream = this.setGainNodeStream(stream);
+			 //this.updateAudioTrack(stream, streamId, mediaConstraints, onEndedCallback);
+ 
+			 this.updateVideoTrack(stream, streamId, mediaConstraints, onEndedCallback, stopDesktop);
+		 }, true);
+	 }
 	
 	updateAudioTrack (stream, streamId, onEndedCallback) 
 	{
@@ -1086,7 +1161,8 @@ export class WebRTCAdaptor
 			var dataObj = {
 					stream: event.streams[0],
 					track: event.track,
-					streamId: streamId
+					streamId: streamId,
+					trackId: this.idMapping[streamId][event.transceiver.mid],
 			}
 			this.callback("newStreamAvailable", dataObj);
 		}
@@ -1236,6 +1312,10 @@ export class WebRTCAdaptor
 				this.onTrack(event, closedStreamId);
 			}
 
+			this.remotePeerConnection[streamId].onnegotiationneeded = event => {
+				console.log("onnegotiationneeded");
+			}
+
 			if (this.dataChannelEnabled){
 				// skip initializing data channel if it is disabled
 				if (dataChannelMode == "publish") {
@@ -1319,7 +1399,10 @@ export class WebRTCAdaptor
 		{
 			clearInterval(this.remotePeerConnectionStats[streamId].timerId);
 			delete this.remotePeerConnectionStats[streamId];
-		}			
+		}
+		if(this.soundMeters[streamId] != null){
+			delete this.soundMeters[streamId];
+		}				
 	}
 
 	signallingState(streamId) 
@@ -1429,8 +1512,7 @@ export class WebRTCAdaptor
 	muteLocalMic() 
 	{
 		if (this.remotePeerConnection != null) {
-			var track = this.localStream.getAudioTracks()[0];
-			track.enabled = false;
+			this.localStream.getAudioTracks().forEach(track => track.enabled = false);
 		}
 		else {
 			this.callbackError("NoActiveConnection");
@@ -1443,15 +1525,14 @@ export class WebRTCAdaptor
 	unmuteLocalMic() 
 	{
 		if (this.remotePeerConnection != null) {
-			var track = this.localStream.getAudioTracks()[0];
-			track.enabled = true;
+			this.localStream.getAudioTracks().forEach(track => track.enabled = true);
 		}
 		else {
 			this.callbackError("NoActiveConnection");
 		}
 	}
 
-	takeConfiguration(idOfStream, configuration, typeOfConfiguration)
+	takeConfiguration(idOfStream, configuration, typeOfConfiguration, idMapping)
 	{
 		var streamId = idOfStream
 		var type = typeOfConfiguration;
@@ -1462,6 +1543,8 @@ export class WebRTCAdaptor
 		if(isTypeOffer) {
 			dataChannelMode = "play";
 		}
+
+		this.idMapping[streamId] = idMapping;
 
 		this.initPeerConnection(streamId, dataChannelMode);
 
