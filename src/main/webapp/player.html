@@ -402,18 +402,16 @@ video {
 					var dropdownSelectedItem = $(this).text();
  					
  					if(dropdownSelectedItem == "Automatic"){
- 						dropdownSelectedItem = 0;
+ 						//It should 0p because of replacing "p" character in below
+ 						dropdownSelectedItem = "0p";
  					}
 
  					// Remove p character in stream resolution
  					dropdownSelectedItem = dropdownSelectedItem.replace('p', '');
-					let getVideo = document.getElementById("remoteVideo");
-					let overlay = document.getElementById('video-overlay');
-					getVideo.pause();
-					overlay.style.display = "block";
+
  					// Call set stream resolution
     				webRTCAdaptor.forceStreamQuality(streamId, Number(dropdownSelectedItem));
-					setTimeout(function(){ getVideo.play();overlay.style.display = "none";}, 2000);
+
 					// Remove current active item
 					$('a.dropdown-item.active').removeClass("active"); 
 					// Add active in new item
@@ -537,6 +535,14 @@ video {
 					startAnimation();
 				}
 				$("#video_bit_rate").text(parseInt(obj.audioBitrate) + parseInt(obj.videoBitrate));
+			}
+			else if(info == "resolutionChangeInfo"){
+				console.log("Resolution is changed to "+obj["streamHeight"]);
+				let getVideo = document.getElementById("remoteVideo");
+				let overlay = document.getElementById('video-overlay');
+				getVideo.pause();
+				overlay.style.display = "block";
+				setTimeout(function(){ getVideo.play();overlay.style.display = "none";}, 2000);
 			}
 			else {
 				console.log( info + " notification received");
