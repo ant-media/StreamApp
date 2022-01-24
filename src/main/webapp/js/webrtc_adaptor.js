@@ -59,6 +59,12 @@ export class WebRTCAdaptor
 		 */
 		this.onlyDataChannel = false;
 
+		/**
+		 * For audio check when the user is muted itself.
+		 * Check enableAudioLevelWhenMuted
+		 */
+		this.mutedAudioStream = null;
+		this.meterRefresh = null;
 		
 		/**
 		 * While publishing and playing streams data channel is enabled by default
@@ -724,6 +730,47 @@ export class WebRTCAdaptor
 				enabled: enabled,
 		};
 		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
+	}
+
+
+	/**
+	 * These methods are initialized when the user is muted himself in a publish scenario
+	 * It will keep track if the user is trying to speak without sending any data to server
+	 * Please don't forget to disable this function with disableAudioLevelWhenMuted if you use it.
+	 */
+	enableAudioLevelWhenMuted() {
+		navigator.mediaDevices.getUserMedia({video:false, audio:true})
+		.then((stream) => {
+		this.mutedAudioStream = stream;
+		const soundMeter = new SoundMeter(this.audioContext);
+		soundMeter.connectToSource(this.mutedAudioStream, (e) => {
+			if (e) {
+				alert(e);
+				return;
+			}
+			this.meterRefresh = setInterval(() => {
+				if(soundMeter.instant.toFixed(2) > 0.1){
+					this.callback("speaking_but_muted");
+				}
+			}, 200);
+		});
+			
+		})
+		.catch(function(err) {
+			console.log("Can't get the soundlevel on mute")
+		});
+	}
+
+	disableAudioLevelWhenMuted(){
+		if(this.meterRefresh != null){
+			clearInterval(this.meterRefresh)
+		}
+
+		if(this.mutedAudioStream != null){
+			this.mutedAudioStream.getTracks().forEach(function(track) {
+				track.stop();
+			});
+		}
 	}
 	
 	switchDesktopCapture(streamId){
