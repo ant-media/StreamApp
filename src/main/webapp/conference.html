@@ -4,7 +4,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<meta charset="UTF-8">
 	<link rel="stylesheet"
-		  href="css/external//bootstrap4/bootstrap.min.css"
+		  href="css/external/bootstrap4/bootstrap.min.css"
 		   >
 	<script src="js/external/adapter-latest.js"></script>
 	<script src="js/external/jquery-3.4.1.min.js"></script>
@@ -106,7 +106,7 @@ body {
 			</div>
 		<div id="players" class="row">
 			<div class="col-sm-3" >
-				<video id="localVideo" autoplay muted controls playsinline></video>
+				<video style="margin-top:23px;" id="localVideo" autoplay muted controls playsinline></video>
 				<div style="margin-top:10px;display: none;"  class="col-sm-8 offset-sm-2">Microphone Gain: <input type=range id=volume_change_input min=0 max=1 value=1 step=0.01></div>
 			</div>
 		</div>
@@ -232,6 +232,8 @@ body {
 	unmute_mic_button.addEventListener("click", unmuteLocalMic,false)
 	var mcuChbx = document.getElementById("enableMCU");
 
+	var dominantSpeakerFinderId = null;
+	var checkSpeakingStreamIds = new Array();
 
 	//Handles radio buttons for screen share feature
 	if (document.querySelector('input[name="videoSource"]')) {
@@ -323,6 +325,34 @@ body {
 			unmute_mic_button.disabled = true;
 		}
 	}
+	function findDominantSpeaker(streamSoundList){
+		var tmpMax = 0;
+		var tmpStreamId = null;
+		var threshold = 0.01;
+		
+		for(let i = 0; i < streamsList.length; i++){
+			let nextStreamId = streamsList[i];
+			let tmpValue = streamSoundList[nextStreamId]
+			if( tmpValue > threshold ){
+				if(tmpValue > tmpMax){
+					tmpMax = tmpValue;
+					tmpStreamId = nextStreamId;
+				}
+			}
+		}
+		if(tmpStreamId != null){
+			if(checkSpeakingStreamIds[tmpStreamId] == null || typeof checkSpeakingStreamIds[tmpStreamId] == "undefined"){
+				var icon = document.getElementById("audio"+tmpStreamId);
+				icon.style.visibility="visible";
+				checkSpeakingStreamIds[tmpStreamId] = true;
+				setTimeout(()=> {
+					var icon = document.getElementById("audio"+tmpStreamId);
+					icon.style.visibility="hidden";
+					checkSpeakingStreamIds[tmpStreamId] = null;
+				},1000)
+			}
+		}
+	}
 
 	function handleNotificationEvent(obj) {
 		console.log("Received data : ", obj.data);
@@ -380,13 +410,15 @@ body {
 		}
 
 		video.srcObject = obj.stream;
+
+		webRTCAdaptor.enableAudioLevel(obj.stream, obj.streamId)
 	}
 
 	function createRemoteVideo(streamId) {
 		var player = document.createElement("div");
 		player.className = "col-sm-3";
 		player.id = "player"+streamId;
-		player.innerHTML = '<video id="remoteVideo'+streamId+'"controls autoplay playsinline></video>';
+		player.innerHTML = '<img id="audio'+streamId+'"src="images/audio.png" style="visibility: hidden;"></image>' + '<video id="remoteVideo'+streamId+'"controls autoplay playsinline></video>';
 		document.getElementById("players").appendChild(player);
 	}
 
@@ -513,9 +545,20 @@ body {
 						roomTimerId = setInterval(() => {			
 							webRTCAdaptor.getRoomInfo(roomNameBox.value, publishStreamId);
 						}, 5000);
+
+						if(streamsList.length > 0){
+							dominantSpeakerFinderId = setInterval(() => {			
+							webRTCAdaptor.getSoundLevelList(streamsList);
+						}, 200);
+						}
 					}
 					else if (info == "newStreamAvailable") {
 						playVideo(obj);
+						if(dominantSpeakerFinderId == null){
+							dominantSpeakerFinderId = setInterval(() => {			
+							webRTCAdaptor.getSoundLevelList(streamsList);
+							}, 200);
+						}
 					} 
 					else if (info == "publish_started") {
 						//stream is being published
@@ -524,13 +567,16 @@ body {
 						join_publish_button.disabled = true;
 						stop_publish_button.disabled = false;
 						startAnimation();
-					} 
+					}
 					else if (info == "publish_finished") {
 						//stream is being finished
 						console.debug("publish finished");
 					} 
 					else if (info == "screen_share_stopped") {
 						console.log("screen share stopped");
+					}
+					else if (info == "gotSoundList"){
+						findDominantSpeaker(obj);
 					}
 					else if (info == "browser_screen_share_supported") {
 						screen_share_checkbox.disabled = false;
@@ -545,7 +591,9 @@ body {
 						if (roomTimerId != null)
 						{
 							clearInterval(roomTimerId);
+							clearInterval(dominantSpeakerFinderId);
 						}
+						dominantSpeakerFinderId = null;
 
 						join_publish_button.disabled = false;
 						stop_publish_button.disabled = true;

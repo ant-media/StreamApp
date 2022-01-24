@@ -5,6 +5,7 @@
 
 import {PeerStats} from "./peer_stats.js"
 import {WebSocketAdaptor} from "./websocket_adaptor.js"
+import {SoundMeter} from "./soundmeter.js" 
 
 class ReceivingMessage{
 		constructor(size) {
@@ -47,6 +48,10 @@ export class WebRTCAdaptor
 		this.blackFrameTimer = null;
 		this.idMapping = new Array();
 
+
+		var threshold = 0.08;
+		this.soundMeters = new Array();
+		this.soundLevelList = new Array();
 
 		/**
 		 * This is used when only data is brodcasted with the same way video and/or audio.
@@ -786,6 +791,31 @@ export class WebRTCAdaptor
 		return composedStream;
 	}
 
+	enableAudioLevel(stream, streamId) {
+
+		const soundMeter = new SoundMeter(this.audioContext);
+
+		// Put variables in global scope to make them available to the
+		// browser console.
+		soundMeter.connectToSource(stream, function(e) {
+		if (e) {
+			alert(e);
+			return;
+		}
+		console.log("Added sound meter for stream: " + streamId + " = " + soundMeter.instant.toFixed(2));
+		});
+
+		this.soundMeters[streamId] = soundMeter;
+	}
+
+	getSoundLevelList(streamsList){
+		for(let i = 0; i < streamsList.length; i++){
+			this.soundLevelList[streamsList[i]] = this.soundMeters[streamsList[i]].instant.toFixed(2); 
+		}
+		this.callback("gotSoundList" , this.soundLevelList);
+	}
+	
+
 	setGainNodeStream(stream){
 		if(this.mediaConstraints.audio != false && typeof this.mediaConstraints.audio != "undefined"){
 			// Get the videoTracks from the stream.
@@ -1321,7 +1351,10 @@ export class WebRTCAdaptor
 		{
 			clearInterval(this.remotePeerConnectionStats[streamId].timerId);
 			delete this.remotePeerConnectionStats[streamId];
-		}			
+		}
+		if(this.soundMeters[streamId] != null){
+			delete this.soundMeters[streamId];
+		}				
 	}
 
 	signallingState(streamId) 
