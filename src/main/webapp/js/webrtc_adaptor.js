@@ -1054,6 +1054,11 @@ export class WebRTCAdaptor
 	
 	updateAudioTrack (stream, streamId, onEndedCallback) 
 	{
+		//These codes cover when audio source change with audio source buttons
+		//this.setGainNodeStream should be call before the audio source change
+		//this.setGainNodeStream codes calling in prepareStreamTracks function, but it's not calling when audio source change with switchAudioInputSource function
+		stream = this.setGainNodeStream(stream);
+
 		if (this.remotePeerConnection[streamId] != null) {
 			var audioTrackSender = this.remotePeerConnection[streamId].getSenders().find(function(s) {
 				return s.track.kind == "audio";
