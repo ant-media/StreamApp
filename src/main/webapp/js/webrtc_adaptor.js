@@ -682,6 +682,7 @@ export class WebRTCAdaptor
 	gotStream(stream)
 	{
 		//NOTE: I couldn't find a possible reason that we call setGainNode here, it creates problems by adding the second audio track therefore commenting it out. Tahir.
+		//Also the following line causes multiple audio tracks in a stream. burak
 		//stream = this.setGainNodeStream(stream);
 
 		this.localStream = stream;
@@ -1089,11 +1090,14 @@ export class WebRTCAdaptor
 	 {
 		 this.navigatorUserMedia(mediaConstraints, stream => {
 			 //Why did we update also the audio track here?
-			 //Seems redundant and creates issue in Android while switching cam after mic switch, 
-			 //therefore commended out.
+			 //This audio track update is necessary for such a case:
+			 //If you enable screen share with browser audio and then 
+			 //return back to the camera, the audio should be only from mic.
+			 //If, we don't update audio with the following lines, 
+			 //the mixed (mic+browser) audio would be streamed in the camera mode.
 			 
-			 //stream = this.setGainNodeStream(stream);
-			 //this.updateAudioTrack(stream, streamId, mediaConstraints, onEndedCallback);
+			 stream = this.setGainNodeStream(stream);
+			 this.updateAudioTrack(stream, streamId, mediaConstraints, onEndedCallback);
  
 			 this.updateVideoTrack(stream, streamId, mediaConstraints, onEndedCallback, stopDesktop);
 		 }, true);
