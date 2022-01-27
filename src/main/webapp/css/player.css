@@ -28,6 +28,7 @@ body {
     overflow: hidden;
     width: 100% !important;
     height: 100% !important;
+    text-align: center;
 }
 
 #remoteVideo{
@@ -77,15 +78,15 @@ body {
     position: absolute;
     left: 50%;
     top: 50%;
-     transform:translate(-50%, -50%);
+    transform:translate(-50%, -50%);
     /*
     bottom: 50%;
     right: 50%;
 
     */
-
-    display: none;
+    display: none; 
     z-index: 9999999;
+    text-align: center;
 }
 #video-overlay img{
     width: 25%;
