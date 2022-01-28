@@ -4,7 +4,15 @@
 <head>
 	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 	<title>Ant Media Server WebRTC/HLS/DASH Player</title>
+	
+<!--
+	OPEN HERE IF YOU PLAY 360 Degree Video
 
+    //TODO: Find a way to load following js on-demand
+
+	<script src="js/external/aframe.min.js"></script>
+	<script src="js/external/hls.js"></script>
+-->
 	<script src="js/fetch.js"></script>
 	<script src="js/promise.min.js"></script>
 	<script src="js/external/adapter-latest.js"></script>
@@ -52,17 +60,6 @@
 		var is360 = getUrlParameter("is360");
 		if (is360 == "true") {
 			is360 = true;
-			//include aframe -> js
-			var js = document.createElement("script");
-			js.type = "text/javascript";
-			js.src = "js/external/aframe.min.js";
-			head.appendChild(js);
-
-			//include hls.js
-			var jsHls = document.createElement("script");
-			js.type = "text/javascript";
-			js.src = "js/external/hls.js";
-			head.appendChild(js);
 		}
 		else {
 			is360 = false;
