@@ -1,10 +1,9 @@
 <!DOCTYPE html>
 <html>
-
 <head>
 	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 	<title>Ant Media Server WebRTC/HLS/DASH Player</title>
-
+	
 	<script src="js/fetch.js"></script>
 	<script src="js/promise.min.js"></script>
 	<script src="js/external/adapter-latest.js"></script>
@@ -51,18 +50,26 @@
 
 		var is360 = getUrlParameter("is360");
 		if (is360 == "true") {
-			is360 = true;
-			//include aframe -> js
-			var js = document.createElement("script");
-			js.type = "text/javascript";
-			js.src = "js/external/aframe.min.js";
-			head.appendChild(js);
+			var hlsJS = document.createElement("script");
+			hlsJS.type = "text/javascript";
+			hlsJS.src = "js/external/hls.js";
+			head.appendChild(hlsJS);
+			
+			var aframeJS = document.createElement("script");
+			aframeJS.type = "text/javascript";
+			aframeJS.src = "js/external/aframe.min.js";
+			
 
-			//include hls.js
-			var jsHls = document.createElement("script");
-			js.type = "text/javascript";
-			js.src = "js/external/hls.js";
-			head.appendChild(js);
+			aframeJS.onload = function() {
+				var aScene = document.createElement("a-scene");
+				aScene.innerHTML = "<a-videosphere src=\"#remoteVideo\" rotation=\"0 180 0\" style=\"background-color: antiquewhite\"></a-videosphere>";
+				var body = document.getElementsByTagName('body')[0];
+				body.appendChild(aScene);
+			}
+			head.appendChild(aframeJS);
+			
+
+			is360 = true;
 		}
 		else {
 			is360 = false;
@@ -70,8 +77,6 @@
 
 		window.is360 = is360;
 	
-
-
 	</script>
 
 </head>
@@ -101,10 +106,8 @@
 
 	<video id="remoteVideo" controls playsinline></video>
 
-	<!-- 360 player -->
-	<a-scene style="display:none">
-		<a-videosphere src="#remoteVideo" rotation="0 180 0" style="background-color: antiquewhite"></a-videosphere>
-	</a-scene>
+	<!-- 360 player is added dynamically -->
+	
 
 	<div id="networkWarning">Your connection isn't fast enough to play this stream!</div>
 	<img id="play_button" src="images/play.png" onclick="playWebRTCVideo()"
@@ -311,11 +314,6 @@
 
 		function show360ElementsVisibility() {
 			unMuteButton.style.display = "block";
-			document.querySelector('a-scene').style.display = "block";
-		}
-
-		function hide360ElementsVisibility() {
-			document.querySelector('a-scene').style.display = "none";
 		}
 
 		function playWebRTCVideo() {
@@ -505,7 +503,6 @@
 					hls.on(Hls.Events.ERROR, function (event, data) {
 						if (data.fatal) {
 							console.log("There is an error with chunks");
-							hide360ElementsVisibility();
 							tryToPlay(streamId, token, extension, subscriberId, subscriberCode, hlsNoStreamCallback);
 						}
 					});
