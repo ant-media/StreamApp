@@ -3,88 +3,17 @@
 <head>
 	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 	<title>Ant Media Server WebRTC/HLS/DASH Player</title>
-	
 	<script src="js/fetch.js"></script>
 	<script src="js/promise.min.js"></script>
 	<script src="js/external/adapter-latest.js"></script>
 
 	<link href="css/player.css" rel="stylesheet">
-
-	<script type="module">
-		//This part is implemented to speed up opening the player
-		import { getUrlParameter } from "./js/fetch.stream.js";
-		var playOrder = getUrlParameter("playOrder");
-		if (playOrder == null) {
-			playOrder = ["webrtc", "hls"];
-		}
-		else {
-			playOrder = playOrder.split(',');
-		}
-		//make play order global to let the other module access it
-		window.playOrder = playOrder;
-		
-
-		var head = document.getElementsByTagName('head')[0];
-		if (playOrder.includes("hls") || playOrder.includes("vod")) {
-			//include videojs -> js
-			
-			var js = document.createElement("script");
-			js.type = "text/javascript";
-			js.src = "js/external/video.js";
-			head.appendChild(js);
-
-			//include videojs -> css
-			var link = document.createElement("link");
-			link.rel = "stylesheet";
-			link.href = "css/external/video-js.css";
-			head.appendChild(link);
-		}
-
-		if (playOrder.includes("dash")) 
-		{
-			var js = document.createElement("script");
-			js.type = "text/javascript";
-			js.src = "js/external/dash.all.min.js";
-			head.appendChild(js);
-		}
-
-		var is360 = getUrlParameter("is360");
-		if (is360 == "true") {
-			var hlsJS = document.createElement("script");
-			hlsJS.type = "text/javascript";
-			hlsJS.src = "js/external/hls.js";
-			head.appendChild(hlsJS);
-			
-			var aframeJS = document.createElement("script");
-			aframeJS.type = "text/javascript";
-			aframeJS.src = "js/external/aframe.min.js";
-			
-
-			aframeJS.onload = function() {
-				var aScene = document.createElement("a-scene");
-				aScene.innerHTML = "<a-videosphere src=\"#remoteVideo\" rotation=\"0 180 0\" style=\"background-color: antiquewhite\"></a-videosphere>";
-				var body = document.getElementsByTagName('body')[0];
-				body.appendChild(aScene);
-			}
-			head.appendChild(aframeJS);
-			
-
-			is360 = true;
-		}
-		else {
-			is360 = false;
-		}
-
-		window.is360 = is360;
-	
-	</script>
-
 </head>
 
 <body>
 
 	<div id='video-overlay'>
-		<img src="images/loading.gif" />
+		<img src="images/loading.gif" alt="loading image" />
 	</div>
 
 	<div id="video_info">
@@ -137,6 +66,70 @@
 
 		import { WebRTCAdaptor } from "./js/webrtc_adaptor.js"
 		import { getUrlParameter, isMobile, tryToPlay, tryToVODPlay } from "./js/fetch.stream.js";
+		
+		var playOrder = getUrlParameter("playOrder");
+		if (playOrder == null) {
+			playOrder = ["webrtc", "hls"];
+		}
+		else {
+			playOrder = playOrder.split(',');
+		}
+		//make play order global to let the other module access it
+		window.playOrder = playOrder;
+		
+		var head = document.getElementsByTagName('head')[0];
+		if (playOrder.includes("hls") || playOrder.includes("vod")) {
+			//include videojs -> js
+			
+			var js = document.createElement("script");
+			js.type = "text/javascript";
+			js.src = "js/external/video.js";
+			head.appendChild(js);
+
+			//include videojs -> css
+			var link = document.createElement("link");
+			link.rel = "stylesheet";
+			link.href = "css/external/video-js.css";
+			head.appendChild(link);
+		}
+
+		if (playOrder.includes("dash")) 
+		{
+			var js = document.createElement("script");
+			js.type = "text/javascript";
+			js.src = "js/external/dash.all.min.js";
+			head.appendChild(js);
+		}
+
+		var is360 = getUrlParameter("is360");
+		if (is360 == "true") {
+			var hlsJS = document.createElement("script");
+			hlsJS.type = "text/javascript";
+			hlsJS.src = "js/external/hls.js";
+			head.appendChild(hlsJS);
+			
+			var aframeJS = document.createElement("script");
+			aframeJS.type = "text/javascript";
+			aframeJS.src = "js/external/aframe.min.js";
+
+			aframeJS.onload = function() {
+				var aScene = document.createElement("a-scene");
+				aScene.innerHTML = "<a-videosphere src=\"#remoteVideo\" rotation=\"0 180 0\" style=\"background-color: antiquewhite\"></a-videosphere>";
+				var body = document.getElementsByTagName('body')[0];
+				body.appendChild(aScene);
+			}
+			head.appendChild(aframeJS);
+			
+
+			is360 = true;
+		}
+		else {
+			is360 = false;
+		}
+
+		window.is360 = is360;
+		
+		
 
 
 		var streamId = getUrlParameter("id");
@@ -754,8 +747,11 @@
 			}
 		}
 
-
-		main();
+		window.addEventListener('load', function() {
+			//run main method after everything is loaded
+    		main();
+		});
+		
 	</script>
 
 </body>
