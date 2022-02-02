@@ -31,7 +31,8 @@
 
   <body class="animate__animated animate__fadeIn animate__fast">
 
-    <header class="chat-active">
+
+    <!-- header class="chat-active">
       <div class="container-fluid">
         <div class="row">
           <div class="col-3 col-sm-4">
@@ -40,12 +41,12 @@
           <div class="offset-4 col-5 col-sm-4">
             <div class="icons">
               <span><a href="#" data-toggle="modal" data-target="#shareUrlLocationModal" onClick="getWindowLocation()" ><img src="images/icons/share.svg"></a></span>
-              <!--<span><a href="javascript:;"><img src="images/icons/settings.svg"></a></span>-->
+              <span><a href="javascript:;"><img src="images/icons/settings.svg"></a></span>
             </div>
           </div>
         </div>
       </div>
-    </header>
+    </header-->
 
     <div class="viewer-content chat-active">
       <div class="publisher-screen">
@@ -63,11 +64,12 @@
       <div class="container-fluid">
         <div class="row">
           <div class="col-sm-12 col-md-3">
-            <div class="room-name"><span id="date"></span> | <span id="roomName"></span></div>
+            <div class="room-name">            
+            <span></span><img class="logo-compact" src="images/ant-media-emblem.svg"></span>
+            <span id="date"></span> | <span id="roomName"></span></div>
           </div>
           <div class="col-sm-12 col-md-6">
             <div class="icons">
-              <span><a href="javascript:;" id="fullscreen_button"><img src="images/icons/fullscreen.svg"></a></span>
               <span>
                 <a href="javascript:;" id="turn_off_camera_button" class="camera-on active"><img
                     src="images/icons/camera-on.svg"></a>
@@ -171,6 +173,7 @@
     var subscriberCode = getUrlParameter("subscriberCode");
     var isChatActive = false;
     var isPlaying = false;
+    var fullScreenId = -1;
 
     if(roomName == null){
       roomName="room1";
@@ -241,8 +244,8 @@
       });
     });
 
-    var fullscreen_button = document.getElementById("fullscreen_button");
-    fullscreen_button.addEventListener("click", fullscreenLocalCamera,false)
+    //var fullscreen_button = document.getElementById("fullscreen_button");
+    //fullscreen_button.addEventListener("click", fullscreenLocalCamera,false)
 
     var turn_off_camera_button = document.getElementById("turn_off_camera_button");
     turn_off_camera_button.addEventListener("click", turnOffLocalCamera,false)
@@ -495,25 +498,8 @@ function createRemoteVideo(streamId) {
     document.getElementsByClassName('persons')[0].className = "persons";
     document.getElementsByClassName('viewer-content')[0].className = "publisher-content chat-active";
   }
-
-  if(streamIdList.length == 1){
-    document.getElementsByClassName('publisher-content')[0].className = "publisher-content chat-active one-user";
-  }
-
-  if(streamIdList.length == 2){
-    document.getElementsByClassName('publisher-content')[0].className = "publisher-content chat-active two-user";
-  }
-
-  if(streamIdList.length == 3){
-    document.getElementsByClassName('publisher-content')[0].className = "publisher-content chat-active there-user";
-  }
-
-  if(streamIdList.length == 4){
-    document.getElementsByClassName('publisher-content')[0].className = "publisher-content chat-active four-user";
-  }
-
-  if(streamIdList.length > 4){
-    document.getElementsByClassName('publisher-content')[0].className = "publisher-content chat-active multi-user";
+  if(fullScreenId == -1) {  
+    doLayout(streamIdList.length);
   }
 
   if(isChatActive){
@@ -522,16 +508,72 @@ function createRemoteVideo(streamId) {
 
 }
 
+function doLayout(playerCount) {
+   if(streamIdList.length >= 1 && document.getElementsByClassName('publisher-screen')[0] != null ){
+    document.getElementsByClassName('publisher-screen')[0].className = "me-small-screen";
+    document.getElementsByClassName('persons')[0].className = "persons";
+    document.getElementsByClassName('viewer-content')[0].className = "publisher-content chat-active";
+  }
+
+  if(playerCount == 1){
+    document.getElementsByClassName('publisher-content')[0].className = "publisher-content chat-active one-user";
+  }
+
+  if(playerCount == 2){
+    document.getElementsByClassName('publisher-content')[0].className = "publisher-content chat-active two-user";
+  }
+
+  if(playerCount == 3){
+    document.getElementsByClassName('publisher-content')[0].className = "publisher-content chat-active there-user";
+  }
+
+  if(playerCount == 4){
+    document.getElementsByClassName('publisher-content')[0].className = "publisher-content chat-active four-user";
+  }
+
+  if(playerCount > 4){
+    document.getElementsByClassName('publisher-content')[0].className = "publisher-content chat-active multi-user-3column";
+  }
+
+  if(playerCount > 9){
+    document.getElementsByClassName('publisher-content')[0].className = "publisher-content chat-active multi-user-4column";
+  }
+
+  if(playerCount > 12){
+    document.getElementsByClassName('publisher-content')[0].className = "publisher-content chat-active multi-user-5column";
+  }
+}
+
+function makeFullScreen(divId) {
+    if(fullScreenId == divId) {
+	  document.getElementById(divId).classList.remove("selected");
+      document.getElementById(divId).classList.add("unselected");
+      fullScreenId = -1;
+      doLayout(streamIdList.length);
+    }
+	else {
+      document.getElementsByClassName('publisher-content')[0].className = "publisher-content chat-active fullscreen-layout";
+	  if(fullScreenId != -1) {
+        document.getElementById(fullScreenId).classList.remove("selected");
+        document.getElementById(fullScreenId).classList.add("unselected");
+      }
+      document.getElementById(divId).classList.remove("unselected");
+      document.getElementById(divId).classList.add("selected");
+      fullScreenId = divId;
+	}
+}
+
 function generateStreamCol(streamId){
   var streamName = getStreamName(streamId);
   console.log(streamId+" ==> "+streamName);
   const div = document.createElement('div');
-  div.className = "col";
+  div.className = "col unselected";
   div.id="streamId"+streamId;
-  div.innerHTML = "<div class=\"person\">"
-    +"<video id=\"remoteVideo"+streamId+"\" class=\"screen\" autoplay controls playsinline></video>"
-    +"<div class=\"overlay\">"+streamName+"</div>"
-    + "</div>"
+  div.innerHTML = "<div class='person'>"
+    +"<video id='remoteVideo"+streamId+"' class='screen' autoplay playsinline></video>"
+    +"<div class='overlay'><span>"+streamName+"   </span>"
+    +"<span><a href=\"javascript:window.makeFullScreen('streamId"+streamId+"');\"><img src='images/icons/fullscreen.svg'></a></span>"
+    +"</div></div>"
   document.getElementById('players').appendChild(div);
 }
 
@@ -554,20 +596,8 @@ function removeRemoteVideo(streamId) {
       }
     }
 
-    if(streamIdList.length == 1){
-      document.getElementsByClassName('publisher-content')[0].className = "publisher-content chat-active one-user";
-    }
-    
-    if(streamIdList.length == 2){
-      document.getElementsByClassName('publisher-content')[0].className = "publisher-content chat-active two-user";
-    }
-    
-    if(streamIdList.length == 3){
-      document.getElementsByClassName('publisher-content')[0].className = "publisher-content chat-active three-user";
-    }
-
-    if(streamIdList.length == 4){
-      document.getElementsByClassName('publisher-content')[0].className = "publisher-content chat-active four-user";
+    if(fullScreenId == -1) {  
+      doLayout(streamIdList.length);
     }
 
     if(document.getElementsByClassName('publisher-content')[0] != null && isChatActive){
@@ -608,7 +638,16 @@ function checkTrackStatus(streamIdList){
   });
 }
 
-
+/*/testttt
+var i = 1;
+setInterval(() => {			
+        generateStreamCol("stream"+i);
+        if(fullScreenId == -1) {
+            doLayout(i);
+		}
+		i++;
+    }, 3000);
+*/
 var appName = location.pathname.substring(0, location.pathname
  .lastIndexOf("/") + 1);
 var path = location.hostname + ":" + location.port + appName + "websocket";
@@ -801,6 +840,7 @@ function copyWindowLocation(){
 
 window.getWindowLocation = getWindowLocation
 window.copyWindowLocation = copyWindowLocation
+window.makeFullScreen = makeFullScreen 
 </script>
 
 </html>

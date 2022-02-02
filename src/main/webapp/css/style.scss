@@ -1174,7 +1174,7 @@ address {
 
     .publisher-content {
         position: relative;
-        padding-top: 105px;
+        padding-top: 15px;
         margin-bottom: 195px;
         width: 100%;
         padding-right: 15px;
@@ -1187,7 +1187,7 @@ address {
 
         &.one-user {
             height: 100%;
-            padding-top: 80px;
+            padding-top: 15px;
             padding-bottom: 87px;
             padding-right: 0;
             padding-left: 0;
@@ -1229,7 +1229,7 @@ address {
 
         &.two-user {
             height: 100%;
-            padding-top: 80px;
+            padding-top: 15px;
             padding-bottom: 87px;
             padding-right: 15px;
             padding-left: 15px;
@@ -1284,7 +1284,7 @@ address {
 
         &.three-user {
             height: 100%;
-            padding-top: 80px;
+            padding-top: 15px;
             padding-bottom: 87px;
             padding-right: 15px;
             padding-left: 15px;
@@ -1344,7 +1344,7 @@ address {
 
         &.four-user {
             height: 100%;
-            padding-top: 120px;
+            padding-top: 15px;
             padding-bottom: 87px;
             padding-right: 15px;
             padding-left: 15px;
@@ -1381,22 +1381,17 @@ address {
 
         }
 
-        &.multi-user {
-
-
+        &.multi-user-3column {
             @media (max-width: 575.98px) {
                 padding-top: 72px;
             }
-
             .persons {
                 padding-bottom: 210px;
 
                 @media (max-width: 575.98px) {
                     padding-bottom: 150px;
                 }
-
                 .row {
-
                     .col {
                         flex: 0 0 33.333333%;
                         max-width: 33.333333%;
@@ -1405,11 +1400,91 @@ address {
                             min-width: 100%;
                         }
                     }
-
                     .person {
                         height: 24vh;
                     }
                 }
+            }
+        }
+        
+        &.multi-user-4column {
+            @media (max-width: 575.98px) {
+                padding-top: 72px;
+            }
+            .persons {
+                padding-bottom: 210px;
+
+                @media (max-width: 575.98px) {
+                    padding-bottom: 150px;
+                }
+                .row {
+                    .col {
+                        flex: 0 0 25%;
+                        max-width: 25%;
+
+                        @media (max-width: 575.98px) {
+                            min-width: 100%;
+                        }
+                    }
+                    .person {
+                        height: 24vh;
+                    }
+                }
+            }
+        }
+        
+        &.multi-user-5column {
+            @media (max-width: 575.98px) {
+                padding-top: 72px;
+            }
+            .persons {
+                padding-bottom: 210px;
+
+                @media (max-width: 575.98px) {
+                    padding-bottom: 150px;
+                }
+                .row {
+                    .col {
+                        flex: 0 0 20%;
+                        max-width: 20%;
+
+                        @media (max-width: 575.98px) {
+                            min-width: 100%;
+                        }
+                    }
+                    .person {
+                        height: 24vh;
+                    }
+                }
+            }
+        }
+        
+        &.fullscreen-layout {
+            height: 100%;
+            .persons {
+            height: 100%;   
+            padding-bottom: 80px;
+                .row {
+                     height: 100%;
+                    .col {
+                        height: 100%;
+                    }
+                    .person {
+                        height: 100%;
+                    }
+                }
+            }
+            .unselected {
+                display: none;
+                visibility: hidden;
+            }
+            .selected {
+                width: 100%;
+                height: 100%;
+            }
+            .person {
+                height: 100%;
+                width: 100%;
             }
 
         }
@@ -1423,7 +1498,6 @@ address {
                 overflow: hidden;
                 height: 400px;
                 margin-bottom: 30px;
-                background-color: $secondary-color;
                 box-shadow: 0px 0px 14px 0px rgba(0, 0, 0, 0.15);
 
                 @media (max-width: 1429.98px) {
@@ -1577,7 +1651,7 @@ address {
         position: fixed;
         bottom: 0;
         left: 0;
-        padding: 20px;
+        padding: 5px;
         box-shadow: 0px -14px 50px 5px rgba(0, 0, 0, 0.34);
         background-color: white;
         z-index: 99;
@@ -1589,7 +1663,7 @@ address {
         .room-name {
             font-size: 20px;
             font-weight: 600;
-            margin-top: 21px;
+            margin-top: 7px;
             line-height: 18px;
 
 
@@ -1898,6 +1972,6 @@ address {
     transform:translate(-50%, -50%);
 
     color: white; background: #666666; opacity: .5;
-    z-index:100;
+    z-index:10;
 
 }
