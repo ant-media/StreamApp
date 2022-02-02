@@ -1311,7 +1311,8 @@ export class WebRTCAdaptor
 			if (!this.playStreamId.includes(streamId))
 			{
 				if(this.localStream != null) {
-					this.remotePeerConnection[streamId].addStream(this.localStream);
+					//AddStream is deprecated thus updated to the addTrack after version 2.4.2.1
+					this.localStream.getTracks().forEach(track => this.remotePeerConnection[streamId].addTrack(track, this.localStream));
 				}
 			}
 			this.remotePeerConnection[streamId].onicecandidate = event => {
