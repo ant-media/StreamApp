@@ -513,22 +513,50 @@ export class WebRTCAdaptor
 		}
 		//If it started with playOnly mode and wants to publish now
 		else if(this.localStream == null){
-			this.navigatorUserMedia(this.mediaConstraints, (stream => {
-				this.gotStream(stream);
-				var jsCmd = {
-					command : "publish",
-					streamId : streamId,
-					token : token,
-					subscriberId: typeof subscriberId !== undefined ? subscriberId : "" ,
-					subscriberCode: typeof subscriberCode !== undefined ? subscriberCode : "",
-					streamName : typeof streamName !== undefined ? streamName : "" ,
-					mainTrack : typeof mainTrack !== undefined ? mainTrack : "" ,				
-					video: this.localStream.getVideoTracks().length > 0 ? true : false,
-					audio: this.localStream.getAudioTracks().length > 0 ? true : false,
-					metaData: metaData,
-				};
-				this.webSocketAdaptor.send(JSON.stringify(jsCmd));
-			}), false);
+			if(this.publishMode == "camera"){
+				this.navigatorUserMedia(this.mediaConstraints, (stream => {
+					this.gotStream(stream);
+					var jsCmd = {
+						command : "publish",
+						streamId : streamId,
+						token : token,
+						subscriberId: typeof subscriberId !== undefined ? subscriberId : "" ,
+						subscriberCode: typeof subscriberCode !== undefined ? subscriberCode : "",
+						streamName : typeof streamName !== undefined ? streamName : "" ,
+						mainTrack : typeof mainTrack !== undefined ? mainTrack : "" ,				
+						video: this.localStream.getVideoTracks().length > 0 ? true : false,
+						audio: this.localStream.getAudioTracks().length > 0 ? true : false,
+						metaData: metaData,
+					};
+					this.webSocketAdaptor.send(JSON.stringify(jsCmd));
+				}), false);
+			}
+			else if(this.publishMode == "screen"){
+				navigator.mediaDevices.getDisplayMedia(this.mediaConstraints)
+				.then(stream =>{
+				
+					this.gotStream(stream);
+					var jsCmd = {
+						command : "publish",
+						streamId : streamId,
+						token : token,
+						subscriberId: typeof subscriberId !== undefined ? subscriberId : "" ,
+						subscriberCode: typeof subscriberCode !== undefined ? subscriberCode : "",
+						streamName : typeof streamName !== undefined ? streamName : "" ,
+						mainTrack : typeof mainTrack !== undefined ? mainTrack : "" ,				
+						video: this.localStream.getVideoTracks().length > 0 ? true : false,
+						audio: this.localStream.getAudioTracks().length > 0 ? true : false,
+						metaData: metaData,
+					};
+					this.webSocketAdaptor.send(JSON.stringify(jsCmd));
+				})
+				.catch(error => {
+					if (error.name === "NotAllowedError") {
+						console.debug("Permission denied error");
+						this.callbackError("ScreenSharePermissionDenied");
+					}
+				});
+			}
 		} 
 		else{
 			var jsCmd = {
