@@ -3722,6 +3722,31 @@ address {
 .room .publisher-content.active .me-small-screen {
   right: 26%;
 }
+.room .local-video-content .me-small-screen {
+  position: fixed;
+  bottom: 98px;
+  right: 10px;
+  z-index: 999;
+}
+@media (max-width: 575.98px) {
+  .room .local-video-content .me-small-screen {
+    bottom: 72px;
+  }
+}
+.room .local-video-content .me-small-screen video {
+  width: 200px;
+  height: auto;
+  box-shadow: 0px 0px 14px 0px rgba(0, 0, 0, 0.5);
+  border: white 4px solid;
+}
+@media (max-width: 575.98px) {
+  .room .local-video-content .me-small-screen video {
+    width: 120px;
+  }
+}
+.room .local-video-content.active .me-small-screen {
+  right: 26%;
+}
 .room .viewer-content {
   position: relative;
   padding-top: 89px;

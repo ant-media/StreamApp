@@ -30,6 +30,20 @@
   </head>
 
   <body class="animate__animated animate__fadeIn animate__fast">
+      <div class="container h-100" id="entrance-screen">
+        <div class="row h-100 justify-content-center align-items-center">
+          <form class="col-md-auto col-md-6">
+            <div class="logo"><img src="images/ant-media-logo.svg"></div>
+            <div class="logo-text">CONFERENCE CALL</div>
+            <p>Start a video conference call now with Ant Media!</p>
+            <div class="form-group">
+              <label for="formGroupExampleInput">Your Name</label>
+              <input type="text" class="form-control" id="streamNameInput" value="Guest">
+            </div>
+            <a id="enterButton" href="javascript:;" class="btn btn-primary">Login</a>
+          </form>   
+        </div>
+      </div>
 
 
     <!-- header class="chat-active">
@@ -48,16 +62,17 @@
       </div>
     </header-->
 
-    <div class="viewer-content chat-active">
-      <div class="publisher-screen">
-        <video id="localVideo" class="screen" autoplay muted playsinline></video>
+    <div class="local-video-content">
+      <div class="me-small-screen">
+        <video id="localVideo" class="screen" autoplay="" muted="" playsinline=""></video>
       </div>
+    </div>
 
+    <div class="publisher-content chat-active" id="conference-screen" style="display:none;">
       <div class="persons d-none">
         <div class="row" id="players">
         </div>
       </div>
-
     </div>
 
     <footer class="chat-active">
@@ -88,7 +103,7 @@
                     src="images/icons/screen-share-on.svg"></a>
               </span>
               <span><a href="#" class="chat-on"><img src="images/icons/chat.svg"></a></span>
-              <span><a href="conference-enter.html"><img src="images/icons/close-call.svg"></a></span>
+              <span><a href="javascript:;" id="close_call_button"><img src="images/icons/close-call.svg"></a></span>
             </div>
           </div>
         </div>
@@ -184,6 +199,9 @@
       streamName="Guest";
     }
 
+    document.getElementById("streamNameInput").value = streamName;
+
+
     if(playOnly == null) {
       playOnly = false;
     }
@@ -262,6 +280,14 @@
     var send = document.getElementsByClassName('send')[0];
     send.addEventListener("click", sendData, false);
 
+
+    var enter_button = document.getElementById("enterButton");
+    enter_button.addEventListener("click", enter, false);
+
+    var close_call_button = document.getElementById("close_call_button");
+    close_call_button.addEventListener("click", exit, false);
+    
+
     var roomOfStream = new Array();
     var streamIdList = new Array();
     var streamDetailsList = new Array();
@@ -273,15 +299,26 @@
     var isChatActive = false;
     var roomTimerId = -1;
 
-    function fullscreenLocalCamera() {
-     var localVideo = document.getElementById('localVideo');
-     if (localVideo.requestFullscreen) 
-      localVideo.requestFullscreen();
-    else if (localVideo.webkitRequestFullscreen) 
-      localVideo.webkitRequestFullscreen();
-    else if (localVideo.msRequestFullScreen) 
-      localVideo.msRequestFullScreen();
-  }
+    function enter() {
+      streamName = document.getElementById("streamNameInput").value;
+
+      joinRoom();
+
+      var conferenceDiv = document.getElementById("conference-screen");
+      conferenceDiv.style.display="block";
+
+      var entranceDiv = document.getElementById("entrance-screen");
+      entranceDiv.style.display="none";
+    }
+
+    function exit() {
+      leaveRoom();
+      var conferenceDiv = document.getElementById("conference-screen");
+      conferenceDiv.style.display="none";
+
+      var entranceDiv = document.getElementById("entrance-screen");
+      entranceDiv.style.display="block";
+    }
 
   function startScreenShare() {
     webRTCAdaptor.switchDesktopCapture(publishStreamId);
@@ -439,12 +476,6 @@ function joinRoom() {
 
 function leaveRoom() {
   webRTCAdaptor.leaveFromRoom(roomName);
-
-  for (var node in document.getElementById("players").childNodes) {
-   if(node.tagName == 'DIV' && node.id != "localVideo") {
-    document.getElementById("players").removeChild(node);
-  }
-}
 }
 
 function publish(publishStreamId, token, subscriberId, subscriberCode, streamName) {
@@ -493,11 +524,6 @@ function createRemoteVideo(streamId) {
 
   generateStreamCol(streamId);
 
-  if(streamIdList.length >= 1 && document.getElementsByClassName('publisher-screen')[0] != null ){
-    document.getElementsByClassName('publisher-screen')[0].className = "me-small-screen";
-    document.getElementsByClassName('persons')[0].className = "persons";
-    document.getElementsByClassName('viewer-content')[0].className = "publisher-content chat-active";
-  }
   if(fullScreenId == -1) {  
     doLayout(streamIdList.length);
   }
@@ -505,14 +531,11 @@ function createRemoteVideo(streamId) {
   if(isChatActive){
     document.getElementsByClassName('publisher-content')[0].classList.add("active");
   }
-
 }
 
 function doLayout(playerCount) {
-   if(streamIdList.length >= 1 && document.getElementsByClassName('publisher-screen')[0] != null ){
-    document.getElementsByClassName('publisher-screen')[0].className = "me-small-screen";
+   if(streamIdList.length >= 1){
     document.getElementsByClassName('persons')[0].className = "persons";
-    document.getElementsByClassName('viewer-content')[0].className = "publisher-content chat-active";
   }
 
   if(playerCount == 1){
@@ -588,11 +611,9 @@ function removeRemoteVideo(streamId) {
     streamIdList.splice(streamIdIndex, 1);
 
     if(streamIdList.length == 0){
-      document.getElementsByClassName('publisher-content')[0].className = "viewer-content chat-active";
-      document.getElementsByClassName('me-small-screen')[0].className = "publisher-screen";
       document.getElementsByClassName('persons')[0].className = "persons d-none";
       if(isChatActive){
-        document.getElementsByClassName('viewer-content')[0].classList.add("active");
+        document.getElementsByClassName('publisher-content')[0].classList.add("active");
       }
     }
 
@@ -669,7 +690,6 @@ var webRTCAdaptor = new WebRTCAdaptor(
   callback : (info, obj) => {
    if (info == "initialized") {
     console.log("initialized");
-    webRTCAdaptor.joinRoom(roomName, publishStreamId);
   } 
   else if (info == "joinedTheRoom") {
     var room = obj.ATTR_ROOM_NAME;
@@ -733,6 +753,7 @@ var webRTCAdaptor = new WebRTCAdaptor(
 		streamsList = new Array();
     streamDetailsList = new Array();
 		isPlaying = false;
+    publishStreamId = null;
   } 
   else if (info == "closed") {
     if (typeof obj != "undefined") {
