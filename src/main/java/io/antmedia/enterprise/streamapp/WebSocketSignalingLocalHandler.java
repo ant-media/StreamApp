@@ -31,7 +31,7 @@ public class WebSocketSignalingLocalHandler {
     WebSocketCommunityHandler handler;
     private String userAgent = "N/A";
 
-    protected static Logger logger = LoggerFactory.getLogger(WebSocketLocalHandler.class);
+    protected static Logger logger = LoggerFactory.getLogger(WebSocketSignalingLocalHandler.class);
 
     @OnOpen
     public void onOpen(Session session, EndpointConfig config) {
