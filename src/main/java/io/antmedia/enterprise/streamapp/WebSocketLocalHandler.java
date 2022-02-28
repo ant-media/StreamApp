@@ -108,7 +108,7 @@ public class WebSocketLocalHandler {
 			handler.setUserAgent(userAgent);
 		} catch (Exception e) {
 			logger.error("WebSocket handler cannot be created");
-			logger.error(ExceptionUtils.getMessage(e));
+			logger.error(ExceptionUtils.getStackTrace(e));
 		} 
 	}
 
