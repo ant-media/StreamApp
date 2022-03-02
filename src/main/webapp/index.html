@@ -93,7 +93,7 @@ video {
 				<label class=" mr-2" for="inlineFormCustomSelectPref">Max Video Bitrate(Kbps):</label>
 				<div class="form-inline">
 					<input type="text" class="form-control  mr-sm-2"
-							id="maxBandwidthTextBox" name="maxBandwidthTextBox" >
+							id="maxBandwidthTextBox" name="maxBandwidthTextBox" value="900">
 				  
 					<button type="button" class="btn btn-outline-primary btn-sm" id="max_bandwidth_apply" >Apply</button>
 				</div>
@@ -193,34 +193,15 @@ video {
 			$("#streamId").val("stream1");
 		}
 	  }
-	  
-	  $("#maxBandwidthTextBox").val(maxVideoBitrateKbps);
-	  $("#max_bandwidth_apply").click(function() {
-		var bitrateBoxValue = $("#maxBandwidthTextBox").val();
-		if(bitrateBoxValue == "unlimited" || bitrateBoxValue == NaN){
-			maxVideoBitrateKbps = "unlimited"
-			console.log("input bitrate: " + maxVideoBitrateKbps);
-			webRTCAdaptor.changeBandwidth(maxVideoBitrateKbps,  $("#streamId").val());
-		}
-		else{
-			var bitrate = parseInt(bitrateBoxValue);
-			if (bitrate == NaN || bitrate < 100 || bitrate > 2500) {
-				maxVideoBitrateKbps = 900;
-			}
-			else {
-				maxVideoBitrateKbps = bitrate;
-			}
-			console.log("input bitrate: " + maxVideoBitrateKbps);
-			$("#maxBandwidthTextBox").val(maxVideoBitrateKbps)
-			if (webRTCAdaptor != null) {
-				webRTCAdaptor.changeBandwidth(maxVideoBitrateKbps,  $("#streamId").val());
-			}
-		}
-	  })
     }
 	$(function() {
 		init();
 	});
+
+	var max_bandwidth_input = document.getElementById("maxBandwidthTextBox");
+
+	var max_bandwidth_apply = document.getElementById("max_bandwidth_apply");
+	max_bandwidth_apply.addEventListener("click", setBitrateValue, false);
 
 	var maxVideoBitrateKbps = 900;
 	var subscriberId = getUrlParameter("subscriberId");
@@ -276,6 +257,33 @@ video {
        		}
    		}
     }
+
+    function setBitrateValue(){
+
+			var bitrateBoxValue = max_bandwidth_input.value;
+
+			if(bitrateBoxValue == "unlimited" || bitrateBoxValue == NaN){
+				maxVideoBitrateKbps = "unlimited"
+				console.log("input bitrate: " + maxVideoBitrateKbps);
+			}
+			else{
+				var bitrate = parseInt(bitrateBoxValue);
+				if (bitrate == NaN || bitrate < 100 || bitrate > 2500) {
+					maxVideoBitrateKbps = 900;
+				}
+				else {
+					maxVideoBitrateKbps = bitrate;
+				}
+				console.log("input bitrate: " + maxVideoBitrateKbps);
+			}
+
+			// Check stream is publishing
+			// If it's publishing then call changeBandwidth function
+			if (start_publish_button.disabled) {
+				webRTCAdaptor.changeBandwidth(maxVideoBitrateKbps,  $("#streamId").val());
+			}
+
+		}
 
     let meterRefresh = null;
 
@@ -353,6 +361,8 @@ video {
     }
 
 	function startPublishing() {
+		setBitrateValue();
+		webRTCAdaptor.bandwidth = maxVideoBitrateKbps;
 		streamId = streamIdBox.value;
 		webRTCAdaptor.publish(streamId, token, subscriberId, subscriberCode, streamName, mainTrack);
 	}
