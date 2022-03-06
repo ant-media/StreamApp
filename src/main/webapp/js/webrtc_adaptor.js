@@ -47,6 +47,8 @@ export class WebRTCAdaptor
 		this.publishStreamId = null;
 		this.blackFrameTimer = null;
 		this.idMapping = new Array();
+		this.deviceArray = new Array();
+		this.inputDeviceBusyQueue = 0;
 
 
 		var threshold = 0.08;
@@ -220,12 +222,12 @@ export class WebRTCAdaptor
 	}
 	getDevices(){
 		navigator.mediaDevices.enumerateDevices().then(devices => {
-			let deviceArray = new Array();
+			this.deviceArray = new Array();
 			let checkAudio = false
 			let checkVideo = false
 			devices.forEach(device => {	
 				if (device.kind == "audioinput" || device.kind == "videoinput") {
-					deviceArray.push(device);
+					this.deviceArray.push(device);
 					if(device.kind=="audioinput"){
 						checkAudio = true;
 					}
@@ -234,7 +236,7 @@ export class WebRTCAdaptor
 					}
 				}
 			});
-			this.callback("available_devices", deviceArray);
+			this.callback("available_devices", this.deviceArray);
 			if(checkAudio == false && this.localStream == null){
 				console.log("Audio input not found")
 				console.log("Retrying to get user media without audio")
@@ -325,7 +327,12 @@ export class WebRTCAdaptor
 		navigator.mediaDevices.getUserMedia(mediaConstraints).then(func).catch(error => {
 			if (error.name == "NotFoundError"){
 				this.getDevices()
-			}else{
+			}
+			if (error.name == "NotReadableError"){
+				this.callbackError(error.name, error.message);
+				this.tryNextAvailableDevice();
+			}
+			else{
 				this.callbackError(error.name, error.message);
 			}
 			});
@@ -333,6 +340,38 @@ export class WebRTCAdaptor
 			navigator.mediaDevices.getUserMedia(mediaConstraints).then(func)
 		}
 	}
+
+	tryNextAvailableDevice(){
+
+		var videoDeviceCount = 0;
+		var videoDeviceArray = new Array();
+
+		// Count all video input devices
+		this.deviceArray.forEach(function(device) {
+			if (device.kind == "videoinput") {
+					videoDeviceCount++;
+					videoDeviceArray.push(device);
+			}
+		});
+
+		// If all devices are busy then it should exit queue
+		if(this.inputDeviceBusyQueue+1 == videoDeviceCount){ //
+			this.callbackError("NotFoundError");
+			return;
+		}
+
+		for (let i = 0; i < videoDeviceCount; i++) {
+			if(i == this.inputDeviceBusyQueue ){
+				this.inputDeviceBusyQueue++;
+				console.log(videoDeviceArray[i].label + " video device is busy");
+
+				console.log("Switching video device to " + videoDeviceArray[i+1].label);
+				this.callback("device_changed", videoDeviceArray[i+1].deviceId);
+				break;
+			}
+		}
+
+	}	
 
 	/**
 	 * Get user media
@@ -953,10 +992,10 @@ export class WebRTCAdaptor
 	 */
 	switchVideoCameraCapture(streamId, deviceId, onEndedCallback) 
 	{
+
 		//stop the track because in some android devices need to close the current camera stream
-		var videoTrack = this.localStream.getVideoTracks()[0];
-		if (videoTrack) {
-			videoTrack.stop();
+		if (this.localStream != null && this.localStream.getVideoTracks()[0] != null ) {
+			this.localStream.getVideoTracks()[0].stop();
 		}
 		else {
 		   console.warn("There is no video track in local stream");
@@ -973,7 +1012,6 @@ export class WebRTCAdaptor
 							this.mediaConstraints.video.deviceId = { exact: deviceId };
 						else 
 							this.mediaConstraints.video = { deviceId: { exact: deviceId } };
-						this.setVideoCameraSource(streamId, this.mediaConstraints, null, true, deviceId);
 						break;
 					}
 				}
@@ -1019,7 +1057,7 @@ export class WebRTCAdaptor
 			this.localStream.addTrack(newAudioTrack);
 		}
 		else{
-			this.localStream = stream;
+			this.localStream = stream
 		}
 		
 
@@ -1089,6 +1127,9 @@ export class WebRTCAdaptor
 	 setVideoCameraSource(streamId, mediaConstraints, onEndedCallback, stopDesktop) 
 	 {
 		 this.navigatorUserMedia(mediaConstraints, stream => {
+			 //Video tracks should apply firstly
+		 	 this.updateVideoTrack(stream, streamId, mediaConstraints, onEndedCallback, stopDesktop);
+
 			 //Why did we update also the audio track here?
 			 //This audio track update is necessary for such a case:
 			 //If you enable screen share with browser audio and then 
@@ -1096,10 +1137,7 @@ export class WebRTCAdaptor
 			 //If, we don't update audio with the following lines, 
 			 //the mixed (mic+browser) audio would be streamed in the camera mode.
 			 
-			 stream = this.setGainNodeStream(stream);
 			 this.updateAudioTrack(stream, streamId, mediaConstraints, onEndedCallback);
- 
-			 this.updateVideoTrack(stream, streamId, mediaConstraints, onEndedCallback, stopDesktop);
 		 }, true);
 	 }
 	

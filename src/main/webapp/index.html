@@ -366,9 +366,12 @@ video {
 	}
 	
   	function switchVideoMode(chbx) {
-  		if(chbx.value == "screen") {
-			  //webRTCAdaptor.switchDesktopWithMicAudio(streamId);
-			  webRTCAdaptor.switchDesktopCapture(streamId);
+		//If video device changes manually, then inputDeviceBusyQueue should reset. 
+  		webRTCAdaptor.inputDeviceBusyQueue = 0;
+  		
+		if(chbx.value == "screen") {
+			//webRTCAdaptor.switchDesktopWithMicAudio(streamId);
+			webRTCAdaptor.switchDesktopCapture(streamId);
   		}
   		else if(chbx.value == "screenwithcamera"){
 			webRTCAdaptor.switchDesktopCaptureWithCamera(streamId);
@@ -733,6 +736,15 @@ video {
 						stop_publish_button.disabled = false;
 						startAnimation();
 						console.log(info + "notification received");
+					}
+					else if (info == "device_changed") {
+
+						webRTCAdaptor.checkWebSocketConnection();
+						//obj mean current video device id
+						webRTCAdaptor.switchVideoCameraCapture(streamId, obj);
+
+						$(":radio[value="+obj+"]").prop("checked", true);
+						
 					}
 					else {
 						console.log( info + " notification received");
