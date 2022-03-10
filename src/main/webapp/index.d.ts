@@ -1,0 +1,1 @@
+declare module '@antmedia/webrtc_adaptor'
