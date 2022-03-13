@@ -45,23 +45,6 @@
         </div>
       </div>
 
-
-    <!-- header class="chat-active">
-      <div class="container-fluid">
-        <div class="row">
-          <div class="col-3 col-sm-4">
-            <div class="logo"><img class="logo-full" src="images/ant-media-video-call.svg"><img class="logo-compact" src="images/ant-media-emblem.svg"></div>
-          </div>
-          <div class="offset-4 col-5 col-sm-4">
-            <div class="icons">
-              <span><a href="#" data-toggle="modal" data-target="#shareUrlLocationModal" onClick="getWindowLocation()" ><img src="images/icons/share.svg"></a></span>
-              <span><a href="javascript:;"><img src="images/icons/settings.svg"></a></span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </header-->
-
     <div class="local-video-content">
       <div class="me-small-screen">
         <video id="localVideo" class="screen" autoplay="" muted="" playsinline=""></video>
@@ -321,8 +304,8 @@
     }
 
   function startScreenShare() {
-    webRTCAdaptor.switchDesktopCapture(publishStreamId);
     isScreenSharing = true;
+    webRTCAdaptor.switchDesktopCapture(publishStreamId);
     handleScreenShareButtons();
   }
 
@@ -330,9 +313,15 @@
     if(isScreenSharing) {
       isScreenSharing = false;
       handleScreenShareButtons();
-      if(!isCameraOff) {
-        webRTCAdaptor.switchVideoCameraCapture(publishStreamId);
-      }
+    }
+
+    if(!isCameraOff) {
+      webRTCAdaptor.switchVideoCameraCapture(publishStreamId);
+    }
+    else{
+      webRTCAdaptor.turnOffLocalCamera(publishStreamId);
+      isCameraOff = true;
+      handleCameraButtons();
     }
   }
 
@@ -385,13 +374,18 @@
  }
 
  function turnOffLocalCamera() {
-  webRTCAdaptor.turnOffLocalCamera(publishStreamId);
   isCameraOff = true;
-  handleCameraButtons();
-  sendNotificationEvent("CAM_TURNED_OFF");
+  if(!isScreenSharing){
+    webRTCAdaptor.turnOffLocalCamera(publishStreamId);
+    handleCameraButtons();
+    sendNotificationEvent("CAM_TURNED_OFF");
+  }
 }
 
 function turnOnLocalCamera() {
+
+  handleScreenShareButtons();
+
   webRTCAdaptor.turnOnLocalCamera(publishStreamId);
   isCameraOff = false;
   handleCameraButtons();
@@ -659,16 +653,6 @@ function checkTrackStatus(streamIdList){
   });
 }
 
-/*/testttt
-var i = 1;
-setInterval(() => {			
-        generateStreamCol("stream"+i);
-        if(fullScreenId == -1) {
-            doLayout(i);
-		}
-		i++;
-    }, 3000);
-*/
 var appName = location.pathname.substring(0, location.pathname
  .lastIndexOf("/") + 1);
 var path = location.hostname + ":" + location.port + appName + "websocket";
