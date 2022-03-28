@@ -11,7 +11,7 @@
 
 	<context:annotation-config />
 	<!-- Defines a properties file for dereferencing variables -->
-	<context:property-placeholder location="/WEB-INF/ant-web.properties"/>
+	<context:property-placeholder location="/WEB-INF/ant-media-web.properties"/>
 
 	<!--- S3 Recording info -->
 	<bean id="app.storageClient" class="io.antmedia.storage.AmazonS3StorageClient">
