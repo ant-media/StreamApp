@@ -1104,12 +1104,12 @@ export class MediaManager
 	getVideoSender(streamId) 
 	{
 		var videoSender = null;
-		if ((adapter.browserDetails.browser === 'chrome' ||
+		if (typeof adapter !== "undefined" && adapter !== null && ((adapter.browserDetails.browser === 'chrome' ||
 				(adapter.browserDetails.browser === 'firefox' ||
 					adapter.browserDetails.browser === 'safari' &&
 						adapter.browserDetails.version >= 64)) &&
 						'RTCRtpSender' in window &&
-						'setParameters' in window.RTCRtpSender.prototype)
+						'setParameters' in window.RTCRtpSender.prototype))
 		{
 			videoSender = this.getSender(streamId, "video");
 
