@@ -119,6 +119,12 @@ export class MediaManager
 		  * Check enableAudioLevelWhenMuted
 		  */
 		 this.mutedAudioStream = null;
+
+		 /**
+		  * This flag is the status of audio stream
+		  * Checking when the audio stream is updated
+		  */
+		 this.isMuted = false;
 		 
 		 /**
 		  * meter refresh period for "are you talking?" check
@@ -787,7 +793,6 @@ export class MediaManager
 		else{
 			this.localStream = stream;
 		}
-		
 
 		if (this.localVideo != null) 
 		{   //it can be null
@@ -799,6 +804,14 @@ export class MediaManager
 				onEndedCallback(event);
 			}
 		}
+
+		if(this.isMuted){
+			this.muteLocalMic();
+		}
+		else{
+			this.unmuteLocalMic();
+		}
+
 	}
 	
 	/**
@@ -1074,6 +1087,7 @@ export class MediaManager
 	  */
 	muteLocalMic() 
 	{
+		this.isMuted = true;
 		if (this.localStream != null) {
 			this.localStream.getAudioTracks().forEach(track => track.enabled = false);
 		}
@@ -1090,6 +1104,7 @@ export class MediaManager
 	 */
 	unmuteLocalMic() 
 	{
+		this.isMuted = false;
 		if (this.localStream != null) {
 			this.localStream.getAudioTracks().forEach(track => track.enabled = true);
 		}
