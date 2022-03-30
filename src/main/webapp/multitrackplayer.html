@@ -152,9 +152,7 @@ body {
 		var enabledTracks = [];
 		tracks.forEach(function(trackId) {
 			var checkBox = document.getElementById("cbx"+trackId);
-			if(checkBox.checked) {
-				enabledTracks.push(trackId);
-			}
+			enabledTracks.push((checkBox.checked?"":"!")+trackId);
 		});
 		
 		streamId = streamNameBox.value;
@@ -173,7 +171,8 @@ body {
 	var pc_config = {
 			'iceServers' : [ {
 				'urls' : 'stun:stun1.l.google.com:19302'
-			} ]
+			} ],
+			sdpSemantics: 'unified-plan'
 		};
 
 	var sdpConstraints = {
@@ -224,7 +223,7 @@ body {
 							+ JSON.stringify(obj));
 				}
 			} else if (info == "newStreamAvailable") {
-				playVideoTrack(obj);
+				playVideo(obj);
 			}
 			else if (info == "updated_stats") {
 				//obj is the PeerStats which has fields
@@ -281,40 +280,57 @@ body {
 		webRTCAdaptor.enableTrack(streamNameBox.value, trackId, checkBox.checked);
 	}
 	
-	function playVideoTrack(obj) {
-		var index = "0";
-		var label = obj.track.label;
+	function playVideo(obj) {
+		var room = streamNameBox.value;
+		console.log("new stream available with id: "
+				+ obj.streamId + "on the room:" + room);
+		
+		var index;			
 		if(obj.track.kind == "video") {
-			index = label.replace("ARDAMSv", "");
+			index = obj.track.id.replace("ARDAMSv", "");
 		}
 		else if(obj.track.kind == "audio") {
-			index = label.replace("ARDAMSa", "");
+			index = obj.track.id.replace("ARDAMSa", "");
 		}
-		else {
-			console.error("unknown track kind:"+obj.track.kind);
+
+		if(index == room) {
+			return;
 		}
-		
+
 		var video = document.getElementById("remoteVideo"+index);
-		
+
 		if (video == null) {
 			createRemoteVideo(index);
 			video = document.getElementById("remoteVideo"+index);
+			video.srcObject = new MediaStream();	
 		}
 
-		if(obj.track.kind == "audio") {
-			video.srcObject = obj.stream;			
-		}
-		else {
-			video.srcObject = new MediaStream([obj.track]);			
-		}
+		video.srcObject.addTrack(obj.track)
+
+		obj.track.onended = event => {
+			video.srcObject.removeTrack(event.currentTarget);
+			if(video.srcObject.getTracks().length == 0) {
+				removeRemoteVideo(index);
+			}
+		};
 	}
 	
-	function createRemoteVideo(index) {
-		var player = document.createElement("div"); 
-		player.className = "col-sm-6";
-		player.id = "player"+index;
-		player.innerHTML = '<video id="remoteVideo'+index+'" autoplay controls playsinline></video>'+'video:'+index;
+	function createRemoteVideo(streamId) {
+		var player = document.createElement("div");
+		player.className = "col-sm-12";
+		player.id = "player"+streamId;
+		player.innerHTML = '<video id="remoteVideo'+streamId+'"controls autoplay playsinline></video>'+streamId;
 		document.getElementById("players").appendChild(player);
+	}
+
+	function removeRemoteVideo(streamId) {
+		var video = document.getElementById("remoteVideo"+streamId);
+		if (video != null) {
+			var player = document.getElementById("player" + streamId);
+			video.srcObject = null;
+			document.getElementById("players").removeChild(player);
+		}
+		//webRTCAdaptor.stop(streamId);
 	}
 
 	$(function() {

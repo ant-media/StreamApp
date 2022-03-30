@@ -335,8 +335,8 @@ video {
 						console.log("iceConnectionState Changed: ",JSON.stringify(obj));
 					}
 					else if (info == "data_received") {
-						console.log("Data received: " + obj.event.data + " type: " + obj.event.type + " for stream: " + obj.streamId);
-						$("#dataMessagesTextarea").append("Received: " + obj.event.data + "\r\n");
+						console.log("Data received: " + obj.data + " type: " + obj.type + " for stream: " + obj.streamId);
+						$("#dataMessagesTextarea").append("Received: " + obj.data + "\r\n");
 					}
 					else {
 						console.log( info + " notification received");

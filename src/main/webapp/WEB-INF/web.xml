@@ -20,6 +20,12 @@
 		<listener-class>org.red5.logging.ContextLoggingListener
 		</listener-class>
 	</listener>
+	
+	<context-param>
+        <param-name>logbackDisableServletContainerInitializer</param-name>
+        <param-value>true</param-value>
+    </context-param>
+	
 
 	<listener>
 		<listener-class>io.antmedia.filter.TokenSessionFilter</listener-class>
@@ -134,6 +140,11 @@
 	<mime-mapping>
 		<extension>m4s</extension>
 		<mime-type>video/iso.segment</mime-type>
+	</mime-mapping>
+	
+	<mime-mapping>
+		<extension>mjs</extension>
+		<mime-type>text/javascript</mime-type>
 	</mime-mapping>
 
 	<filter>

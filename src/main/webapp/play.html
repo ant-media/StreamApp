@@ -1,28 +1,20 @@
 <!DOCTYPE html>
 <html>
-
 <head>
 	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-	<title>Ant Media Server WebRTC/HLS Player</title>
-
-	<script src="js/external/aframe.min.js"></script>
-	<script src="js/external/hls.js"></script>
-
-	<!-- videojs includes  -->
-	<link href="css/external/video-js.css" rel="stylesheet">
-	<script src="js/external/video.js"></script>
-	<!--  end of video js includes  -->
-
+	<title>Ant Media Server WebRTC/HLS/DASH Player</title>
 	<script src="js/fetch.js"></script>
 	<script src="js/promise.min.js"></script>
 	<script src="js/external/adapter-latest.js"></script>
-	<script src="js/external/dash.all.min.js"></script>
 
 	<link href="css/player.css" rel="stylesheet">
-
 </head>
 
 <body>
+
+	<div id='video-overlay'>
+		<img src="images/loading.gif" alt="loading image" />
+	</div>
 
 	<div id="video_info">
 		Stream will start playing automatically<br />when it is live
@@ -46,10 +38,8 @@
 
 	<video id="remoteVideo" controls playsinline></video>
 
-	<!-- 360 player -->
-	<a-scene style="display:none">
-		<a-videosphere src="#remoteVideo" rotation="0 180 0" style="background-color: antiquewhite"></a-videosphere>
-	</a-scene>
+	<!-- 360 player is added dynamically -->
+	
 
 	<div id="networkWarning">Your connection isn't fast enough to play this stream!</div>
 	<img id="play_button" src="images/play.png" onclick="playWebRTCVideo()"
@@ -79,8 +69,7 @@
 
 		import { WebRTCAdaptor } from "./js/webrtc_adaptor.js"
 		import { getUrlParameter, isMobile, tryToPlay, tryToVODPlay } from "./js/fetch.stream.js";
-
-		//The play order, player tries to play according to this order, if it can not play then tries following format
+		
 		var playOrder = getUrlParameter("playOrder");
 		if (playOrder == null) {
 			playOrder = ["webrtc", "hls"];
@@ -88,6 +77,63 @@
 		else {
 			playOrder = playOrder.split(',');
 		}
+		//make play order global to let the other module access it
+		window.playOrder = playOrder;
+		
+		var head = document.getElementsByTagName('head')[0];
+		if (playOrder.includes("hls") || playOrder.includes("vod")) {
+			//include videojs -> js
+			
+			var js = document.createElement("script");
+			js.type = "text/javascript";
+			js.src = "js/external/video.js";
+			head.appendChild(js);
+
+			//include videojs -> css
+			var link = document.createElement("link");
+			link.rel = "stylesheet";
+			link.href = "css/external/video-js.css";
+			head.appendChild(link);
+		}
+
+		if (playOrder.includes("dash")) 
+		{
+			var js = document.createElement("script");
+			js.type = "text/javascript";
+			js.src = "js/external/dash.all.min.js";
+			head.appendChild(js);
+		}
+
+		var is360 = getUrlParameter("is360");
+		if (is360 == "true") {
+			var hlsJS = document.createElement("script");
+			hlsJS.type = "text/javascript";
+			hlsJS.src = "js/external/hls.js";
+			head.appendChild(hlsJS);
+			
+			var aframeJS = document.createElement("script");
+			aframeJS.type = "text/javascript";
+			aframeJS.src = "js/external/aframe.min.js";
+
+			aframeJS.onload = function() {
+				var aScene = document.createElement("a-scene");
+				aScene.innerHTML = "<a-videosphere src=\"#remoteVideo\" rotation=\"0 180 0\" style=\"background-color: antiquewhite\"></a-videosphere>";
+				var body = document.getElementsByTagName('body')[0];
+				body.appendChild(aScene);
+			}
+			head.appendChild(aframeJS);
+			
+
+			is360 = true;
+		}
+		else {
+			is360 = false;
+		}
+
+		window.is360 = is360;
+		
+		
+
 
 		var streamId = getUrlParameter("id");
 		if (streamId == null) {
@@ -135,18 +181,23 @@
 		var dashExtension = "mpd";
 		var subscriberId = getUrlParameter("subscriberId");
 		var subscriberCode = getUrlParameter("subscriberCode");
-		var is360 = getUrlParameter("is360");
-
-		if (is360 == "true") {
-			is360 = true;
-		}
-		else {
-			is360 = false;
-		}
 
 		var unMuteButton = document.getElementById("unmuteButton");
 		var placeHolder = document.getElementById("video_info");
 		var player = document.getElementById("remoteVideo");
+
+		var iceConnected = false;
+
+
+		//This function creates a-scene elements only if is360 parameter is true.
+		//This makes a-scene doesn't run in the background if it is not needed.
+		function createVrVideo() {
+			var vrScene = document.createElement("a-scene");
+			vrScene.style.display = "none";
+			vrScene.innerHTML = '<a-videosphere src="#remoteVideo" rotation="0 180 0" style="background-color: antiquewhite"></a-videosphere>';
+			var remoteVideoNode = document.getElementById("remoteVideo");
+			remoteVideoNode.parentNode.insertBefore(vrScene, remoteVideoNode.nextSibling);
+		}
 
 		// This function mutes or unmutes the 360 video stream.
 		// This is necessary because the browser doesn't allow videos to be played automatically and unmuted by default.
@@ -172,11 +223,24 @@
 			placeHolder.innerHTML = "Stream will start playing automatically<br/>when it is live" + '<div><img id="logo" src="images/logo.png" ></image></div>';
 			setTimeout(function () {
 				var index = playOrder.indexOf(currentTech);
-				if (index == -1 || index == (playOrder.length - 1)) {
-					index = 0;
+
+				if (currentTech == "webrtc") {
+					if (!iceConnected) {
+						if (index == -1 || index == (playOrder.length - 1)) {
+							index = 0;
+						}
+						else {
+							index++;
+						}
+					}
 				}
 				else {
-					index++;
+					if (index == -1 || index == (playOrder.length - 1)) {
+						index = 0;
+					}
+					else {
+						index++;
+					}
 				}
 
 				var tech = playOrder[index];
@@ -246,11 +310,6 @@
 
 		function show360ElementsVisibility() {
 			unMuteButton.style.display = "block";
-			document.querySelector('a-scene').style.display = "block";
-		}
-
-		function hide360ElementsVisibility() {
-			document.querySelector('a-scene').style.display = "none";
 		}
 
 		function playWebRTCVideo() {
@@ -337,7 +396,11 @@
 				if (extension != dashExtension) {
 
 					player = videojs('video-player', {
-						poster: "previews/" + preview + ".png"
+						poster: "previews/" + preview + ".png",
+						liveui: true,
+						liveTracker: {
+							trackingThreshold: 0
+						},
 					});
 
 					videojs.Hls.xhr.beforeRequest = function (options) {
@@ -345,12 +408,22 @@
 						return options;
 					};
 
-					player.src({
-						src: "streams/" + streamId + "." + extension,
-						type: type,
-						withCredentials: true,
+					if (token != null || typeof token != "undefined") {
+						player.src({
+							src: "streams/" + streamId + "." + extension + "?token=" + token,
+							type: type,
+							withCredentials: true,
 
-					});
+						});
+					}
+					else {
+						player.src({
+							src: "streams/" + streamId + "." + extension,
+							type: type,
+							withCredentials: true,
+
+						});
+					}
 
 					player.poster("previews/" + preview + ".png");
 
@@ -426,7 +499,6 @@
 					hls.on(Hls.Events.ERROR, function (event, data) {
 						if (data.fatal) {
 							console.log("There is an error with chunks");
-							hide360ElementsVisibility();
 							tryToPlay(streamId, token, extension, subscriberId, subscriberCode, hlsNoStreamCallback);
 						}
 					});
@@ -478,7 +550,7 @@
 						});
 					});
 				}
-				
+
 			}
 			else if (is360) {
 				setHLSElementsVisibility(false);
@@ -530,7 +602,7 @@
 				websocketURL = "wss://" + path;
 			}
 
-			var iceConnected = false;
+			iceConnected = false;
 
 			//webRTCAdaptor is a global variable
 			webRTCAdaptor = new WebRTCAdaptor({
@@ -549,7 +621,7 @@
 					}
 					else if (info == "streamInformation") {
 						console.log("stream information");
-						webRTCAdaptor.play(streamId, token, subscriberId, subscriberCode);
+						webRTCAdaptor.play(streamId, token, "",[] ,subscriberId, subscriberCode);
 					}
 					else if (info == "play_started") {
 						//joined the stream
@@ -567,8 +639,7 @@
 						//1. stream is really finished 
 						//2. ice connection cannot be established and server reports play_finished event
 						//check that publish may start again
-						if (iceConnected) 
-						{
+						if (iceConnected) {
 							//webrtc connection was successful and try to play again with webrtc
 							setTimeout(function () {
 								webRTCAdaptor.getStreamInfo(streamId);
@@ -607,6 +678,14 @@
 							//it means the ice connection has been established
 							iceConnected = true;
 						}
+					}
+					else if (info == "resolutionChangeInfo") {
+						console.log("Resolution is changed to " + description["streamHeight"]);
+						let getVideo = document.getElementById("remoteVideo");
+						let overlay = document.getElementById('video-overlay');
+						getVideo.pause();
+						overlay.style.display = "block";
+						setTimeout(function () { getVideo.play(); overlay.style.display = "none"; }, 2000);
 					}
 
 				},
@@ -671,7 +750,11 @@
 			}
 		}
 
-		main();
+		window.addEventListener('load', function() {
+			//run main method after everything is loaded
+    		main();
+		});
+		
 	</script>
 
 </body>
