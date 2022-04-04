@@ -131,10 +131,10 @@ export class MediaManager
 		  */
 		 this.meterRefresh = null;
 
-		 	/**
+		 /**
 		 * For keeping track of whether user turned off the camera
 		 */
-		this.cameraEnabled = false;
+		 this.cameraEnabled = true;
 
 		/**
 		 * html video element that presents local stream
@@ -1046,6 +1046,7 @@ export class MediaManager
 			 else{
 				choosenId = this.publishStreamId;
 			 }
+			 this.cameraEnabled = false;
 			 this.updateVideoTrack(this.replacementStream, choosenId, null, true);
 		 }
 		 else {
@@ -1086,6 +1087,7 @@ export class MediaManager
 				else{
 					choosenId = this.publishStreamId;
 				}
+				this.cameraEnabled = true;
 				this.updateVideoTrack(stream, choosenId, null, true);
 			}, false);
 		}
