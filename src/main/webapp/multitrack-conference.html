@@ -108,7 +108,7 @@ body {
 	</div>
 
 	<div class="jumbotron">
-		<div id="players">
+		<div id="players" class="row">
 			<div class="col-sm-3">
 				<video id="localVideo" autoplay muted controls playsinline></video>
 				<div style="margin-top:10px;" class="col-sm-8 col-sm-offset-2">Microphone Gain: <input type=range id=volume_change_input min=0 max=1 value=1 step=0.01></div>
@@ -117,18 +117,18 @@ body {
 
 
 
-		<div class="row">
+		<div class="row" style="padding: 15px;">
 			<div class="col-sm-8 offset-sm-2">
-				<p>
+				<div style="padding:5px" class="form-check form-check-inline col-sm-10" >
 					<input type="text" class="form-control" value="room1"
 						   id="roomName" placeholder="Type room name">
-				</p>
-				<p>
+				</div>
+				<div style="padding:5px">
 					<button class="btn btn-primary" disabled
 							id="join_publish_button">Join Room</button>
 					<button class="btn btn-primary" disabled
 							id="stop_publish_button">Leave Room</button>
-				</p>
+				</div>
 
 				<div style="padding:10px">
 					<button id="turn_off_camera_button" class="btn btn-outline-primary"  >Turn off Camera</button>
@@ -338,13 +338,13 @@ body {
 
 	function sendData() {
 		try {
-			var iceState = webRTCAdaptor.iceConnectionState(streamId);
+			var iceState = webRTCAdaptor.iceConnectionState(publishStreamId);
             if (iceState != null && iceState != "failed" && iceState != "disconnected") {
             
 				var msg = $("#dataTextbox").val();
 				var notEvent = { streamId: publishStreamId, eventType:"CHAT_MESSAGE", message:msg };
 
-				webRTCAdaptor.sendData(streamId, JSON.stringify(notEvent));
+				webRTCAdaptor.sendData(publishStreamId, JSON.stringify(notEvent));
 				$("#all-messages").append("Sent: " + msg+ "<br>");
 				$("#dataTextbox").val("");
 			}
@@ -419,7 +419,7 @@ body {
 
 	function publish(streamId, token) {
 		publishStreamId = streamId;
-		webRTCAdaptor.publish(publishStreamId, token, "", "", streamName, roomNameBox.value);
+		webRTCAdaptor.publish(publishStreamId, token, "", "", streamName, roomNameBox.value,"{someKey:somveValue}");
 	}
 
 	function streamInformation(obj) {
@@ -431,15 +431,9 @@ body {
 		console.log("new stream available with id: "
 				+ obj.streamId + "on the room:" + room);
 		
-		var index;			
-		if(obj.track.kind == "video") {
-			index = obj.track.id.replace("ARDAMSv", "");
-		}
-		else if(obj.track.kind == "audio") {
-			index = obj.track.id.replace("ARDAMSa", "");
-		}
+		var index = obj.trackId.substring("ARDAMSx".length);
 
-		if(index == room) {
+		if(index == room || index == publishStreamId) {
 			return;
 		}
 
@@ -453,9 +447,14 @@ body {
 
 		video.srcObject.addTrack(obj.track)
 
-		obj.track.onended = event => {
-			video.srcObject.removeTrack(event.currentTarget);
-			if(video.srcObject.getTracks().length == 0) {
+		obj.track.onmute = event => {
+			var remove = true;
+			video.srcObject.getTracks().forEach(function(item) {
+				if(!item.muted) {
+					remove = false;
+				}
+			});
+			if(remove) {
 				removeRemoteVideo(index);
 			}
 		};
@@ -509,7 +508,9 @@ body {
 			'iceServers' : [ {
 				'urls' : 'stun:stun1.l.google.com:19302'
 			} ],
-			sdpSemantics: 'plan-b'
+			sdpSemantics: 'unified-plan'
+			//sdpSemantics: 'plan-b'
+
 		};
 
 	var sdpConstraints = {
@@ -662,6 +663,11 @@ body {
 					} 
 					else if(info == "data_received") {
 						handleNotificationEvent(obj);
+					}
+					else if(info == "session_restored"){
+						handleCameraButtons();
+						startAnimation();
+						console.log(info + "notification received");
 					}
 				},
 				callbackError : function(error, message) {
