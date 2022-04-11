@@ -60,6 +60,17 @@
 		<filter-name>HlsStatisticsFilter</filter-name>
 		<url-pattern>/streams/*</url-pattern>
 	</filter-mapping>
+
+	<filter>
+		<filter-name>DashStatisticsFilter</filter-name>
+		<filter-class>io.antmedia.filter.DashStatisticsFilter</filter-class>
+		<async-supported>true</async-supported>
+	</filter>
+	<filter-mapping>
+		<filter-name>DashStatisticsFilter</filter-name>
+		<url-pattern>/streams/*</url-pattern>
+	</filter-mapping>
+	
 	<filter>
 		<filter-name>CorsFilter</filter-name>
 		<filter-class>io.antmedia.filter.CorsHeaderFilter</filter-class>
