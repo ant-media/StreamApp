@@ -1455,6 +1455,7 @@ export class WebRTCAdaptor
 	changeBandwidth(bandwidth, streamId) {this.mediaManager.changeBandwidth(bandwidth, streamId);};
 	enableAudioLevelWhenMuted() {this.mediaManager.enableAudioLevelWhenMuted()};
 	disableAudioLevelWhenMuted() {this.mediaManager.disableAudioLevelWhenMuted()};
+	closeStream() {this.mediaManager.closeStream()};
 }
 
 
