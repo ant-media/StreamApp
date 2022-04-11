@@ -71,10 +71,14 @@
 		 	<param-name>cors.allowed.methods</param-name>
 		 	<param-value>GET,POST,HEAD,OPTIONS,PUT,DELETE</param-value>
 		 </init-param>
+		 
+		 <!-- cors.allowed.origins -> * and credentials are not supported at the same time.  
+		 If you set to cors.allowed.origins to specific domains and support credentials open the below lines
 		 <init-param>
             <param-name>cors.support.credentials</param-name>
             <param-value>true</param-value>
          </init-param>
+         -->
 		 <init-param>
 		 	<param-name>cors.allowed.headers</param-name>
             <param-value>Accept, Origin, X-Requested-With, Access-Control-Request-Headers, Content-Type, Access-Control-Request-Method, Authorization</param-value>
@@ -159,6 +163,16 @@
 	<filter-mapping>
 		<filter-name>RestJWTAuthenticationFilter</filter-name>
 		<url-pattern>/rest/*</url-pattern>
+	</filter-mapping>
+
+	<filter>
+		<filter-name>RestProxyFilter</filter-name>
+		<filter-class>io.antmedia.rest.RestProxyFilter</filter-class>
+		<async-supported>true</async-supported>
+	</filter>
+	<filter-mapping>
+		<filter-name>RestProxyFilter</filter-name>
+		<url-pattern>/rest/v2/broadcasts/*</url-pattern>
 	</filter-mapping>
 
 	<filter>
