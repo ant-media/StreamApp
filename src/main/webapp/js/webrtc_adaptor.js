@@ -1440,6 +1440,11 @@ export class WebRTCAdaptor
 	getVideoSender(streamId) { 
 		return this.mediaManager.getVideoSender(streamId); 
 	}
+
+  closeStream() {
+    this.mediaManager.closeStream();
+  };
+
 }
 
 
