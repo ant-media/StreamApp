@@ -1014,34 +1014,6 @@ export class WebRTCAdaptor
 		});
 	};
 
-	/**
-	 * Called internally to get the video sender of the published stream.
-	 * 	 streamId: unique id for the stream 
-	 */
-	getVideoSender(streamId) 
-	{
-		var videoSender = null;
-		if ((adapter.browserDetails.browser === 'chrome' ||
-				(adapter.browserDetails.browser === 'firefox' ||
-					adapter.browserDetails.browser === 'safari' &&
-						adapter.browserDetails.version >= 64)) &&
-						'RTCRtpSender' in window &&
-						'setParameters' in window.RTCRtpSender.prototype)
-		{
-			if (this.remotePeerConnection[streamId] != null) {
-				const senders = this.remotePeerConnection[streamId].getSenders();
-
-				for (let i = 0; i < senders.length; i++) {
-					if (senders[i].track != null && senders[i].track.kind == "video") {
-						videoSender = senders[i];
-						break;
-					}
-				}
-			}
-
-		}
-		return videoSender;
-	}
 
 	/**
 	* Toggle video track on the server side.
@@ -1452,10 +1424,27 @@ export class WebRTCAdaptor
 	switchAudioInputSource(streamId, deviceId) {this.mediaManager.switchAudioInputSource(streamId, deviceId);}
 	setVolumeLevel(volumeLevel) {this.mediaManager.setVolumeLevel(volumeLevel);}
 	enableAudioLevelForLocalStream(levelCallback, period) {this.mediaManager.enableAudioLevelForLocalStream(levelCallback, period);}
-	changeBandwidth(bandwidth, streamId) {this.mediaManager.changeBandwidth(bandwidth, streamId);};
-	enableAudioLevelWhenMuted() {this.mediaManager.enableAudioLevelWhenMuted()};
-	disableAudioLevelWhenMuted() {this.mediaManager.disableAudioLevelWhenMuted()};
-	closeStream() {this.mediaManager.closeStream()};
+	
+	changeBandwidth(bandwidth, streamId) {
+		this.mediaManager.changeBandwidth(bandwidth, streamId);
+	}
+	
+	enableAudioLevelWhenMuted() {
+		this.mediaManager.enableAudioLevelWhenMuted();
+	}
+	
+	disableAudioLevelWhenMuted() {
+		this.mediaManager.disableAudioLevelWhenMuted(); 
+	}
+	
+	getVideoSender(streamId) { 
+		return this.mediaManager.getVideoSender(streamId); 
+	}
+
+  closeStream() {
+    this.mediaManager.closeStream();
+  };
+
 }
 
 
