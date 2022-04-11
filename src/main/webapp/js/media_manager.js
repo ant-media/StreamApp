@@ -520,9 +520,9 @@ export class MediaManager
 		if (this.previousAudioTrack) {
 			this.previousAudioTrack.stop();
 		}		
-		if(soundLevelProviderId != -1) {
-			clearInterval(soundLevelProviderId);
-			soundLevelProviderId = -1;
+		if(this.soundLevelProviderId != -1) {
+			clearInterval(this.soundLevelProviderId);
+			this.soundLevelProviderId = -1;
 		}
 	}
 	
