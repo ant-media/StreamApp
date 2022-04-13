@@ -25,7 +25,7 @@ import io.antmedia.websocket.WebSocketCommunityHandler;
 import io.antmedia.websocket.WebSocketConstants;
 
 
-@ServerEndpoint(value="/signaling", configurator=AMSEndpointConfigurator.class)
+@ServerEndpoint(value="/websocket/signaling", configurator=AMSEndpointConfigurator.class)
 public class WebSocketSignalingLocalHandler {
 
     WebSocketCommunityHandler handler;
@@ -43,6 +43,7 @@ public class WebSocketSignalingLocalHandler {
 
         //increase max text buffer size - Chrome 90 requires
         session.setMaxTextMessageBufferSize(8192 * 10);
+        
     }
 
 
