@@ -30,6 +30,16 @@
 	<listener>
 		<listener-class>io.antmedia.filter.TokenSessionFilter</listener-class>
 	</listener>
+	<!--  Put RestProxyFilter to the top of the Filter list -->
+	<filter>
+		<filter-name>RestProxyFilter</filter-name>
+		<filter-class>io.antmedia.filter.RestProxyFilter</filter-class>
+		<async-supported>true</async-supported>
+	</filter>
+	<filter-mapping>
+		<filter-name>RestProxyFilter</filter-name>
+		<url-pattern>/rest/v2/broadcasts/*</url-pattern>
+	</filter-mapping>
 
 	<filter>
 		<filter-name>TokenFilter</filter-name>
@@ -174,16 +184,6 @@
 	<filter-mapping>
 		<filter-name>RestJWTAuthenticationFilter</filter-name>
 		<url-pattern>/rest/*</url-pattern>
-	</filter-mapping>
-
-	<filter>
-		<filter-name>RestProxyFilter</filter-name>
-		<filter-class>io.antmedia.rest.RestProxyFilter</filter-class>
-		<async-supported>true</async-supported>
-	</filter>
-	<filter-mapping>
-		<filter-name>RestProxyFilter</filter-name>
-		<url-pattern>/rest/v2/broadcasts/*</url-pattern>
 	</filter-mapping>
 
 	<filter>
