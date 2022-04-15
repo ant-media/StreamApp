@@ -461,6 +461,8 @@ function handleNotificationEvent(obj) {
       console.log("Microphone muted for : ", eventStreamId);
     } else if (eventType == "MIC_UNMUTED"){
       console.log("Microphone unmuted for : ", eventStreamId);
+    } else if (eventType == "AUDIO_TRACK_ASSIGNMENT"){
+      console.log("Microphone unmuted for : ", eventStreamId);
     }
   }
 }
@@ -591,6 +593,11 @@ function generateStreamCol(streamId){
     +"<div class='overlay'><span>"+streamName+"   </span>"
     +"<span><a href=\"javascript:window.makeFullScreen('streamId"+streamId+"');\"><img src='images/icons/fullscreen.svg'></a></span>"
     +"</div></div>"
+   
+   if(streamId.startsWith("audioTrack")) {
+     div.style.display = "none";
+   }
+
   document.getElementById('players').appendChild(div);
 }
 
