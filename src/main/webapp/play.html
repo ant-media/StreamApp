@@ -74,6 +74,15 @@
 		else {
 			playOrder = playOrder.split(',');
 		}
+
+		var tryToReplay = getUrlParameter("tryToReplay");
+		if (tryToReplay == null || tryToReplay.toUpperCase() == "true".toUpperCase()) {
+			tryToReplay = true;
+		}
+		else{
+			tryToReplay = false;
+		}
+
 		//make play order global to let the other module access it
 		window.playOrder = playOrder;
 		
@@ -533,7 +542,9 @@
 							hideWebRTCElements();
 							setHLSElementsVisibility(false);
 							setPlaceHolderVisibility(true);
-							tryToPlay(streamId, token, extension, subscriberId, subscriberCode, hlsNoStreamCallback);
+							if(tryToReplay){
+								tryToPlay(streamId, token, extension, subscriberId, subscriberCode, hlsNoStreamCallback);
+							}
 						});
 					});
 				}
@@ -546,7 +557,9 @@
 					hideWebRTCElements();
 					setHLSElementsVisibility(false);
 					setPlaceHolderVisibility(true);
-					tryToPlay(streamId, token, extension, subscriberId, subscriberCode, hlsNoStreamCallback);
+					if(tryToReplay){
+						tryToPlay(streamId, token, extension, subscriberId, subscriberCode, hlsNoStreamCallback);
+					}
 				});
 				setWebRTCElementsVisibility(true);
 			}
