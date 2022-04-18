@@ -1182,6 +1182,28 @@ export class MediaManager
        		}
 	}
 
+    /**
+     * Applies the media constraints on fly.
+     *
+     * @param {*} constraints : mediaConstraints wanted to be applied
+     */
+    applyConstraints(constraints) {
+        if(this.localStream && constraints.video){
+            let videoTrack = this.localStream.getVideoTracks()[0];
+            videoTrack.applyConstraints(constraints.video).then(() => {
+                    console.log("New media constraints applied");
+                    this.callback("constraints_applied");
+                })
+                .catch(e => {
+                    // OverconstrainedError
+                    console.log("overconstr", e);
+                    this.callbackError(e.name, e.message);
+                });
+        } else {
+            console.log("There is no stream");
+        }
+    }
+
 	/**
 	 * Called by user
 	 * To create a sound meter for the local stream
