@@ -1200,7 +1200,7 @@ export class MediaManager
                     this.callbackError(e.name, e.message);
                 });
         } else {
-            console.log("There is no stream");
+			console.log("There is no stream on fly to apply the constraints");
         }
     }
 
