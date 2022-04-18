@@ -1196,7 +1196,7 @@ export class MediaManager
                 })
                 .catch(e => {
                     // OverconstrainedError
-                    console.log("overconstr", e);
+                    console.error("overconstr", e);
                     this.callbackError(e.name, e.message);
                 });
         } else {
