@@ -447,7 +447,7 @@ function handleMicButtons() {
 }
 
 function handleNotificationEvent(obj) {
-  console.log("Received data : ", obj.data);
+  //console.log("Received data : ", obj.data);
   var notificationEvent = JSON.parse(obj.data);
   if(notificationEvent != null && typeof(notificationEvent) == "object") {
     var eventStreamId = notificationEvent.streamId;
@@ -461,8 +461,15 @@ function handleNotificationEvent(obj) {
       console.log("Microphone muted for : ", eventStreamId);
     } else if (eventType == "MIC_UNMUTED"){
       console.log("Microphone unmuted for : ", eventStreamId);
-    } else if (eventType == "AUDIO_TRACK_ASSIGNMENT"){
-      console.log("Microphone unmuted for : ", eventStreamId);
+    } else if (eventType == "AUDIO_TRACK_ASSIGNMENT"){     
+      var assignments = notificationEvent.assignments;
+      
+      assignments.forEach(item => {
+        var trackId = item.trackId;
+        var audioLevel = item.audioLevel;
+        
+        console.log(trackId+" - "+audioLevel);
+      });
     }
   }
 }
