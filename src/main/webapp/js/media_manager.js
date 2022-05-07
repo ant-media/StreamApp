@@ -1203,6 +1203,15 @@ export class MediaManager
 			levelCallback(soundMeter.instant.toFixed(2));
 		}, period);
 	}
+	
+	/**
+	 * Called by user
+	 * To change media constraints on the fly
+	 * 
+	 */
+	applyConstraints(newConstaints) { 
+		return this.videoTrack.applyConstraints(newConstaints); 
+	}
 }
 
 
