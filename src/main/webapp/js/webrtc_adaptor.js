@@ -671,7 +671,11 @@ export class WebRTCAdaptor
 			if (!this.playStreamId.includes(streamId))
 			{
 				if(this.mediaManager.localStream != null) {
-					this.remotePeerConnection[streamId].addStream(this.mediaManager.localStream);
+					let pc = this.remotePeerConnection[streamId];
+					let stream = this.mediaManager.localStream;
+					stream.getTracks().forEach(function (track) {
+					  pc.addTrack(track, stream);
+					});
 				}
 			}
 			this.remotePeerConnection[streamId].onicecandidate = event => {
