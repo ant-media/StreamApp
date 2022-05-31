@@ -233,7 +233,7 @@
         </dependency>
         <dependency>
     			<groupId>org.glassfish.jersey.ext</groupId>
-    			<artifactId>jersey-spring4</artifactId>
+    			<artifactId>jersey-spring5</artifactId>
     			<version>${jersey.version}</version>
     			<scope>provided</scope>
 		</dependency>
