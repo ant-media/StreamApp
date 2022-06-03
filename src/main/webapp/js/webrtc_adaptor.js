@@ -1408,6 +1408,45 @@ export class WebRTCAdaptor
 		}
 		return sender;
 	}
+	
+	/**
+	 * Called by user
+	 * 
+	 * @param {*} videoTrackId : track id associated with pinned video
+	 * @param {*} streamId : streamId of the pinned video
+ 	 * @param {*} enabled : true | false
+	 * @returns 
+	 */
+	assignVideoTrack(videoTrackId, streamId, enabled) {
+		var jsCmd = {
+				command : "assignVideoTrackCommand",
+				streamId : streamId,
+				videoTrackId : videoTrackId,
+				enabled : enabled,
+		};
+
+		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
+	}
+	
+	/**
+	 * Called by user
+	 * video tracks may be less than the participants count
+	 * so these parameters are used for assigning video tracks to participants.
+	 * This message is used to make pagination in conference.
+	 *
+	 * @param {*} offset : start index for participant list to play
+	 * @param {*} size : number of the participants to play
+	 * @returns 
+	 */
+	updateVideoTrackAssignments(offset, size) {
+		var jsCmd = {
+				command : "updateVideoTrackAssignmentsCommand",
+				offset : offset,
+				size : size,
+		};
+
+		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
+	}
   
 
 	/**
