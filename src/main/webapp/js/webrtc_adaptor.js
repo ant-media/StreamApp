@@ -1485,8 +1485,8 @@ export class WebRTCAdaptor
     this.mediaManager.closeStream();
   };
   
-  applyConstraints(newConstaints) {
-      this.mediaManager.applyConstraints(newConstaints);
+  applyConstraints(streamId, newConstaints) {
+      this.mediaManager.applyConstraints(streamId, newConstaints);
   }
 
 }
