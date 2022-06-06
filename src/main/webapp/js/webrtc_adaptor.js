@@ -1438,8 +1438,9 @@ export class WebRTCAdaptor
 	 * @param {*} size : number of the participants to play
 	 * @returns 
 	 */
-	updateVideoTrackAssignments(offset, size) {
+	updateVideoTrackAssignments(streamId, offset, size) {
 		var jsCmd = {
+				streamId : streamId,
 				command : "updateVideoTrackAssignmentsCommand",
 				offset : offset,
 				size : size,
