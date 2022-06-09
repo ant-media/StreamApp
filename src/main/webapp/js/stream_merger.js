@@ -89,9 +89,10 @@ export class StreamMerger{
       videoElement = document.createElement('video');
       videoElement.autoplay = true;
       videoElement.muted = true;
+      videoElement.defaultMuted = true;
       videoElement.srcObject = mediaStream;
-      videoElement.setAttribute('style', 'position:fixed; left: 0px; top:0px; display: none pointer-events: none; opacity:0;');
-      document.body.appendChild(videoElement);
+      videoElement.setAttribute('style', 'position:absoulute; left: 0; top:0; display: block; width:1px; height:1px;');
+      document.body.prepend(videoElement);
 
       if (!stream.mute) {
         stream.audioSource = this.audioCtx.createMediaStreamSource(mediaStream)
