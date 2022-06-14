@@ -1,32 +1,35 @@
 name: publish Node.js Package
 
 on:
-  release:
-    types: [published]
+  push
+#:
+#     tags:
+#       - ams-v**
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v1
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
         with:
-          node-version: 12
+          node-version: '16.x'
       - run: yarn install
 
   publish-gpr:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v1
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
         with:
-          node-version: 12
-          registry-url: https://npm.pkg.github.com/
-          scope: '@ant-media'
+          node-version: '16.x'
+           # Setup .npmrc file to publish to npm
+          registry-url: 'https://registry.npmjs.org'
       - run: yarn install
       - run: git config --global user.email "$GITHUB_ACTOR@users.noreply.github.com" && git config --global user.name "$GITHUB_ACTOR"
       - run: yarn version --new-version $(echo ${{github.event.release.tag_name}} | cut -d v -f 2)
       - run: yarn publish
         env:
-          NODE_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
+          NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
+  
