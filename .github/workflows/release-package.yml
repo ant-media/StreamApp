@@ -7,17 +7,7 @@ on:
 #       - ams-v**
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-        with:
-          node-version: '16.x'
-      - run: yarn install
-
-  publish-gpr:
-    needs: build
+  publish-npmjs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -30,10 +20,9 @@ jobs:
         with:
           java-version: '11'
           distribution: 'adopt'
-      - run: yarn install
-      - run: git config --global user.email "$GITHUB_ACTOR@users.noreply.github.com" && git config --global user.name "$GITHUB_ACTOR"
-      - run: yarn version --new-version $(mvn -q -Dexec.executable="echo" -Dexec.args='${project.version}' --non-recursive exec:exec)
-      - run: yarn publish
+      - run: npm install
+      - run: npm version $(mvn -q -Dexec.executable="echo" -Dexec.args='${project.version}' --non-recursive exec:exec) --no-git-tag-version
+      - run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
   
