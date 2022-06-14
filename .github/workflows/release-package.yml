@@ -1,10 +1,9 @@
 name: publish Node.js Package
 
 on:
-  push
-#:
-#     tags:
-#       - ams-v**
+  push:
+    tags:
+      - ams-v**
 
 jobs:
   publish-npmjs:
