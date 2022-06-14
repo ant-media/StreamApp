@@ -28,7 +28,8 @@ jobs:
          registry-url: 'https://registry.npmjs.org'
       - uses: actions/setup-java@v3
         with:
-          java-version: '11' 
+          java-version: '11'
+          distribution: 'adopt'
       - run: yarn install
       - run: git config --global user.email "$GITHUB_ACTOR@users.noreply.github.com" && git config --global user.name "$GITHUB_ACTOR"
       - run: yarn version --new-version $(mvn -q -Dexec.executable="echo" -Dexec.args='${project.version}' --non-recursive exec:exec)
