@@ -9,6 +9,8 @@ on:
 jobs:
   publish-npmjs:
     runs-on: ubuntu-latest
+    env:
+      version: $(mvn -q -Dexec.executable="echo" -Dexec.args='${project.version}' --non-recursive exec:exec)
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
@@ -21,7 +23,8 @@ jobs:
           java-version: '11'
           distribution: 'adopt'
       - run: npm install
-      - run: npm version $(mvn -q -Dexec.executable="echo" -Dexec.args='${project.version}' --non-recursive exec:exec) --no-git-tag-version
+      - run: 
+      - run: npm version $version --no-git-tag-version
       - run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
