@@ -4,11 +4,8 @@
 <title>Ant Media Server WebRTC Multipeer Play</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta charset="UTF-8">
-<link rel="stylesheet"
-	href="css/external/bootstrap4/bootstrap.min.css"
-	>
+<link rel="stylesheet" href="css/external/bootstrap4/bootstrap.min.css">
 <script src="js/external/adapter-latest.js"></script>
-<script src="js/webrtc_adaptor.js" ></script>
 <link rel="stylesheet" href="css/common.css" />
 
 </head>
@@ -31,8 +28,8 @@
 			<input type="text" class="form-control" value="stream1" id="streamName"
 				placeholder="Type stream name"> <span
 				class="input-group-btn">
-				<button onclick="join()" class="btn btn-default" disabled id="join_button">Join</button>
-				<button onclick="leave()" class="btn btn-default" disabled id="leave_button">Leave</button>
+				<button class="btn btn-primary" disabled id="join_button">Join</button>
+				<button class="btn btn-primary" disabled id="leave_button">Leave</button>
 			</span>
 		</div>
 	</div>
@@ -41,10 +38,14 @@
     
     </script>
 </body>
-<script>
+<script type="module">
+	import {WebRTCAdaptor} from "./js/webrtc_adaptor.js"
 	
 	var join_button = document.getElementById("join_button");
+	join_button.addEventListener("click", join, false);
+
 	var leave_button = document.getElementById("leave_button");
+	leave_button.addEventListener("click", leave, false);
 
 
 	var streamNameBox = document.getElementById("streamName");
