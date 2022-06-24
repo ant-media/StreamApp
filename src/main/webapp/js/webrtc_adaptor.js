@@ -1448,6 +1448,23 @@ export class WebRTCAdaptor
 
 		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
 	}
+	
+	/**
+	 * Called by user
+	 * This message is used to set max video track count in a conference.
+	 *
+	 * @param {*} maxTrackCount : maximum video track count
+	 * @returns 
+	 */
+	setMaxVideoTrackCount(streamId, maxTrackCount) {
+		var jsCmd = {
+				streamId : streamId,
+				command : "setMaxVideoTrackCountCommand",
+				maxTrackCount : maxTrackCount,
+		};
+
+		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
+	}
   
 
 	/**
