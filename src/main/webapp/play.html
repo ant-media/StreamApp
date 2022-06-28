@@ -639,11 +639,11 @@
 							}
 						}
 					}
-					else if (info == "closed") {
-						//console.log("Connection closed");
-						if (typeof description != "undefined") {
-							console.log("Connecton closed: " + JSON.stringify(description));
-						}
+					else if (info == "closed") 
+					{
+						console.log("Websocket connecton closed: " + typeof description != "undefined" ? 
+									JSON.stringify(description) : "");
+						
 					}
 					else if (info == "bitrateMeasurement") {
 
@@ -674,6 +674,9 @@
 						overlay.style.display = "block";
 						setTimeout(function () { getVideo.play(); overlay.style.display = "none"; }, 2000);
 					}
+					else if (info == "server_will_close") {
+						console.log("Server will close soon");	
+					}
 
 				},
 				callbackError: function (error) {
@@ -681,7 +684,9 @@
 
 					console.log("error callback: " + JSON.stringify(error));
 
-					if (error == "no_stream_exist") {
+					if (error == "no_stream_exist" || error == "WebSocketNotConnected" 
+							|| error == "not_initialized_yet" || error == "data_store_not_available") 
+					{
 
 						if (typeof noStreamCallback != "undefined") {
 							noStreamCallback();
@@ -692,8 +697,8 @@
 						* If getting codec incompatible or remote description error, it will redirect HLS player.
 						*/
 						tryToPlay(streamId, token, hlsExtension, subscriberId, subscriberCode, hlsNoStreamCallback);
-
 					}
+					
 				}
 			});
 		}

@@ -261,8 +261,11 @@ video {
 			}
 			else{
 				var bitrate = parseInt(bitrateBoxValue);
-				if (bitrate == NaN || bitrate < 100 || bitrate > 2500) {
+				if (bitrate == NaN) {
 					maxVideoBitrateKbps = 900;
+				}
+		    	else if (bitrate < 100) {
+					maxVideoBitrateKbps = 100;
 				}
 				else {
 					maxVideoBitrateKbps = bitrate;
@@ -741,32 +744,46 @@ video {
 						errorMessage = message;
 					}
 					var errorMessage = JSON.stringify(error);
-					if (error.indexOf("NotFoundError") != -1) {
-						errorMessage = "Camera or Mic are not found or not allowed in your device";
-					}
-					else if (error.indexOf("NotReadableError") != -1 || error.indexOf("TrackStartError") != -1) {
-						errorMessage = "Camera or Mic is being used by some other process that does not let read the devices";
-					}
-					else if(error.indexOf("OverconstrainedError") != -1 || error.indexOf("ConstraintNotSatisfiedError") != -1) {
-						errorMessage = "There is no device found that fits your video and audio constraints. You may change video and audio constraints"
-					}
-					else if (error.indexOf("NotAllowedError") != -1 || error.indexOf("PermissionDeniedError") != -1) {
-						errorMessage = "You are not allowed to access camera and mic.";
-					}
-					else if (error.indexOf("TypeError") != -1) {
-						errorMessage = "Video/Audio is required";
-					}
-					else if (error.indexOf("getUserMediaIsNotAllowed") != -1){
-						errorMessage = "You are not allowed to reach devices from an insecure origin, please enable ssl";
-					}
-					else if (error.indexOf("ScreenSharePermissionDenied") != -1) {
-						errorMessage = "You are not allowed to access screen share";
-						$(".video-source").first().prop("checked", true);						
-					}
-					else if (error.indexOf("WebSocketNotConnected") != -1) {
+					
+					if (error.indexOf("WebSocketNotConnected") != -1) {
 						errorMessage = "WebSocket Connection is disconnected.";
 					}
-					alert(errorMessage);
+					else if (error.indexOf("not_initialized_yet") != -1) {
+						errorMessage = "Server is getting initialized.";
+					}
+					else if (error.indexOf("data_store_not_available") != -1) {
+						errorMessage = "Data store is not available. It's likely that server is initialized or getting closed";
+					}
+					else {
+						if (error.indexOf("NotFoundError") != -1) {
+						errorMessage = "Camera or Mic are not found or not allowed in your device";
+						}
+						else if (error.indexOf("NotReadableError") != -1 || error.indexOf("TrackStartError") != -1) {
+							errorMessage = "Camera or Mic is being used by some other process that does not let read the devices";
+						}
+						else if(error.indexOf("OverconstrainedError") != -1 || error.indexOf("ConstraintNotSatisfiedError") != -1) {
+							errorMessage = "There is no device found that fits your video and audio constraints. You may change video and audio constraints"
+						}
+						else if (error.indexOf("NotAllowedError") != -1 || error.indexOf("PermissionDeniedError") != -1) {
+							errorMessage = "You are not allowed to access camera and mic.";
+						}
+						else if (error.indexOf("TypeError") != -1) {
+							errorMessage = "Video/Audio is required";
+						}
+						else if (error.indexOf("getUserMediaIsNotAllowed") != -1){
+							errorMessage = "You are not allowed to reach devices from an insecure origin, please enable ssl";
+						}
+						else if (error.indexOf("ScreenSharePermissionDenied") != -1) {
+							errorMessage = "You are not allowed to access screen share";
+							$(".video-source").first().prop("checked", true);						
+						}
+						else {
+							errorMessage = error
+						}
+						alert(errorMessage);
+							
+					}
+					console.error(errorMessage);
 				}
 			});
 	}
