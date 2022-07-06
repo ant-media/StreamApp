@@ -1465,6 +1465,23 @@ export class WebRTCAdaptor
 
 		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
 	}
+	
+	/**
+	 * Called by user
+	 * This message is used to send audio level in a conference.
+	 *
+	 * @param {*} value : audio lavel
+	 * @returns 
+	 */
+	updateAudioLevel(streamId, value) {
+		var jsCmd = {
+				streamId : streamId,
+				command : "updateAudioLevel",
+				level : value,
+		};
+
+		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
+	}
   
 
 	/**
