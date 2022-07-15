@@ -1476,11 +1476,11 @@ export class WebRTCAdaptor
 	updateAudioLevel(streamId, value) {
 		var jsCmd = {
 				streamId : streamId,
-				command : "updateAudioLevel",
-				level : value,
+				eventType : "UPDATE_AUDIO_LEVEL",
+				audioLevel : value,
 		};
 
-		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
+		this.sendData(streamId, JSON.stringify(jsCmd));
 	}
   
 

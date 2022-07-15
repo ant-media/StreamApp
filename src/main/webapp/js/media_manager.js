@@ -1196,7 +1196,7 @@ export class MediaManager
 				alert(e);
 				return;
 			}
-			console.log("Added sound meter for stream: " + streamId + " = " + soundMeter.instant.toFixed(2));
+			// console.log("Added sound meter for stream: " + streamId + " = " + soundMeter.instant.toFixed(2));
 		});
 
 		this.soundLevelProviderId = setInterval(() => {			

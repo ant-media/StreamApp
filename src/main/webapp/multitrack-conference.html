@@ -200,6 +200,7 @@ body {
 <script type="module">
 	import {WebRTCAdaptor} from "./js/webrtc_adaptor.js"
     import {getUrlParameter} from "./js/fetch.stream.js" 
+    import {SoundMeter} from "./js/soundmeter.js" 
 
     /**
     * This page accepts 3 arguments through url parameter
@@ -460,6 +461,12 @@ body {
 		};
 	}
 
+	function enableAudioLevel() {
+		webRTCAdaptor.enableAudioLevelForLocalStream((value) => {
+			webRTCAdaptor.updateAudioLevel(publishStreamId, value);
+		}, 200);
+	}; 
+
 	function createRemoteVideo(streamId) {
 		var player = document.createElement("div");
 		player.className = "col-sm-3";
@@ -591,6 +598,8 @@ body {
 						join_publish_button.disabled = true;
 						stop_publish_button.disabled = false;
 						startAnimation();
+
+						enableAudioLevel();
 
 						webRTCAdaptor.getRoomInfo(roomNameBox.value, publishStreamId);
 					} 
