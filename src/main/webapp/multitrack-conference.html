@@ -420,6 +420,7 @@ body {
 
 	function publish(streamId, token) {
 		publishStreamId = streamId;
+		streamId = streamId;
 		webRTCAdaptor.publish(publishStreamId, token, "", "", streamName, roomNameBox.value,"{someKey:somveValue}");
 	}
 
@@ -448,22 +449,14 @@ body {
 
 		video.srcObject.addTrack(obj.track)
 
-		obj.track.onmute = event => {
-			var remove = true;
-			video.srcObject.getTracks().forEach(function(item) {
-				if(!item.muted) {
-					remove = false;
-				}
-			});
-			if(remove) {
-				removeRemoteVideo(index);
-			}
+		obj.track.onended = event => {
+			removeRemoteVideo(index);
 		};
 	}
 
 	function enableAudioLevel() {
 		webRTCAdaptor.enableAudioLevelForLocalStream((value) => {
-			webRTCAdaptor.updateAudioLevel(publishStreamId, value);
+			webRTCAdaptor.updateAudioLevel(publishStreamId,  Math.floor(value*100));
 		}, 200);
 	}; 
 
