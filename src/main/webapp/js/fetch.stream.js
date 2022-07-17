@@ -36,10 +36,17 @@ export function tryToPlay(name, token, type, subscriberId, subscriberCode, noStr
 					}
 			}).catch(function(err) {
 				console.log("Error: " + err);
+				if (typeof noStreamCallback != "undefined") {
+					noStreamCallback();
+				}
 			});
 		}
 	}).catch(function(err) {
 		console.log("Error: " + err);
+		if (typeof noStreamCallback != "undefined") {
+			noStreamCallback();
+		}
+		
 	});
 
 }
@@ -122,6 +129,9 @@ export function tryToVODPlay(name, token, subscriberId, subscriberCode, noStream
 						}
 					}).catch(function(err) {
 						console.log("Error: " + err);
+						if (typeof noStreamCallback != "undefined") {
+							noStreamCallback();
+						}	
 					});
 				}
 				else{
@@ -132,11 +142,17 @@ export function tryToVODPlay(name, token, subscriberId, subscriberCode, noStream
 				}
 			}).catch(function(err) {
 				console.log("Error: " + err);
+				if (typeof noStreamCallback != "undefined") {
+					noStreamCallback();
+				}
 			});
 		}
 		
 	}).catch(function(err) {
 			console.log("Error: " + err);
+			if (typeof noStreamCallback != "undefined") {
+				noStreamCallback();
+			}
 	});
 
 }
