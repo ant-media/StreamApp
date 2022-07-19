@@ -50,6 +50,12 @@ export class MediaManager
 		 * This is the Stream Id for the publisher.
 		 */
 		 this.publishStreamId = null;
+	
+		/**
+		  * this is the object of the local stream to publish
+		  * it is initiated in initLocalStream method
+		  */
+		 this.localStream = null;
 
 		/**
 		 * The values of the above fields are provided as user parameters by the constructor.
@@ -103,11 +109,6 @@ export class MediaManager
 		  */
 		 this.secondaryAudioTrackGainNode = null;
 		 
-		 /**
-		  * this is the object of the local stream to publish
-		  * it is initiated in initLocalStream method
-		  */
-		 this.localStream = null;
 
 		/**
 		 * Timer to create black frame to publish when video is muted
