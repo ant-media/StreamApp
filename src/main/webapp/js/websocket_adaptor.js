@@ -76,7 +76,7 @@ export class WebSocketAdaptor
                 this.webrtcadaptor.closePeerConnection(obj.streamId);
             }
             else if (obj.command == "error") {
-                this.callbackError(obj.definition);
+                this.callbackError(obj.definition, obj);
             }
             else if (obj.command == "notification") {
                 this.callback(obj.definition, obj);
