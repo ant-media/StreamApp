@@ -777,6 +777,9 @@ video {
 							errorMessage = "You are not allowed to access screen share";
 							$(".video-source").first().prop("checked", true);						
 						}
+						else if (error.indexOf("UnsecureContext") != -1) {
+							errorMessage = "Please Install SSL(https). Camera and mic cannot be opened because of unsecure context. ";
+						}
 						else {
 							errorMessage = error
 						}
