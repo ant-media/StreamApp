@@ -961,6 +961,75 @@ export class MediaManager
 			this.updateVideoTrack(stream, streamId, onEndedCallback, stopDesktop);
 		}, true);
 	 }
+
+	/**
+	 * Called by User
+	 * to switch between front and back camera on mobile devices
+	 *
+	 * @param {*} streamId Id of the stream to be changed.
+	 * @param {*} onEndedCallback callback for when the switching video state is completed, can be used to understand if it is loading or not
+	 *
+	 * This method is used to switch front and back camera.
+	 */
+	switchVideoCameraCaptureForMobile(streamId, onEndedCallback)
+	{
+		//stop the track because in some android devices need to close the current camera stream
+		var videoTrack = this.localStream.getVideoTracks()[0];
+		if (videoTrack) {
+			videoTrack.stop();
+		}
+		else {
+			console.warn("There is no video track in local stream");
+		}
+
+		// When device id set, facing mode is not working
+		// so, remove device id
+		if (this.mediaConstraints.video.deviceId !== undefined)
+		{
+			delete this.mediaConstraints.video.deviceId;
+		}
+
+		if (typeof(this.mediaConstraints.video) === "boolean")
+		{
+			// When video is boolean, it uses default values
+			this.mediaConstraints.video = {facingMode: "environment"};
+		}
+		else if (this.mediaConstraints.video.facingMode === undefined)
+		{
+			// Default value of facing mode is user.
+			// If facing mode is not defined, set it to user mode.
+			this.mediaConstraints.video.facingMode = "environment";
+		}
+		else
+		{
+			this.mediaConstraints.video.facingMode = this.changeFacingMode(this.mediaConstraints.video.facingMode);
+		}
+
+		this.publishMode = "camera";
+		console.debug("Media constraints video property = " + this.mediaConstraints.video);
+		this.setVideoCameraSource(streamId, this.mediaConstraints, null, true);
+	}
+
+	/**
+	 * Change facing mode with respect to the input
+	 *
+	 * @param {*} facingMode
+	 */
+	changeFacingMode(facingMode)
+	{
+		if (facingMode === "user")
+		{
+			return "environment"
+		}
+		else if (facingMode === "environment")
+		{
+			return "user"
+		}
+		else {
+			console.warn("Invalid facing mode " + facingMode);
+			return null;
+		}
+	}
 	
 
 	 /**

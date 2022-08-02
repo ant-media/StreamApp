@@ -1420,6 +1420,7 @@ export class WebRTCAdaptor
 	unmuteLocalMic() {this.mediaManager.unmuteLocalMic();}
 	switchDesktopCapture(streamId) {this.mediaManager.switchDesktopCapture(streamId);}
 	switchVideoCameraCapture(streamId, deviceId) {this.mediaManager.switchVideoCameraCapture(streamId, deviceId);}
+	switchVideoCameraCaptureForMobile(streamId) {this.mediaManager.switchVideoCameraCaptureForMobile(streamId);}
 	switchDesktopCaptureWithCamera(streamId) {this.mediaManager.switchDesktopCaptureWithCamera(streamId);}
 	switchAudioInputSource(streamId, deviceId) {this.mediaManager.switchAudioInputSource(streamId, deviceId);}
 	setVolumeLevel(volumeLevel) {this.mediaManager.setVolumeLevel(volumeLevel);}
