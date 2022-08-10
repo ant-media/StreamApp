@@ -185,6 +185,16 @@
 		<filter-name>RestJWTAuthenticationFilter</filter-name>
 		<url-pattern>/rest/*</url-pattern>
 	</filter-mapping>
+	
+	<filter>
+		<filter-name>ContentSecurityPolicyHeaderFilter</filter-name>
+		<filter-class>io.antmedia.filter.ContentSecurityPolicyHeaderFilter</filter-class>
+		<async-supported>true</async-supported>
+	</filter>
+	<filter-mapping>
+		<filter-name>ContentSecurityPolicyHeaderFilter</filter-name>
+		<url-pattern>/*</url-pattern>
+	</filter-mapping>
 
 	<filter>
 		<filter-name>RestAuthenticationFiler</filter-name>
