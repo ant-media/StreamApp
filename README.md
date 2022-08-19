@@ -1,3 +1,74 @@
-# StreamApp sample AMS application #
+# [Ant Media Server](https://antmedia.io/) Javascript SDK
 
-For more information on how to install this application, please refer to [this blog post](https://antmedia.io/develop-your-own-application-on-ant-media-server-with-3-steps/). 
+WebSocket interface in publishing and playing WebRTC streams on Ant Media Server using Javascript.
+
+Features of Ant Media:
+* adaptive bitrate streaming
+* ultra low latency streaming by using WebRTC technology with ~0.5 seconds latency
+
+[![NPM version](https://img.shields.io/badge/npm-v2.4.3-informational)](https://www.npmjs.com/package/@antmedia/webrtc_adaptor)
+[![Build Status](https://api.travis-ci.com/ant-media/StreamApp.svg?branch=master)](https://app.travis-ci.com/github/ant-media/StreamApp)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=io.antmedia%3Aant-media-server&metric=alert_status)](https://sonarcloud.io/dashboard?id=io.antmedia%3Aant-media-server)
+
+## <a name="installation"></a>Installation
+
+Using npm:
+```shell
+$ npm install @antmedia/webrtc_adaptor
+```
+
+Using yarn:
+```shell
+$ yarn add @antmedia/webrtc_adaptor
+```
+
+## <a name="usage">Usage
+
+In your project, run:
+
+```
+npm i @antmedia/webrtc_adaptor --save-dev
+```
+Then inside your javascript file initialize the WebRTCAdaptor
+```javascript
+  // ...
+import { WebRTCAdaptor } from '@ant-media/webrtc_adaptor';
+
+const webRTCAdaptor = new WebRTCAdaptor({
+    websocket_url: "wss://your-domain.tld:5443/WebRTCAppEE/websocket",
+    mediaConstraints: {
+        video: true,
+        audio: true,
+    },
+    peerconnection_config: {
+        'iceServers': [{'urls': 'stun:stun1.l.google.com:19302'}]
+    },
+    sdp_constraints: {
+        OfferToReceiveAudio : false,
+        OfferToReceiveVideo : false,
+    },
+    localVideoId: "id-of-video-element", // <video id="id-of-video-element" autoplay muted></video>
+    bandwidth: int|string, // default is 900 kbps, string can be 'unlimited'
+    dataChannelEnabled: true|false, // enable or disable data channel
+    callback: (info, obj) => {}, // check info callbacks bellow
+    callbackError: function(error, message) {}, // check error callbacks bellow
+});
+
+// Then, in another part of your script, you can start streaming by calling the publish method
+webRTCAdaptor.publish(streamId, token, subscriberId, subscriberCode, streamName);
+
+//...
+```
+
+## <a name="documentation">Documentation
+[Javascript SDK Documentation](https://resources.antmedia.io/docs/javascript-sdk)
+
+## <a name="livedemo">Live Demo
+You can check our [live demo](https://antmedia.io/live-demo).
+
+## <a name="issues">Issues
+Create issues on the [Ant-Media-Server](https://github.com/ant-media/Ant-Media-Server/issues)
+
+## Keywords
+
+webrtc, livestream, live, rtmp, hls, dash
