@@ -1,4 +1,4 @@
-# [Ant Media Server](https://antmedia.io/) Javascript SDK
+# [Ant Media Server](https://antmedia.io/) WebRTC SDK
 
 WebSocket interface in publishing and playing WebRTC streams on Ant Media Server using Javascript.
 
@@ -21,6 +21,11 @@ Using yarn:
 ```shell
 $ yarn add @antmedia/webrtc_adaptor
 ```
+
+## <a name="requirements"></a>Requirements
+
+Before start using Ant Media Server WebRTC SDK, you need a distribution of the Ant Media Server running on a server or local machine.
+[Click here to learn more about Ant Media Server](https://antmedia.io/)
 
 ## <a name="usage">Usage
 
