@@ -68,7 +68,3 @@ You can check our [live demo](https://antmedia.io/live-demo).
 
 ## <a name="issues">Issues
 Create issues on the [Ant-Media-Server](https://github.com/ant-media/Ant-Media-Server/issues)
-
-## Keywords
-
-webrtc, livestream, live, rtmp, hls, dash
