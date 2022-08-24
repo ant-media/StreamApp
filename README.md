@@ -34,7 +34,8 @@ In your project, run:
 ```
 npm i @antmedia/webrtc_adaptor --save-dev
 ```
-Then inside your javascript file initialize the WebRTCAdaptor
+Then inside your javascript file:
+#### <a name="initialize">Initialize the WebRTCAdaptor
 ```javascript
   // ...
 import { WebRTCAdaptor } from '@ant-media/webrtc_adaptor';
@@ -58,11 +59,19 @@ const webRTCAdaptor = new WebRTCAdaptor({
     callback: (info, obj) => {}, // check info callbacks bellow
     callbackError: function(error, message) {}, // check error callbacks bellow
 });
-
-// Then, in another part of your script, you can start streaming by calling the publish method
-webRTCAdaptor.publish(streamId, token, subscriberId, subscriberCode, streamName);
-
 //...
+```
+In another part of your script:
+#### <a name="publish">Publish
+```javascript
+// You can start streaming by calling the publish method
+webRTCAdaptor.publish(streamId);
+```
+
+#### <a name="play">Play
+```javascript
+// You can start streaming by calling the publish method
+webRTCAdaptor.play(streamId);
 ```
 
 ## <a name="documentation">Documentation
