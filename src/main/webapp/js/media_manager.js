@@ -1204,6 +1204,21 @@ export class MediaManager
 			levelCallback(soundMeter.instant.toFixed(2));
 		}, period);
 	}
+
+	/**
+	 * Called by user
+	 * To toggle noiseSuppression or echoCancellation constraints
+	 * 
+	 * @param {*} streamId : current stream Id
+	 * @param {*} updatedAudioMediaConstraints : audio constraints
+	 */
+	updateAudioMediaConstraints(streamId, updatedAudioMediaConstraints) {
+		this.mediaConstraints.audio = Object.assign({}, {
+			noiseSuppression: this.mediaConstraints.audio.noiseSuppression,
+			echoCancellation: this.mediaConstraints.audio.echoCancellation,
+		}, updatedAudioMediaConstraints);
+		this.setAudioInputSource(streamId, this.mediaConstraints, null);
+	}
 }
 
 

@@ -1442,6 +1442,10 @@ export class WebRTCAdaptor
 		return this.mediaManager.getVideoSender(streamId); 
 	}
 
+	updateAudioMediaConstraints(streamId, updatedAudioMediaConstraints) {
+		this.mediaManager.updateAudioMediaConstraints(streamId, updatedAudioMediaConstraints);
+	}
+
   closeStream() {
     this.mediaManager.closeStream();
   };
