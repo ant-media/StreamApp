@@ -179,6 +179,13 @@
 		var subscriberId = getUrlParameter("subscriberId");
 		var subscriberCode = getUrlParameter("subscriberCode");
 
+		/*
+    	* It's not mandatory if you don't use the new Load Balancer mechanism
+    	* It uses one of the nodes on Cluster mode
+    	* Example parameters: "origin" or "edge"
+ 		*/
+		var target = getUrlParameter("target");
+
 		var unMuteButton = document.getElementById("unmuteButton");
 		var placeHolder = document.getElementById("video_info");
 		var player = document.getElementById("remoteVideo");
@@ -610,7 +617,7 @@
 			};
 
 			var appName = location.pathname.substring(0, location.pathname.lastIndexOf("/") + 1);
-			var path = location.hostname + ":" + location.port + appName + "websocket";
+			var path = location.hostname + ":" + location.port + appName + "websocket?target="+target;
 			var websocketURL = "ws://" + path;
 
 			if (location.protocol.startsWith("https")) {

@@ -209,6 +209,13 @@ video {
 	var streamName = getUrlParameter("streamName");
 	var mainTrack = getUrlParameter("mainTrack");
 	
+	/*
+    * It's not mandatory if you don't use the new Load Balancer mechanism
+    * It uses one of the nodes on Cluster mode
+    * Example parameters: "origin" or "edge"
+ 	*/
+	var target = getUrlParameter("target");
+	
 	//TODO: Migrate these methods to Jquery
 	var start_publish_button = document.getElementById("start_publish_button");
 	start_publish_button.addEventListener("click", startPublishing, false);
@@ -493,7 +500,7 @@ video {
 	};
 
 	var appName = location.pathname.substring(0, location.pathname.lastIndexOf("/")+1);
-	var path =  location.hostname + ":" + location.port + appName + "websocket?rtmpForward=" + rtmpForward;
+	var path =  location.hostname + ":" + location.port + appName + "websocket?rtmpForward=" + rtmpForward + "&target="+target;
 	var websocketURL =  "ws://" + path;
 	
 	if (location.protocol.startsWith("https")) {
