@@ -759,7 +759,7 @@ video {
 						errorMessage = "Camera or Mic are not found or not allowed in your device";
 						}
 						else if (error.indexOf("NotReadableError") != -1 || error.indexOf("TrackStartError") != -1) {
-							errorMessage = "Camera or Mic is being used by some other process that does not let read the devices";
+							errorMessage = "Camera or Mic are already in use and they cannot be opened";
 						}
 						else if(error.indexOf("OverconstrainedError") != -1 || error.indexOf("ConstraintNotSatisfiedError") != -1) {
 							errorMessage = "There is no device found that fits your video and audio constraints. You may change video and audio constraints"
