@@ -671,22 +671,33 @@ video {
 						var devices = new Array();
 				
 						var i = 0;
+						var cameraIndex = 0;
+						var micIndex = 0;
 						obj.forEach(function(device) {
 							var label = device.label;
-							var deviceId = device.deviceId;
 							var devices = new Array();
 
 							devices.forEach(function(same){
 								if (same == device.label){
 									i += 1;
 									label = device.label + " - " + i
-									deviceId = device.deviceId + i
 								}
-							})
-							if (device.kind == "videoinput") {
+							});							
+
+							if (device.kind == "videoinput") 
+							{
+								if (typeof label == "undefined" || label == "") {
+									label = "Cam-" + cameraIndex;
+								}
+								cameraIndex++;
 								videoHtmlContent += getCameraRadioButton(label, device.deviceId);
 							}
-							else if (device.kind == "audioinput"){
+							else if (device.kind == "audioinput")
+							{
+								if (typeof label == "undefined" || label == "") {
+									label = "Mic-" + micIndex;
+								}
+								micIndex++;
 								audioHtmlContent += getAudioRadioButton(label, device.deviceId);
 							}
 							devices.push(device.label)
@@ -759,7 +770,7 @@ video {
 						errorMessage = "Camera or Mic are not found or not allowed in your device";
 						}
 						else if (error.indexOf("NotReadableError") != -1 || error.indexOf("TrackStartError") != -1) {
-							errorMessage = "Camera or Mic is being used by some other process that does not let read the devices";
+							errorMessage = "Camera or Mic are already in use and they cannot be opened";
 						}
 						else if(error.indexOf("OverconstrainedError") != -1 || error.indexOf("ConstraintNotSatisfiedError") != -1) {
 							errorMessage = "There is no device found that fits your video and audio constraints. You may change video and audio constraints"
