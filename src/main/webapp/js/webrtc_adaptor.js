@@ -1425,6 +1425,7 @@ export class WebRTCAdaptor
 	switchAudioInputSource(streamId, deviceId) {this.mediaManager.switchAudioInputSource(streamId, deviceId);}
 	setVolumeLevel(volumeLevel) {this.mediaManager.setVolumeLevel(volumeLevel);}
 	enableAudioLevelForLocalStream(levelCallback, period) {this.mediaManager.enableAudioLevelForLocalStream(levelCallback, period);}
+	applyConstraints(constraints){this.mediaManager.applyConstraints(constraints)};
 	
 	changeBandwidth(bandwidth, streamId) {
 		this.mediaManager.changeBandwidth(bandwidth, streamId);
