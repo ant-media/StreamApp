@@ -98,7 +98,6 @@ export class MediaManager
 		 * the primary audio in mixed audio case
 		 * 
 		 * its volume can be controled
-		 * 
 		 */
 		 this.primaryAudioTrackGainNode = null;
 		
@@ -1228,9 +1227,17 @@ export class MediaManager
 	 */
 	applyConstraints(streamId, newConstaints) { 
    		var videoTrackSender = this.getSender(streamId, "video");
-		return videoTrackSender.track.applyConstraints(newConstaints).catch(e => {
-          console.error('Error while applying capture constraints:', e.message);
-        });
+   		if (videoTrackSender != null && typeof videoTrackSender != "undefined") 
+   		{
+			return videoTrackSender.track.applyConstraints(newConstaints).catch(e => {
+          		console.error('Error while applying capture constraints:', e.message);
+        	});
+        }
+        else {
+			return new Promise((resolve, reject) => {
+			    reject("There is no video track sender to apply constraints for streamId:" + streamId);
+			});
+		}
 	}
 }
 
