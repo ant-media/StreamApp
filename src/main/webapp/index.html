@@ -671,28 +671,33 @@ video {
 						var devices = new Array();
 				
 						var i = 0;
+						var cameraIndex = 0;
+						var micIndex = 0;
 						obj.forEach(function(device) {
 							var label = device.label;
-							var deviceId = device.deviceId;
 							var devices = new Array();
 
 							devices.forEach(function(same){
 								if (same == device.label){
 									i += 1;
 									label = device.label + " - " + i
-									deviceId = device.deviceId + i
 								}
-							});
+							});							
 
-							if (typeof label == "undefined" || label == "") {
-								var length = device.deviceId.length;
-								label = device.deviceId.substring(length-5, length);
-							}
-
-							if (device.kind == "videoinput") {
+							if (device.kind == "videoinput") 
+							{
+								if (typeof label == "undefined" || label == "") {
+									label = "Cam-" + cameraIndex;
+								}
+								cameraIndex++;
 								videoHtmlContent += getCameraRadioButton(label, device.deviceId);
 							}
-							else if (device.kind == "audioinput"){
+							else if (device.kind == "audioinput")
+							{
+								if (typeof label == "undefined" || label == "") {
+									label = "Mic-" + micIndex;
+								}
+								micIndex++;
 								audioHtmlContent += getAudioRadioButton(label, device.deviceId);
 							}
 							devices.push(device.label)
