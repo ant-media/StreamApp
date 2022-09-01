@@ -682,7 +682,13 @@ video {
 									label = device.label + " - " + i
 									deviceId = device.deviceId + i
 								}
-							})
+							});
+
+							if (typeof label == "undefined" || label == "") {
+								var length = device.deviceId.length;
+								label = device.deviceId.substring(length-5, length);
+							}
+
 							if (device.kind == "videoinput") {
 								videoHtmlContent += getCameraRadioButton(label, device.deviceId);
 							}
