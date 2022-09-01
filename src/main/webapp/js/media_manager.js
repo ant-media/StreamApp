@@ -1190,28 +1190,6 @@ export class MediaManager
        		}
 	}
 
-    /**
-     * Applies the media constraints on fly.
-     *
-     * @param {*} constraints : mediaConstraints wanted to be applied
-     */
-    applyConstraints(constraints) {
-        if(this.localStream && constraints.video){
-            let videoTrack = this.localStream.getVideoTracks()[0];
-            videoTrack.applyConstraints(constraints.video).then(() => {
-                    console.log("New media constraints applied");
-                    this.callback("constraints_applied");
-                })
-                .catch(e => {
-                    // OverconstrainedError
-                    console.error("overconstr", e);
-                    this.callbackError(e.name, e.message);
-                });
-        } else {
-			console.log("There is no stream on fly to apply the constraints");
-        }
-    }
-
 	/**
 	 * Called by user
 	 * To create a sound meter for the local stream
@@ -1241,24 +1219,39 @@ export class MediaManager
       	// console.log("Added sound meter for stream: " + streamId + " = " + soundMeter.instant.toFixed(2));
     	});
   	}
-	
+    
 	/**
 	 * Called by user
-	 * To change media constraints on the fly
+	 * To change audio/video constraints on the fly
 	 * 
 	 */
-	applyConstraints(streamId, newConstaints) { 
-   		var videoTrackSender = this.getSender(streamId, "video");
-   		if (videoTrackSender != null && typeof videoTrackSender != "undefined") 
-   		{
-			return videoTrackSender.track.applyConstraints(newConstaints).catch(e => {
-          		console.error('Error while applying capture constraints:', e.message);
-        	});
-        }
-        else {
-			return new Promise((resolve, reject) => {
-			    reject("There is no video track sender to apply constraints for streamId:" + streamId);
-			});
+	applyConstraints(streamId, newConstraints) 
+	{ 
+		var constraints = {};
+		if (newConstraints.audio === undefined && newConstraints.video === undefined)
+		{	
+			//if audio or video field is not defined, assume that it's a video constraint
+			constraints.video = newConstraints;	
+		}
+		else if (newConstraints.video !== undefined) 
+		{
+			constraints.video = newConstraints.video;
+		}
+		
+		
+		if (constraints.video !== undefined)		 
+		{
+	   		var videoTrackSender = this.getSender(streamId, "video");
+	   		if (videoTrackSender != null && videoTrackSender !== undefined) 
+	   		{
+				return videoTrackSender.track.applyConstraints(constraints.video);
+						
+	        }
+	        else {
+				return new Promise((resolve, reject) => {
+				    reject("There is no video track sender to apply constraints for streamId:" + streamId);
+				});
+			}
 		}
 	}
 }
