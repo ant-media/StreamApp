@@ -98,7 +98,6 @@ export class MediaManager
 		 * the primary audio in mixed audio case
 		 * 
 		 * its volume can be controled
-		 * 
 		 */
 		 this.primaryAudioTrackGainNode = null;
 		
@@ -109,6 +108,11 @@ export class MediaManager
 		  */
 		 this.secondaryAudioTrackGainNode = null;
 		 
+		 
+		 /**
+     	  * this is the sound meter object for the local stream
+          */
+		 this.localStreamSoundMeter = null;
 
 		/**
 		 * Timer to create black frame to publish when video is muted
@@ -812,7 +816,10 @@ export class MediaManager
 		else{
 			this.unmuteLocalMic();
 		}
-
+		
+		if(this.localStreamSoundMeter != null) {
+      		this.connectSoundMeterToLocalStream();
+    	}	
 	}
 	
 	/**
@@ -1183,28 +1190,6 @@ export class MediaManager
        		}
 	}
 
-    /**
-     * Applies the media constraints on fly.
-     *
-     * @param {*} constraints : mediaConstraints wanted to be applied
-     */
-    applyConstraints(constraints) {
-        if(this.localStream && constraints.video){
-            let videoTrack = this.localStream.getVideoTracks()[0];
-            videoTrack.applyConstraints(constraints.video).then(() => {
-                    console.log("New media constraints applied");
-                    this.callback("constraints_applied");
-                })
-                .catch(e => {
-                    // OverconstrainedError
-                    console.error("overconstr", e);
-                    this.callbackError(e.name, e.message);
-                });
-        } else {
-			console.log("There is no stream on fly to apply the constraints");
-        }
-    }
-
 	/**
 	 * Called by user
 	 * To create a sound meter for the local stream
@@ -1213,18 +1198,61 @@ export class MediaManager
 	 * @param {*} period : measurement period
 	 */
 	enableAudioLevelForLocalStream(levelCallback, period) {
-		const soundMeter = new SoundMeter(this.audioContext);
-		soundMeter.connectToSource(this.localStream, function(e) {
-			if (e) {
-				alert(e);
-				return;
-			}
-			console.log("Added sound meter for stream: " + streamId + " = " + soundMeter.instant.toFixed(2));
-		});
+		this.localStreamSoundMeter = new SoundMeter(this.audioContext);
+    	this.connectSoundMeterToLocalStream();
 
 		this.soundLevelProviderId = setInterval(() => {			
-			levelCallback(soundMeter.instant.toFixed(2));
+			levelCallback(this.localStreamSoundMeter.instant.toFixed(2));
 		}, period);
+	}
+	
+	/**
+     * Connects the local stream to Sound Meter
+     * It should be called when local stream changes
+     */
+    connectSoundMeterToLocalStream() {
+    	this.localStreamSoundMeter.connectToSource(this.localStream, function (e) {
+     	 if (e) {
+        	alert(e);
+        	return;
+      	}
+      	// console.log("Added sound meter for stream: " + streamId + " = " + soundMeter.instant.toFixed(2));
+    	});
+  	}
+    
+	/**
+	 * Called by user
+	 * To change audio/video constraints on the fly
+	 * 
+	 */
+	applyConstraints(streamId, newConstraints) 
+	{ 
+		var constraints = {};
+		if (newConstraints.audio === undefined && newConstraints.video === undefined)
+		{	
+			//if audio or video field is not defined, assume that it's a video constraint
+			constraints.video = newConstraints;	
+		}
+		else if (newConstraints.video !== undefined) 
+		{
+			constraints.video = newConstraints.video;
+		}
+		
+		
+		if (constraints.video !== undefined)		 
+		{
+	   		var videoTrackSender = this.getSender(streamId, "video");
+	   		if (videoTrackSender != null && videoTrackSender !== undefined) 
+	   		{
+				return videoTrackSender.track.applyConstraints(constraints.video);
+						
+	        }
+	        else {
+				return new Promise((resolve, reject) => {
+				    reject("There is no video track sender to apply constraints for streamId:" + streamId);
+				});
+			}
+		}
 	}
 }
 
