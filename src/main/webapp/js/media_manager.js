@@ -407,17 +407,19 @@ export class MediaManager
 	 */
 	navigatorUserMedia(mediaConstraints, func, catch_error)
 	{
-		if( catch_error == true){
-		navigator.mediaDevices.getUserMedia(mediaConstraints).then(func).catch(error => {
-			if (error.name == "NotFoundError"){
-				this.getDevices()
-			}else{
-				this.callbackError(error.name, error.message);
-			}
-			});
-		}else {
-			navigator.mediaDevices.getUserMedia(mediaConstraints).then(func)
-		}
+		return navigator.mediaDevices.getUserMedia(mediaConstraints).then(func).catch(error => {
+				if( catch_error == true)
+				{
+					if (error.name == "NotFoundError"){
+						this.getDevices()
+					}else{
+						this.callbackError(error.name, error.message);
+					}
+				}
+				else {
+					console.warn(error);
+				}
+		});
 	}
 
 	/**
@@ -898,7 +900,7 @@ export class MediaManager
 	 */
 	setAudioInputSource(streamId, mediaConstraints, onEndedCallback) 
 	{
-		this.navigatorUserMedia(mediaConstraints, stream => {
+		return this.navigatorUserMedia(mediaConstraints, stream => {
 			stream = this.setGainNodeStream(stream);
 			this.updateAudioTrack(stream, streamId, mediaConstraints, onEndedCallback);
 		}, true);
@@ -1220,39 +1222,65 @@ export class MediaManager
     	});
   	}
     
+	applyConstraints(streamId, newConstaints) {
+		this.applyConstraints(newConstaints);
+	}
 	/**
 	 * Called by user
 	 * To change audio/video constraints on the fly
 	 * 
 	 */
-	applyConstraints(streamId, newConstraints) 
+	applyConstraints(newConstraints) 
 	{ 
+		    
 		var constraints = {};
 		if (newConstraints.audio === undefined && newConstraints.video === undefined)
 		{	
 			//if audio or video field is not defined, assume that it's a video constraint
 			constraints.video = newConstraints;	
+			this.mediaConstraints.video = Object.assign({}, 
+				this.mediaConstraints.video,
+				constraints.video);
 		}
 		else if (newConstraints.video !== undefined) 
 		{
 			constraints.video = newConstraints.video;
+			this.mediaConstraints.video = Object.assign({}, 
+				this.mediaConstraints.video,
+				constraints.video);
 		}
 		
 		
+		if (newConstraints.audio !== undefined) {
+			 
+		    constraints.audio = newConstraints.audio;
+			
+		    this.mediaConstraints.audio = Object.assign({}, 
+			   this.mediaConstraints.audio,
+		       constraints.audio);
+		}
+		
+		
+		var promise = null;
 		if (constraints.video !== undefined)		 
 		{
-	   		var videoTrackSender = this.getSender(streamId, "video");
-	   		if (videoTrackSender != null && videoTrackSender !== undefined) 
-	   		{
-				return videoTrackSender.track.applyConstraints(constraints.video);
-						
-	        }
-	        else {
-				return new Promise((resolve, reject) => {
-				    reject("There is no video track sender to apply constraints for streamId:" + streamId);
+			if (this.localStream && this.localStream.getVideoTracks().length > 0) {
+				var videoTrack = this.localStream.getVideoTracks()[0];
+				promise = videoTrack.applyConstraints(this.mediaConstraints.video);
+			}
+			else {
+				promise = new Promise((resolve, reject) => {
+					reject("There is no video track to apply constraints");
 				});
 			}
 		}
+		
+		if (constraints.audio !== undefined) 
+		{
+			//just give the audio constraints not to get video stream
+			promise = this.setAudioInputSource(streamId, { audio: this.mediaConstraints.audio }, null);
+		}
+		return promise;
 	}
 }
 
