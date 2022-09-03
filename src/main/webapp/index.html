@@ -88,8 +88,6 @@ video {
 			</div>
 			<div class="form-group col-sm-12 text-left options">
 
-				<div style="margin-top:10px;" class="form-group">Microphone Gain: <br><input type=range id="volume_change_input" min=0 max=1 value=1 step=0.01></div>
-				
 				<label class=" mr-2" for="inlineFormCustomSelectPref">Max Video Bitrate(Kbps):</label>
 				<div class="form-inline">
 					<input type="text" class="form-control  mr-sm-2"
@@ -102,6 +100,23 @@ video {
 					<a id="browser_screen_share_doesnt_support" href="https://caniuse.com/#search=getDisplayMedia">Your browser doesn't support screen share. You can see supported browsers in this link </a>
 				<div class="dropdown-divider"></div>
 				<legend class="col-form-label audio-source-legend">Audio Source</legend>
+
+
+				<legend class="col-form-label microphone-gain-legend">Microphone Gain</legend>
+				<div class="form-inline"><input type=range id="volume_change_input" min=0 max=1 value=1 step=0.01></div>
+				<legend class="col-form-label audio-quality-legend">Audio Quality</legend>
+				<div class="form-check-inline form-inline">
+					<div class="custom-control custom-switch">
+						<input type="checkbox" class="custom-control-input" name="noiseSuppression" id="noiseSuppression">
+						<label class="custom-control-label" for="noiseSuppression">Noise Supression</label>
+					  </div>
+				</div>
+				<div class="form-check-inline form-inline">	  
+					  <div class="custom-control custom-switch">
+						<input type="checkbox" class="custom-control-input" name="echoCancellation" id="echoCancellation">
+						<label class="custom-control-label" for="echoCancellation">Echo Cancellation</label>
+					  </div>
+				</div>
 				
 			</div>	
 			<div class="dropdown-divider"></div>
@@ -222,6 +237,11 @@ video {
 	document.getElementById("streamId").defaultValue = "Goofy"
 	var streamIdBox = document.getElementById("streamId");
 	streamIdBox.value = "stream1";
+
+	var toggleNoiseSuppression = document.getElementById("noiseSuppression");
+	toggleNoiseSuppression.addEventListener("click", changeAudioConstraints, false);
+	var toggleEchoCancellation = document.getElementById("echoCancellation");
+	toggleEchoCancellation.addEventListener("click", changeAudioConstraints, false);
 	
 	/**
 	 * If publishing stops for any reason, it tries to republish again.
@@ -463,7 +483,26 @@ video {
         });
       }
 
-	var pc_config = {
+	function changeAudioConstraints() {
+		var constraint = { audio: {} };
+		switch(this.name) {
+			case 'noiseSuppression': {
+				constraint.audio.noiseSuppression = this.checked;
+				break;
+			}
+			case 'echoCancellation': {
+				constraint.audio.echoCancellation = this.checked;
+				break;
+			}
+			default: {
+				break;
+			}
+		}
+		webRTCAdaptor.applyConstraints(constraint);
+	}
+
+
+	  var pc_config = {
 			'iceServers' : [ {
 				'urls' : 'stun:stun1.l.google.com:19302'
 			} ]
@@ -489,7 +528,7 @@ video {
 	
 	var mediaConstraints = {
 		video : true,
-		audio : true
+		audio: true,
 	};
 
 	var appName = location.pathname.substring(0, location.pathname.lastIndexOf("/")+1);
@@ -798,11 +837,16 @@ video {
 							
 					}
 					console.error(errorMessage);
+					if (message !== undefined) {
+						console.error(message);
+					}
 				}
 			});
 	}
 	
 	//initialize the WebRTCAdaptor
 	initWebRTCAdaptor(false, autoRepublishEnabled);
+
+	window.webRTCAdaptor = webRTCAdaptor;
 </script>
 </html>
