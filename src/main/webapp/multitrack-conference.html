@@ -200,6 +200,7 @@ body {
 <script type="module">
 	import {WebRTCAdaptor} from "./js/webrtc_adaptor.js"
     import {getUrlParameter} from "./js/fetch.stream.js" 
+    import {SoundMeter} from "./js/soundmeter.js" 
 
     /**
     * This page accepts 3 arguments through url parameter
@@ -419,6 +420,7 @@ body {
 
 	function publish(streamId, token) {
 		publishStreamId = streamId;
+		streamId = streamId;
 		webRTCAdaptor.publish(publishStreamId, token, "", "", streamName, roomNameBox.value,"{someKey:somveValue}");
 	}
 
@@ -447,18 +449,16 @@ body {
 
 		video.srcObject.addTrack(obj.track)
 
-		obj.track.onmute = event => {
-			var remove = true;
-			video.srcObject.getTracks().forEach(function(item) {
-				if(!item.muted) {
-					remove = false;
-				}
-			});
-			if(remove) {
-				removeRemoteVideo(index);
-			}
+		obj.track.onended = event => {
+			removeRemoteVideo(index);
 		};
 	}
+
+	function enableAudioLevel() {
+		webRTCAdaptor.enableAudioLevelForLocalStream((value) => {
+			webRTCAdaptor.updateAudioLevel(publishStreamId,  Math.floor(value*100));
+		}, 200);
+	}; 
 
 	function createRemoteVideo(streamId) {
 		var player = document.createElement("div");
@@ -591,6 +591,8 @@ body {
 						join_publish_button.disabled = true;
 						stop_publish_button.disabled = false;
 						startAnimation();
+
+						enableAudioLevel();
 
 						webRTCAdaptor.getRoomInfo(roomNameBox.value, publishStreamId);
 					} 
