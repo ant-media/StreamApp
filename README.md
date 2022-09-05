@@ -74,7 +74,7 @@ webRTCAdaptor.play(streamId);
 ```
 
 ## Samples
-Visit The [Samples List[(https://resources.antmedia.io/docs/sample-tools-and-applications) and look at their [sources codes](https://github.com/ant-media/StreamApp/tree/master/src/main/webapp)
+Visit The [Samples List](https://resources.antmedia.io/docs/sample-tools-and-applications) and look at their [sources codes](https://github.com/ant-media/StreamApp/tree/master/src/main/webapp)
 
 ## <a name="documentation">Documentation
 [Javascript SDK Documentation](https://resources.antmedia.io/docs/javascript-sdk)
