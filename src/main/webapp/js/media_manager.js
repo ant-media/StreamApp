@@ -66,6 +66,11 @@ export class MediaManager
 				this[key] = initialValues.userParameters[key];
 			}
 		}
+		
+		 /**
+		 * Available devices
+		 */
+		 this.deviceArray;
 		 
 		 /**
 		  * current volume value which is set by the user
@@ -223,12 +228,12 @@ export class MediaManager
 	 */
 	getDevices(){
 		navigator.mediaDevices.enumerateDevices().then(devices => {
-			let deviceArray = new Array();
+			this.deviceArray = new Array();
 			let checkAudio = false
 			let checkVideo = false
 			devices.forEach(device => {	
 				if (device.kind == "audioinput" || device.kind == "videoinput") {
-					deviceArray.push(device);
+					this.deviceArray.push(device);
 					if(device.kind=="audioinput"){
 						checkAudio = true;
 					}
@@ -237,7 +242,7 @@ export class MediaManager
 					}
 				}
 			});
-			this.callback("available_devices", deviceArray);
+			this.callback("available_devices", this.deviceArray);
 
 			//TODO is the following part necessary. why?
 			if(checkAudio == false && this.localStream == null){
@@ -509,24 +514,28 @@ export class MediaManager
 	 */
 	closeStream() 
 	{
-		this.localStream.getVideoTracks().forEach(function(track) {
-			track.onended = null;
-			track.stop();
-		});
-
-		this.localStream.getAudioTracks().forEach(function(track) {
-			track.onended = null;
-			track.stop();
-		});
-		if (this.videoTrack !== null) {
+		if (this.localStream) 
+		{
+			this.localStream.getVideoTracks().forEach(function(track) {
+				track.onended = null;
+				track.stop();
+			});
+	
+			this.localStream.getAudioTracks().forEach(function(track) {
+				track.onended = null;
+				track.stop();
+			});
+		}
+		
+		if (this.videoTrack) {
 			this.videoTrack.stop();
 		}
 
-		if (this.audioTrack !== null) {
+		if (this.audioTrack) {
 			this.audioTrack.stop();
 		}
 
-		if (this.smallVideoTrack !== null) {
+		if (this.smallVideoTrack) {
 			this.smallVideoTrack.stop();
 		}		
 		if (this.previousAudioTrack) {
@@ -924,9 +933,10 @@ export class MediaManager
 	 switchVideoCameraCapture(streamId, deviceId, onEndedCallback) 
 	 {
 		 //stop the track because in some android devices need to close the current camera stream
-		 var videoTrack = this.localStream.getVideoTracks()[0];
-		 if (videoTrack) {
-			 videoTrack.stop();
+		 if (this.localStream && this.localStream.getVideoTracks().length > 0)
+		 {
+		 	var videoTrack = this.localStream.getVideoTracks()[0];
+			videoTrack.stop();
 		 }
 		 else {
 			console.warn("There is no video track in local stream");
@@ -993,8 +1003,9 @@ export class MediaManager
 	switchVideoCameraFacingMode(streamId, facingMode)
 	{
 		//stop the track because in some android devices need to close the current camera stream
-		var videoTrack = this.localStream.getVideoTracks()[0];
-		if (videoTrack) {
+		if (this.localStream && this.localStream.getVideoTracks().length > 0)
+		{
+		 	var videoTrack = this.localStream.getVideoTracks()[0];
 			videoTrack.stop();
 		}
 		else {

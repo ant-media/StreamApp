@@ -261,6 +261,9 @@ video {
 
 	var volume_change_input = document.getElementById("volume_change_input");
 	volume_change_input.addEventListener("change", changeVolume);
+	
+	
+	var deviceList;
 
 	function changeVolume(){
 	/**
@@ -546,6 +549,8 @@ video {
 	var selectedRadio = null;
 	var selectedAudio = null;
 
+	var currentDeviceIndex = 0;
+	
 	function initWebRTCAdaptor(publishImmediately, autoRepublishEnabled) 
 	{
 		webRTCAdaptor = new WebRTCAdaptor({
@@ -711,13 +716,13 @@ video {
 						var videoHtmlContent = "";
 						var audioHtmlContent = "";
 						var devices = new Array();
-				
+						
+						var deviceList = obj;
 						var i = 0;
 						var cameraIndex = 0;
 						var micIndex = 0;
 						obj.forEach(function(device) {
 							var label = device.label;
-							var devices = new Array();
 
 							devices.forEach(function(same){
 								if (same == device.label){
@@ -778,20 +783,11 @@ video {
 						$(":radio[value=" + selectedRadio + "]").prop("checked", true);
 						$(":radio[value=" + selectedAudio + "]").prop("checked", true);
 					}
-					else if(info == "session_restored"){
+					else if(info == "session_restored") {
 						start_publish_button.disabled = true;
 						stop_publish_button.disabled = false;
 						startAnimation();
 						console.log(info + "notification received");
-					}
-					else if (info == "device_changed") {
-
-						webRTCAdaptor.checkWebSocketConnection();
-						//obj mean current video device id
-						webRTCAdaptor.switchVideoCameraCapture(streamId, obj);
-
-						$(":radio[value="+obj+"]").prop("checked", true);
-						
 					}
 					else {
 						console.log( info + " notification received");
@@ -822,6 +818,61 @@ video {
 						}
 						else if (error.indexOf("NotReadableError") != -1 || error.indexOf("TrackStartError") != -1) {
 							errorMessage = "Camera or Mic are already in use and they cannot be opened";
+							
+							/*
+							///////////////////////////////////
+							//////Code sample that can open next available camera or microphone 
+							///////////////////////////////////
+							
+							console.log("Trying next audio and video devices if any");
+							var camIndex = 0;
+							var microphoneIndex = 0;
+							var newCameraFound = false;
+							var newMicrophoneFound = false;
+							
+							currentDeviceIndex++;
+							deviceList.forEach(function(device) 
+							{
+								if (device.kind == "videoinput") 
+								{
+									camIndex++;
+									if (camIndex == currentDeviceIndex) 
+									{
+										mediaConstraint.video = {
+											deviceId: device.deviceId
+										}
+										newCameraFound = true;
+									}
+								}
+								
+								if (device.kind == "audioinput") 
+								{
+									microphoneIndex
+									if (microphoneIndex == currentDeviceIndex) 
+									{
+										mediaConstraint.audio = {
+											deviceId: device.deviceId
+										}
+										newMicrophoneFound = true;
+									}
+								}
+							});
+							
+							if (!newCameraFound) {
+								console.warn("No new other camera is found. Using the default one");
+								delete mediaConstraint.video.deviceId;
+							}
+							if (!newMicrophoneFound) {
+								console.warn("No new microphone is found. Using the default one");
+								delete mediaConstraint.audio.deviceId;
+							}
+							
+							if (newCameraFound || newMicrophoneFound) {
+								webRTCAdaptor.closeStream();
+								webRTCAdaptor.openStream(mediaConstraint);
+							}
+							*/
+
 						}
 						else if(error.indexOf("OverconstrainedError") != -1 || error.indexOf("ConstraintNotSatisfiedError") != -1) {
 							errorMessage = "There is no device found that fits your video and audio constraints. You may change video and audio constraints"

@@ -224,38 +224,6 @@ export class WebRTCAdaptor
 		this.checkWebSocketConnection();
 	}
 
-	tryNextAvailableDevice(){
-
-		var videoDeviceCount = 0;
-		var videoDeviceArray = new Array();
-
-		// Count all video input devices
-		this.deviceArray.forEach(function(device) {
-			if (device.kind == "videoinput") {
-					videoDeviceCount++;
-					videoDeviceArray.push(device);
-			}
-		});
-
-		// If all devices are busy then it should exit queue
-		if(this.inputDeviceBusyQueue+1 == videoDeviceCount){ //
-			this.callbackError("NotFoundError");
-			return;
-		}
-
-		for (let i = 0; i < videoDeviceCount; i++) {
-			if(i == this.inputDeviceBusyQueue ){
-				this.inputDeviceBusyQueue++;
-				console.log(videoDeviceArray[i].label + " video device is busy");
-
-				console.log("Switching video device to " + videoDeviceArray[i+1].label);
-				this.callback("device_changed", videoDeviceArray[i+1].deviceId);
-				break;
-			}
-		}
-
-	}	
-
 	/**
 	 * Called to start a new WebRTC stream. AMS responds with start message.
 	 * Parameters:
@@ -1564,10 +1532,14 @@ export class WebRTCAdaptor
 	getVideoSender(streamId) { 
 		return this.mediaManager.getVideoSender(streamId); 
 	}
+	
+	openStream(mediaConstraints) {
+		this.mediaManager.openStream(mediaConstraints);
+	}
 
-  closeStream() {
-    this.mediaManager.closeStream();
-  };
+    closeStream() {
+      this.mediaManager.closeStream();
+    };
   
   applyConstraints(streamId, newConstaints) {
       this.mediaManager.applyConstraints(streamId, newConstaints);
