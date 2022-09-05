@@ -2,9 +2,8 @@
 
 WebSocket interface in publishing and playing WebRTC streams on Ant Media Server using Javascript.
 
-Features of Ant Media:
-* adaptive bitrate streaming
-* ultra low latency streaming by using WebRTC technology with ~0.5 seconds latency
+For more information, visit [antmedia.io](https://antmedia.io)
+
 
 [![NPM version](https://img.shields.io/badge/npm-v2.4.3-informational)](https://www.npmjs.com/package/@antmedia/webrtc_adaptor)
 [![Build Status](https://api.travis-ci.com/ant-media/StreamApp.svg?branch=master)](https://app.travis-ci.com/github/ant-media/StreamApp)
@@ -25,7 +24,7 @@ $ yarn add @antmedia/webrtc_adaptor
 ## <a name="requirements"></a>Requirements
 
 Before start using Ant Media Server WebRTC SDK, you need a distribution of the Ant Media Server running on a server or local machine.
-[Click here to learn more about Ant Media Server](https://antmedia.io/)
+[Quick Start - Ant Media Server](https://resources.antmedia.io/docs/quick-start)
 
 ## <a name="usage">Usage
 
@@ -74,6 +73,9 @@ webRTCAdaptor.publish(streamId);
 webRTCAdaptor.play(streamId);
 ```
 
+## Samples
+Visit The [Samples List[(https://resources.antmedia.io/docs/sample-tools-and-applications) and look at their [sources codes](https://github.com/ant-media/StreamApp/tree/master/src/main/webapp)
+
 ## <a name="documentation">Documentation
 [Javascript SDK Documentation](https://resources.antmedia.io/docs/javascript-sdk)
 
@@ -82,3 +84,5 @@ You can check our [live demo](https://antmedia.io/live-demo).
 
 ## <a name="issues">Issues
 Create issues on the [Ant-Media-Server](https://github.com/ant-media/Ant-Media-Server/issues)
+
+
