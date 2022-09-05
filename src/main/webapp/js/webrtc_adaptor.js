@@ -1501,7 +1501,7 @@ export class WebRTCAdaptor
 	 * to switch between front and back camera on mobile devices
 	 *
 	 * @param {*} streamId Id of the stream to be changed.
-	 * @param {*} facingMode it can be ""user" and "environment"
+	 * @param {*} facingMode it can be ""user" or "environment"
 	 *
 	 * This method is used to switch front and back camera.
 	 */

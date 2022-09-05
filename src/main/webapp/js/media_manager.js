@@ -986,7 +986,7 @@ export class MediaManager
 	 * to switch between front and back camera on mobile devices
 	 *
 	 * @param {*} streamId Id of the stream to be changed.
-	 * @param {*} facingMode
+	 * @param {*} facingMode it can be "user" or "environment"
 	 *
 	 * This method is used to switch front and back camera.
 	 */
