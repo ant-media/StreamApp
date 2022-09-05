@@ -136,6 +136,11 @@ export class MediaManager
 		  */
 		 this.meterRefresh = null;
 
+		 /**
+		 * For keeping track of whether user turned off the camera
+		 */
+		 this.cameraEnabled = true;
+
 		/**
 		 * html video element that presents local stream
 		 */
@@ -967,7 +972,12 @@ export class MediaManager
 			 	this.updateAudioTrack(stream, streamId, mediaConstraints, onEndedCallback);
 			}
 
-			this.updateVideoTrack(stream, streamId, onEndedCallback, stopDesktop);
+			if(this.cameraEnabled){
+				this.updateVideoTrack(stream, streamId, onEndedCallback, stopDesktop);
+			}
+			else{
+				this.turnOffLocalCamera();
+			}
 		}, true);
 	 }
 	
@@ -1046,6 +1056,7 @@ export class MediaManager
 			 else{
 				choosenId = this.publishStreamId;
 			 }
+			 this.cameraEnabled = false;
 			 this.updateVideoTrack(this.replacementStream, choosenId, null, true);
 		 }
 		 else {
@@ -1086,6 +1097,7 @@ export class MediaManager
 				else{
 					choosenId = this.publishStreamId;
 				}
+				this.cameraEnabled = true;
 				this.updateVideoTrack(stream, choosenId, null, true);
 			}, false);
 		}
