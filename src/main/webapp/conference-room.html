@@ -45,23 +45,6 @@
         </div>
       </div>
 
-
-    <!-- header class="chat-active">
-      <div class="container-fluid">
-        <div class="row">
-          <div class="col-3 col-sm-4">
-            <div class="logo"><img class="logo-full" src="images/ant-media-video-call.svg"><img class="logo-compact" src="images/ant-media-emblem.svg"></div>
-          </div>
-          <div class="offset-4 col-5 col-sm-4">
-            <div class="icons">
-              <span><a href="#" data-toggle="modal" data-target="#shareUrlLocationModal" onClick="getWindowLocation()" ><img src="images/icons/share.svg"></a></span>
-              <span><a href="javascript:;"><img src="images/icons/settings.svg"></a></span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </header-->
-
     <div class="local-video-content">
       <div class="me-small-screen">
         <video id="localVideo" class="screen" autoplay="" muted="" playsinline=""></video>
@@ -211,6 +194,11 @@
     setInterval(() => {      
      dateSpan.innerHTML = formatAMPM(new Date);
    }, 60000);
+   
+   
+    var statusTimerId = setInterval(() => {      
+        updateStatus();
+    }, 5000);
     
     var roomNameSpan = document.getElementById("roomName");
     roomNameSpan.innerHTML = roomName;
@@ -298,6 +286,8 @@
     var isScreenSharing = false;
     var isChatActive = false;
     var roomTimerId = -1;
+    
+    var isPinned = false;
 
     function enter() {
       streamName = document.getElementById("streamNameInput").value;
@@ -321,8 +311,8 @@
     }
 
   function startScreenShare() {
-    webRTCAdaptor.switchDesktopCapture(publishStreamId);
     isScreenSharing = true;
+    webRTCAdaptor.switchDesktopCapture(publishStreamId);
     handleScreenShareButtons();
   }
 
@@ -330,9 +320,15 @@
     if(isScreenSharing) {
       isScreenSharing = false;
       handleScreenShareButtons();
-      if(!isCameraOff) {
-        webRTCAdaptor.switchVideoCameraCapture(publishStreamId);
-      }
+    }
+
+    if(!isCameraOff) {
+      webRTCAdaptor.switchVideoCameraCapture(publishStreamId);
+    }
+    else{
+      webRTCAdaptor.turnOffLocalCamera(publishStreamId);
+      isCameraOff = true;
+      handleCameraButtons();
     }
   }
 
@@ -385,13 +381,18 @@
  }
 
  function turnOffLocalCamera() {
-  webRTCAdaptor.turnOffLocalCamera(publishStreamId);
   isCameraOff = true;
-  handleCameraButtons();
-  sendNotificationEvent("CAM_TURNED_OFF");
+  if(!isScreenSharing){
+    webRTCAdaptor.turnOffLocalCamera(publishStreamId);
+    handleCameraButtons();
+    sendNotificationEvent("CAM_TURNED_OFF");
+  }
 }
 
 function turnOnLocalCamera() {
+
+  handleScreenShareButtons();
+
   webRTCAdaptor.turnOnLocalCamera(publishStreamId);
   isCameraOff = false;
   handleCameraButtons();
@@ -412,9 +413,9 @@ function unmuteLocalMic() {
   sendNotificationEvent("MIC_UNMUTED");
 }
 
-function sendNotificationEvent(eventType) {
+function sendNotificationEvent(eventType, payload) {
   if(isDataChannelOpen) {
-    var notEvent = { streamId: publishStreamId, eventType:eventType };
+    var notEvent = { streamId: publishStreamId, eventType:eventType, payload: payload};
     webRTCAdaptor.sendData(publishStreamId, JSON.stringify(notEvent));
   } else {
     console.log("Could not send the notification because data channel is not open.");
@@ -453,7 +454,7 @@ function handleMicButtons() {
 }
 
 function handleNotificationEvent(obj) {
-  console.log("Received data : ", obj.data);
+  //console.log("Received data : ", obj.data);
   var notificationEvent = JSON.parse(obj.data);
   if(notificationEvent != null && typeof(notificationEvent) == "object") {
     var eventStreamId = notificationEvent.streamId;
@@ -467,6 +468,20 @@ function handleNotificationEvent(obj) {
       console.log("Microphone muted for : ", eventStreamId);
     } else if (eventType == "MIC_UNMUTED"){
       console.log("Microphone unmuted for : ", eventStreamId);
+    } else if (eventType == "AUDIO_TRACK_ASSIGNMENT"){     
+      var assignments = notificationEvent.assignments;
+      
+      assignments.forEach(item => {
+        var trackId = item.trackId;
+        var audioLevel = item.audioLevel;
+        
+        console.log(trackId+" - "+audioLevel);
+      });
+    } else if (eventType == "UPDATE_STATUS"){
+      var payload = notificationEvent.payload;
+      if(payload.pinnedId == publishStreamId) {
+        isPinned = true;
+      }
     }
   }
 }
@@ -485,6 +500,21 @@ function publish(publishStreamId, token, subscriberId, subscriberCode, streamNam
 function streamInformation(obj) {
   webRTCAdaptor.play(obj.streamId, token,	roomName);
 }
+
+function updateStatus() {
+	var payload = {streamId:publishStreamId, pinnedId:fullScreenId, mic:isMicMuted, camera:isCameraOff};
+	sendNotificationEvent("UPDATE_STATUS", payload);
+	
+    var requestedMediaConstraints = {
+          width: isPinned ? 1080 : 360,
+          height: isPinned ? 720 : 240,
+    }	
+	
+    webRTCAdaptor.applyConstraints(payload.streamId, requestedMediaConstraints);
+    console.log("current reslution:"+requestedMediaConstraints.height);
+    isPinned = false;
+}
+
 
 function playVideo(obj) {
 
@@ -567,8 +597,9 @@ function doLayout(playerCount) {
   }
 }
 
-function makeFullScreen(divId) {
-    if(fullScreenId == divId) {
+function makeFullScreen(streamId) {
+	var divId="streamId"+streamId;
+    if(fullScreenId == streamId) {
 	  document.getElementById(divId).classList.remove("selected");
       document.getElementById(divId).classList.add("unselected");
       fullScreenId = -1;
@@ -577,12 +608,12 @@ function makeFullScreen(divId) {
 	else {
       document.getElementsByClassName('publisher-content')[0].className = "publisher-content chat-active fullscreen-layout";
 	  if(fullScreenId != -1) {
-        document.getElementById(fullScreenId).classList.remove("selected");
-        document.getElementById(fullScreenId).classList.add("unselected");
+        document.getElementById("streamId"+fullScreenId).classList.remove("selected");
+        document.getElementById("streamId"+fullScreenId).classList.add("unselected");
       }
       document.getElementById(divId).classList.remove("unselected");
       document.getElementById(divId).classList.add("selected");
-      fullScreenId = divId;
+      fullScreenId = streamId;
 	}
 }
 
@@ -595,8 +626,13 @@ function generateStreamCol(streamId){
   div.innerHTML = "<div class='person'>"
     +"<video id='remoteVideo"+streamId+"' class='screen' autoplay playsinline></video>"
     +"<div class='overlay'><span>"+streamName+"   </span>"
-    +"<span><a href=\"javascript:window.makeFullScreen('streamId"+streamId+"');\"><img src='images/icons/fullscreen.svg'></a></span>"
+    +"<span><a href=\"javascript:makeFullScreen('"+streamId+"');\"><img src='images/icons/fullscreen.svg'></a></span>"
     +"</div></div>"
+   
+   if(streamId.startsWith("audioTrack")) {
+     div.style.display = "none";
+   }
+
   document.getElementById('players').appendChild(div);
 }
 
@@ -659,16 +695,6 @@ function checkTrackStatus(streamIdList){
   });
 }
 
-/*/testttt
-var i = 1;
-setInterval(() => {			
-        generateStreamCol("stream"+i);
-        if(fullScreenId == -1) {
-            doLayout(i);
-		}
-		i++;
-    }, 3000);
-*/
 var appName = location.pathname.substring(0, location.pathname
  .lastIndexOf("/") + 1);
 var path = location.hostname + ":" + location.port + appName + "websocket";
@@ -742,6 +768,7 @@ var webRTCAdaptor = new WebRTCAdaptor(
 		if (roomTimerId != null)
 		{
 			clearInterval(roomTimerId);
+			clearInterval(statusTimerId);
 		}
 						
 		if (streamsList != null) {

@@ -261,7 +261,7 @@ video {
 		setTimeout(function() {
 			merger.start();
 			var result = merger.getResult();
-			webRTCAdaptor.gotStream(result);
+			webRTCAdaptor.mediaManager.gotStream(result);
 			console.log("streamslist = " + streamsList);
 			if(streamsList.length > 0){
 				publish(publishStreamId);

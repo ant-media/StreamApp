@@ -1,12 +1,14 @@
-/**
- *
- * @returns
- */
-
 import {PeerStats} from "./peer_stats.js"
 import {WebSocketAdaptor} from "./websocket_adaptor.js"
+import {MediaManager} from "./media_manager.js" 
 import {SoundMeter} from "./soundmeter.js" 
 
+
+/**
+ * This structure is used to handle large size data channel messages (like image)
+ * which should be splitted into chunks while sending and receiving.
+ * 
+*/
 class ReceivingMessage{
 		constructor(size) {
 		this.size = size;
@@ -15,45 +17,131 @@ class ReceivingMessage{
 	}
 }
 
+/**
+ * WebRTCAdaptor Class is interface to the JS SDK of Ant Media Server (AMS). This class manages the signalling, 
+ * keeps the states of peers.
+ * 
+ * This class is used for peer-to-peer signalling,
+ * publisher and player signalling and conference. 
+ * 
+ * Also it is responsible for some room management in conference case.
+ * 
+ * There are different use cases in AMS. This class is used for all of them.
+ * 
+ * WebRTC Publish
+ * WebRTC Play
+ * WebRTC Data Channel Connection
+ * WebRTC Conference
+ * WebRTC Multitrack Play
+ * WebRTC Multitrack Conference
+ * WebRTC peer-to-peer session
+ * 
+ */
 export class WebRTCAdaptor
 {
 	constructor(initialValues){
+		/**
+		 * Used while initializing the PeerConnection
+		 * https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection/RTCPeerConnection#parameters
+		 */
 		this.peerconnection_config = null;
+
+		/**
+		 * Used while creating SDP (answer or offer)
+		 * https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection/createOffer#parameters
+		 */
 		this.sdp_constraints = null;
+
+		/**
+		 * This keeps the PeerConnections for each stream id.
+		 * It is an array because one @WebRTCAdaptor instance can manage multiple WebRTC connections as in the conference.
+		 * Its indices are the Stream Ids of each stream
+		 */
 		this.remotePeerConnection = new Array();
+
+		/**
+		 * This keeps statistics for the each PeerConnection.
+		 * It is an array because one @WebRTCAdaptor instance can manage multiple WebRTC connections as in the conference.
+		 * Its indices are the Stream Ids of each stream
+		 */
 		this.remotePeerConnectionStats = new Array();
+
+		/**
+		 * This keeps the Remote Description (SDP) set status for each PeerConnection.
+		 * We need to keep this status because sometimes ice candidates from the remote peer
+		 * may come before the Remote Description (SDP). So we need to store those ice candidates 
+		 * in @iceCandidateList field until we get and set the Remote Description.
+		 * Otherwise setting ice candidates before Remote description may cause problem.
+		 */
 		this.remoteDescriptionSet = new Array();
+
+		/**
+		 * This keeps the Ice Candidates which are received before the Remote Description (SDP) received.
+		 * For details please check @remoteDescriptionSet field.
+		 */
 		this.iceCandidateList = new Array();
+
+		/**
+		 * This is the name for the room that is desired to join in conference mode.
+		 */
 		this.roomName = null;
-		this.videoTrackSender = null;
-		this.audioTrackSender = null;
+
+		/**
+		 * This keeps StreamIds for the each playing session.
+		 * It is an array because one @WebRTCAdaptor instance can manage multiple playing sessions.
+		 */
 		this.playStreamId = new Array();
-		this.currentVolume = null;
-		this.originalAudioTrackGainNode = null;
-		this.videoTrack = null;
-		this.audioTrack = null;
-		this.smallVideoTrack = null;		
-		this.audioContext = null;
-	    this.soundOriginGainNode = null;
-		this.secondStreamGainNode = null;
-		this.localStream = null;
-		this.bandwidth = 900; //default bandwidth kbps
-		this.isMultiPeer = false; //used for multiple peer client
-		this.multiPeerStreamId = null;   //used for multiple peer client
+		
+		/**
+		 * Audio context to use
+		 */
+		this.audioContext = new AudioContext();
+
+		/**
+		 * This is the flag indicates if multiple peers will join a peer in the peer to peer mode.
+		 * This is used only with Embedded SDk
+		 */
+		this.isMultiPeer = false;
+
+		/**
+		 * This is the stream id that multiple peers can join a peer in the peer to peer mode.
+		 * This is used only with Embedded SDk
+		 */
+		this.multiPeerStreamId = null; 
+
+		/**
+		 * This is instance of @WebSocketAdaptor and manages to websocket connection.
+		 * All signalling messages are sent to/recived from
+		 * the Ant Media Server over this web socket connection  
+		 */
 		this.webSocketAdaptor = null;
+
+		/**
+		 * This flags indicates if this @WebRTCAdaptor instance is used only for playing session(s) 
+		 * You don't need camera/mic access in play mode
+		 */
 		this.isPlayMode = false;
+
+		/**
+		 * This flags enables/disables debug logging
+		 */
 		this.debug = false;
-		this.viewerInfo = "";
+
+		/**
+		 * This is the Stream Id for the publisher. One @WebRCTCAdaptor supports only one publishing
+		 * session for now (23.02.2022).
+		 * In conference mode you can join a room with null stream id. In that case
+		 * Ant Media Server generates a stream id and provides it JoinedTheRoom callback and it is set to this field.
+		 */
 		this.publishStreamId = null;
-		this.blackFrameTimer = null;
+
+		/**
+		 * This is used to keep stream id and track id (which is provided in SDP) mapping
+		 * in MultiTrack Playback and conference.
+		 */
 		this.idMapping = new Array();
 		this.deviceArray = new Array();
 		this.inputDeviceBusyQueue = 0;
-
-
-		var threshold = 0.08;
-		this.soundMeters = new Array();
-		this.soundLevelList = new Array();
 
 		/**
 		 * This is used when only data is brodcasted with the same way video and/or audio.
@@ -62,20 +150,16 @@ export class WebRTCAdaptor
 		this.onlyDataChannel = false;
 
 		/**
-		 * For audio check when the user is muted itself.
-		 * Check enableAudioLevelWhenMuted
-		 */
-		this.mutedAudioStream = null;
-		this.meterRefresh = null;
-		
-		/**
 		 * While publishing and playing streams data channel is enabled by default
 		 */
 		this.dataChannelEnabled = true;
 
+		/**
+		 * This is array of @ReceivingMessage 
+		 * When you receive multiple large size messages @ReceivingMessage simultaneously
+		 * this map is used to indicate them with its index tokens.
+		 */
 		this.receivingMessages = new Map();
-
-		this.publishMode="camera"; //screen, screen+camera
 
 		/**
 		 * Supported candidate types. Below types are for both sending and receiving candidates.
@@ -84,261 +168,60 @@ export class WebRTCAdaptor
 		 * if candidate protocol is in the list below.
 		 */
 		this.candidateTypes = ["udp", "tcp"];
-
-
-		this.desktopStream = null;
-
+		
 		/**
-		 * The cam_location below is effective when camera and screen is send at the same time.
-		 * possible values are top and bottom. It's on right all the time
+		 * The values of the above fields are provided as this constructor parameter.
+		 * TODO: Also some other hidden parameters may be passed here
 		 */
-		this.camera_location = "top"
-
-		/**
-		 * The cam_margin below is effective when camera and screen is send at the same time.
-		 * This is the margin value in px from the edges
-		 */
-		this.camera_margin = 15;
-
-		/**
-		 * this camera_percent is how large the camera view appear on the screen. It's %15 by default.
-		 */
-		this.camera_percent = 15;
-
 		for(var key in initialValues) {
 			if(initialValues.hasOwnProperty(key)) {
 				this[key] = initialValues[key];
 			}
 		}
 
-		this.localVideo = document.getElementById(this.localVideoId);
+		/**
+		 * The html video tag for receiver is got here
+		 */
 		this.remoteVideo = document.getElementById(this.remoteVideoId);
 
-		//A dummy stream created to replace the tracks when camera is turned off.
-		this.dummyCanvas =document.createElement("canvas");
+		/**
+		  * Keeps the sound meters for each connection. Its index is stream id
+		  */
+		 this.soundMeters = new Array();
+		 
+		 /**
+		  * Keeps the current audio level for each playing streams in conference mode
+		  */
+		 this.soundLevelList = new Array();
 
-		// It should be compatible with previous version
-		if(this.mediaConstraints.video == "camera") {
-			this.publishMode="camera";
-		}
-		else if(this.mediaConstraints.video == "screen") {
-			this.publishMode="screen";
-		}
-		else if(this.mediaConstraints.video == "screen+camera") {
-			this.publishMode="screen+camera";
-		}
-				
-		//Check browser support for screen share function
-		this.checkBrowserScreenShareSupported();
+		/**
+		 * All media management works for teh local stream are made by @MediaManager class.
+		 * for details please check @MediaManager
+		 */
+		this.mediaManager = new MediaManager({
+			userParameters : initialValues,
+			webRTCAdaptor : this,
+
+			callback : (info, obj) => {this.callback(info, obj)},
+			callbackError : (error, message) => {this.callbackError(error, message)},
+			getSender : (streamId, type) => {return this.getSender(streamId, type)},
+		});				
 		
-		if (!this.isPlayMode && !this.onlyDataChannel && typeof this.mediaConstraints != "undefined" && this.localStream == null)
-		{
-			this.checkWebRTCPermissions();
+		//Initialize the local stream (if needed) and web socket connection
+		this.initialize();
+	} 
 
-			// Get devices only in publish mode.
-			this.getDevices();
-			this.trackDeviceChange();
-
-			if (typeof this.mediaConstraints.video != "undefined" && this.mediaConstraints.video != false)
-			{
-				this.openStream(this.mediaConstraints, this.mode);	
-			}
-			else {
-				// get only audio
-				var media_audio_constraint = { audio: this.mediaConstraints.audio };
-				this.navigatorUserMedia(media_audio_constraint , stream => {
-					this.gotStream(stream);
-				}, true)
-			}
+	/**
+	 * Called by constuctor to 
+	 * 	-check local stream unless it is in play mode
+	 * 	-start websocket connection
+	 */
+	initialize() {
+		if (!this.isPlayMode && !this.onlyDataChannel && typeof this.mediaConstraints != "undefined" && this.mediaManager.localStream == null) {
+			//we need local stream because it not a play mode
+			this.mediaManager.initLocalStream();
 		}
-		else {
-			//just playing, it does not open any stream
-			this.checkWebSocketConnection();
-		}
-	}
-	setDesktopwithCameraSource(stream, streamId, audioStream, onEndedCallback) 
-	{
-		this.desktopStream = stream;
-		this.navigatorUserMedia({video: true, audio: false},cameraStream => {
-			this.smallVideoTrack = cameraStream.getVideoTracks()[0];
-			
-			//create a canvas element
-			var canvas = document.createElement("canvas");
-			var canvasContext = canvas.getContext("2d");
-
-			//create video element for screen
-			//var screenVideo = document.getElementById('sourceVideo');
-			var screenVideo = document.createElement('video');
-
-			screenVideo.srcObject = stream;
-			screenVideo.play();
-			//create video element for camera
-			var cameraVideo = document.createElement('video');
-
-			cameraVideo.srcObject = cameraStream;
-			cameraVideo.play();
-			var canvasStream = canvas.captureStream(15);
-
-			if(this.localStream == null){
-				this.gotStream(canvasStream);
-			}
-			else{
-				this.updateVideoTrack(canvasStream,streamId,this.mediaConstraints,onended,null);
-			}
-			if (onEndedCallback != null) {
-				stream.getVideoTracks()[0].onended = function(event) {
-					onEndedCallback(event);
-				}
-			}
-
-			//update the canvas
-			setInterval(() => {
-				//draw screen to canvas
-				canvas.width = screenVideo.videoWidth;
-				canvas.height = screenVideo.videoHeight;
-				canvasContext.drawImage(screenVideo, 0, 0, canvas.width, canvas.height);
-
-				var cameraWidth = screenVideo.videoWidth * (this.camera_percent/100);
-				var cameraHeight = (cameraVideo.videoHeight/cameraVideo.videoWidth)*cameraWidth
-
-				var positionX = (canvas.width - cameraWidth) - this.camera_margin;
-				var positionY;
-
-				if (this.camera_location == "top") {
-					positionY = this.camera_margin;
-				}
-				else { //if not top, make it bottom
-					//draw camera on right bottom corner
-					positionY = (canvas.height - cameraHeight) - this.camera_margin;
-				}
-				canvasContext.drawImage(cameraVideo, positionX, positionY, cameraWidth, cameraHeight);
-			}, 66);
-		}, true)
-	}
-	trackDeviceChange(){
-		navigator.mediaDevices.ondevicechange = () => {
-			this.getDevices();
-		}
-	}
-	getDevices(){
-		navigator.mediaDevices.enumerateDevices().then(devices => {
-			this.deviceArray = new Array();
-			let checkAudio = false
-			let checkVideo = false
-			devices.forEach(device => {	
-				if (device.kind == "audioinput" || device.kind == "videoinput") {
-					this.deviceArray.push(device);
-					if(device.kind=="audioinput"){
-						checkAudio = true;
-					}
-					if(device.kind=="videoinput"){
-						checkVideo = true;
-					}
-				}
-			});
-			this.callback("available_devices", this.deviceArray);
-			if(checkAudio == false && this.localStream == null){
-				console.log("Audio input not found")
-				console.log("Retrying to get user media without audio")
-				if(this.inputDeviceNotFoundLimit < 2){
-					if(checkVideo != false){
-						this.openStream({video : true, audio : false}, this.mode)
-						this.inputDeviceNotFoundLimit++;
-					}else{
-						console.log("Video input not found")
-						alert("There is no video or audio input")
-					}
-				}
-				else{
-					alert("No input device found, publish is not possible");
-				}
-			}
-		}).catch(err => {
-			console.error("Cannot get devices -> error name: " + err.name + ": " + err.message);
-		});
-	}
-
-	prepareStreamTracks(mediaConstraints,audioConstraint,stream,streamId) 
-	{
-		//this trick, getting audio and video separately, make us add or remove tracks on the fly
-		var audioTrack = stream.getAudioTracks()
-		if (audioTrack.length > 0 && this.publishMode == "camera") {
-			audioTrack[0].stop();
-			stream.removeTrack(audioTrack[0]);
-		}
-		//now get only audio to add this stream
-		if (audioConstraint != "undefined" && audioConstraint != false) {
-			var media_audio_constraint = { audio: audioConstraint};
-			this.navigatorUserMedia(media_audio_constraint, audioStream => {
-
-				audioStream = this.setGainNodeStream(audioStream);
-				if (this.originalAudioTrackGainNode !== null) {
-					this.originalAudioTrackGainNode.stop();
-				}
-				this.originalAudioTrackGainNode = audioStream.getAudioTracks()[1];
-
-				//add callback if desktop is sharing
-				var onended = event => {
-					this.callback("screen_share_stopped");
-					this.setVideoCameraSource(streamId, mediaConstraints, null, true);
-				}
-
-				if(this.publishMode == "screen"){
-					this.updateVideoTrack(stream,streamId,mediaConstraints,onended,true);
-					if(audioTrack.length > 0 ){
-						var mixedStream = this.mixAudioStreams(stream, audioStream, streamId);
-						this.updateAudioTrack(mixedStream,streamId,null);
-					}
-					else{
-						this.updateAudioTrack(audioStream,streamId,null);
-					}
-				}
-				else if(this.publishMode == "screen+camera" ){
-					if(audioTrack.length > 0 ){
-						var mixedStream = this.mixAudioStreams(stream, audioStream, streamId);
-						this.updateAudioTrack(mixedStream,streamId,null);
-						this.setDesktopwithCameraSource(stream,streamId, mixedStream,onended);
-					}
-					else{
-						this.updateAudioTrack(audioStream,streamId,null);
-						this.setDesktopwithCameraSource(stream,streamId,audioStream,onended);
-					}
-				}
-				else{
-					if(audioConstraint != false && audioConstraint != undefined){
-						stream.addTrack(audioStream.getAudioTracks()[0]);
-					}
-					this.gotStream(stream);
-				}
-				this.checkWebSocketConnection();
-			}, true)
-		}
-		else {
-			if(typeof audioStream != "undefined" && audioStream.getAudioTracks()[0] != null){
-				stream.addTrack(audioStream.getAudioTracks()[0]);
-			}
-			this.gotStream(stream);
-		}
-	}
-
-	navigatorUserMedia(mediaConstraints, func ,catch_error)
-	{
-		if( catch_error == true){
-		navigator.mediaDevices.getUserMedia(mediaConstraints).then(func).catch(error => {
-			if (error.name == "NotFoundError"){
-				this.getDevices()
-			}
-			if (error.name == "NotReadableError"){
-				this.callbackError(error.name, error.message);
-				this.tryNextAvailableDevice();
-			}
-			else{
-				this.callbackError(error.name, error.message);
-			}
-			});
-		}else {
-			navigator.mediaDevices.getUserMedia(mediaConstraints).then(func)
-		}
+		this.checkWebSocketConnection();
 	}
 
 	tryNextAvailableDevice(){
@@ -374,168 +257,23 @@ export class WebRTCAdaptor
 	}	
 
 	/**
-	 * Get user media
-	 */
-	getUserMedia(mediaConstraints, audioConstraint, streamId) 
-	{
-		const resetTrack = (stream) => {
-			let videoTracks = stream.getVideoTracks();
-			let audioTracks = stream.getAudioTracks();
-			
-			if (videoTracks.length > 0) {
-				if (this.videoTrack !== null)
-					this.videoTrack.stop();
-				this.videoTrack = videoTracks[0];
-			}
-			
-			if (audioTracks.length > 0) {
-				if (this.audioTrack !== null)
-					this.audioTrack.stop();				
-				this.audioTrack = audioTracks[0];	
-			}		
-
-			if (this.smallVideoTrack)
-				this.smallVideoTrack.stop();
-			return stream;
-		}
-		
-		// Check Media Constraint video value screen or screen + camera
-		if(this.publishMode == "screen+camera" || this.publishMode == "screen"){
-			navigator.mediaDevices.getDisplayMedia(mediaConstraints)
-			.then(stream =>{
-				resetTrack(stream);
-				this.prepareStreamTracks(mediaConstraints,audioConstraint,stream, streamId);
-
-			})
-			.catch(error => {
-				if (error.name === "NotAllowedError") {
-					console.debug("Permission denied error");
-					this.callbackError("ScreenSharePermissionDenied");
-
-					// Redirect Default Stream Camera
-					if(this.localStream == null){
-
-						var mediaConstraints = {
-							video : true,
-							audio : true
-						};
-
-						this.openStream(mediaConstraints);
-					}
-					else{
-						this.switchVideoCameraCapture(streamId);
-					}
-
-				}
-			});
-		}
-		// If mediaConstraints only user camera
-		else {
-			this.navigatorUserMedia(mediaConstraints, (stream =>{
-				resetTrack(stream);
-				this.prepareStreamTracks(mediaConstraints,audioConstraint,stream, streamId);
-			}),true);
-		}
-	}
-
-	/**
-	 * Open media stream, it may be screen, camera or audio
-	 */
-	openStream(mediaConstraints)
-	{
-		this.mediaConstraints = mediaConstraints;
-		var audioConstraint = false;
-		if (typeof mediaConstraints.audio != "undefined" && mediaConstraints.audio != false) {
-			audioConstraint = mediaConstraints.audio;
-		}
-
-		if (typeof mediaConstraints.video != "undefined") {
-			this.getUserMedia(mediaConstraints, audioConstraint);
-		}
-		else {
-			console.error("MediaConstraint video is not defined");
-			this.callbackError("media_constraint_video_not_defined");
-		}
-	}
-
-	/**
-	 * Closes stream, if you want to stop peer connection, call stop(streamId)
-	 */
-	closeStream() 
-	{
-		this.localStream.getVideoTracks().forEach(function(track) {
-			track.onended = null;
-			track.stop();
-		});
-
-		this.localStream.getAudioTracks().forEach(function(track) {
-			track.onended = null;
-			track.stop();
-		});
-		if (this.videoTrack !== null) {
-			this.videoTrack.stop();
-		}
-
-		if (this.audioTrack !== null) {
-			this.audioTrack.stop();
-		}
-
-		if (this.smallVideoTrack !== null) {
-			this.smallVideoTrack.stop();
-		}		
-		if (this.originalAudioTrackGainNode) {
-			this.originalAudioTrackGainNode.stop();
-		}		
-		
-	}
-	/*
-	* Checks if we is permitted from browser
-	*/
-	checkWebRTCPermissions(){
-		if (!("WebSocket" in window)) {
-			console.log("WebSocket not supported.");
-			this.callbackError("WebSocketNotSupported");
-			return;
-		}
-
-		if (typeof navigator.mediaDevices == "undefined" && this.isPlayMode == false) {
-			console.log("Cannot open camera and mic because of unsecure context. Please Install SSL(https)");
-			this.callbackError("UnsecureContext");
-			return;
-		}
-		if (typeof navigator.mediaDevices == "undefined" || navigator.mediaDevices == undefined || navigator.mediaDevices == null ) {
-			this.callbackError("getUserMediaIsNotAllowed");
-		}
-	}
-
-	/**
-	 * Checks browser supports screen share feature
-	 * if exist it calls callback with "browser_screen_share_supported"
-	 */
-
-	checkBrowserScreenShareSupported() 
-	{
-		if ((typeof navigator.mediaDevices != "undefined"  && navigator.mediaDevices.getDisplayMedia) || navigator.getDisplayMedia ) {
-			this.callback("browser_screen_share_supported");
-		}
-	};
-
-	enableSecondStreamInMixedAudio(enable) 
-	{
-		
-		if (this.secondStreamGainNode != null) {
-			if (enable) {
-				this.secondStreamGainNode.gain.value = 1;
-			}
-			else {
-				this.secondStreamGainNode.gain.value = 0;
-			}
-		}
-	}
-
+	 * Called to start a new WebRTC stream. AMS responds with start message.
+	 * Parameters:
+	 * 	 streamId: unique id for the stream
+	 * 	 token: required if any stream security (token control) enabled. Check https://github.com/ant-media/Ant-Media-Server/wiki/Stream-Security-Documentation
+	 * 	 subscriberId: required if TOTP enabled. Check https://github.com/ant-media/Ant-Media-Server/wiki/Time-based-One-Time-Password-(TOTP) 
+	 * 	 subscriberCode: required if TOTP enabled. Check https://github.com/ant-media/Ant-Media-Server/wiki/Time-based-One-Time-Password-(TOTP)
+	 *   streamName: required if you want to set a name for the stream
+	 *   mainTrack: required if you want to start the stream as a subtrack for a main streamwhich has id of this parameter. 
+	 * 				Check:https://antmedia.io/antmediaserver-webrtc-multitrack-playing-feature/
+	 * 				!!! for multitrack conference set this value with roomName
+	 *   metaData: a free text information for the stream to AMS. It is provided to Rest methods by the AMS
+	 */ 
 	publish(streamId, token, subscriberId, subscriberCode, streamName, mainTrack, metaData) 
 	{
-		this.publishStreamId =streamId;
+		//TODO: should refactor the repeated code  
+		this.publishStreamId = streamId;
+		this.mediaManager.publishStreamId = streamId;
 		if (this.onlyDataChannel) {
 			var jsCmd = {
 				command : "publish",
@@ -551,9 +289,9 @@ export class WebRTCAdaptor
 			};
 		}
 		//If it started with playOnly mode and wants to publish now
-		else if(this.localStream == null){
-			this.navigatorUserMedia(this.mediaConstraints, (stream => {
-				this.gotStream(stream);
+		else if(this.mediaManager.localStream == null){
+			this.mediaManager.navigatorUserMedia(this.mediaConstraints, (stream => {
+				this.mediaManager.gotStream(stream);
 				var jsCmd = {
 					command : "publish",
 					streamId : streamId,
@@ -562,8 +300,8 @@ export class WebRTCAdaptor
 					subscriberCode: typeof subscriberCode !== undefined ? subscriberCode : "",
 					streamName : typeof streamName !== undefined ? streamName : "" ,
 					mainTrack : typeof mainTrack !== undefined ? mainTrack : "" ,				
-					video: this.localStream.getVideoTracks().length > 0 ? true : false,
-					audio: this.localStream.getAudioTracks().length > 0 ? true : false,
+					video: this.mediaManager.localStream.getVideoTracks().length > 0 ? true : false,
+					audio: this.mediaManager.localStream.getAudioTracks().length > 0 ? true : false,
 					metaData: metaData,
 				};
 				this.webSocketAdaptor.send(JSON.stringify(jsCmd));
@@ -578,14 +316,23 @@ export class WebRTCAdaptor
 					subscriberCode: typeof subscriberCode !== undefined ? subscriberCode : "",
 					streamName : typeof streamName !== undefined ? streamName : "" ,
 					mainTrack : typeof mainTrack !== undefined ? mainTrack : "" ,
-					video: this.localStream.getVideoTracks().length > 0 ? true : false,
-					audio: this.localStream.getAudioTracks().length > 0 ? true : false,
+					video: this.mediaManager.localStream.getVideoTracks().length > 0 ? true : false,
+					audio: this.mediaManager.localStream.getAudioTracks().length > 0 ? true : false,
 					metaData: metaData,
 			};
 		}
 		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
 	}
 
+	/**
+	 * Called to join a room. AMS responds with joinedTheRoom message.
+	 * Parameters:
+	 * 	 roomName: unique id of the room
+	 * 	 stream: unique id of the stream belogns to this participant
+	 * 	 mode: 	legacy for older implementation (default value)
+	 * 			mcu for merging streams
+	 * 			amcu: audio only conferences with mixed audio
+	 */ 
 	joinRoom(roomName, streamId, mode) 
 	{
 		this.roomName = roomName;
@@ -599,7 +346,19 @@ export class WebRTCAdaptor
 		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
 	}
 	
-	play(streamId, token, roomId, enableTracks, subscriberId, subscriberCode) 
+	/**
+	 * Called to start a playing session for a stream. AMS responds with start message.
+	 * Parameters:
+	 * 	 streamId: unique id for the stream that you want to play
+	 * 	 token: required if any stream security (token control) enabled. Check https://github.com/ant-media/Ant-Media-Server/wiki/Stream-Security-Documentation
+	 *   roomId: required if this stream is belonging to a room participant
+	 *   enableTracks: required if the stream is a main stream of multitrack playing. You can pass the the subtrack id list that you want to play.
+	 * 					you can also provide a track id that you don't want to play by adding ! before the id. 
+	 * 	 subscriberId: required if TOTP enabled. Check https://github.com/ant-media/Ant-Media-Server/wiki/Time-based-One-Time-Password-(TOTP) 
+	 * 	 subscriberCode: required if TOTP enabled. Check https://github.com/ant-media/Ant-Media-Server/wiki/Time-based-One-Time-Password-(TOTP)
+	 *   metaData: a free text information for the stream to AMS. It is provided to Rest methods by the AMS
+	 */ 
+	play(streamId, token, roomId, enableTracks, subscriberId, subscriberCode, metaData) 
 	{
 		this.playStreamId.push(streamId);
 		var jsCmd =
@@ -611,12 +370,17 @@ export class WebRTCAdaptor
 				trackList : enableTracks,
 				subscriberId: typeof subscriberId !== undefined ? subscriberId : "" ,
 				subscriberCode: typeof subscriberCode !== undefined ? subscriberCode : "",
-				viewerInfo : this.viewerInfo,
+				viewerInfo : metaData,
 		}
 
 		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
 	}
 
+	/**
+	 * Called to stop a publishing/playing session for a stream. AMS responds with publishFinished or playFinished message.
+	 * Parameters:
+	 * 	 streamId: unique id for the stream that you want to stop publishing or playing
+	 */
 	stop(streamId) 
 	{
 		this.closePeerConnection(streamId);
@@ -629,6 +393,11 @@ export class WebRTCAdaptor
 		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
 	}
 
+	/**
+	 * Called to join a peer-to-peer mode session as peer. AMS responds with joined message.
+	 * Parameters:
+	 * 	 streamId: unique id for the peer-to-peer session
+	 */
 	join(streamId) 
 	{
 		var jsCmd = {
@@ -641,6 +410,11 @@ export class WebRTCAdaptor
 		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
 	}
 
+	/**
+	 * Called to leave from a conference room. AMS responds with leavedTheRoom message.
+	 * Parameters:
+	 * 	 roomName: unique id for the conference room
+	 */
 	leaveFromRoom(roomName) 
 	{
 		this.roomName = roomName;
@@ -653,6 +427,11 @@ export class WebRTCAdaptor
 		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
 	}
 
+	/**
+	 * Called to leave from a peer-to-peer mode session. AMS responds with leaved message.
+	 * Parameters:
+	 * 	 streamId: unique id for the peer-to-peer session
+	 */
 	leave(streamId) 
 	{
 		var jsCmd = {
@@ -665,6 +444,11 @@ export class WebRTCAdaptor
 		this.multiPeerStreamId = null;
 	}
 
+	/**
+	 * Called to get a stream information for a specific stream. AMS responds with streamInformation message.
+	 * Parameters:
+	 * 	 streamId: unique id for the stream that you want to get info about
+	 */
 	getStreamInfo(streamId) 
 	{
 		var jsCmd = {
@@ -674,6 +458,12 @@ export class WebRTCAdaptor
 		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
 	}
 	
+	/**
+	 * Called to update the meta information for a specific stream.
+	 * Parameters:
+	 * 	 streamId: unique id for the stream that you want to update MetaData
+	 *   metaData: new free text information for the stream
+	 */
 	upateStreamMetaData(streamId, metaData) 
 	{
 		var jsCmd = {
@@ -684,6 +474,13 @@ export class WebRTCAdaptor
 		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
 	}
 	
+	/**
+	 * Called to get the room information for a specific room. AMS responds with roomInformation message 
+	 * which includes the ids and names of the streams in that room.
+	 * Parameters:
+	 * 	 roomName: unique id for the room that you want to get info about
+	 * 	 streamId: unique id for the stream that is streamed by this @WebRTCAdaptor
+	 */
 	getRoomInfo(roomName,streamId) 
 	{
 		var jsCmd = {
@@ -694,6 +491,13 @@ export class WebRTCAdaptor
 		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
 	}
 
+	/**
+	 * Called to enable/disable data flow from the AMS for a specific track under a main track.
+	 * Parameters:
+	 * 	 mainTrackId: unique id for the main stream
+	 * 	 trackId: unique id for the track that you want to enable/disable data flow for
+	 * 	 enabled: true or false
+	 */
 	enableTrack(mainTrackId, trackId, enabled) 
 	{
 		var jsCmd = {
@@ -705,6 +509,13 @@ export class WebRTCAdaptor
 		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
 	}
 
+	/**
+	 * Called to get the track ids under a main stream. AMS responds with trackList message. 
+	 * Parameters:
+	 * 	 streamId: unique id for the main stream
+	 * 	 token: not used 
+	 * TODO: check this function
+	 */
 	getTracks(streamId, token) 
 	{
 		this.playStreamId.push(streamId);
@@ -718,482 +529,12 @@ export class WebRTCAdaptor
 		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
 	}
 
-	gotStream(stream)
-	{
-		//NOTE: I couldn't find a possible reason that we call setGainNode here, it creates problems by adding the second audio track therefore commenting it out. Tahir.
-		//Also the following line causes multiple audio tracks in a stream. burak
-		//stream = this.setGainNodeStream(stream);
-
-		this.localStream = stream;
-		if (this.localVideo) {
-			this.localVideo.srcObject = stream;
-		}
-		this.checkWebSocketConnection();
-		this.getDevices();
-	}
-	
 	/**
-	* Toggle video track on the server side.
-	*
-	* streamId is the id of the stream
-	* trackId is the id of the track. streamId is also one of the trackId of the stream. If you are having just a single track on your 
-	*         stream, you need to give streamId as trackId parameter as well.  
-	* enabled is the enable/disable video track. If it's true, server sends video track. If it's false, server does not send video
-	
-	*/
-	toggleVideo(streamId, trackId, enabled) 
-	{
-		var jsCmd = {
-				command : "toggleVideo",
-				streamId: streamId,
-				trackId: trackId,
-				enabled: enabled,
-		};
-		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
-	}
-	
-	/**
-	* Toggle audio track on the server side.
-	*
-	* streamId is the id of the stream
-	* trackId is the id of the track. streamId is also one of the trackId of the stream. If you are having just a single track on your 
-	*         stream, you need to give streamId as trackId parameter as well.  
-	* enabled is the enable/disable video track. If it's true, server sends audio track. If it's false, server does not send audio
-	*
-	*/
-	toggleAudio(streamId, trackId, enabled)
-	{
-		var jsCmd = {
-				command : "toggleAudio",
-				streamId: streamId,
-				trackId: trackId,
-				enabled: enabled,
-		};
-		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
-	}
-
-
-	/**
-	 * These methods are initialized when the user is muted himself in a publish scenario
-	 * It will keep track if the user is trying to speak without sending any data to server
-	 * Please don't forget to disable this function with disableAudioLevelWhenMuted if you use it.
+	 * Called by browser when a new track is added to WebRTC connetion. This is used to infor html pages with newStreamAvailable callback. 
+	 * Parameters:
+	 * 	 event: TODO
+	 * 	 streamId: unique id for the stream 
 	 */
-	enableAudioLevelWhenMuted() {
-		navigator.mediaDevices.getUserMedia({video:false, audio:true})
-		.then((stream) => {
-		this.mutedAudioStream = stream;
-		const soundMeter = new SoundMeter(this.audioContext);
-		soundMeter.connectToSource(this.mutedAudioStream, (e) => {
-			if (e) {
-				alert(e);
-				return;
-			}
-			this.meterRefresh = setInterval(() => {
-				if(soundMeter.instant.toFixed(2) > 0.1){
-					this.callback("speaking_but_muted");
-				}
-			}, 200);
-		});
-			
-		})
-		.catch(function(err) {
-			console.log("Can't get the soundlevel on mute")
-		});
-	}
-
-	disableAudioLevelWhenMuted(){
-		if(this.meterRefresh != null){
-			clearInterval(this.meterRefresh)
-		}
-
-		if(this.mutedAudioStream != null){
-			this.mutedAudioStream.getTracks().forEach(function(track) {
-				track.stop();
-			});
-		}
-	}
-	
-	switchDesktopCapture(streamId){
-		this.publishMode = "screen";
-
-		var audioConstraint = false;
-		if (typeof this.mediaConstraints.audio != "undefined" && this.mediaConstraints.audio != false) {
-			audioConstraint = this.mediaConstraints.audio;
-		}
-		
-		if(typeof this.mediaConstraints.video != "undefined" && this.mediaConstraints.video != false){
-			this.mediaConstraints.video = true
-		}
-
-		this.getUserMedia(this.mediaConstraints, audioConstraint, streamId);
-	}
-	/*
-	* This method mixed the first stream audio to the second stream audio and 
-	* returns mixed stream. 
-	* stream: Initiali stream that contain video and audio
-	* 
-	*/
-	mixAudioStreams(stream, secondStream,streamId)
-	{
-		//console.debug("audio stream track count: " + audioStream.getAudioTracks().length);
-		var composedStream = new MediaStream();
-		//added the video stream from the screen
-		stream.getVideoTracks().forEach(function(videoTrack) {
-			composedStream.addTrack(videoTrack);
-		});
-
-		this.audioContext = new AudioContext();
-		var audioDestionation = this.audioContext.createMediaStreamDestination();
-
-		if (stream.getAudioTracks().length > 0) {
-			this.soundOriginGainNode = this.audioContext.createGain();
-
-			//Adjust the gain for screen sound
-			this.soundOriginGainNode.gain.value = 1;
-			var audioSource = this.audioContext.createMediaStreamSource(stream);
-
-			audioSource.connect(this.soundOriginGainNode).connect(audioDestionation);
-		}
-		else {
-			console.debug("Origin stream does not have audio track")
-		}
-
-		if (secondStream.getAudioTracks().length > 0) {
-			this.secondStreamGainNode = this.audioContext.createGain();
-			
-			//Adjust the gain for second sound
-			this.secondStreamGainNode.gain.value = 1;
-
-			var audioSource2 = this.audioContext.createMediaStreamSource(secondStream);
-			audioSource2.connect(this.secondStreamGainNode).connect(audioDestionation);
-		}
-		else {
-			console.debug("Second stream does not have audio track")
-		}
-
-		audioDestionation.stream.getAudioTracks().forEach(function(track) {
-			composedStream.addTrack(track);
-			console.log("audio destination add track");
-		});
-
-		return composedStream;
-	}
-
-	enableAudioLevel(stream, streamId) {
-
-		const soundMeter = new SoundMeter(this.audioContext);
-
-		// Put variables in global scope to make them available to the
-		// browser console.
-		soundMeter.connectToSource(stream, function(e) {
-		if (e) {
-			alert(e);
-			return;
-		}
-		console.log("Added sound meter for stream: " + streamId + " = " + soundMeter.instant.toFixed(2));
-		});
-
-		this.soundMeters[streamId] = soundMeter;
-	}
-
-	getSoundLevelList(streamsList){
-		for(let i = 0; i < streamsList.length; i++){
-			this.soundLevelList[streamsList[i]] = this.soundMeters[streamsList[i]].instant.toFixed(2); 
-		}
-		this.callback("gotSoundList" , this.soundLevelList);
-	}
-	
-
-	setGainNodeStream(stream){
-		if(this.mediaConstraints.audio != false && typeof this.mediaConstraints.audio != "undefined"){
-			// Get the videoTracks from the stream.
-			const videoTracks = stream.getVideoTracks();
-
-			// Get the audioTracks from the stream.
-			const audioTracks = stream.getAudioTracks();
-
-			/**
-			* Create a new audio context and build a stream source,
-			* stream destination and a gain node. Pass the stream into 
-			* the mediaStreamSource so we can use it in the Web Audio API.
-			*/
-			this.audioContext = new AudioContext();
-			let mediaStreamSource = this.audioContext.createMediaStreamSource(stream);
-			let mediaStreamDestination = this.audioContext.createMediaStreamDestination();
-			this.soundOriginGainNode = this.audioContext.createGain();
-
-			/**
-			* Connect the stream to the gainNode so that all audio
-			* passes through the gain and can be controlled by it.
-			* Then pass the stream from the gain to the mediaStreamDestination
-			* which can pass it back to the RTC client.
-			*/
-			mediaStreamSource.connect(this.soundOriginGainNode);
-			this.soundOriginGainNode.connect(mediaStreamDestination);
-
-			if(this.currentVolume == null){
-				this.soundOriginGainNode.gain.value = 1;
-			}
-			else{
-				this.soundOriginGainNode.gain.value = this.currentVolume;
-			}
-
-			/**
-			* The mediaStreamDestination.stream outputs a MediaStream object
-			* containing a single AudioMediaStreamTrack. Add the video track
-			* to the new stream to rejoin the video with the controlled audio.
-			*/
-			const controlledStream = mediaStreamDestination.stream;
-
-			for (const videoTrack of videoTracks) {
-				controlledStream.addTrack(videoTrack);
-			}
-			for (const audioTrack of audioTracks) {
-				controlledStream.addTrack(audioTrack);
-			}
-
-			/**
-			* Use the stream that went through the gainNode. This
-			* is the same stream but with altered input volume levels.
-			*/
-			return controlledStream;
-		}
-		return stream;
-	}
-
-	switchAudioInputSource(streamId, deviceId) 
-	{
-		//stop the track because in some android devices need to close the current camera stream
-		var audioTrack = this.localStream.getAudioTracks()[0];
-		if (audioTrack) {
-			audioTrack.stop();
-		}
-		else {
-		   console.warn("There is no audio track in local stream");
-		}
-
-		if (typeof deviceId != "undefined" ) {
-			if(this.mediaConstraints.audio !== true)
-				this.mediaConstraints.audio.deviceId = deviceId;
-			else 
-				this.mediaConstraints.audio = { "deviceId": deviceId };
-		}
-		this.setAudioInputSource(streamId, this.mediaConstraints, null, true, deviceId);
-	}
-
-
-	/**
-	 * 
-	 * @param {*} streamId Id of the stream to be changed.
-	 * @param {*} deviceId Id of the device which will use as a media device
-	 * @param {*} onEndedCallback callback for when the switching video state is completed, can be used to understand if it is loading or not
-	 * 
-	 * This method is used to switch to video capture. 
-	 */
-	switchVideoCameraCapture(streamId, deviceId, onEndedCallback) 
-	{
-
-		//stop the track because in some android devices need to close the current camera stream
-		if (this.localStream != null && this.localStream.getVideoTracks()[0] != null ) {
-			this.localStream.getVideoTracks()[0].stop();
-		}
-		else {
-		   console.warn("There is no video track in local stream");
-		}
-		
-		this.publishMode = "camera";		
-		navigator.mediaDevices.enumerateDevices().then(devices => {
-			for(let i = 0; i < devices.length; i++) {	
-				if (devices[i].kind == "videoinput") {
-					//Adjust video source only if there is a matching device id with the given one.
-					//It creates problems if we don't check that since video can be just true to select default cam and it is like that in many cases.
-					if(devices[i].deviceId == deviceId){
-						if(this.mediaConstraints.video !== true)
-							this.mediaConstraints.video.deviceId = { exact: deviceId };
-						else 
-							this.mediaConstraints.video = { deviceId: { exact: deviceId } };
-						break;
-					}
-				}
-			};
-			//If no matching device found don't adjust the media constraints let it be true instead of a device ID
-			console.debug("Given deviceId = " + deviceId + " - Media constraints video property = " + this.mediaConstraints.video);
-			this.setVideoCameraSource(streamId, this.mediaConstraints, null, true, deviceId);
-		})
-
-	}
-
-	switchDesktopCaptureWithCamera(streamId) 
-	{
-		if(typeof this.mediaConstraints.video != "undefined" && this.mediaConstraints.video != false){
-			this.mediaConstraints.video = true
-		}
-
-		this.publishMode = "screen+camera";
-
-		var audioConstraint = false;
-		if (typeof this.mediaConstraints.audio != "undefined" && this.mediaConstraints.audio != false) {
-			audioConstraint = this.mediaConstraints.audio;
-		}
-		this.getUserMedia(this.mediaConstraints, audioConstraint, streamId);
-	}
-	
-	/**
-	 * This method updates the local stream. It removes existant audio track from the local stream
-	 * and add the audio track in `stream` parameter to the local stream
-	 */
-	updateLocalAudioStream(stream, onEndedCallback) 
-	{
-		var newAudioTrack = stream.getAudioTracks()[0];
-		
-		if (this.localStream != null && this.localStream.getAudioTracks()[0] != null) 
-		{
-			var audioTrack = this.localStream.getAudioTracks()[0];
-			this.localStream.removeTrack(audioTrack);
-			audioTrack.stop();
-			this.localStream.addTrack(newAudioTrack);
-		}
-		else if(this.localStream != null){
-			this.localStream.addTrack(newAudioTrack);
-		}
-		else{
-			this.localStream = stream
-		}
-		
-
-		if (this.localVideo != null) 
-		{   //it can be null
-			this.localVideo.srcObject = this.localStream;
-		}
-
-		if (onEndedCallback != null) {
-			stream.getAudioTracks()[0].onended = function(event) {
-				onEndedCallback(event);
-			}
-		}
-	}
-	
-	/**
-	 * This method updates the local stream. It removes existant video track from the local stream
-	 * and add the video track in `stream` parameter to the local stream
-	 */
-	updateLocalVideoStream(stream, onEndedCallback, stopDesktop) 
-	{
-		if (stopDesktop && this.desktopStream != null) {
-			this.desktopStream.getVideoTracks()[0].stop();
-		}
-
-		var newVideoTrack = stream.getVideoTracks()[0];
-
-		if(this.localStream != null && this.localStream.getVideoTracks()[0] != null){
-			var videoTrack = this.localStream.getVideoTracks()[0];
-			this.localStream.removeTrack(videoTrack);
-			videoTrack.stop();
-			this.localStream.addTrack(newVideoTrack);
-		}
-		else if(this.localStream != null){
-			this.localStream.addTrack(newVideoTrack);
-		}
-		else{
-			this.localStream = stream;
-		}
-
-		if (this.localVideo) {
-			this.localVideo.srcObject = this.localStream;
-		}
-
-		if (onEndedCallback != null) {
-			stream.getVideoTracks()[0].onended = function(event) {
-				onEndedCallback(event);
-			}
-		}
-	}
-	
-	/**
-	 * This method sets Audio Input Source. 
-	 * It calls updateAudioTrack function for the update local audio stream.
-	 */
-	setAudioInputSource(streamId, mediaConstraints, onEndedCallback) 
-	{
-		this.navigatorUserMedia(mediaConstraints,stream => {
-			this.updateAudioTrack(stream, streamId, mediaConstraints, onEndedCallback);
-		}, true);
-	}
-	
-	/**
-	 * This method sets Video Input Source. 
-	 * It calls updateVideoTrack function for the update local video stream.
-	 */
-	 setVideoCameraSource(streamId, mediaConstraints, onEndedCallback, stopDesktop) 
-	 {
-		 this.navigatorUserMedia(mediaConstraints, stream => {
-			 //Video tracks should apply firstly
-		 	 this.updateVideoTrack(stream, streamId, mediaConstraints, onEndedCallback, stopDesktop);
-
-			 //Why did we update also the audio track here?
-			 //This audio track update is necessary for such a case:
-			 //If you enable screen share with browser audio and then 
-			 //return back to the camera, the audio should be only from mic.
-			 //If, we don't update audio with the following lines, 
-			 //the mixed (mic+browser) audio would be streamed in the camera mode.
-			 
-			 this.updateAudioTrack(stream, streamId, mediaConstraints, onEndedCallback);
-		 }, true);
-	 }
-	
-	updateAudioTrack (stream, streamId, onEndedCallback) 
-	{
-		//These codes cover when audio source change with audio source buttons
-		//this.setGainNodeStream should be call before the audio source change
-		//this.setGainNodeStream codes calling in prepareStreamTracks function, but it's not calling when audio source change with switchAudioInputSource function
-		stream = this.setGainNodeStream(stream);
-
-		if (this.remotePeerConnection[streamId] != null) {
-			var audioTrackSender = this.remotePeerConnection[streamId].getSenders().find(function(s) {
-				return s.track.kind == "audio";
-			});
-
-			if (audioTrackSender) {
-				audioTrackSender.replaceTrack(stream.getAudioTracks()[0]).then(result => {
-					this.updateLocalAudioStream(stream, onEndedCallback);
-	
-				}).catch(function(error) {
-					console.log(error.name);
-				});
-			}
-			else {
-				console.error("AudioTrackSender is undefined or null");
-			}
-		}
-		else {
-			this.updateLocalAudioStream(stream, onEndedCallback);
-		}
-	}
-
-	updateVideoTrack(stream, streamId, mediaConstraints, onEndedCallback, stopDesktop) 
-	{
-		if (this.remotePeerConnection[streamId] != null) {
-			var videoTrackSender = this.remotePeerConnection[streamId].getSenders().find(function(s) {
-				return s.track.kind == "video";
-			});
-
-			if (videoTrackSender) {
-				videoTrackSender.replaceTrack(stream.getVideoTracks()[0]).then(result => {
-					this.updateLocalVideoStream(stream, onEndedCallback, stopDesktop);
-	
-				}).catch(error => {
-					console.log(error.name);
-				});
-			}
-			else {
-				console.error("VideoTrackSender is undefined or null");
-			}
-		}
-		else {
-			this.updateLocalVideoStream(stream, onEndedCallback, stopDesktop);
-		}
-	}
-
 	onTrack(event, streamId)
 	{
 		console.log("onTrack");
@@ -1216,6 +557,12 @@ export class WebRTCAdaptor
 
 	}
 
+	/**
+	 * Called by WebSocketAdaptor when a new ice candidate is received from AMS. 
+	 * Parameters:
+	 * 	 event: TODO
+	 * 	 streamId: unique id for the stream 
+	 */
 	iceCandidateReceived(event, streamId)
 	{
 		if (event.candidate) {
@@ -1267,7 +614,12 @@ export class WebRTCAdaptor
 		}
 	}
 
-
+	/**
+	 * Called internally to initiate Data Channel. 
+	 * Note that Data Channel should be enabled fromAMS settings. 
+	 * 	 streamId: unique id for the stream 
+	 *   dataChannel: provided by PeerConnection
+	 */
 	initDataChannel(streamId, dataChannel) 
 	{
 		dataChannel.onerror = (error) => {
@@ -1336,7 +688,11 @@ export class WebRTCAdaptor
 		};
 	}
 
-	// data channel mode can be "publish" , "play" or "peer" based on this it is decided which way data channel is created
+	/**
+	 * Called internally to initiate PeerConnection. 
+	 * 	 streamId: unique id for the stream 
+	 *   dataChannelMode: can be "publish" , "play" or "peer" based on this it is decided which way data channel is created
+	 */
 	initPeerConnection(streamId, dataChannelMode) 
 	{
 		if (this.remotePeerConnection[streamId] == null)
@@ -1348,9 +704,9 @@ export class WebRTCAdaptor
 			this.iceCandidateList[streamId] = new Array();
 			if (!this.playStreamId.includes(streamId))
 			{
-				if(this.localStream != null) {
+				if(this.mediaManager.localStream != null) {
 					//AddStream is deprecated thus updated to the addTrack after version 2.4.2.1
-					this.localStream.getTracks().forEach(track => this.remotePeerConnection[streamId].addTrack(track, this.localStream));
+					this.mediaManager.localStream.getTracks().forEach(track => this.remotePeerConnection[streamId].addTrack(track, this.mediaManager.localStream));
 				}
 			}
 			this.remotePeerConnection[streamId].onicecandidate = event => {
@@ -1410,11 +766,12 @@ export class WebRTCAdaptor
 				var obj = {state:this.remotePeerConnection[streamId].iceConnectionState, streamId:streamId};
 				this.callback("ice_connection_state_changed",obj);
 
-				if (!this.isPlayMode) {
+				//
+				if (!this.isPlayMode && !this.playStreamId.includes(streamId)) {
 					if (this.remotePeerConnection[streamId].iceConnectionState == "connected") {
 
-						this.changeBandwidth(this.bandwidth, streamId).then(() => {
-							console.log("Bandwidth is changed to " + this.bandwidth);
+						this.mediaManager.changeBandwidth(this.mediaManager.bandwidth, streamId).then(() => {
+							console.log("Bandwidth is changed to " + this.mediaManager.bandwidth);
 						})
 						.catch(e => console.warn(e));
 					}
@@ -1424,6 +781,10 @@ export class WebRTCAdaptor
 		}
 	}
 
+	/**
+	 * Called internally to close PeerConnection. 
+	 * 	 streamId: unique id for the stream 
+	 */
 	closePeerConnection(streamId) 
 	{	
 		if (this.remotePeerConnection[streamId] != null)
@@ -1453,6 +814,12 @@ export class WebRTCAdaptor
 		}				
 	}
 
+	/**
+	 * Called to get the signalling state for a stream. 
+	 * This information can be used for error handling.
+	 * Check: https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection/connectionState
+	 * 	 streamId: unique id for the stream 
+	 */
 	signallingState(streamId) 
 	{
 		if (this.remotePeerConnection[streamId] != null) {
@@ -1461,6 +828,12 @@ export class WebRTCAdaptor
 		return null;
 	}
 
+	/**
+	 * Called to get the ice connection state for a stream. 
+	 * This information can be used for error handling.
+	 * Check: https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection/iceConnectionState
+	 * 	 streamId: unique id for the stream 
+	 */
 	iceConnectionState(streamId) 
 	{
 		if (this.remotePeerConnection[streamId] != null) {
@@ -1469,6 +842,12 @@ export class WebRTCAdaptor
 		return null;
 	}
 
+	/**
+	 * Called by browser when Local Configuration (SDP) is created successfully. 
+	 * It is set as LocalDescription first then sent to AMS.
+	 * 	 configuration: created Local Configuration (SDP) 
+	 * 	 streamId: unique id for the stream 
+	 */
 	gotDescription(configuration, streamId)
 	{
 		this.remotePeerConnection[streamId]
@@ -1495,91 +874,17 @@ export class WebRTCAdaptor
 			console.error("Cannot set local description. Error is: " + error);
 		});
 	}
-	initializeDummyFrame(){
-		this.dummyCanvas.getContext('2d').fillRect(0, 0, 320, 240);
-		this.replacementStream = this.dummyCanvas.captureStream();
-	}
-
-	turnOffLocalCamera(streamId) 
-	 {
-		 //Initialize the first dummy frame for switching.
-		this.initializeDummyFrame();
-		
-		 if (this.remotePeerConnection != null) {
-			 let choosenId;
-			 if(streamId != null || typeof streamId != "undefined"){
-				choosenId = streamId;
-			 }
-			 else{
-				choosenId = this.publishStreamId;
-			 }
-			 this.updateVideoTrack(this.replacementStream, choosenId, this.mediaConstraints, null, true);
-		 }
-		 else {
-			 this.callbackError("NoActiveConnection");
-		 }
-
-		 //We need to send black frames within a time interval, because when the user turn off the camera,
-		//player can't connect to the sender since there is no data flowing. Sending a black frame in each 3 seconds resolves it.
-		if(this.blackFrameTimer == null){
-			this.blackFrameTimer = setInterval(() => {			
-				this.initializeDummyFrame();
-			}, 3000);
-		}
-	 }
-
-	 turnOnLocalCamera(streamId) 
-	 {
-		if(this.blackFrameTimer != null){
-			clearInterval(this.blackFrameTimer);
-			this.blackFrameTimer = null;
-		}
-		 if(this.localStream == null){
-			 this.navigatorUserMedia(this.mediaConstraints, stream =>{
-				 this.gotStream(stream);
-			 }, false);
-		 }
-		 //This method will get the camera track and replace it with dummy track
-		 else if (this.remotePeerConnection != null) {
-			 this.navigatorUserMedia(this.mediaConstraints, stream =>{
-				let choosenId;
-			 	if(streamId != null || typeof streamId != "undefined"){
-					choosenId = streamId;
-				 }
-				 else{
-					choosenId = this.publishStreamId;
-				 }
-				 this.updateVideoTrack(stream, choosenId, this.mediaConstraints, null, true);
-			 }, false);
-		 }
-		 else {
-			 this.callbackError("NoActiveConnection");
-		 }
-	 }
-
-	muteLocalMic() 
-	{
-		if (this.remotePeerConnection != null) {
-			this.localStream.getAudioTracks().forEach(track => track.enabled = false);
-		}
-		else {
-			this.callbackError("NoActiveConnection");
-		}
-	}
 
 	/**
-	 * if there is audio it calls callbackError with "AudioAlreadyActive" parameter
+	 * Called by WebSocketAdaptor when Remote Configuration (SDP) is received from AMS. 
+	 * It is set as RemoteDescription first then if @iceCandidateList has candidate that 
+	 * is received bfore this message, it is added as ice candidate.
+	 * 	 configuration: received Remote Configuration (SDP) 
+	 * 	 idOfStream: unique id for the stream 
+	 * 	 typeOfConfiguration: unique id for the stream 
+	 * 	 idMapping: stream id and track id (which is provided in SDP) mapping in MultiTrack Playback and conference.
+	 * 				It is recorded to match stream id as new tracks are added with @onTrack
 	 */
-	unmuteLocalMic() 
-	{
-		if (this.remotePeerConnection != null) {
-			this.localStream.getAudioTracks().forEach(track => track.enabled = true);
-		}
-		else {
-			this.callbackError("NoActiveConnection");
-		}
-	}
-
 	takeConfiguration(idOfStream, configuration, typeOfConfiguration, idMapping)
 	{
 		var streamId = idOfStream
@@ -1648,6 +953,14 @@ export class WebRTCAdaptor
 
 	}
 
+	/**
+	 * Called by WebSocketAdaptor when new ice candidate is received from AMS. 
+	 * If Remote Description (SDP) is already set, the candidate is added immediately,
+	 * otherwise stored in @iceCandidateList to add after Remote Description (SDP) set.
+	 * 	 idOfTheStream: unique id for the stream 
+	 * 	 tmpLabel: sdpMLineIndex 
+	 * 	 tmpCandidate: ice candidate
+	 */
 	takeCandidate(idOfTheStream, tmpLabel, tmpCandidate) 
 	{
 		var streamId = idOfTheStream;
@@ -1671,6 +984,11 @@ export class WebRTCAdaptor
 		}
 	};
 
+	/**
+	 * Called internally to add the Ice Candidate to PeerConnection 
+	 * 	 streamId: unique id for the stream 
+	 * 	 tmpCandidate: ice candidate
+	 */
 	addIceCandidate(streamId, candidate) 
 	{	
 		var protocolSupported = false;
@@ -1712,6 +1030,10 @@ export class WebRTCAdaptor
 		}
 	};
 
+	/**
+	 * Called by WebSocketAdaptor when start message is received //TODO: may be changed. this logic shouldn't be in WebSocketAdaptor
+	 * 	 idOfStream: unique id for the stream 
+	 */
 	startPublishing(idOfStream) 
 	{
 		var streamId = idOfStream;
@@ -1727,66 +1049,51 @@ export class WebRTCAdaptor
 		});
 	};
 
+
 	/**
-	 * If we have multiple video tracks in coming versions, this method may cause some issues
-	 */
-	getVideoSender(streamId) 
+	* Toggle video track on the server side.
+	*
+	*   streamId: is the id of the stream
+	*   trackId: is the id of the track. streamId is also one of the trackId of the stream. If you are having just a single track on your 
+	*         stream, you need to give streamId as trackId parameter as well.  
+	*   enabled: is the enable/disable video track. If it's true, server sends video track. If it's false, server does not send video
+	*/
+	toggleVideo(streamId, trackId, enabled) 
 	{
-		var videoSender = null;
-		if ((adapter.browserDetails.browser === 'chrome' ||
-				(adapter.browserDetails.browser === 'firefox' ||
-					adapter.browserDetails.browser === 'safari' &&
-						adapter.browserDetails.version >= 64)) &&
-						'RTCRtpSender' in window &&
-						'setParameters' in window.RTCRtpSender.prototype)
-		{
-			if (this.remotePeerConnection[streamId] != null) {
-				const senders = this.remotePeerConnection[streamId].getSenders();
-
-				for (let i = 0; i < senders.length; i++) {
-					if (senders[i].track != null && senders[i].track.kind == "video") {
-						videoSender = senders[i];
-						break;
-					}
-				}
-			}
-
-		}
-		return videoSender;
+		var jsCmd = {
+				command : "toggleVideo",
+				streamId: streamId,
+				trackId: trackId,
+				enabled: enabled,
+		};
+		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
+	}
+	
+	/**
+	* Toggle audio track on the server side.
+	*
+	*   streamId: is the id of the stream
+	*   trackId: is the id of the track. streamId is also one of the trackId of the stream. If you are having just a single track on your 
+	*         	stream, you need to give streamId as trackId parameter as well.  
+	*   enabled: is the enable/disable video track. If it's true, server sends audio track. If it's false, server does not send audio
+	*
+	*/
+	toggleAudio(streamId, trackId, enabled)
+	{
+		var jsCmd = {
+				command : "toggleAudio",
+				streamId: streamId,
+				trackId: trackId,
+				enabled: enabled,
+		};
+		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
 	}
 
 	/**
-	 * bandwidth is in kbps
-	 */
-	changeBandwidth(bandwidth, streamId) 
-	{
-		var errorDefinition = "";
-
-		var videoSender = this.getVideoSender(streamId);
-
-		if (videoSender != null) {
-			const parameters = videoSender.getParameters();
-
-			if (!parameters.encodings) {
-				parameters.encodings = [{}];
-			}
-
-			if (bandwidth === 'unlimited') {
-				delete parameters.encodings[0].maxBitrate;
-			}
-			else {
-				parameters.encodings[0].maxBitrate = bandwidth * 1000;
-			}
-
-			return videoSender.setParameters(parameters)
-		}
-		else {
-			errorDefinition = "Video sender not found to change bandwidth. Streaming may not be active";
-		}
-
-		return Promise.reject(errorDefinition);
-	};
-
+	* Called to get statistics for a PeerConnection. It can be publisher or player.
+	*
+    * 	 streamId: unique id for the stream 
+	*/
 	getStats(streamId)
 	{
 		console.log("peerstatsgetstats = " + this.remotePeerConnectionStats[streamId]);
@@ -1954,13 +1261,12 @@ export class WebRTCAdaptor
 
 		});
 	}
-	disableStats(streamId) 
-	{
-		if(this.remotePeerConnectionStats[streamId] != null || typeof this.remotePeerConnectionStats[streamId] != 'undefined'){
-			clearInterval(this.remotePeerConnectionStats[streamId].timerId);
-		}
-	}
 
+	/**
+	 * Called to start a periodic timer to get statistics periodically (5 seconds) for a specific stream.
+	 *
+     * 	 streamId: unique id for the stream 
+	 */
 	enableStats(streamId) 
 	{
 		if (this.remotePeerConnectionStats[streamId] == null) {
@@ -1974,7 +1280,30 @@ export class WebRTCAdaptor
 	}
 
 	/**
-	 * After calling this function, create new WebRTCAdaptor instance, don't use the the same objectone
+	 * Called to stop the periodic timer which is set by @enableStats
+	 *
+     * 	 streamId: unique id for the stream 
+	 */
+	disableStats(streamId) 
+	{
+		if(this.remotePeerConnectionStats[streamId] != null || typeof this.remotePeerConnectionStats[streamId] != 'undefined'){
+			clearInterval(this.remotePeerConnectionStats[streamId].timerId);
+		}
+	}
+
+	/**
+	 * Called to check and start Web Socket connection if it is not started
+	 */
+	 checkWebSocketConnection()
+	 {
+		 if (this.webSocketAdaptor == null || (this.webSocketAdaptor.isConnected() == false && this.webSocketAdaptor.isConnecting() == false) ) {
+			 this.webSocketAdaptor = new WebSocketAdaptor({websocket_url : this.websocket_url, webrtcadaptor : this, callback : this.callback, callbackError : this.callbackError, debug : this.debug});
+		 }
+	 }
+
+	/**
+	 * Called to stop Web Socket connection
+	 * After calling this function, create new WebRTCAdaptor instance, don't use the the same object
 	 * Because all streams are closed on server side as well when websocket connection is closed.
 	 */
 	closeWebSocket() 
@@ -1987,13 +1316,9 @@ export class WebRTCAdaptor
 		this.webSocketAdaptor.close();
 	}
 
-	checkWebSocketConnection()
-	{
-		if (this.webSocketAdaptor == null || (this.webSocketAdaptor.isConnected() == false && this.webSocketAdaptor.isConnecting() == false) ) {
-			this.webSocketAdaptor = new WebSocketAdaptor({websocket_url : this.websocket_url, webrtcadaptor : this, callback : this.callback, callbackError : this.callbackError, debug : this.debug});
-		}
-	}
-
+	/**
+	 * Called to send a text message to other peer in the peer-to-peer sessionnnection is closed.
+	 */
 	peerMessage(streamId, definition, data) 
 	{
 		var jsCmd = {
@@ -2006,6 +1331,12 @@ export class WebRTCAdaptor
 		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
 	}
 	
+	/**
+	 * Called to force AMS to send the video with the specified resolution in case of Adaptive Streaming (ABR) enabled.
+	 * Normally the resolution is automatically determined by AMS according to the network condition.
+     * 	 streamId: unique id for the stream 
+	 *   resolution: default is auto. You can specify any height value from the ABR list.
+	 */
 	forceStreamQuality(streamId, resolution) 
 	{
 		var jsCmd = {
@@ -2016,6 +1347,11 @@ export class WebRTCAdaptor
 		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
 	}
 
+	/**
+	 * Called to send data via DataChannel. DataChannel should be enabled on AMS settings. 
+     * 	 streamId: unique id for the stream 
+	 *   data: data that you want to send. It may be a text (may in Json format or not) or binary 
+	 */
 	sendData(streamId, data) 
 	{
 		var CHUNK_SIZE = 16000;
@@ -2050,4 +1386,198 @@ export class WebRTCAdaptor
 			}
 		}
 	}
+
+	/**
+	 * Called by user
+	 * to add SoundMeter to a stream (remote stream)
+	 * to measure audio level. This sound Meters are added to a map with the key of StreamId.
+	 * When user called @getSoundLevelList, the instant levels are provided.
+	 * 	
+	 * This list can be used to add a sign to talking participant 
+	 * in conference room. And also to determine the dominant audio to focus that player.
+	 * @param {*} stream 
+	 * @param {*} streamId 
+	 */
+	enableAudioLevel(stream, streamId) {
+		const soundMeter = new SoundMeter(this.audioContext);
+
+		// Put variables in global scope to make them available to the
+		// browser console.
+		soundMeter.connectToSource(stream, function(e) {
+		if (e) {
+			alert(e);
+			return;
+		}
+		console.log("Added sound meter for stream: " + streamId + " = " + soundMeter.instant.toFixed(2));
+		});
+
+		this.soundMeters[streamId] = soundMeter;
+	}
+
+	/**
+	 * Called by the user
+	 * to get the audio levels for the streams for the provided StreamIds
+	 * 
+	 * @param {*} streamsList 
+	 */
+	getSoundLevelList(streamsList){
+		for(let i = 0; i < streamsList.length; i++){
+			this.soundLevelList[streamsList[i]] = this.soundMeters[streamsList[i]].instant.toFixed(2); 
+		}
+		this.callback("gotSoundList" , this.soundLevelList);
+	}
+
+	/**
+	 * Called media manaher to get video/audio sender for the local peer connection
+	 * 
+	 * @param {*} streamId : 
+	 * @param {*} type : "video" or "audio"
+	 * @returns 
+	 */
+	getSender(streamId, type) {
+		var sender = null;
+		if (this.remotePeerConnection[streamId] != null) {
+			sender = this.remotePeerConnection[streamId].getSenders().find(function(s) {
+				return s.track.kind == type;
+			});
+		}
+		return sender;
+	}
+	
+	/**
+	 * Called by user
+	 * 
+	 * @param {*} videoTrackId : track id associated with pinned video
+	 * @param {*} streamId : streamId of the pinned video
+ 	 * @param {*} enabled : true | false
+	 * @returns 
+	 */
+	assignVideoTrack(videoTrackId, streamId, enabled) {
+		var jsCmd = {
+				command : "assignVideoTrackCommand",
+				streamId : streamId,
+				videoTrackId : videoTrackId,
+				enabled : enabled,
+		};
+
+		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
+	}
+	
+	/**
+	 * Called by user
+	 * video tracks may be less than the participants count
+	 * so these parameters are used for assigning video tracks to participants.
+	 * This message is used to make pagination in conference.
+	 *
+	 * @param {*} offset : start index for participant list to play
+	 * @param {*} size : number of the participants to play
+	 * @returns 
+	 */
+	updateVideoTrackAssignments(streamId, offset, size) {
+		var jsCmd = {
+				streamId : streamId,
+				command : "updateVideoTrackAssignmentsCommand",
+				offset : offset,
+				size : size,
+		};
+
+		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
+	}
+	
+	/**
+	 * Called by user
+	 * This message is used to set max video track count in a conference.
+	 *
+	 * @param {*} maxTrackCount : maximum video track count
+	 * @returns 
+	 */
+	setMaxVideoTrackCount(streamId, maxTrackCount) {
+		var jsCmd = {
+				streamId : streamId,
+				command : "setMaxVideoTrackCountCommand",
+				maxTrackCount : maxTrackCount,
+		};
+
+		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
+	}
+	
+	/**
+	 * Called by user
+	 * This message is used to send audio level in a conference.
+	 *
+	 * @param {*} value : audio lavel
+	 * @returns 
+	 */
+	updateAudioLevel(streamId, value) {
+		var jsCmd = {
+				streamId : streamId,
+				eventType : "UPDATE_AUDIO_LEVEL",
+				audioLevel : value,
+		};
+
+		this.sendData(streamId, JSON.stringify(jsCmd));
+	}
+  
+
+	/**
+	 * The following messages are forwarded to MediaManager. They are also kept here because of backward compatibility.
+	 * You can find the details about them in media_manager.js
+	 */
+	turnOffLocalCamera(streamId) {this.mediaManager.turnOffLocalCamera(streamId);}
+	turnOnLocalCamera(streamId) {this.mediaManager.turnOnLocalCamera(streamId);}
+	muteLocalMic() {this.mediaManager.muteLocalMic();}
+	unmuteLocalMic() {this.mediaManager.unmuteLocalMic();}
+	switchDesktopCapture(streamId) {this.mediaManager.switchDesktopCapture(streamId);}
+	switchVideoCameraCapture(streamId, deviceId) {this.mediaManager.switchVideoCameraCapture(streamId, deviceId);}
+	
+	/**
+	 * Called by User
+	 * to switch between front and back camera on mobile devices
+	 *
+	 * @param {*} streamId Id of the stream to be changed.
+	 * @param {*} facingMode it can be ""user" or "environment"
+	 *
+	 * This method is used to switch front and back camera.
+	 */
+	switchVideoCameraFacingMode(streamId, facingMode) {		
+		this.mediaManager.switchVideoCameraFacingMode(streamId, facingMode);
+	}
+	
+	switchDesktopCaptureWithCamera(streamId) {this.mediaManager.switchDesktopCaptureWithCamera(streamId);}
+	switchAudioInputSource(streamId, deviceId) {this.mediaManager.switchAudioInputSource(streamId, deviceId);}
+	setVolumeLevel(volumeLevel) {this.mediaManager.setVolumeLevel(volumeLevel);}
+	enableAudioLevelForLocalStream(levelCallback, period) {this.mediaManager.enableAudioLevelForLocalStream(levelCallback, period);}
+	applyConstraints(constraints){this.mediaManager.applyConstraints(constraints)};
+	
+	changeBandwidth(bandwidth, streamId) {
+		this.mediaManager.changeBandwidth(bandwidth, streamId);
+	}
+	
+	enableAudioLevelWhenMuted() {
+		this.mediaManager.enableAudioLevelWhenMuted();
+	}
+	
+	disableAudioLevelWhenMuted() {
+		this.mediaManager.disableAudioLevelWhenMuted(); 
+	}
+	
+	getVideoSender(streamId) { 
+		return this.mediaManager.getVideoSender(streamId); 
+	}
+
+  closeStream() {
+    this.mediaManager.closeStream();
+  };
+  
+  applyConstraints(streamId, newConstaints) {
+      this.mediaManager.applyConstraints(streamId, newConstaints);
+  }
+
 }
+
+
+/* The Information Callbacks Called by This Class */
+//TODO:
+
+/* The Error Callbacks Called by This Class */
+//TODO:
