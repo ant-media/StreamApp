@@ -961,7 +961,7 @@ export class MediaManager
 	 setVideoCameraSource(streamId, mediaConstraints, onEndedCallback, stopDesktop) 
 	 {
 		this.navigatorUserMedia(mediaConstraints, stream => {		
-			if(stopDesktop && this.secondaryAudioTrackGainNode) {
+			if(stopDesktop && this.secondaryAudioTrackGainNode && stream.getAudioTracks().length > 0) {
 				//This audio track update is necessary for such a case:
 				//If you enable screen share with browser audio and then 
 				//return back to the camera, the audio should be only from mic.
@@ -986,11 +986,11 @@ export class MediaManager
 	 * to switch between front and back camera on mobile devices
 	 *
 	 * @param {*} streamId Id of the stream to be changed.
-	 * @param {*} onEndedCallback callback for when the switching video state is completed, can be used to understand if it is loading or not
+	 * @param {*} facingMode
 	 *
 	 * This method is used to switch front and back camera.
 	 */
-	switchVideoCameraCaptureForMobile(streamId, onEndedCallback)
+	switchVideoCameraFacingMode(streamId, facingMode)
 	{
 		//stop the track because in some android devices need to close the current camera stream
 		var videoTrack = this.localStream.getVideoTracks()[0];
@@ -1000,56 +1000,26 @@ export class MediaManager
 		else {
 			console.warn("There is no video track in local stream");
 		}
-
+		
 		// When device id set, facing mode is not working
 		// so, remove device id
-		if (this.mediaConstraints.video.deviceId !== undefined)
+		if (this.mediaConstraints.video !== undefined && this.mediaConstraints.video.deviceId !== undefined)
 		{
 			delete this.mediaConstraints.video.deviceId;
 		}
-
-		if (typeof(this.mediaConstraints.video) === "boolean")
-		{
-			// When video is boolean, it uses default values
-			this.mediaConstraints.video = {facingMode: "environment"};
-		}
-		else if (this.mediaConstraints.video.facingMode === undefined)
-		{
-			// Default value of facing mode is user.
-			// If facing mode is not defined, set it to user mode.
-			this.mediaConstraints.video.facingMode = "environment";
-		}
-		else
-		{
-			this.mediaConstraints.video.facingMode = this.changeFacingMode(this.mediaConstraints.video.facingMode);
-		}
+		
+		var videoConstraint = {
+			'facingMode' : facingMode
+		};
+		
+		this.mediaConstraints.video = Object.assign({}, 
+				this.mediaConstraints.video,
+				videoConstraint);
 
 		this.publishMode = "camera";
 		console.debug("Media constraints video property = " + this.mediaConstraints.video);
-		this.setVideoCameraSource(streamId, this.mediaConstraints, null, true);
-	}
-
-	/**
-	 * Change facing mode with respect to the input
-	 *
-	 * @param {*} facingMode
-	 */
-	changeFacingMode(facingMode)
-	{
-		if (facingMode === "user")
-		{
-			return "environment"
-		}
-		else if (facingMode === "environment")
-		{
-			return "user"
-		}
-		else {
-			console.warn("Invalid facing mode " + facingMode);
-			return null;
-		}
-	}
-	
+		this.setVideoCameraSource(streamId, { video: this.mediaConstraints.video }, null, true);
+	}	
 
 	 /**
 	  * Updates the audio track in the audio sender

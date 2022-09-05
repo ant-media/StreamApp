@@ -1495,7 +1495,20 @@ export class WebRTCAdaptor
 	unmuteLocalMic() {this.mediaManager.unmuteLocalMic();}
 	switchDesktopCapture(streamId) {this.mediaManager.switchDesktopCapture(streamId);}
 	switchVideoCameraCapture(streamId, deviceId) {this.mediaManager.switchVideoCameraCapture(streamId, deviceId);}
-	switchVideoCameraCaptureForMobile(streamId) {this.mediaManager.switchVideoCameraCaptureForMobile(streamId);}
+	
+	/**
+	 * Called by User
+	 * to switch between front and back camera on mobile devices
+	 *
+	 * @param {*} streamId Id of the stream to be changed.
+	 * @param {*} facingMode it can be ""user" and "environment"
+	 *
+	 * This method is used to switch front and back camera.
+	 */
+	switchVideoCameraFacingMode(streamId, facingMode) {		
+		this.mediaManager.switchVideoCameraFacingMode(streamId, facingMode);
+	}
+	
 	switchDesktopCaptureWithCamera(streamId) {this.mediaManager.switchDesktopCaptureWithCamera(streamId);}
 	switchAudioInputSource(streamId, deviceId) {this.mediaManager.switchAudioInputSource(streamId, deviceId);}
 	setVolumeLevel(volumeLevel) {this.mediaManager.setVolumeLevel(volumeLevel);}
