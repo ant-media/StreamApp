@@ -88,8 +88,6 @@ video {
 			</div>
 			<div class="form-group col-sm-12 text-left options">
 
-				<div style="margin-top:10px;" class="form-group">Microphone Gain: <br><input type=range id="volume_change_input" min=0 max=1 value=1 step=0.01></div>
-				
 				<label class=" mr-2" for="inlineFormCustomSelectPref">Max Video Bitrate(Kbps):</label>
 				<div class="form-inline">
 					<input type="text" class="form-control  mr-sm-2"
@@ -102,6 +100,23 @@ video {
 					<a id="browser_screen_share_doesnt_support" href="https://caniuse.com/#search=getDisplayMedia">Your browser doesn't support screen share. You can see supported browsers in this link </a>
 				<div class="dropdown-divider"></div>
 				<legend class="col-form-label audio-source-legend">Audio Source</legend>
+
+
+				<legend class="col-form-label microphone-gain-legend">Microphone Gain</legend>
+				<div class="form-inline"><input type=range id="volume_change_input" min=0 max=1 value=1 step=0.01></div>
+				<legend class="col-form-label audio-quality-legend">Audio Quality</legend>
+				<div class="form-check-inline form-inline">
+					<div class="custom-control custom-switch">
+						<input type="checkbox" class="custom-control-input" name="noiseSuppression" id="noiseSuppression">
+						<label class="custom-control-label" for="noiseSuppression">Noise Supression</label>
+					  </div>
+				</div>
+				<div class="form-check-inline form-inline">	  
+					  <div class="custom-control custom-switch">
+						<input type="checkbox" class="custom-control-input" name="echoCancellation" id="echoCancellation">
+						<label class="custom-control-label" for="echoCancellation">Echo Cancellation</label>
+					  </div>
+				</div>
 				
 			</div>	
 			<div class="dropdown-divider"></div>
@@ -209,13 +224,6 @@ video {
 	var streamName = getUrlParameter("streamName");
 	var mainTrack = getUrlParameter("mainTrack");
 	
-	/*
-    * It's not mandatory if you don't use the new Load Balancer mechanism
-    * It uses one of the nodes on Cluster mode
-    * Example parameters: "origin" or "edge"
- 	*/
-	var target = getUrlParameter("target");
-	
 	//TODO: Migrate these methods to Jquery
 	var start_publish_button = document.getElementById("start_publish_button");
 	start_publish_button.addEventListener("click", startPublishing, false);
@@ -229,6 +237,11 @@ video {
 	document.getElementById("streamId").defaultValue = "Goofy"
 	var streamIdBox = document.getElementById("streamId");
 	streamIdBox.value = "stream1";
+
+	var toggleNoiseSuppression = document.getElementById("noiseSuppression");
+	toggleNoiseSuppression.addEventListener("click", changeAudioConstraints, false);
+	var toggleEchoCancellation = document.getElementById("echoCancellation");
+	toggleEchoCancellation.addEventListener("click", changeAudioConstraints, false);
 	
 	/**
 	 * If publishing stops for any reason, it tries to republish again.
@@ -470,7 +483,26 @@ video {
         });
       }
 
-	var pc_config = {
+	function changeAudioConstraints() {
+		var constraint = { audio: {} };
+		switch(this.name) {
+			case 'noiseSuppression': {
+				constraint.audio.noiseSuppression = this.checked;
+				break;
+			}
+			case 'echoCancellation': {
+				constraint.audio.echoCancellation = this.checked;
+				break;
+			}
+			default: {
+				break;
+			}
+		}
+		webRTCAdaptor.applyConstraints(constraint);
+	}
+
+
+	  var pc_config = {
 			'iceServers' : [ {
 				'urls' : 'stun:stun1.l.google.com:19302'
 			} ]
@@ -496,11 +528,11 @@ video {
 	
 	var mediaConstraints = {
 		video : true,
-		audio : true
+		audio: true,
 	};
 
 	var appName = location.pathname.substring(0, location.pathname.lastIndexOf("/")+1);
-	var path =  location.hostname + ":" + location.port + appName + "websocket?rtmpForward=" + rtmpForward + "&target="+target;
+	var path =  location.hostname + ":" + location.port + appName + "websocket?rtmpForward=" + rtmpForward;
 	var websocketURL =  "ws://" + path;
 	
 	if (location.protocol.startsWith("https")) {
@@ -678,22 +710,33 @@ video {
 						var devices = new Array();
 				
 						var i = 0;
+						var cameraIndex = 0;
+						var micIndex = 0;
 						obj.forEach(function(device) {
 							var label = device.label;
-							var deviceId = device.deviceId;
 							var devices = new Array();
 
 							devices.forEach(function(same){
 								if (same == device.label){
 									i += 1;
 									label = device.label + " - " + i
-									deviceId = device.deviceId + i
 								}
-							})
-							if (device.kind == "videoinput") {
+							});							
+
+							if (device.kind == "videoinput") 
+							{
+								if (typeof label == "undefined" || label == "") {
+									label = "Cam-" + cameraIndex;
+								}
+								cameraIndex++;
 								videoHtmlContent += getCameraRadioButton(label, device.deviceId);
 							}
-							else if (device.kind == "audioinput"){
+							else if (device.kind == "audioinput")
+							{
+								if (typeof label == "undefined" || label == "") {
+									label = "Mic-" + micIndex;
+								}
+								micIndex++;
 								audioHtmlContent += getAudioRadioButton(label, device.deviceId);
 							}
 							devices.push(device.label)
@@ -766,7 +809,7 @@ video {
 						errorMessage = "Camera or Mic are not found or not allowed in your device";
 						}
 						else if (error.indexOf("NotReadableError") != -1 || error.indexOf("TrackStartError") != -1) {
-							errorMessage = "Camera or Mic is being used by some other process that does not let read the devices";
+							errorMessage = "Camera or Mic are already in use and they cannot be opened";
 						}
 						else if(error.indexOf("OverconstrainedError") != -1 || error.indexOf("ConstraintNotSatisfiedError") != -1) {
 							errorMessage = "There is no device found that fits your video and audio constraints. You may change video and audio constraints"
@@ -794,11 +837,16 @@ video {
 							
 					}
 					console.error(errorMessage);
+					if (message !== undefined) {
+						console.error(message);
+					}
 				}
 			});
 	}
 	
 	//initialize the WebRTCAdaptor
 	initWebRTCAdaptor(false, autoRepublishEnabled);
+
+	window.webRTCAdaptor = webRTCAdaptor;
 </script>
 </html>

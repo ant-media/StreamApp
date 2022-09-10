@@ -19,6 +19,18 @@ export class WebSocketAdaptor
         this.connected = false;
         this.pingTimerId = -1;
 
+        /*
+        * It's not mandatory if you don't use the new Load Balancer mechanism
+        * It uses one of the nodes on Cluster mode
+        * Example parameters: "origin" or "edge"
+        */
+        if(this.webrtcadaptor.isPlayMode){
+            this.websocket_url+="?target=edge";
+        }
+        else{
+           this.websocket_url+="?target=origin";
+        }
+
 		this.wsConn = new WebSocket(this.websocket_url);
         this.wsConn.onopen = () => {
             if (this.debug) 
