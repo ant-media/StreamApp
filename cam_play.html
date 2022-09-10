@@ -1,0 +1,191 @@
+<html>
+<head>
+<title>Ant Media Server WebRTC Peer</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="UTF-8">
+<link rel="stylesheet"
+	href="css/external/bootstrap4/bootstrap.min.css"
+	>
+<script src="js/external/adapter-latest.js"></script>
+<link rel="stylesheet" href="css/common.css" />
+
+<style>
+video {
+	width: 100%;
+	max-width: 640px;
+}
+
+.options {
+		display:none;
+	}
+
+.message_area {
+	height: 300px;
+	overflow-y: auto;
+	border-style: groove;
+	border-width: thin;
+	background-color: white;
+}
+</style>
+</head>
+<body>
+	<div class="container" style="padding: 40px 15px; text-align: center">
+		 <div class="header clearfix">
+			<div class="row">
+				<h3 class="col text-muted">Embedded SDK WebRTC Cam Player</h3>
+            </div>
+		</div>
+		
+		<div class="alert alert-primary text-center enterprise-feature" role="alert">
+			<a href="https://antmedia.io">Try Enterprise Edition for free at antmedia.io</a> <br/><br/>
+			<a href="https://github.com/ant-media/Ant-Media-Server/wiki#community-edition--enterprise-edition" style="font-size:12px">Comparison between Community and Enterprise</a>		 
+		</div>
+			
+		<video id="remoteVideo" autoplay controls playsinline width="720"></video>
+		<br /> <br />
+		<div class="input-group offset-sm-2 col-sm-8">
+			<input type="text" class="form-control" value="stream1" id="streamName"
+				placeholder="Type stream name"> <span
+				class="input-group-btn">
+				<button class="btn btn-primary" disabled id="join_button">Join</button>
+				<button class="btn btn-primary" disabled id="leave_button">Leave</button>
+			</span>
+		</div>
+		<br /> <br />
+		<div class="col-sm-10 text-right">
+			<button type="button" id="options" class="btn btn-outline-primary btn-sm">Options</button>
+        </div>
+		<div class="form-group offset-sm-2 col-sm-8 text-left options">
+			<div class="dropdown-divider"></div>
+			<label>Data Channel Messages</label>
+			<div id="all-messages" class="message_area"></div>
+			<div class="form-row">
+				<div class="form-group col-sm-10">
+					<input type="text" class="form-control" id="dataTextbox" placeholder="Write your message to send publisher/players">
+				</div>
+				<div class="form-group col-sm-2">
+                    <button type="button" id="send" class="btn btn-outline-primary btn-block">Send</button>
+				</div>
+            </div>
+        </div>
+	</div>
+</body>
+
+<script src="js/external/jquery-3.4.1.min.js"  crossorigin="anonymous"></script>
+
+<script type="module">
+	import {WebRTCAdaptor} from "./js/webrtc_adaptor.js"
+	
+	var streamNameBox = document.getElementById("streamName");
+
+
+	var join_button = document.getElementById("join_button");
+	join_button.addEventListener("click", join, false);
+	var leave_button = document.getElementById("leave_button");
+	leave_button.addEventListener("click", leave, false);
+	
+	var options = document.getElementById("options");
+	options.addEventListener("click", toggleOptions, false);
+	var send = document.getElementById("send");
+	send.addEventListener("click", sendData, false);
+
+	function toggleOptions() {
+		$(".options").toggle();
+	}
+
+	function sendData() {
+		try {
+			var iceState = webRTCAdaptor.iceConnectionState(streamNameBox.value);
+            if (iceState != null && iceState != "failed" && iceState != "disconnected") {
+            
+				webRTCAdaptor.sendData($("#streamName").val(), $("#dataTextbox").val());
+				$("#all-messages").append("Sent: " + $("#dataTextbox").val() + "<br>");
+				$("#dataTextbox").val("");
+			}
+			else {
+				alert("WebRTC playing is not active. Please click Start Playing first")
+			}
+		}
+		catch (exception) {
+			console.error(exception);
+			alert("Message cannot be sent. Make sure you've enabled data channel and choose the correct player distribution on server web panel");
+		}
+	}
+
+
+
+	function join() {
+		webRTCAdaptor.join(streamNameBox.value);
+	}
+
+	function leave() {
+		webRTCAdaptor.leave(streamNameBox.value);
+	}
+	  
+	var pc_config =
+	{
+		'iceServers' : [ {
+			'urls' : 'stun:stun1.l.google.com:19302'
+		} ]
+	};
+	
+
+	var sdpConstraints = 
+	{
+		OfferToReceiveAudio : true,
+		OfferToReceiveVideo : true
+			
+	};
+	var mediaConstraints = {
+	          video: false,
+	          audio: false
+	        };
+	
+	var appName = location.pathname.substring(0, location.pathname.lastIndexOf("/")+1);
+	var websocketURL = "ws://" + location.hostname + ":5080" + appName + "websocket";
+	
+	if (location.protocol.startsWith("https")) {
+		websocketURL = "wss://" + location.hostname + ":5443" + appName + "websocket";
+	}
+	
+	var webRTCAdaptor = new WebRTCAdaptor({
+		  websocket_url: websocketURL,
+		  mediaConstraints: mediaConstraints,
+		  peerconnection_config: pc_config,
+		  sdp_constraints: sdpConstraints,
+		  remoteVideoId: "remoteVideo",
+          isPlayMode : true,
+		  callback: function(info, obj) {
+			  if (info == "initialized") {
+				  console.log("initialized");
+				  join_button.disabled = false;
+				  leave_button.disabled = true;
+			  }
+			  else if (info == "joined") {
+				  //joined the stream
+				  console.log("joined");
+				  join_button.disabled = true;
+				  leave_button.disabled = false;
+			  }
+			  else if (info == "leaved") {
+				  //leaved the stream
+				  console.log("leaved");
+				  join_button.disabled = false;
+				  leave_button.disabled = true;
+			  }
+			  else if (info == "data_received") {
+				var data = obj.data;
+				$("#all-messages").append("Received: " + data + "<br>");
+			}
+		  },
+		  callbackError: function(error) {
+			  //some of the possible errors, NotFoundError, SecurityError,PermissionDeniedError
+			  
+			  console.log("error callback: " + error);
+			  alert(error);
+		  }
+	  });
+	
+
+</script>
+</html>

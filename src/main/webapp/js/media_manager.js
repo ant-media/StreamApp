@@ -98,7 +98,6 @@ export class MediaManager
 		 * the primary audio in mixed audio case
 		 * 
 		 * its volume can be controled
-		 * 
 		 */
 		 this.primaryAudioTrackGainNode = null;
 		
@@ -109,6 +108,11 @@ export class MediaManager
 		  */
 		 this.secondaryAudioTrackGainNode = null;
 		 
+		 
+		 /**
+     	  * this is the sound meter object for the local stream
+          */
+		 this.localStreamSoundMeter = null;
 
 		/**
 		 * Timer to create black frame to publish when video is muted
@@ -131,6 +135,11 @@ export class MediaManager
 		  * meter refresh period for "are you talking?" check
 		  */
 		 this.meterRefresh = null;
+
+		 /**
+		 * For keeping track of whether user turned off the camera
+		 */
+		 this.cameraEnabled = true;
 
 		/**
 		 * html video element that presents local stream
@@ -403,17 +412,19 @@ export class MediaManager
 	 */
 	navigatorUserMedia(mediaConstraints, func, catch_error)
 	{
-		if( catch_error == true){
-		navigator.mediaDevices.getUserMedia(mediaConstraints).then(func).catch(error => {
-			if (error.name == "NotFoundError"){
-				this.getDevices()
-			}else{
-				this.callbackError(error.name, error.message);
-			}
-			});
-		}else {
-			navigator.mediaDevices.getUserMedia(mediaConstraints).then(func)
-		}
+		return navigator.mediaDevices.getUserMedia(mediaConstraints).then(func).catch(error => {
+				if( catch_error == true)
+				{
+					if (error.name == "NotFoundError"){
+						this.getDevices()
+					}else{
+						this.callbackError(error.name, error.message);
+					}
+				}
+				else {
+					console.warn(error);
+				}
+		});
 	}
 
 	/**
@@ -812,7 +823,10 @@ export class MediaManager
 		else{
 			this.unmuteLocalMic();
 		}
-
+		
+		if(this.localStreamSoundMeter != null) {
+      		this.connectSoundMeterToLocalStream();
+    	}	
 	}
 	
 	/**
@@ -891,7 +905,7 @@ export class MediaManager
 	 */
 	setAudioInputSource(streamId, mediaConstraints, onEndedCallback) 
 	{
-		this.navigatorUserMedia(mediaConstraints, stream => {
+		return this.navigatorUserMedia(mediaConstraints, stream => {
 			stream = this.setGainNodeStream(stream);
 			this.updateAudioTrack(stream, streamId, mediaConstraints, onEndedCallback);
 		}, true);
@@ -947,7 +961,7 @@ export class MediaManager
 	 setVideoCameraSource(streamId, mediaConstraints, onEndedCallback, stopDesktop) 
 	 {
 		this.navigatorUserMedia(mediaConstraints, stream => {		
-			if(stopDesktop && this.secondaryAudioTrackGainNode) {
+			if(stopDesktop && this.secondaryAudioTrackGainNode && stream.getAudioTracks().length > 0) {
 				//This audio track update is necessary for such a case:
 				//If you enable screen share with browser audio and then 
 				//return back to the camera, the audio should be only from mic.
@@ -958,10 +972,54 @@ export class MediaManager
 			 	this.updateAudioTrack(stream, streamId, mediaConstraints, onEndedCallback);
 			}
 
-			this.updateVideoTrack(stream, streamId, onEndedCallback, stopDesktop);
+			if(this.cameraEnabled){
+				this.updateVideoTrack(stream, streamId, onEndedCallback, stopDesktop);
+			}
+			else{
+				this.turnOffLocalCamera();
+			}
 		}, true);
 	 }
-	
+
+	/**
+	 * Called by User
+	 * to switch between front and back camera on mobile devices
+	 *
+	 * @param {*} streamId Id of the stream to be changed.
+	 * @param {*} facingMode it can be "user" or "environment"
+	 *
+	 * This method is used to switch front and back camera.
+	 */
+	switchVideoCameraFacingMode(streamId, facingMode)
+	{
+		//stop the track because in some android devices need to close the current camera stream
+		var videoTrack = this.localStream.getVideoTracks()[0];
+		if (videoTrack) {
+			videoTrack.stop();
+		}
+		else {
+			console.warn("There is no video track in local stream");
+		}
+		
+		// When device id set, facing mode is not working
+		// so, remove device id
+		if (this.mediaConstraints.video !== undefined && this.mediaConstraints.video.deviceId !== undefined)
+		{
+			delete this.mediaConstraints.video.deviceId;
+		}
+		
+		var videoConstraint = {
+			'facingMode' : facingMode
+		};
+		
+		this.mediaConstraints.video = Object.assign({}, 
+				this.mediaConstraints.video,
+				videoConstraint);
+
+		this.publishMode = "camera";
+		console.debug("Media constraints video property = " + this.mediaConstraints.video);
+		this.setVideoCameraSource(streamId, { video: this.mediaConstraints.video }, null, true);
+	}	
 
 	 /**
 	  * Updates the audio track in the audio sender
@@ -1037,6 +1095,7 @@ export class MediaManager
 			 else{
 				choosenId = this.publishStreamId;
 			 }
+			 this.cameraEnabled = false;
 			 this.updateVideoTrack(this.replacementStream, choosenId, null, true);
 		 }
 		 else {
@@ -1077,6 +1136,7 @@ export class MediaManager
 				else{
 					choosenId = this.publishStreamId;
 				}
+				this.cameraEnabled = true;
 				this.updateVideoTrack(stream, choosenId, null, true);
 			}, false);
 		}
@@ -1191,18 +1251,87 @@ export class MediaManager
 	 * @param {*} period : measurement period
 	 */
 	enableAudioLevelForLocalStream(levelCallback, period) {
-		const soundMeter = new SoundMeter(this.audioContext);
-		soundMeter.connectToSource(this.localStream, function(e) {
-			if (e) {
-				alert(e);
-				return;
-			}
-			console.log("Added sound meter for stream: " + streamId + " = " + soundMeter.instant.toFixed(2));
-		});
+		this.localStreamSoundMeter = new SoundMeter(this.audioContext);
+    	this.connectSoundMeterToLocalStream();
 
 		this.soundLevelProviderId = setInterval(() => {			
-			levelCallback(soundMeter.instant.toFixed(2));
+			levelCallback(this.localStreamSoundMeter.instant.toFixed(2));
 		}, period);
+	}
+	
+	/**
+     * Connects the local stream to Sound Meter
+     * It should be called when local stream changes
+     */
+    connectSoundMeterToLocalStream() {
+    	this.localStreamSoundMeter.connectToSource(this.localStream, function (e) {
+     	 if (e) {
+        	alert(e);
+        	return;
+      	}
+      	// console.log("Added sound meter for stream: " + streamId + " = " + soundMeter.instant.toFixed(2));
+    	});
+  	}
+    
+	applyConstraints(streamId, newConstaints) {
+		this.applyConstraints(newConstaints);
+	}
+	/**
+	 * Called by user
+	 * To change audio/video constraints on the fly
+	 * 
+	 */
+	applyConstraints(newConstraints) 
+	{ 
+		    
+		var constraints = {};
+		if (newConstraints.audio === undefined && newConstraints.video === undefined)
+		{	
+			//if audio or video field is not defined, assume that it's a video constraint
+			constraints.video = newConstraints;	
+			this.mediaConstraints.video = Object.assign({}, 
+				this.mediaConstraints.video,
+				constraints.video);
+		}
+		else if (newConstraints.video !== undefined) 
+		{
+			constraints.video = newConstraints.video;
+			this.mediaConstraints.video = Object.assign({}, 
+				this.mediaConstraints.video,
+				constraints.video);
+		}
+		
+		
+		if (newConstraints.audio !== undefined) {
+			 
+		    constraints.audio = newConstraints.audio;
+			
+		    this.mediaConstraints.audio = Object.assign({}, 
+			   this.mediaConstraints.audio,
+		       constraints.audio);
+		}
+		
+		
+		var promise = null;
+		if (constraints.video !== undefined)		 
+		{
+			if (this.localStream && this.localStream.getVideoTracks().length > 0) {
+				var videoTrack = this.localStream.getVideoTracks()[0];
+				promise = videoTrack.applyConstraints(this.mediaConstraints.video);
+			}
+			else {
+				promise = new Promise((resolve, reject) => {
+					reject("There is no video track to apply constraints");
+				});
+			}
+		}
+		
+		if (constraints.audio !== undefined) 
+		{
+			//just give the audio constraints not to get video stream
+			promise = this.setAudioInputSource(streamId, { audio: this.mediaConstraints.audio }, null);
+		}
+		return promise;
 	}
 }
 

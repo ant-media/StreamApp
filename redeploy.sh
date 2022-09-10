@@ -18,6 +18,6 @@ fi
 
 cd $AMS_DIR
 rm -r webapps/*App*
-sh create_app.sh LiveApp $AMS_DIR
-sh create_app.sh WebRTCAppEE $AMS_DIR
+bash create_app.sh LiveApp $AMS_DIR
+bash create_app.sh WebRTCAppEE $AMS_DIR
 #./start-debug.sh

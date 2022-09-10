@@ -1409,6 +1409,80 @@ export class WebRTCAdaptor
 		}
 		return sender;
 	}
+	
+	/**
+	 * Called by user
+	 * 
+	 * @param {*} videoTrackId : track id associated with pinned video
+	 * @param {*} streamId : streamId of the pinned video
+ 	 * @param {*} enabled : true | false
+	 * @returns 
+	 */
+	assignVideoTrack(videoTrackId, streamId, enabled) {
+		var jsCmd = {
+				command : "assignVideoTrackCommand",
+				streamId : streamId,
+				videoTrackId : videoTrackId,
+				enabled : enabled,
+		};
+
+		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
+	}
+	
+	/**
+	 * Called by user
+	 * video tracks may be less than the participants count
+	 * so these parameters are used for assigning video tracks to participants.
+	 * This message is used to make pagination in conference.
+	 *
+	 * @param {*} offset : start index for participant list to play
+	 * @param {*} size : number of the participants to play
+	 * @returns 
+	 */
+	updateVideoTrackAssignments(streamId, offset, size) {
+		var jsCmd = {
+				streamId : streamId,
+				command : "updateVideoTrackAssignmentsCommand",
+				offset : offset,
+				size : size,
+		};
+
+		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
+	}
+	
+	/**
+	 * Called by user
+	 * This message is used to set max video track count in a conference.
+	 *
+	 * @param {*} maxTrackCount : maximum video track count
+	 * @returns 
+	 */
+	setMaxVideoTrackCount(streamId, maxTrackCount) {
+		var jsCmd = {
+				streamId : streamId,
+				command : "setMaxVideoTrackCountCommand",
+				maxTrackCount : maxTrackCount,
+		};
+
+		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
+	}
+	
+	/**
+	 * Called by user
+	 * This message is used to send audio level in a conference.
+	 *
+	 * @param {*} value : audio lavel
+	 * @returns 
+	 */
+	updateAudioLevel(streamId, value) {
+		var jsCmd = {
+				streamId : streamId,
+				eventType : "UPDATE_AUDIO_LEVEL",
+				audioLevel : value,
+		};
+
+		this.sendData(streamId, JSON.stringify(jsCmd));
+	}
   
 
 	/**
@@ -1421,10 +1495,25 @@ export class WebRTCAdaptor
 	unmuteLocalMic() {this.mediaManager.unmuteLocalMic();}
 	switchDesktopCapture(streamId) {this.mediaManager.switchDesktopCapture(streamId);}
 	switchVideoCameraCapture(streamId, deviceId) {this.mediaManager.switchVideoCameraCapture(streamId, deviceId);}
+	
+	/**
+	 * Called by User
+	 * to switch between front and back camera on mobile devices
+	 *
+	 * @param {*} streamId Id of the stream to be changed.
+	 * @param {*} facingMode it can be ""user" or "environment"
+	 *
+	 * This method is used to switch front and back camera.
+	 */
+	switchVideoCameraFacingMode(streamId, facingMode) {		
+		this.mediaManager.switchVideoCameraFacingMode(streamId, facingMode);
+	}
+	
 	switchDesktopCaptureWithCamera(streamId) {this.mediaManager.switchDesktopCaptureWithCamera(streamId);}
 	switchAudioInputSource(streamId, deviceId) {this.mediaManager.switchAudioInputSource(streamId, deviceId);}
 	setVolumeLevel(volumeLevel) {this.mediaManager.setVolumeLevel(volumeLevel);}
 	enableAudioLevelForLocalStream(levelCallback, period) {this.mediaManager.enableAudioLevelForLocalStream(levelCallback, period);}
+	applyConstraints(constraints){this.mediaManager.applyConstraints(constraints)};
 	
 	changeBandwidth(bandwidth, streamId) {
 		this.mediaManager.changeBandwidth(bandwidth, streamId);
@@ -1445,6 +1534,10 @@ export class WebRTCAdaptor
   closeStream() {
     this.mediaManager.closeStream();
   };
+  
+  applyConstraints(streamId, newConstaints) {
+      this.mediaManager.applyConstraints(streamId, newConstaints);
+  }
 
 }
 
