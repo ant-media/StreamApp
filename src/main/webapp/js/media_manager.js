@@ -578,7 +578,7 @@ export class MediaManager
 		if (this.localVideo) {
 			this.localVideo.srcObject = stream;
 		}
-//		this.getDevices();
+		this.getDevices();
 	}
 	
 	/**
