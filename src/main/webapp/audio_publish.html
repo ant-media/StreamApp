@@ -179,7 +179,11 @@ body {
 
       }
 
-	var pc_config = null;
+	var pc_config = {
+		'iceServers' : [ {
+			'urls' : 'stun:stun1.l.google.com:19302'
+		} ]
+	};
 
 	var sdpConstraints = {
 		OfferToReceiveAudio : false,
