@@ -575,6 +575,7 @@ export class MediaManager
 			this.localVideo.srcObject = stream;
 		}
 		this.getDevices();
+		this.trackDeviceChange();
 	}
 	
 	/**
