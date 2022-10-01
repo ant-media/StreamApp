@@ -181,10 +181,6 @@ export class MediaManager
 	initLocalStream() {
 		this.checkWebRTCPermissions();
 
-		// Get devices only in publish mode.
-		this.getDevices();
-		this.trackDeviceChange();
-
 		if (typeof this.mediaConstraints.video != "undefined" && this.mediaConstraints.video != false)
 		{
 			this.openStream(this.mediaConstraints, this.mode);	
