@@ -58,6 +58,12 @@ export class MediaManager
 		 this.localStream = null;
 
 		/**
+		 * publish mode is determined by the user and set by @mediaConstraints.video
+		 * It may be camera, screen, screen+camera
+		 */
+		this.publishMode="camera"; //screen, screen+camera
+
+		/**
 		 * The values of the above fields are provided as user parameters by the constructor.
 		 * TODO: Also some other hidden parameters may be passed here
 		 */
@@ -118,6 +124,11 @@ export class MediaManager
 		 * Timer to create black frame to publish when video is muted
 		 */
 		 this.blackFrameTimer = null;
+
+		/**
+		 * Timer to draw camera and desktop to canvas
+		 */
+		this.desktopCameraCanvasDrawerTimer = null;
  
 		 /**
 		  * For audio check when the user is muted itself.
@@ -154,12 +165,6 @@ export class MediaManager
 		  */
 		 this.soundLevelProviderId = -1;
 
-		/**
-		 * publish mode is determined by the user and set by @mediaConstraints.video
-		 * It may be camera, screen, screen+camera
-		 */
-		this.publishMode="camera"; //screen, screen+camera
-
 		// It should be compatible with previous version
 		if (this.mediaConstraints) {
 			if(this.mediaConstraints.video == "camera") {
@@ -195,7 +200,7 @@ export class MediaManager
 			// get only audio
 			var media_audio_constraint = { audio: this.mediaConstraints.audio };
 			return this.navigatorUserMedia(media_audio_constraint , stream => {
-				this.gotStream(stream);
+				return this.gotStream(stream);
 			}, true)
 		}
 	}
@@ -282,7 +287,7 @@ export class MediaManager
 	setDesktopwithCameraSource(stream, streamId, onEndedCallback) 
 	{
 		this.desktopStream = stream;
-		this.navigatorUserMedia({video: true, audio: false},cameraStream => {
+		return this.navigatorUserMedia({video: true, audio: false},cameraStream => {
 			this.smallVideoTrack = cameraStream.getVideoTracks()[0];
 			
 			//create a canvas element
@@ -302,40 +307,44 @@ export class MediaManager
 			cameraVideo.play();
 			var canvasStream = canvas.captureStream(15);
 
-			if(this.localStream == null){
-				this.gotStream(canvasStream);
-			}
-			else{
-				this.updateVideoTrack(canvasStream, streamId, onended, null);
-			}
 			if (onEndedCallback != null) {
 				stream.getVideoTracks()[0].onended = function(event) {
 					onEndedCallback(event);
 				}
 			}
+			var promise;
+			if(this.localStream == null){
+				promise = this.gotStream(canvasStream);
+			}
+			else{
+				promise = this.updateVideoTrack(canvasStream, streamId, onended, null);
+			}
+			
+			promise.then(()=> {
 
-			//update the canvas
-			setInterval(() => {
-				//draw screen to canvas
-				canvas.width = screenVideo.videoWidth;
-				canvas.height = screenVideo.videoHeight;
-				canvasContext.drawImage(screenVideo, 0, 0, canvas.width, canvas.height);
+				//update the canvas
+				this.desktopCameraCanvasDrawerTimer = setInterval(() => {
+					//draw screen to canvas
+					canvas.width = screenVideo.videoWidth;
+					canvas.height = screenVideo.videoHeight;
+					canvasContext.drawImage(screenVideo, 0, 0, canvas.width, canvas.height);
 
-				var cameraWidth = screenVideo.videoWidth * (this.camera_percent/100);
-				var cameraHeight = (cameraVideo.videoHeight/cameraVideo.videoWidth)*cameraWidth
+					var cameraWidth = screenVideo.videoWidth * (this.camera_percent/100);
+					var cameraHeight = (cameraVideo.videoHeight/cameraVideo.videoWidth)*cameraWidth
 
-				var positionX = (canvas.width - cameraWidth) - this.camera_margin;
-				var positionY;
+					var positionX = (canvas.width - cameraWidth) - this.camera_margin;
+					var positionY;
 
-				if (this.camera_location == "top") {
-					positionY = this.camera_margin;
-				}
-				else { //if not top, make it bottom
-					//draw camera on right bottom corner
-					positionY = (canvas.height - cameraHeight) - this.camera_margin;
-				}
-				canvasContext.drawImage(cameraVideo, positionX, positionY, cameraWidth, cameraHeight);
-			}, 66);
+					if (this.camera_location == "top") {
+						positionY = this.camera_margin;
+					}
+					else { //if not top, make it bottom
+						//draw camera on right bottom corner
+						positionY = (canvas.height - cameraHeight) - this.camera_margin;
+					}
+					canvasContext.drawImage(cameraVideo, positionX, positionY, cameraWidth, cameraHeight);
+				}, 66);
+			});
 		}, true)
 	}
 	
@@ -364,7 +373,7 @@ export class MediaManager
 		//now get only audio to add this stream
 		if (audioConstraint != "undefined" && audioConstraint != false) {
 			var media_audio_constraint = { audio: audioConstraint};
-			this.navigatorUserMedia(media_audio_constraint, audioStream => {
+			return this.navigatorUserMedia(media_audio_constraint, audioStream => {
 
 				//here audioStream has onr audio track only
 				audioStream = this.setGainNodeStream(audioStream);
@@ -378,30 +387,37 @@ export class MediaManager
 					this.setVideoCameraSource(streamId, mediaConstraints, null, true);		
 				}
 
-				if(this.publishMode == "screen"){
-					this.updateVideoTrack(stream, streamId,  onended, true);
-					if(audioTracks.length > 0 ){ //system audio share case, then mix it with device audio
-						audioStream = this.mixAudioStreams(stream, audioStream);
-					}
-					this.updateAudioTrack(audioStream, streamId, null);
+				if(this.publishMode == "screen")
+				{
+					return this.updateVideoTrack(stream, streamId,  onended, true).then(() => {
+						if(audioTracks.length > 0 ){ //system audio share case, then mix it with device audio
+							audioStream = this.mixAudioStreams(stream, audioStream);
+						}
+						return this.updateAudioTrack(audioStream, streamId, null);
+					});
 				}
-				else if(this.publishMode == "screen+camera" ){
+				else if(this.publishMode == "screen+camera" )
+				{
 					if(audioTracks.length > 0 ){ //system audio share case, then mix it with device audio
 						audioStream = this.mixAudioStreams(stream, audioStream);
 					}
-					this.updateAudioTrack(audioStream, streamId, null);
-					this.setDesktopwithCameraSource(stream, streamId, onended);
+
+					return this.updateAudioTrack(audioStream, streamId, null).then(()=> {
+						return this.setDesktopwithCameraSource(stream, streamId, onended);
+					});
+					
 				}
 				else{
 					if(audioConstraint != false && audioConstraint != undefined){
 						stream.addTrack(audioStream.getAudioTracks()[0]);
 					}
-					this.gotStream(stream);
+				
+					return this.gotStream(stream);
 				}
 			}, true)
 		}
 		else {
-			this.gotStream(stream);
+			return this.gotStream(stream);
 		}
 	}
 
@@ -414,7 +430,12 @@ export class MediaManager
 	 */
 	navigatorUserMedia(mediaConstraints, func, catch_error)
 	{
-		return navigator.mediaDevices.getUserMedia(mediaConstraints).then(func).catch(error => {
+		return navigator.mediaDevices.getUserMedia(mediaConstraints).then((stream) => {
+			if (typeof func != "undefined") {
+				func(stream);
+			}
+			return stream;
+		}).catch(error => {
 				if( catch_error == true)
 				{
 					if (error.name == "NotFoundError"){
@@ -437,8 +458,13 @@ export class MediaManager
 	 */
 	navigatorDisplayMedia(mediaConstraints, func)
 	{
-		navigator.mediaDevices.getDisplayMedia(mediaConstraints)
-			.then(func)
+		return navigator.mediaDevices.getDisplayMedia(mediaConstraints)
+			.then((stream) => {
+				if (typeof func != "undefined") {
+					func(stream);
+				}
+				return stream;
+			})
 			.catch(error => {
 				if (error.name === "NotAllowedError") {
 					console.debug("Permission denied error");
@@ -468,21 +494,32 @@ export class MediaManager
 	 */
 	getMedia(mediaConstraints, audioConstraint, streamId) 
 	{		
+		if(this.desktopCameraCanvasDrawerTimer != null){
+			clearInterval(this.desktopCameraCanvasDrawerTimer);
+			this.desktopCameraCanvasDrawerTimer = null;
+		}
+
 		// Check Media Constraint video value screen or screen + camera
 		if(this.publishMode == "screen+camera" || this.publishMode == "screen"){
-			return this.navigatorDisplayMedia(mediaConstraints, (stream =>{
+			return this.navigatorDisplayMedia(mediaConstraints).then(stream =>{
 				if (this.smallVideoTrack)
 					this.smallVideoTrack.stop();
-				this.prepareStreamTracks(mediaConstraints, audioConstraint, stream, streamId);
-			}));
+				return this.prepareStreamTracks(mediaConstraints, audioConstraint, stream, streamId);
+			});
 		}
 		// If mediaConstraints only user camera
 		else {
-			return this.navigatorUserMedia(mediaConstraints, (stream =>{
+			return this.navigatorUserMedia(mediaConstraints).then(stream =>{
 				if (this.smallVideoTrack)
 					this.smallVideoTrack.stop();
-				this.prepareStreamTracks(mediaConstraints, audioConstraint, stream, streamId);
-			}),true);
+				return this.prepareStreamTracks(mediaConstraints, audioConstraint, stream, streamId);
+			}).catch(error => {
+				if (error.name == "NotFoundError"){
+					this.getDevices()
+				}else{
+					this.callbackError(error.name, error.message);
+				}
+			});
 		}
 	}
 
@@ -589,6 +626,9 @@ export class MediaManager
 		}
 		this.getDevices();
 		this.trackDeviceChange();
+		return new Promise((resolve, reject) => {
+			resolve();
+		})
 	}
 	
 	/**
@@ -770,7 +810,7 @@ export class MediaManager
 			this.mediaConstraints.video = true
 		}
 
-		this.getMedia(this.mediaConstraints, audioConstraint, streamId);
+		return this.getMedia(this.mediaConstraints, audioConstraint, streamId);
 	}
 
 	/**
@@ -791,7 +831,7 @@ export class MediaManager
 		if (typeof this.mediaConstraints.audio != "undefined" && this.mediaConstraints.audio != false) {
 			audioConstraint = this.mediaConstraints.audio;
 		}
-		this.getMedia(this.mediaConstraints, audioConstraint, streamId);
+		return this.getMedia(this.mediaConstraints, audioConstraint, streamId);
 	}
 	
 	/**
@@ -917,7 +957,7 @@ export class MediaManager
 	{
 		return this.navigatorUserMedia(mediaConstraints, stream => {
 			stream = this.setGainNodeStream(stream);
-			this.updateAudioTrack(stream, streamId, mediaConstraints, onEndedCallback);
+			return this.updateAudioTrack(stream, streamId, mediaConstraints, onEndedCallback);
 		}, true);
 	}
 
@@ -944,7 +984,7 @@ export class MediaManager
 		 }
 		 
 		 this.publishMode = "camera";		
-		 navigator.mediaDevices.enumerateDevices().then(devices => {
+		 return navigator.mediaDevices.enumerateDevices().then(devices => {
 			 for(let i = 0; i < devices.length; i++) {	
 				 if (devices[i].kind == "videoinput") {
 					 //Adjust video source only if there is a matching device id with the given one.
@@ -960,7 +1000,7 @@ export class MediaManager
 			 };
 			 //If no matching device found don't adjust the media constraints let it be true instead of a device ID
 			 console.debug("Given deviceId = " + deviceId + " - Media constraints video property = " + this.mediaConstraints.video);
-			 this.setVideoCameraSource(streamId, this.mediaConstraints, null, true, deviceId);
+			 return this.setVideoCameraSource(streamId, this.mediaConstraints, null, true, deviceId);
 		 })
  
 	 }
@@ -971,7 +1011,7 @@ export class MediaManager
 	 */
 	 setVideoCameraSource(streamId, mediaConstraints, onEndedCallback, stopDesktop) 
 	 {
-		this.navigatorUserMedia(mediaConstraints, stream => {		
+		return this.navigatorUserMedia(mediaConstraints, stream => {		
 			if(stopDesktop && this.secondaryAudioTrackGainNode && stream.getAudioTracks().length > 0) {
 				//This audio track update is necessary for such a case:
 				//If you enable screen share with browser audio and then 
@@ -980,14 +1020,15 @@ export class MediaManager
 				//the mixed (mic+browser) audio would be streamed in the camera mode.
 				this.secondaryAudioTrackGainNode = null;
 			 	stream = this.setGainNodeStream(stream);
-			 	this.updateAudioTrack(stream, streamId, mediaConstraints, onEndedCallback);
+			 	this.updateAudioTrack(stream, streamId, mediaConstraints, onEndedCallback)
+				
 			}
-
+			
 			if(this.cameraEnabled){
-				this.updateVideoTrack(stream, streamId, onEndedCallback, stopDesktop);
+				return this.updateVideoTrack(stream, streamId, onEndedCallback, stopDesktop);
 			}
 			else{
-				this.turnOffLocalCamera();
+				return this.turnOffLocalCamera();
 			}
 		}, true);
 	 }
@@ -1030,7 +1071,7 @@ export class MediaManager
 
 		this.publishMode = "camera";
 		console.debug("Media constraints video property = " + this.mediaConstraints.video);
-		this.setVideoCameraSource(streamId, { video: this.mediaConstraints.video }, null, true);
+		return this.setVideoCameraSource(streamId, { video: this.mediaConstraints.video }, null, true);
 	}	
 
 	 /**
@@ -1045,7 +1086,7 @@ export class MediaManager
 	{
 		var audioTrackSender = this.getSender(streamId, "audio");
 		if (audioTrackSender) {
-			audioTrackSender.replaceTrack(stream.getAudioTracks()[0]).then(result => {
+			return audioTrackSender.replaceTrack(stream.getAudioTracks()[0]).then(result => {
 				this.updateLocalAudioStream(stream, onEndedCallback);
 
 			}).catch(function(error) {
@@ -1054,6 +1095,9 @@ export class MediaManager
 		}
 		else {
 			this.updateLocalAudioStream(stream, onEndedCallback);
+			return new Promise((resolve, reject) => {
+				resolve();
+			});
 		}
 	}
 
@@ -1069,7 +1113,7 @@ export class MediaManager
 	{
 		var videoTrackSender = this.getSender(streamId, "video");
 		if (videoTrackSender) {
-			videoTrackSender.replaceTrack(stream.getVideoTracks()[0]).then(result => {
+			return videoTrackSender.replaceTrack(stream.getVideoTracks()[0]).then(result => {
 				this.updateLocalVideoStream(stream, onEndedCallback, stopDesktop);
 
 			}).catch(error => {
@@ -1078,6 +1122,9 @@ export class MediaManager
 		}
 		else {
 			this.updateLocalVideoStream(stream, onEndedCallback, stopDesktop);
+			return new Promise((resolve, reject) => {
+				resolve();
+			});
 		}
 	}
 
@@ -1099,28 +1146,35 @@ export class MediaManager
 		 //Initialize the first dummy frame for switching.
 		this.initializeDummyFrame();
 		
-		 if (this.localStream != null) {
-			 let choosenId;
-			 if(streamId != null || typeof streamId != "undefined"){
-				choosenId = streamId;
-			 }
-			 else{
-				choosenId = this.publishStreamId;
-			 }
-			 this.cameraEnabled = false;
-			 this.updateVideoTrack(this.replacementStream, choosenId, null, true);
-		 }
-		 else {
-			 this.callbackError("NoActiveConnection");
-		 }
-
-		 //We need to send black frames within a time interval, because when the user turn off the camera,
+		//We need to send black frames within a time interval, because when the user turn off the camera,
 		//player can't connect to the sender since there is no data flowing. Sending a black frame in each 3 seconds resolves it.
 		if(this.blackFrameTimer == null){
 			this.blackFrameTimer = setInterval(() => {			
 				this.initializeDummyFrame();
 			}, 3000);
 		}
+
+		if (this.localStream != null) {
+			let choosenId;
+			if(streamId != null || typeof streamId != "undefined"){
+			choosenId = streamId;
+			}
+			else{
+			choosenId = this.publishStreamId;
+			}
+			this.cameraEnabled = false;
+			return this.updateVideoTrack(this.replacementStream, choosenId, null, true);
+		}
+		else {
+			
+			return new Promise((resolve, reject) => {
+				this.callbackError("NoActiveConnection");
+				reject("NoActiveStream");
+			});
+		}
+
+		 
+		
 	 }
 
 	 /**

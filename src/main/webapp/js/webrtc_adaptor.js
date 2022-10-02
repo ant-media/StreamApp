@@ -1497,8 +1497,12 @@ export class WebRTCAdaptor
 	turnOnLocalCamera(streamId) {this.mediaManager.turnOnLocalCamera(streamId);}
 	muteLocalMic() {this.mediaManager.muteLocalMic();}
 	unmuteLocalMic() {this.mediaManager.unmuteLocalMic();}
-	switchDesktopCapture(streamId) {this.mediaManager.switchDesktopCapture(streamId);}
-	switchVideoCameraCapture(streamId, deviceId) {this.mediaManager.switchVideoCameraCapture(streamId, deviceId);}
+	switchDesktopCapture(streamId) {
+		return this.mediaManager.switchDesktopCapture(streamId);
+	}
+	switchVideoCameraCapture(streamId, deviceId) {
+		return this.mediaManager.switchVideoCameraCapture(streamId, deviceId);
+	}
 	
 	/**
 	 * Called by User
@@ -1510,10 +1514,12 @@ export class WebRTCAdaptor
 	 * This method is used to switch front and back camera.
 	 */
 	switchVideoCameraFacingMode(streamId, facingMode) {		
-		this.mediaManager.switchVideoCameraFacingMode(streamId, facingMode);
+		return this.mediaManager.switchVideoCameraFacingMode(streamId, facingMode);
 	}
 	
-	switchDesktopCaptureWithCamera(streamId) {this.mediaManager.switchDesktopCaptureWithCamera(streamId);}
+	switchDesktopCaptureWithCamera(streamId) {
+		return this.mediaManager.switchDesktopCaptureWithCamera(streamId);
+	}
 	switchAudioInputSource(streamId, deviceId) {this.mediaManager.switchAudioInputSource(streamId, deviceId);}
 	setVolumeLevel(volumeLevel) {this.mediaManager.setVolumeLevel(volumeLevel);}
 	enableAudioLevelForLocalStream(levelCallback, period) {this.mediaManager.enableAudioLevelForLocalStream(levelCallback, period);}
@@ -1536,16 +1542,16 @@ export class WebRTCAdaptor
 	}
 	
 	openStream(mediaConstraints) {
-		this.mediaManager.openStream(mediaConstraints);
+		return this.mediaManager.openStream(mediaConstraints);
 	}
 
     closeStream() {
-      this.mediaManager.closeStream();
+        return this.mediaManager.closeStream();
     };
   
-  applyConstraints(streamId, newConstaints) {
-      this.mediaManager.applyConstraints(streamId, newConstaints);
-  }
+	applyConstraints(streamId, newConstaints) {
+		this.mediaManager.applyConstraints(streamId, newConstaints);
+	}
 
 }
 
