@@ -262,9 +262,6 @@ video {
 	var volume_change_input = document.getElementById("volume_change_input");
 	volume_change_input.addEventListener("change", changeVolume);
 	
-	
-	var deviceList;
-
 	function changeVolume(){
 	/**
    	* Change the gain levels on the input selector.
@@ -386,8 +383,7 @@ video {
 	}
 	
   	function switchVideoMode(chbx) {
-		//If video device changes manually, then inputDeviceBusyQueue should reset. 
-  		webRTCAdaptor.inputDeviceBusyQueue = 0;
+		//If video device changes manually 
   		
 		if(chbx.value == "screen") {
 			//webRTCAdaptor.switchDesktopWithMicAudio(streamId);
@@ -548,8 +544,6 @@ video {
 	var	webRTCAdaptor = null;
 	var selectedRadio = null;
 	var selectedAudio = null;
-
-	var currentDeviceIndex = 0;
 	
 	function initWebRTCAdaptor(publishImmediately, autoRepublishEnabled) 
 	{
@@ -717,7 +711,6 @@ video {
 						var audioHtmlContent = "";
 						var devices = new Array();
 						
-						var deviceList = obj;
 						var i = 0;
 						var cameraIndex = 0;
 						var micIndex = 0;
@@ -816,62 +809,11 @@ video {
 						if (error.indexOf("NotFoundError") != -1) {
 						errorMessage = "Camera or Mic are not found or not allowed in your device";
 						}
-						else if (error.indexOf("NotReadableError") != -1 || error.indexOf("TrackStartError") != -1) {
-							errorMessage = "Camera or Mic are already in use and they cannot be opened";
+						else if (error.indexOf("NotReadableError") != -1 || error.indexOf("TrackStartError") != -1) 
+						{
+							errorMessage = "Camera or Mic are already in use and they cannot be opened. Choose another video/audio source on the page below if you have";
 							
-							/*
-							///////////////////////////////////
-							//////Code sample that can open next available camera or microphone 
-							///////////////////////////////////
-							
-							console.log("Trying next audio and video devices if any");
-							var camIndex = 0;
-							var microphoneIndex = 0;
-							var newCameraFound = false;
-							var newMicrophoneFound = false;
-							
-							currentDeviceIndex++;
-							deviceList.forEach(function(device) 
-							{
-								if (device.kind == "videoinput") 
-								{
-									camIndex++;
-									if (camIndex == currentDeviceIndex) 
-									{
-										mediaConstraint.video = {
-											deviceId: device.deviceId
-										}
-										newCameraFound = true;
-									}
-								}
-								
-								if (device.kind == "audioinput") 
-								{
-									microphoneIndex
-									if (microphoneIndex == currentDeviceIndex) 
-									{
-										mediaConstraint.audio = {
-											deviceId: device.deviceId
-										}
-										newMicrophoneFound = true;
-									}
-								}
-							});
-							
-							if (!newCameraFound) {
-								console.warn("No new other camera is found. Using the default one");
-								delete mediaConstraint.video.deviceId;
-							}
-							if (!newMicrophoneFound) {
-								console.warn("No new microphone is found. Using the default one");
-								delete mediaConstraint.audio.deviceId;
-							}
-							
-							if (newCameraFound || newMicrophoneFound) {
-								webRTCAdaptor.closeStream();
-								webRTCAdaptor.openStream(mediaConstraint);
-							}
-							*/
+							$(".options").show();
 
 						}
 						else if(error.indexOf("OverconstrainedError") != -1 || error.indexOf("ConstraintNotSatisfiedError") != -1) {

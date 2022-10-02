@@ -141,7 +141,6 @@ export class WebRTCAdaptor
 		 */
 		this.idMapping = new Array();
 		this.deviceArray = new Array();
-		this.inputDeviceBusyQueue = 0;
 
 		/**
 		 * This is used when only data is brodcasted with the same way video and/or audio.
