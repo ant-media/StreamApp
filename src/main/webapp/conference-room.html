@@ -30,34 +30,32 @@
   </head>
 
   <body class="animate__animated animate__fadeIn animate__fast">
-
-
-    <!-- header class="chat-active">
-      <div class="container-fluid">
-        <div class="row">
-          <div class="col-3 col-sm-4">
-            <div class="logo"><img class="logo-full" src="images/ant-media-video-call.svg"><img class="logo-compact" src="images/ant-media-emblem.svg"></div>
-          </div>
-          <div class="offset-4 col-5 col-sm-4">
-            <div class="icons">
-              <span><a href="#" data-toggle="modal" data-target="#shareUrlLocationModal" onClick="getWindowLocation()" ><img src="images/icons/share.svg"></a></span>
-              <span><a href="javascript:;"><img src="images/icons/settings.svg"></a></span>
+      <div class="container h-100" id="entrance-screen">
+        <div class="row h-100 justify-content-center align-items-center">
+          <form class="col-md-auto col-md-6">
+            <div class="logo"><img src="images/ant-media-logo.svg"></div>
+            <div class="logo-text">CONFERENCE CALL</div>
+            <p>Start a video conference call now with Ant Media!</p>
+            <div class="form-group">
+              <label for="formGroupExampleInput">Your Name</label>
+              <input type="text" class="form-control" id="streamNameInput" value="Guest">
             </div>
-          </div>
+            <a id="enterButton" href="javascript:;" class="btn btn-primary">Login</a>
+          </form>   
         </div>
       </div>
-    </header-->
 
-    <div class="viewer-content chat-active">
-      <div class="publisher-screen">
-        <video id="localVideo" class="screen" autoplay muted playsinline></video>
+    <div class="local-video-content">
+      <div class="me-small-screen">
+        <video id="localVideo" class="screen" autoplay="" muted="" playsinline=""></video>
       </div>
+    </div>
 
+    <div class="publisher-content chat-active" id="conference-screen" style="display:none;">
       <div class="persons d-none">
         <div class="row" id="players">
         </div>
       </div>
-
     </div>
 
     <footer class="chat-active">
@@ -88,7 +86,7 @@
                     src="images/icons/screen-share-on.svg"></a>
               </span>
               <span><a href="#" class="chat-on"><img src="images/icons/chat.svg"></a></span>
-              <span><a href="conference-enter.html"><img src="images/icons/close-call.svg"></a></span>
+              <span><a href="javascript:;" id="close_call_button"><img src="images/icons/close-call.svg"></a></span>
             </div>
           </div>
         </div>
@@ -184,6 +182,9 @@
       streamName="Guest";
     }
 
+    document.getElementById("streamNameInput").value = streamName;
+
+
     if(playOnly == null) {
       playOnly = false;
     }
@@ -193,6 +194,11 @@
     setInterval(() => {      
      dateSpan.innerHTML = formatAMPM(new Date);
    }, 60000);
+   
+   
+    var statusTimerId = setInterval(() => {      
+        updateStatus();
+    }, 5000);
     
     var roomNameSpan = document.getElementById("roomName");
     roomNameSpan.innerHTML = roomName;
@@ -262,6 +268,14 @@
     var send = document.getElementsByClassName('send')[0];
     send.addEventListener("click", sendData, false);
 
+
+    var enter_button = document.getElementById("enterButton");
+    enter_button.addEventListener("click", enter, false);
+
+    var close_call_button = document.getElementById("close_call_button");
+    close_call_button.addEventListener("click", exit, false);
+    
+
     var roomOfStream = new Array();
     var streamIdList = new Array();
     var streamDetailsList = new Array();
@@ -272,20 +286,33 @@
     var isScreenSharing = false;
     var isChatActive = false;
     var roomTimerId = -1;
+    
+    var isPinned = false;
 
-    function fullscreenLocalCamera() {
-     var localVideo = document.getElementById('localVideo');
-     if (localVideo.requestFullscreen) 
-      localVideo.requestFullscreen();
-    else if (localVideo.webkitRequestFullscreen) 
-      localVideo.webkitRequestFullscreen();
-    else if (localVideo.msRequestFullScreen) 
-      localVideo.msRequestFullScreen();
-  }
+    function enter() {
+      streamName = document.getElementById("streamNameInput").value;
+
+      joinRoom();
+
+      var conferenceDiv = document.getElementById("conference-screen");
+      conferenceDiv.style.display="block";
+
+      var entranceDiv = document.getElementById("entrance-screen");
+      entranceDiv.style.display="none";
+    }
+
+    function exit() {
+      leaveRoom();
+      var conferenceDiv = document.getElementById("conference-screen");
+      conferenceDiv.style.display="none";
+
+      var entranceDiv = document.getElementById("entrance-screen");
+      entranceDiv.style.display="block";
+    }
 
   function startScreenShare() {
-    webRTCAdaptor.switchDesktopCapture(publishStreamId);
     isScreenSharing = true;
+    webRTCAdaptor.switchDesktopCapture(publishStreamId);
     handleScreenShareButtons();
   }
 
@@ -293,9 +320,15 @@
     if(isScreenSharing) {
       isScreenSharing = false;
       handleScreenShareButtons();
-      if(!isCameraOff) {
-        webRTCAdaptor.switchVideoCameraCapture(publishStreamId);
-      }
+    }
+
+    if(!isCameraOff) {
+      webRTCAdaptor.switchVideoCameraCapture(publishStreamId);
+    }
+    else{
+      webRTCAdaptor.turnOffLocalCamera(publishStreamId);
+      isCameraOff = true;
+      handleCameraButtons();
     }
   }
 
@@ -348,13 +381,18 @@
  }
 
  function turnOffLocalCamera() {
-  webRTCAdaptor.turnOffLocalCamera(publishStreamId);
   isCameraOff = true;
-  handleCameraButtons();
-  sendNotificationEvent("CAM_TURNED_OFF");
+  if(!isScreenSharing){
+    webRTCAdaptor.turnOffLocalCamera(publishStreamId);
+    handleCameraButtons();
+    sendNotificationEvent("CAM_TURNED_OFF");
+  }
 }
 
 function turnOnLocalCamera() {
+
+  handleScreenShareButtons();
+
   webRTCAdaptor.turnOnLocalCamera(publishStreamId);
   isCameraOff = false;
   handleCameraButtons();
@@ -375,9 +413,9 @@ function unmuteLocalMic() {
   sendNotificationEvent("MIC_UNMUTED");
 }
 
-function sendNotificationEvent(eventType) {
+function sendNotificationEvent(eventType, payload) {
   if(isDataChannelOpen) {
-    var notEvent = { streamId: publishStreamId, eventType:eventType };
+    var notEvent = { streamId: publishStreamId, eventType:eventType, payload: payload};
     webRTCAdaptor.sendData(publishStreamId, JSON.stringify(notEvent));
   } else {
     console.log("Could not send the notification because data channel is not open.");
@@ -416,7 +454,7 @@ function handleMicButtons() {
 }
 
 function handleNotificationEvent(obj) {
-  console.log("Received data : ", obj.data);
+  //console.log("Received data : ", obj.data);
   var notificationEvent = JSON.parse(obj.data);
   if(notificationEvent != null && typeof(notificationEvent) == "object") {
     var eventStreamId = notificationEvent.streamId;
@@ -430,6 +468,20 @@ function handleNotificationEvent(obj) {
       console.log("Microphone muted for : ", eventStreamId);
     } else if (eventType == "MIC_UNMUTED"){
       console.log("Microphone unmuted for : ", eventStreamId);
+    } else if (eventType == "AUDIO_TRACK_ASSIGNMENT"){     
+      var assignments = notificationEvent.assignments;
+      
+      assignments.forEach(item => {
+        var trackId = item.trackId;
+        var audioLevel = item.audioLevel;
+        
+        console.log(trackId+" - "+audioLevel);
+      });
+    } else if (eventType == "UPDATE_STATUS"){
+      var payload = notificationEvent.payload;
+      if(payload.pinnedId == publishStreamId) {
+        isPinned = true;
+      }
     }
   }
 }
@@ -439,12 +491,6 @@ function joinRoom() {
 
 function leaveRoom() {
   webRTCAdaptor.leaveFromRoom(roomName);
-
-  for (var node in document.getElementById("players").childNodes) {
-   if(node.tagName == 'DIV' && node.id != "localVideo") {
-    document.getElementById("players").removeChild(node);
-  }
-}
 }
 
 function publish(publishStreamId, token, subscriberId, subscriberCode, streamName) {
@@ -454,6 +500,21 @@ function publish(publishStreamId, token, subscriberId, subscriberCode, streamNam
 function streamInformation(obj) {
   webRTCAdaptor.play(obj.streamId, token,	roomName);
 }
+
+function updateStatus() {
+	var payload = {streamId:publishStreamId, pinnedId:fullScreenId, mic:isMicMuted, camera:isCameraOff};
+	sendNotificationEvent("UPDATE_STATUS", payload);
+	
+    var requestedMediaConstraints = {
+          width: isPinned ? 1080 : 360,
+          height: isPinned ? 720 : 240,
+    }	
+	
+    webRTCAdaptor.applyConstraints(payload.streamId, requestedMediaConstraints);
+    console.log("current reslution:"+requestedMediaConstraints.height);
+    isPinned = false;
+}
+
 
 function playVideo(obj) {
 
@@ -493,11 +554,6 @@ function createRemoteVideo(streamId) {
 
   generateStreamCol(streamId);
 
-  if(streamIdList.length >= 1 && document.getElementsByClassName('publisher-screen')[0] != null ){
-    document.getElementsByClassName('publisher-screen')[0].className = "me-small-screen";
-    document.getElementsByClassName('persons')[0].className = "persons";
-    document.getElementsByClassName('viewer-content')[0].className = "publisher-content chat-active";
-  }
   if(fullScreenId == -1) {  
     doLayout(streamIdList.length);
   }
@@ -505,14 +561,11 @@ function createRemoteVideo(streamId) {
   if(isChatActive){
     document.getElementsByClassName('publisher-content')[0].classList.add("active");
   }
-
 }
 
 function doLayout(playerCount) {
-   if(streamIdList.length >= 1 && document.getElementsByClassName('publisher-screen')[0] != null ){
-    document.getElementsByClassName('publisher-screen')[0].className = "me-small-screen";
+   if(streamIdList.length >= 1){
     document.getElementsByClassName('persons')[0].className = "persons";
-    document.getElementsByClassName('viewer-content')[0].className = "publisher-content chat-active";
   }
 
   if(playerCount == 1){
@@ -544,8 +597,9 @@ function doLayout(playerCount) {
   }
 }
 
-function makeFullScreen(divId) {
-    if(fullScreenId == divId) {
+function makeFullScreen(streamId) {
+	var divId="streamId"+streamId;
+    if(fullScreenId == streamId) {
 	  document.getElementById(divId).classList.remove("selected");
       document.getElementById(divId).classList.add("unselected");
       fullScreenId = -1;
@@ -554,12 +608,12 @@ function makeFullScreen(divId) {
 	else {
       document.getElementsByClassName('publisher-content')[0].className = "publisher-content chat-active fullscreen-layout";
 	  if(fullScreenId != -1) {
-        document.getElementById(fullScreenId).classList.remove("selected");
-        document.getElementById(fullScreenId).classList.add("unselected");
+        document.getElementById("streamId"+fullScreenId).classList.remove("selected");
+        document.getElementById("streamId"+fullScreenId).classList.add("unselected");
       }
       document.getElementById(divId).classList.remove("unselected");
       document.getElementById(divId).classList.add("selected");
-      fullScreenId = divId;
+      fullScreenId = streamId;
 	}
 }
 
@@ -572,8 +626,13 @@ function generateStreamCol(streamId){
   div.innerHTML = "<div class='person'>"
     +"<video id='remoteVideo"+streamId+"' class='screen' autoplay playsinline></video>"
     +"<div class='overlay'><span>"+streamName+"   </span>"
-    +"<span><a href=\"javascript:window.makeFullScreen('streamId"+streamId+"');\"><img src='images/icons/fullscreen.svg'></a></span>"
+    +"<span><a href=\"javascript:makeFullScreen('"+streamId+"');\"><img src='images/icons/fullscreen.svg'></a></span>"
     +"</div></div>"
+   
+   if(streamId.startsWith("audioTrack")) {
+     div.style.display = "none";
+   }
+
   document.getElementById('players').appendChild(div);
 }
 
@@ -588,11 +647,9 @@ function removeRemoteVideo(streamId) {
     streamIdList.splice(streamIdIndex, 1);
 
     if(streamIdList.length == 0){
-      document.getElementsByClassName('publisher-content')[0].className = "viewer-content chat-active";
-      document.getElementsByClassName('me-small-screen')[0].className = "publisher-screen";
       document.getElementsByClassName('persons')[0].className = "persons d-none";
       if(isChatActive){
-        document.getElementsByClassName('viewer-content')[0].classList.add("active");
+        document.getElementsByClassName('publisher-content')[0].classList.add("active");
       }
     }
 
@@ -638,16 +695,6 @@ function checkTrackStatus(streamIdList){
   });
 }
 
-/*/testttt
-var i = 1;
-setInterval(() => {			
-        generateStreamCol("stream"+i);
-        if(fullScreenId == -1) {
-            doLayout(i);
-		}
-		i++;
-    }, 3000);
-*/
 var appName = location.pathname.substring(0, location.pathname
  .lastIndexOf("/") + 1);
 var path = location.hostname + ":" + location.port + appName + "websocket";
@@ -669,7 +716,6 @@ var webRTCAdaptor = new WebRTCAdaptor(
   callback : (info, obj) => {
    if (info == "initialized") {
     console.log("initialized");
-    webRTCAdaptor.joinRoom(roomName, publishStreamId);
   } 
   else if (info == "joinedTheRoom") {
     var room = obj.ATTR_ROOM_NAME;
@@ -722,6 +768,7 @@ var webRTCAdaptor = new WebRTCAdaptor(
 		if (roomTimerId != null)
 		{
 			clearInterval(roomTimerId);
+			clearInterval(statusTimerId);
 		}
 						
 		if (streamsList != null) {
@@ -733,6 +780,7 @@ var webRTCAdaptor = new WebRTCAdaptor(
 		streamsList = new Array();
     streamDetailsList = new Array();
 		isPlaying = false;
+    publishStreamId = null;
   } 
   else if (info == "closed") {
     if (typeof obj != "undefined") {

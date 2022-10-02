@@ -1590,6 +1590,36 @@ address {
             }
         }
     }
+    
+    .local-video-content {
+        .me-small-screen {
+            position: fixed;
+            bottom: 98px;
+            right: 10px;
+            z-index: 999;
+
+            @media (max-width: 575.98px) {
+                bottom: 72px;
+            }
+
+            video {
+                width: 200px;
+                height: auto;
+                box-shadow: 0px 0px 14px 0px rgba(0, 0, 0, 0.5);
+                border: white 4px solid;
+
+                @media (max-width: 575.98px) {
+                    width: 120px;
+                }
+            }
+        }
+
+        &.active {
+            .me-small-screen {
+                right: 26%;
+            }
+        }
+    }
 
     .viewer-content {
         position: relative;
