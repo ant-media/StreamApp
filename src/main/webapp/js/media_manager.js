@@ -66,11 +66,6 @@ export class MediaManager
 				this[key] = initialValues.userParameters[key];
 			}
 		}
-		
-		 /**
-		 * Available devices
-		 */
-		 this.deviceArray;
 		 
 		 /**
 		  * current volume value which is set by the user
@@ -224,12 +219,12 @@ export class MediaManager
 	 */
 	getDevices(){
 		navigator.mediaDevices.enumerateDevices().then(devices => {
-			this.deviceArray = new Array();
+			var deviceArray = new Array();
 			let checkAudio = false
 			let checkVideo = false
 			devices.forEach(device => {	
 				if (device.kind == "audioinput" || device.kind == "videoinput") {
-					this.deviceArray.push(device);
+					deviceArray.push(device);
 					if(device.kind=="audioinput"){
 						checkAudio = true;
 					}
@@ -238,9 +233,9 @@ export class MediaManager
 					}
 				}
 			});
-			this.callback("available_devices", this.deviceArray);
+			this.callback("available_devices", deviceArray);
 
-			//TODO is the following part necessary. why?
+			//TODO: is the following part necessary. why?
 			if(checkAudio == false && this.localStream == null){
 				console.log("Audio input not found")
 				console.log("Retrying to get user media without audio")

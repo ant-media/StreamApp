@@ -140,7 +140,6 @@ export class WebRTCAdaptor
 		 * in MultiTrack Playback and conference.
 		 */
 		this.idMapping = new Array();
-		this.deviceArray = new Array();
 
 		/**
 		 * This is used when only data is brodcasted with the same way video and/or audio.
