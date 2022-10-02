@@ -186,10 +186,6 @@ export class MediaManager
 	initLocalStream() {
 		this.checkWebRTCPermissions();
 
-		// Get devices only in publish mode.
-		this.getDevices();
-		this.trackDeviceChange();
-
 		if (typeof this.mediaConstraints.video != "undefined" && this.mediaConstraints.video != false)
 		{
 			this.openStream(this.mediaConstraints, this.mode);	
@@ -587,7 +583,8 @@ export class MediaManager
 		if (this.localVideo) {
 			this.localVideo.srcObject = stream;
 		}
-//		this.getDevices();
+		this.getDevices();
+		this.trackDeviceChange();
 	}
 	
 	/**
