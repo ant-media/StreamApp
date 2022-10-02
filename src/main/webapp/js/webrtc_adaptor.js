@@ -1530,10 +1530,14 @@ export class WebRTCAdaptor
 	getVideoSender(streamId) { 
 		return this.mediaManager.getVideoSender(streamId); 
 	}
+	
+	openStream(mediaConstraints) {
+		this.mediaManager.openStream(mediaConstraints);
+	}
 
-  closeStream() {
-    this.mediaManager.closeStream();
-  };
+    closeStream() {
+      this.mediaManager.closeStream();
+    };
   
   applyConstraints(streamId, newConstaints) {
       this.mediaManager.applyConstraints(streamId, newConstaints);
