@@ -203,6 +203,11 @@ export class MediaManager
 				return this.gotStream(stream);
 			}, true)
 		}
+		else {
+			//init with default values because user just asked to initLocalStream
+			this.mediaConstraints = { video:true, audio:true}; 
+			return this.openStream(this.mediaConstraints, this.mode);	
+		}
 	}
 
 	/*

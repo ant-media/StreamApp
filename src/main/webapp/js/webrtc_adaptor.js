@@ -240,57 +240,46 @@ export class WebRTCAdaptor
 		//TODO: should refactor the repeated code  
 		this.publishStreamId = streamId;
 		this.mediaManager.publishStreamId = streamId;
-		if (this.onlyDataChannel) {
-			var jsCmd = {
-				command : "publish",
-				streamId : streamId,
-				token : token,
-				subscriberId: typeof subscriberId !== undefined ? subscriberId : "" ,
-				subscriberCode: typeof subscriberCode !== undefined ? subscriberCode : "",
-				streamName : typeof streamName !== undefined ? streamName : "" ,
-				mainTrack : typeof mainTrack !== undefined ? mainTrack : "" ,
-				video: false,
-				audio: false,
-				metaData: metaData,
-			};
+		if (this.onlyDataChannel) 
+		{
+			this.sendPublishCommand(streamId, token, subscriberId, subscriberCode, streamName, mainTrack, metaData, false, false);			
 		}
 		//If it started with playOnly mode and wants to publish now
- 		if(this.mediaManager.localStream == null){
-	
+ 		else if(this.mediaManager.localStream == null)
+ 		{
 			this.mediaManager.initLocalStream().then(() => 
 			{
-					var jsCmd = {
-					command : "publish",
-					streamId : streamId,
-					token : token,
-					subscriberId: typeof subscriberId !== undefined ? subscriberId : "" ,
-					subscriberCode: typeof subscriberCode !== undefined ? subscriberCode : "",
-					streamName : typeof streamName !== undefined ? streamName : "" ,
-					mainTrack : typeof mainTrack !== undefined ? mainTrack : "" ,				
-					video: this.mediaManager.localStream.getVideoTracks().length > 0 ? true : false,
-					audio: this.mediaManager.localStream.getAudioTracks().length > 0 ? true : false,
-					metaData: metaData,
-				};
-				this.webSocketAdaptor.send(JSON.stringify(jsCmd));
+				var videoEnabled = this.mediaManager.localStream.getVideoTracks().length > 0 ? true : false;
+				var audioEnabled = this.mediaManager.localStream.getAudioTracks().length > 0 ? true : false;
+				this.sendPublishCommand(streamId, token, subscriberId, subscriberCode, streamName, mainTrack, metaData, videoEnabled, audioEnabled)
+					
 			}).catch(error => {
-				
 				console.warn(error);
 			});
 		} 
-		else{
-			var jsCmd = {
-					command : "publish",
-					streamId : streamId,
-					token : token,
-					subscriberId: typeof subscriberId !== undefined ? subscriberId : "" ,
-					subscriberCode: typeof subscriberCode !== undefined ? subscriberCode : "",
-					streamName : typeof streamName !== undefined ? streamName : "" ,
-					mainTrack : typeof mainTrack !== undefined ? mainTrack : "" ,
-					video: this.mediaManager.localStream.getVideoTracks().length > 0 ? true : false,
-					audio: this.mediaManager.localStream.getAudioTracks().length > 0 ? true : false,
-					metaData: metaData,
-			};
+		else
+		{
+			var videoEnabled = this.mediaManager.localStream.getVideoTracks().length > 0 ? true : false;
+			var audioEnabled = this.mediaManager.localStream.getAudioTracks().length > 0 ? true : false;
+			this.sendPublishCommand(streamId, token, subscriberId, subscriberCode, streamName, mainTrack, metaData, videoEnabled, audioEnabled)
+	
 		}
+		
+	}
+	
+	sendPublishCommand(streamId, token, subscriberId, subscriberCode, streamName, mainTrack, metaData, videoEnabled, audioEnabled) {
+		var jsCmd = {
+			command : "publish",
+			streamId : streamId,
+			token : token,
+			subscriberId: typeof subscriberId !== undefined ? subscriberId : "" ,
+			subscriberCode: typeof subscriberCode !== undefined ? subscriberCode : "",
+			streamName : typeof streamName !== undefined ? streamName : "" ,
+			mainTrack : typeof mainTrack !== undefined ? mainTrack : "" ,				
+			video: videoEnabled,
+			audio: audioEnabled,
+			metaData: metaData,
+		};
 		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
 	}
 
