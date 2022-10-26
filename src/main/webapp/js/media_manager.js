@@ -155,7 +155,7 @@ export class MediaManager
 		/**
 		 * html video element that presents local stream
 		 */
-		 this.localVideo = document.getElementById(this.localVideoId);
+		 this.localVideo = this.localVideoElement || document.getElementById(this.localVideoId);
 
 		 //A dummy stream created to replace the tracks when camera is turned off.
 		 this.dummyCanvas = document.createElement("canvas");

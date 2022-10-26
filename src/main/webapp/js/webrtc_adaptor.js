@@ -180,7 +180,7 @@ export class WebRTCAdaptor
 		/**
 		 * The html video tag for receiver is got here
 		 */
-		this.remoteVideo = document.getElementById(this.remoteVideoId);
+		this.remoteVideo = this.remoteVideoElement || document.getElementById(this.remoteVideoId);
 
 		/**
 		  * Keeps the sound meters for each connection. Its index is stream id
