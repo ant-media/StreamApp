@@ -21,20 +21,6 @@ Using yarn:
 $ yarn add @antmedia/webrtc_adaptor
 ```
 
-### <a name="usage_nodejs">Usage with Node.js
-
-If you are using Node.js, because of that ES2016 standarts not supported by Node.js, you should also add ECMAScript module loader to your project.
-
-```
-npm i esm --save
-```
-
-After that, before running project with node, add esm requirement as below.
-
-```
-node -r esm index.js
-```
-
 ## <a name="requirements"></a>Requirements
 
 Before start using Ant Media Server WebRTC SDK, you need a distribution of the Ant Media Server running on a server or local machine.
@@ -47,7 +33,6 @@ In your project, run:
 ```
 npm i @antmedia/webrtc_adaptor --save-dev
 ```
-
 Then inside your javascript file:
 #### <a name="initialize">Initialize the WebRTCAdaptor
 ```javascript
