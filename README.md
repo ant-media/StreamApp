@@ -5,7 +5,7 @@ WebSocket interface in publishing and playing WebRTC streams on Ant Media Server
 For more information, visit [antmedia.io](https://antmedia.io)
 
 
-[![NPM version](https://img.shields.io/badge/npm-v2.4.4-informational)](https://www.npmjs.com/package/@antmedia/webrtc_adaptor)
+[![NPM version](https://img.shields.io/badge/npm-v2.4.3-informational)](https://www.npmjs.com/package/@antmedia/webrtc_adaptor)
 [![Build Status](https://api.travis-ci.com/ant-media/StreamApp.svg?branch=master)](https://app.travis-ci.com/github/ant-media/StreamApp)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=io.antmedia%3Aant-media-server&metric=alert_status)](https://sonarcloud.io/dashboard?id=io.antmedia%3Aant-media-server)
 
