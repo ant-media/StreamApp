@@ -635,6 +635,18 @@ export class MediaManager
 			resolve();
 		})
 	}
+
+	/**
+	 * Changes local video and sets localStream as source
+	 *
+	 * @param {*} videoEl
+	 */
+	changeLocalVideo(videoEl) {
+		this.localVideo = videoEl
+		if (this.localStream) {
+			this.localVideo.srcObject = this.localStream
+		}
+	}
 	
 	/**
 	 * These methods are initialized when the user is muted himself in a publish scenario
