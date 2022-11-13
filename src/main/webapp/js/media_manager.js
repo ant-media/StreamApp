@@ -155,7 +155,7 @@ export class MediaManager
 		/**
 		 * html video element that presents local stream
 		 */
-		 this.localVideo = document.getElementById(this.localVideoId);
+		 this.localVideo = this.localVideoElement || document.getElementById(this.localVideoId);
 
 		 //A dummy stream created to replace the tracks when camera is turned off.
 		 this.dummyCanvas = document.createElement("canvas");
@@ -634,6 +634,18 @@ export class MediaManager
 		return new Promise((resolve, reject) => {
 			resolve();
 		})
+	}
+
+	/**
+	 * Changes local video and sets localStream as source
+	 *
+	 * @param {*} videoEl
+	 */
+	changeLocalVideo(videoEl) {
+		this.localVideo = videoEl
+		if (this.localStream) {
+			this.localVideo.srcObject = this.localStream
+		}
 	}
 	
 	/**
