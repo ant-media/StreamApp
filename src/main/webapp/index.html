@@ -242,15 +242,13 @@ video {
 	toggleNoiseSuppression.addEventListener("click", changeAudioConstraints, false);
 	var toggleEchoCancellation = document.getElementById("echoCancellation");
 	toggleEchoCancellation.addEventListener("click", changeAudioConstraints, false);
+
+	var streamInitializedTimer = -1;
 	
 	/**
 	 * If publishing stops for any reason, it tries to republish again.
 	 */
 	var autoRepublishEnabled = true;
-	/**
-	 * Timer job that checks the WebRTC connection 
-	 */
-	var autoRepublishIntervalJob = null;
 	
 	var streamId;
 	
@@ -375,10 +373,6 @@ video {
 	}
 
 	function stopPublishing() {
-		if (autoRepublishIntervalJob != null) {
-			clearInterval(autoRepublishIntervalJob);
-			autoRepublishIntervalJob = null;
-		}
 		webRTCAdaptor.stop(streamId);
 	}
 	
@@ -456,19 +450,6 @@ video {
 			alert("Message cannot be sent. Make sure you've enabled data channel on server web panel");
 		}
 	}
-	  
-	
-	function checkAndRepublishIfRequired() {
-	 	var iceState = webRTCAdaptor.iceConnectionState(streamId);
-		console.log("Ice state checked = " + iceState);
-
-	  	if (iceState == null || iceState == "failed" || iceState == "disconnected"){
-	  		webRTCAdaptor.stop(streamId);
-	  		webRTCAdaptor.closePeerConnection(streamId);
-	  		webRTCAdaptor.closeWebSocket();
-	  		initWebRTCAdaptor(true, autoRepublishEnabled);
-		  }	
-	}
 
     function startAnimation() {
 
@@ -544,8 +525,9 @@ video {
 	var	webRTCAdaptor = null;
 	var selectedRadio = null;
 	var selectedAudio = null;
+	var isFirstTry = true;
 	
-	function initWebRTCAdaptor(publishImmediately, autoRepublishEnabled) 
+	function initWebRTCAdaptor(autoRepublishEnabled) 
 	{
 		webRTCAdaptor = new WebRTCAdaptor({
 				websocket_url : websocketURL,
@@ -560,23 +542,27 @@ video {
 					if (info == "initialized") {
 						console.log("initialized");
 						start_publish_button.disabled = false;
-						stop_publish_button.disabled = true;
-						if (publishImmediately) {
-							webRTCAdaptor.publish(streamId, token, subscriberId, subscriberCode, streamName)
-						}
-						
+						stop_publish_button.disabled = true;	
+
+						// If get not_initialized_yet or etc error, it will try again.
+						// We should use "initialized" clause for publishing.
+						// If ice connection is disconnected or etc, communication always uses "initialized" for a refresh.
+						streamInitializedTimer = setInterval(() => {			
+							if (autoRepublishEnabled && !isFirstTry) {
+								webRTCAdaptor.publish(streamId, token, subscriberId, subscriberCode, streamName)
+							}
+						}, 2000);
+
 					} else if (info == "publish_started") {
 						//stream is being published
 						console.log("publish started");
 						start_publish_button.disabled = true;
 						stop_publish_button.disabled = false;
+						// If publish started as expected, streamInitializedTimer interval should clear 
+						// and change to isFirstTry false for preventing infinity loop.
+						isFirstTry = true;
+						clearInterval(streamInitializedTimer);
 						startAnimation();
-						if (autoRepublishEnabled && autoRepublishIntervalJob == null) 
-						{
-							autoRepublishIntervalJob = setInterval(() => {
-								checkAndRepublishIfRequired();
-							}, 3000);
-						}
 						webRTCAdaptor.enableStats(obj.streamId);
 						enableAudioLevel();
 					} else if (info == "publish_finished") {
@@ -601,6 +587,8 @@ video {
 						//console.log("Connection closed");
 						if (typeof obj != "undefined") {
 							console.log("Connecton closed: " + JSON.stringify(obj));
+							// If somehow Ant Media Server will close, then we should reset isFirstTry parameter
+							isFirstTry = false;
 						}
 					}
 					else if (info == "pong") {
@@ -612,6 +600,12 @@ video {
 					}
 					else if (info == "ice_connection_state_changed") {
 						console.log("iceConnectionState Changed: ",JSON.stringify(obj));
+						if (obj.state != null && obj.state != "failed" && obj.state != "disconnected") {
+							// If somehow WebSocket connection disconnected or etc, it needs to be re-initialize.
+							// In this scenario, stream will already drop.
+							// Then it will try to publish stream again.
+							isFirstTry = false;
+						}
 					}
 					else if (info == "updated_stats") {
 						//obj is the PeerStats which has fields
@@ -777,6 +771,9 @@ video {
 						$(":radio[value=" + selectedAudio + "]").prop("checked", true);
 					}
 					else if(info == "session_restored") {
+						// session_restored using for micro disconnections etc.
+						isFirstTry = true;
+						clearInterval(streamInitializedTimer);
 						start_publish_button.disabled = true;
 						stop_publish_button.disabled = false;
 						startAnimation();
@@ -801,6 +798,9 @@ video {
 					}
 					else if (error.indexOf("not_initialized_yet") != -1) {
 						errorMessage = "Server is getting initialized.";
+					}
+					else if (error.indexOf("already_publishing") != -1) {
+						errorMessage = "Publish already started.";
 					}
 					else if (error.indexOf("data_store_not_available") != -1) {
 						errorMessage = "Data store is not available. It's likely that server is initialized or getting closed";
@@ -850,7 +850,7 @@ video {
 	}
 	
 	//initialize the WebRTCAdaptor
-	initWebRTCAdaptor(false, autoRepublishEnabled);
+	initWebRTCAdaptor(autoRepublishEnabled);
 
 	window.webRTCAdaptor = webRTCAdaptor;
 </script>

@@ -9,6 +9,9 @@ export class WebSocketAdaptor
 				this[key] = initialValues[key];
 			}
         }
+
+        this.isReconnection = false;
+        this.reconnectionTimerId = -1;
         
 		this.initWebSocketConnection();
 
@@ -23,24 +26,29 @@ export class WebSocketAdaptor
         * It's not mandatory if you don't use the new Load Balancer mechanism
         * It uses one of the nodes on Cluster mode
         * Example parameters: "origin" or "edge"
+        *
+        * We should check if target parameter was added or not
+        * Consider it WebSocket connection may call again
         */
-        if (this.websocket_url.indexOf("?") == -1) {
-            //if there is no question mark just add it to give extra parameter
-            this.websocket_url+="?";
-        }
-        else {
-            //if there is a question mark, just append extra parameter
-            this.websocket_url+="&";
-        }
-        //add the target field
-        this.websocket_url+="target=";
+        if(!this.websocket_url.includes("target")){
+            if (this.websocket_url.indexOf("?") == -1) {
+                //if there is no question mark just add it to give extra parameter
+                this.websocket_url+="?";
+            }
+            else {
+                //if there is a question mark, just append extra parameter
+                this.websocket_url+="&";
+            }
+            //add the target field
+            this.websocket_url+="target=";
 
-        //add the target value
-        if(this.webrtcadaptor.isPlayMode){
-            this.websocket_url+="edge";
-        }
-        else{
-           this.websocket_url+="origin";
+            //add the target value
+            if(this.webrtcadaptor.isPlayMode){
+                this.websocket_url+="edge";
+            }
+            else{
+               this.websocket_url+="origin";
+            }
         }
 
 		this.wsConn = new WebSocket(this.websocket_url);
@@ -53,7 +61,11 @@ export class WebSocketAdaptor
             this.pingTimerId = setInterval(() => {
                 this.sendPing();
             }, 3000);
-    
+
+            clearInterval(this.reconnectionTimerId);
+
+            // New connection requests are able to reconnect attempts
+            this.isReconnection = true;
             this.connected = true;
             this.connecting = false;
             this.callback("initialized");
@@ -135,7 +147,7 @@ export class WebSocketAdaptor
             console.info(" error occured: " + JSON.stringify(error));
             
             this.clearPingTimer();
-            this.callbackError("WebSocketNotConnected", error)
+            this.callbackError("WebSocketNotConnected", error);                
         }
 
         this.wsConn.onclose = (event) => {
@@ -146,6 +158,13 @@ export class WebSocketAdaptor
             }
             this.clearPingTimer();
             this.callback("closed", event);
+
+            if (this.isReconnection) {
+                this.isReconnection = false;
+                this.reconnectionTimerId = setInterval(() => {
+                    this.initWebSocketConnection();
+            }, 3000);
+            }
         }
 
 	}
@@ -173,13 +192,6 @@ export class WebSocketAdaptor
 	
     send(text) {
 
-        if (this.connecting == false && this.connected == false) {
-			//try to reconnect
-			this.initWebSocketConnection(() => {
-				this.send(text);
-			});
-            return;
-        }
         this.wsConn.send(text);
         if (this.debug) {
         	console.debug("sent message:" +text);

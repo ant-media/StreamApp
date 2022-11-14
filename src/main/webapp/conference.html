@@ -226,6 +226,12 @@ body {
 		playOnly = false;
 	}
 
+	/**
+	 * If publishing stops for any reason, it tries to republish again.
+	 */
+	var autoRepublishEnabled = true;
+	var streamInitializedTimer = -1;
+
 	var volume_change_input = document.getElementById("volume_change_input");
 	volume_change_input.addEventListener("change", changeVolume);
 
@@ -527,8 +533,13 @@ body {
 		websocketURL = "wss://" + path;
 	}
 
-	var webRTCAdaptor = new WebRTCAdaptor(	
-			{
+	
+	var	webRTCAdaptor = null;
+	var isFirstTry = true;
+	
+	function initWebRTCAdaptor(autoRepublishEnabled) 
+	{
+		webRTCAdaptor = new WebRTCAdaptor({
 				websocket_url : websocketURL,
 				mediaConstraints : mediaConstraints,
 				peerconnection_config : pc_config,
@@ -546,8 +557,22 @@ body {
 							isCameraOff = true;
 							handleCameraButtons();
 						}
+						// If get not_initialized_yet or etc error, it will try again.
+						// We should use "initialized" clause for publishing.
+						// If ice connection is disconnected or etc, communication always uses "initialized" for a refresh.
+						streamInitializedTimer = setInterval(() => {			
+							if (autoRepublishEnabled && !isFirstTry) {
+								joinRoom();
+							}
+						}, 2000);
 					} 
 					else if (info == "joinedTheRoom") {
+
+						// If joined to toom as expected, streamInitializedTimer interval should clear 
+						// and change to isFirstTry false for preventing infinity loop.
+						isFirstTry = true;
+						clearInterval(streamInitializedTimer);
+
 						var room = obj.ATTR_ROOM_NAME;
 						roomOfStream[obj.streamId] = room;
 						console.log("joined the room: "
@@ -556,9 +581,10 @@ body {
 
 						publishStreamId = obj.streamId
 
+						join_publish_button.disabled = true;
+						stop_publish_button.disabled = false;
+
 						if(playOnly) {
-							join_publish_button.disabled = true;
-							stop_publish_button.disabled = false;
 							isCameraOff = true;
 							handleCameraButtons();
 						}
@@ -643,6 +669,10 @@ body {
 						if (typeof obj != "undefined") {
 							console.log("Connecton closed: "
 									+ JSON.stringify(obj));
+							// Stop getRoomInfo interval
+							clearInterval(roomTimerId);
+							//When Websocket communication re-initialized, it should be try to rejoin.
+							isFirstTry = false;
 						}
 					} 
 					else if (info == "play_finished") {
@@ -683,6 +713,15 @@ body {
 					else if(info == "data_received") {
 						handleNotificationEvent(obj);
 					}
+					else if (info == "ice_connection_state_changed") {
+						console.log("iceConnectionState Changed: ",JSON.stringify(obj));
+						if (obj.state != null && obj.state != "failed" && obj.state != "disconnected") {
+							// If somehow WebSocket connection disconnected or etc, it needs to be re-initialize.
+							// In this scenario, stream will already drop.
+							// Then it will try to publish stream again.
+							isFirstTry = false;
+						}
+					}
 					else if (info == "speaking_but_muted") {
 						if(!mutedAlertPresent){
 							mutedAlertPresent = true
@@ -699,6 +738,9 @@ body {
 						}
           }	
 					else if(info == "session_restored"){
+						// session_restored using for micro disconnections etc.
+						isFirstTry = true;
+						clearInterval(streamInitializedTimer);
 						handleCameraButtons();
 						startAnimation();
 						console.log(info + "notification received");
@@ -746,10 +788,14 @@ body {
 						camera_checkbox.checked = true;
 					} 
 
-					alert(errorMessage);
+					//alert(errorMessage);
 				}
 			});
+	}
 
-	
+	//initialize the WebRTCAdaptor
+	initWebRTCAdaptor(autoRepublishEnabled);
+
+	window.webRTCAdaptor = webRTCAdaptor;
 </script>
 </html>
