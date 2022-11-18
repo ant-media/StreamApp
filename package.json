@@ -2,13 +2,13 @@
   "name": "@antmedia/webrtc_adaptor",
   "version": "1.0.0",
   "description": "WebRTC Adaptor for implementing a front end using Ant Media Server.",
-  "main": "compiled/webrtc_adaptor.js",
+  "main": "dist/webrtc_adaptor.js",
   "type": "commonjs",
   "directories": {
     "doc": "doc"
   },
   "scripts": {
-    "compile": "babel --plugins @babel/plugin-transform-modules-commonjs src/main/webapp/js/ -d compiled",
+    "compile": "babel --plugins @babel/plugin-transform-modules-commonjs src/main/webapp/js/ -d dist",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "publishConfig": {
