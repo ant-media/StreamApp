@@ -1364,7 +1364,7 @@ export class MediaManager
 	 * To change audio/video constraints on the fly
 	 * 
 	 */
-	applyConstraints(newConstraints) 
+	applyConstraints(streamId, newConstraints) 
 	{ 
 		    
 		var constraints = {};
