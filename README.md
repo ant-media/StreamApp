@@ -37,7 +37,7 @@ Then inside your javascript file:
 #### <a name="initialize">Initialize the WebRTCAdaptor
 ```javascript
   // ...
-import { WebRTCAdaptor } from '@ant-media/webrtc_adaptor';
+import { WebRTCAdaptor } from '@antmedia/webrtc_adaptor';
 
 const webRTCAdaptor = new WebRTCAdaptor({
     websocket_url: "wss://your-domain.tld:5443/WebRTCAppEE/websocket",
