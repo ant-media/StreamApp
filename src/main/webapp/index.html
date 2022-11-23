@@ -88,8 +88,6 @@ video {
 			</div>
 			<div class="form-group col-sm-12 text-left options">
 
-				<div style="margin-top:10px;" class="form-group">Microphone Gain: <br><input type=range id="volume_change_input" min=0 max=1 value=1 step=0.01></div>
-				
 				<label class=" mr-2" for="inlineFormCustomSelectPref">Max Video Bitrate(Kbps):</label>
 				<div class="form-inline">
 					<input type="text" class="form-control  mr-sm-2"
@@ -102,6 +100,23 @@ video {
 					<a id="browser_screen_share_doesnt_support" href="https://caniuse.com/#search=getDisplayMedia">Your browser doesn't support screen share. You can see supported browsers in this link </a>
 				<div class="dropdown-divider"></div>
 				<legend class="col-form-label audio-source-legend">Audio Source</legend>
+
+
+				<legend class="col-form-label microphone-gain-legend">Microphone Gain</legend>
+				<div class="form-inline"><input type=range id="volume_change_input" min=0 max=1 value=1 step=0.01></div>
+				<legend class="col-form-label audio-quality-legend">Audio Quality</legend>
+				<div class="form-check-inline form-inline">
+					<div class="custom-control custom-switch">
+						<input type="checkbox" class="custom-control-input" name="noiseSuppression" id="noiseSuppression">
+						<label class="custom-control-label" for="noiseSuppression">Noise Supression</label>
+					  </div>
+				</div>
+				<div class="form-check-inline form-inline">	  
+					  <div class="custom-control custom-switch">
+						<input type="checkbox" class="custom-control-input" name="echoCancellation" id="echoCancellation">
+						<label class="custom-control-label" for="echoCancellation">Echo Cancellation</label>
+					  </div>
+				</div>
 				
 			</div>	
 			<div class="dropdown-divider"></div>
@@ -222,6 +237,11 @@ video {
 	document.getElementById("streamId").defaultValue = "Goofy"
 	var streamIdBox = document.getElementById("streamId");
 	streamIdBox.value = "stream1";
+
+	var toggleNoiseSuppression = document.getElementById("noiseSuppression");
+	toggleNoiseSuppression.addEventListener("click", changeAudioConstraints, false);
+	var toggleEchoCancellation = document.getElementById("echoCancellation");
+	toggleEchoCancellation.addEventListener("click", changeAudioConstraints, false);
 	
 	/**
 	 * If publishing stops for any reason, it tries to republish again.
@@ -241,7 +261,7 @@ video {
 
 	var volume_change_input = document.getElementById("volume_change_input");
 	volume_change_input.addEventListener("change", changeVolume);
-
+	
 	function changeVolume(){
 	/**
    	* Change the gain levels on the input selector.
@@ -261,8 +281,11 @@ video {
 			}
 			else{
 				var bitrate = parseInt(bitrateBoxValue);
-				if (bitrate == NaN || bitrate < 100 || bitrate > 2500) {
+				if (bitrate == NaN) {
 					maxVideoBitrateKbps = 900;
+				}
+		    	else if (bitrate < 100) {
+					maxVideoBitrateKbps = 100;
 				}
 				else {
 					maxVideoBitrateKbps = bitrate;
@@ -360,9 +383,11 @@ video {
 	}
 	
   	function switchVideoMode(chbx) {
-  		if(chbx.value == "screen") {
-			  //webRTCAdaptor.switchDesktopWithMicAudio(streamId);
-			  webRTCAdaptor.switchDesktopCapture(streamId);
+		//If video device changes manually 
+  		
+		if(chbx.value == "screen") {
+			//webRTCAdaptor.switchDesktopWithMicAudio(streamId);
+			webRTCAdaptor.switchDesktopCapture(streamId);
   		}
   		else if(chbx.value == "screenwithcamera"){
 			webRTCAdaptor.switchDesktopCaptureWithCamera(streamId);
@@ -460,7 +485,26 @@ video {
         });
       }
 
-	var pc_config = {
+	function changeAudioConstraints() {
+		var constraint = { audio: {} };
+		switch(this.name) {
+			case 'noiseSuppression': {
+				constraint.audio.noiseSuppression = this.checked;
+				break;
+			}
+			case 'echoCancellation': {
+				constraint.audio.echoCancellation = this.checked;
+				break;
+			}
+			default: {
+				break;
+			}
+		}
+		webRTCAdaptor.applyConstraints(constraint);
+	}
+
+
+	  var pc_config = {
 			'iceServers' : [ {
 				'urls' : 'stun:stun1.l.google.com:19302'
 			} ]
@@ -486,7 +530,7 @@ video {
 	
 	var mediaConstraints = {
 		video : true,
-		audio : true
+		audio: true,
 	};
 
 	var appName = location.pathname.substring(0, location.pathname.lastIndexOf("/")+1);
@@ -500,7 +544,7 @@ video {
 	var	webRTCAdaptor = null;
 	var selectedRadio = null;
 	var selectedAudio = null;
-
+	
 	function initWebRTCAdaptor(publishImmediately, autoRepublishEnabled) 
 	{
 		webRTCAdaptor = new WebRTCAdaptor({
@@ -666,24 +710,34 @@ video {
 						var videoHtmlContent = "";
 						var audioHtmlContent = "";
 						var devices = new Array();
-				
+						
 						var i = 0;
+						var cameraIndex = 0;
+						var micIndex = 0;
 						obj.forEach(function(device) {
 							var label = device.label;
-							var deviceId = device.deviceId;
-							var devices = new Array();
 
 							devices.forEach(function(same){
 								if (same == device.label){
 									i += 1;
 									label = device.label + " - " + i
-									deviceId = device.deviceId + i
 								}
-							})
-							if (device.kind == "videoinput") {
+							});							
+
+							if (device.kind == "videoinput") 
+							{
+								if (typeof label == "undefined" || label == "") {
+									label = "Cam-" + cameraIndex;
+								}
+								cameraIndex++;
 								videoHtmlContent += getCameraRadioButton(label, device.deviceId);
 							}
-							else if (device.kind == "audioinput"){
+							else if (device.kind == "audioinput")
+							{
+								if (typeof label == "undefined" || label == "") {
+									label = "Mic-" + micIndex;
+								}
+								micIndex++;
 								audioHtmlContent += getAudioRadioButton(label, device.deviceId);
 							}
 							devices.push(device.label)
@@ -722,7 +776,7 @@ video {
 						$(":radio[value=" + selectedRadio + "]").prop("checked", true);
 						$(":radio[value=" + selectedAudio + "]").prop("checked", true);
 					}
-					else if(info == "session_restored"){
+					else if(info == "session_restored") {
 						start_publish_button.disabled = true;
 						stop_publish_button.disabled = false;
 						startAnimation();
@@ -741,37 +795,63 @@ video {
 						errorMessage = message;
 					}
 					var errorMessage = JSON.stringify(error);
-					if (error.indexOf("NotFoundError") != -1) {
-						errorMessage = "Camera or Mic are not found or not allowed in your device";
-					}
-					else if (error.indexOf("NotReadableError") != -1 || error.indexOf("TrackStartError") != -1) {
-						errorMessage = "Camera or Mic is being used by some other process that does not let read the devices";
-					}
-					else if(error.indexOf("OverconstrainedError") != -1 || error.indexOf("ConstraintNotSatisfiedError") != -1) {
-						errorMessage = "There is no device found that fits your video and audio constraints. You may change video and audio constraints"
-					}
-					else if (error.indexOf("NotAllowedError") != -1 || error.indexOf("PermissionDeniedError") != -1) {
-						errorMessage = "You are not allowed to access camera and mic.";
-					}
-					else if (error.indexOf("TypeError") != -1) {
-						errorMessage = "Video/Audio is required";
-					}
-					else if (error.indexOf("getUserMediaIsNotAllowed") != -1){
-						errorMessage = "You are not allowed to reach devices from an insecure origin, please enable ssl";
-					}
-					else if (error.indexOf("ScreenSharePermissionDenied") != -1) {
-						errorMessage = "You are not allowed to access screen share";
-						$(".video-source").first().prop("checked", true);						
-					}
-					else if (error.indexOf("WebSocketNotConnected") != -1) {
+					
+					if (error.indexOf("WebSocketNotConnected") != -1) {
 						errorMessage = "WebSocket Connection is disconnected.";
 					}
-					alert(errorMessage);
+					else if (error.indexOf("not_initialized_yet") != -1) {
+						errorMessage = "Server is getting initialized.";
+					}
+					else if (error.indexOf("data_store_not_available") != -1) {
+						errorMessage = "Data store is not available. It's likely that server is initialized or getting closed";
+					}
+					else {
+						if (error.indexOf("NotFoundError") != -1) {
+						errorMessage = "Camera or Mic are not found or not allowed in your device";
+						}
+						else if (error.indexOf("NotReadableError") != -1 || error.indexOf("TrackStartError") != -1) 
+						{
+							errorMessage = "Camera or Mic are already in use and they cannot be opened. Choose another video/audio source if you have on the page below ";
+							
+							$(".options").show();
+
+						}
+						else if(error.indexOf("OverconstrainedError") != -1 || error.indexOf("ConstraintNotSatisfiedError") != -1) {
+							errorMessage = "There is no device found that fits your video and audio constraints. You may change video and audio constraints"
+						}
+						else if (error.indexOf("NotAllowedError") != -1 || error.indexOf("PermissionDeniedError") != -1) {
+							errorMessage = "You are not allowed to access camera and mic.";
+						}
+						else if (error.indexOf("TypeError") != -1) {
+							errorMessage = "Video/Audio is required";
+						}
+						else if (error.indexOf("getUserMediaIsNotAllowed") != -1){
+							errorMessage = "You are not allowed to reach devices from an insecure origin, please enable ssl";
+						}
+						else if (error.indexOf("ScreenSharePermissionDenied") != -1) {
+							errorMessage = "You are not allowed to access screen share";
+							$(".video-source").first().prop("checked", true);						
+						}
+						else if (error.indexOf("UnsecureContext") != -1) {
+							errorMessage = "Please Install SSL(https). Camera and mic cannot be opened because of unsecure context. ";
+						}
+						else {
+							errorMessage = error
+						}
+						alert(errorMessage);
+							
+					}
+					console.error(errorMessage);
+					if (message !== undefined) {
+						console.error(message);
+					}
 				}
 			});
 	}
 	
 	//initialize the WebRTCAdaptor
 	initWebRTCAdaptor(false, autoRepublishEnabled);
+
+	window.webRTCAdaptor = webRTCAdaptor;
 </script>
 </html>

@@ -19,6 +19,30 @@ export class WebSocketAdaptor
         this.connected = false;
         this.pingTimerId = -1;
 
+        /*
+        * It's not mandatory if you don't use the new Load Balancer mechanism
+        * It uses one of the nodes on Cluster mode
+        * Example parameters: "origin" or "edge"
+        */
+        if (this.websocket_url.indexOf("?") == -1) {
+            //if there is no question mark just add it to give extra parameter
+            this.websocket_url+="?";
+        }
+        else {
+            //if there is a question mark, just append extra parameter
+            this.websocket_url+="&";
+        }
+        //add the target field
+        this.websocket_url+="target=";
+
+        //add the target value
+        if(this.webrtcadaptor.isPlayMode){
+            this.websocket_url+="edge";
+        }
+        else{
+           this.websocket_url+="origin";
+        }
+
 		this.wsConn = new WebSocket(this.websocket_url);
         this.wsConn.onopen = () => {
             if (this.debug) 
@@ -76,7 +100,7 @@ export class WebSocketAdaptor
                 this.webrtcadaptor.closePeerConnection(obj.streamId);
             }
             else if (obj.command == "error") {
-                this.callbackError(obj.definition);
+                this.callbackError(obj.definition, obj);
             }
             else if (obj.command == "notification") {
                 this.callback(obj.definition, obj);

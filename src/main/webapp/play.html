@@ -138,7 +138,7 @@
 
 		window.is360 = is360;
 		
-		
+		var handleConnectivityCallDateTimeMs = 0;
 
 
 		var streamId = getUrlParameter("id");
@@ -544,6 +544,34 @@
 			}
 			setPlaceHolderVisibility(false);
 		}
+		
+		function handleWebRTCConnectivity(noStreamCallback) 
+		{
+			var currentTimeMs = (new Date()).getTime();
+			//call if it's more than 3 seconds older
+			if (currentTimeMs >  (handleConnectivityCallDateTimeMs + 3000)) 
+			{
+				handleConnectivityCallDateTimeMs = currentTimeMs;
+				if (iceConnected) 
+				{
+					//webrtc connection was successful and try to play again with webrtc
+					setTimeout(function () {
+						webRTCAdaptor.getStreamInfo(streamId);
+					}, 3000);
+					console.log("Trying to play with webrtc again");
+				}
+				else 
+				{
+					//webrtc connection was not succesfull, switch the next play type(playOrder) if available 
+					if (typeof noStreamCallback != "undefined") {
+						noStreamCallback();
+						console.log("Trying to play with other tech than webrtc if available");
+					}
+				}
+				//make the flag false to try other technologies
+				iceConnected = false;		
+			}
+		}
 
 
 		function initializeWebRTCPlayer(streamId, token, subscriberId, subscriberCode, noStreamCallback) {
@@ -602,6 +630,9 @@
 					if (!document.getElementById("video-player").paused) {
 						document.getElementById("play_button").style.display = "none";
 					}
+					else if (info == "server_will_close") {
+						console.log("Server will close soon");	
+					}
 
 					console.debug(infos["obj"]);
 					if (infos["obj"].audioBitrate + infos["obj"].videoBitrate > infos["obj"].targetBitrate) {
@@ -639,7 +670,6 @@
 						* If getting codec incompatible or remote description error, it will redirect HLS player.
 						*/
 						tryToPlay(streamId, token, hlsExtension, subscriberId, subscriberCode, hlsNoStreamCallback);
-
 					}
 				});
 

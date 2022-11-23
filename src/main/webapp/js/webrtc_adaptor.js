@@ -180,7 +180,7 @@ export class WebRTCAdaptor
 		/**
 		 * The html video tag for receiver is got here
 		 */
-		this.remoteVideo = document.getElementById(this.remoteVideoId);
+		this.remoteVideo = this.remoteVideoElement || document.getElementById(this.remoteVideoId);
 
 		/**
 		  * Keeps the sound meters for each connection. Its index is stream id
@@ -240,53 +240,46 @@ export class WebRTCAdaptor
 		//TODO: should refactor the repeated code  
 		this.publishStreamId = streamId;
 		this.mediaManager.publishStreamId = streamId;
-		if (this.onlyDataChannel) {
-			var jsCmd = {
-				command : "publish",
-				streamId : streamId,
-				token : token,
-				subscriberId: typeof subscriberId !== undefined ? subscriberId : "" ,
-				subscriberCode: typeof subscriberCode !== undefined ? subscriberCode : "",
-				streamName : typeof streamName !== undefined ? streamName : "" ,
-				mainTrack : typeof mainTrack !== undefined ? mainTrack : "" ,
-				video: false,
-				audio: false,
-				metaData: metaData,
-			};
+		if (this.onlyDataChannel) 
+		{
+			this.sendPublishCommand(streamId, token, subscriberId, subscriberCode, streamName, mainTrack, metaData, false, false);			
 		}
 		//If it started with playOnly mode and wants to publish now
-		else if(this.mediaManager.localStream == null){
-			this.mediaManager.navigatorUserMedia(this.mediaConstraints, (stream => {
-				this.mediaManager.gotStream(stream);
-				var jsCmd = {
-					command : "publish",
-					streamId : streamId,
-					token : token,
-					subscriberId: typeof subscriberId !== undefined ? subscriberId : "" ,
-					subscriberCode: typeof subscriberCode !== undefined ? subscriberCode : "",
-					streamName : typeof streamName !== undefined ? streamName : "" ,
-					mainTrack : typeof mainTrack !== undefined ? mainTrack : "" ,				
-					video: this.mediaManager.localStream.getVideoTracks().length > 0 ? true : false,
-					audio: this.mediaManager.localStream.getAudioTracks().length > 0 ? true : false,
-					metaData: metaData,
-				};
-				this.webSocketAdaptor.send(JSON.stringify(jsCmd));
-			}), false);
+ 		else if(this.mediaManager.localStream == null)
+ 		{
+			this.mediaManager.initLocalStream().then(() => 
+			{
+				var videoEnabled = this.mediaManager.localStream.getVideoTracks().length > 0 ? true : false;
+				var audioEnabled = this.mediaManager.localStream.getAudioTracks().length > 0 ? true : false;
+				this.sendPublishCommand(streamId, token, subscriberId, subscriberCode, streamName, mainTrack, metaData, videoEnabled, audioEnabled)
+					
+			}).catch(error => {
+				console.warn(error);
+			});
 		} 
-		else{
-			var jsCmd = {
-					command : "publish",
-					streamId : streamId,
-					token : token,
-					subscriberId: typeof subscriberId !== undefined ? subscriberId : "" ,
-					subscriberCode: typeof subscriberCode !== undefined ? subscriberCode : "",
-					streamName : typeof streamName !== undefined ? streamName : "" ,
-					mainTrack : typeof mainTrack !== undefined ? mainTrack : "" ,
-					video: this.mediaManager.localStream.getVideoTracks().length > 0 ? true : false,
-					audio: this.mediaManager.localStream.getAudioTracks().length > 0 ? true : false,
-					metaData: metaData,
-			};
+		else
+		{
+			var videoEnabled = this.mediaManager.localStream.getVideoTracks().length > 0 ? true : false;
+			var audioEnabled = this.mediaManager.localStream.getAudioTracks().length > 0 ? true : false;
+			this.sendPublishCommand(streamId, token, subscriberId, subscriberCode, streamName, mainTrack, metaData, videoEnabled, audioEnabled)
+	
 		}
+		
+	}
+	
+	sendPublishCommand(streamId, token, subscriberId, subscriberCode, streamName, mainTrack, metaData, videoEnabled, audioEnabled) {
+		var jsCmd = {
+			command : "publish",
+			streamId : streamId,
+			token : token,
+			subscriberId: typeof subscriberId !== undefined ? subscriberId : "" ,
+			subscriberCode: typeof subscriberCode !== undefined ? subscriberCode : "",
+			streamName : typeof streamName !== undefined ? streamName : "" ,
+			mainTrack : typeof mainTrack !== undefined ? mainTrack : "" ,				
+			video: videoEnabled,
+			audio: audioEnabled,
+			metaData: metaData,
+		};
 		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
 	}
 
@@ -671,7 +664,8 @@ export class WebRTCAdaptor
 			if (!this.playStreamId.includes(streamId))
 			{
 				if(this.mediaManager.localStream != null) {
-					this.remotePeerConnection[streamId].addStream(this.mediaManager.localStream);
+					//AddStream is deprecated thus updated to the addTrack after version 2.4.2.1
+					this.mediaManager.localStream.getTracks().forEach(track => this.remotePeerConnection[streamId].addTrack(track, this.mediaManager.localStream));
 				}
 			}
 			this.remotePeerConnection[streamId].onicecandidate = event => {
@@ -1408,6 +1402,80 @@ export class WebRTCAdaptor
 		}
 		return sender;
 	}
+	
+	/**
+	 * Called by user
+	 * 
+	 * @param {*} videoTrackId : track id associated with pinned video
+	 * @param {*} streamId : streamId of the pinned video
+ 	 * @param {*} enabled : true | false
+	 * @returns 
+	 */
+	assignVideoTrack(videoTrackId, streamId, enabled) {
+		var jsCmd = {
+				command : "assignVideoTrackCommand",
+				streamId : streamId,
+				videoTrackId : videoTrackId,
+				enabled : enabled,
+		};
+
+		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
+	}
+	
+	/**
+	 * Called by user
+	 * video tracks may be less than the participants count
+	 * so these parameters are used for assigning video tracks to participants.
+	 * This message is used to make pagination in conference.
+	 *
+	 * @param {*} offset : start index for participant list to play
+	 * @param {*} size : number of the participants to play
+	 * @returns 
+	 */
+	updateVideoTrackAssignments(streamId, offset, size) {
+		var jsCmd = {
+				streamId : streamId,
+				command : "updateVideoTrackAssignmentsCommand",
+				offset : offset,
+				size : size,
+		};
+
+		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
+	}
+	
+	/**
+	 * Called by user
+	 * This message is used to set max video track count in a conference.
+	 *
+	 * @param {*} maxTrackCount : maximum video track count
+	 * @returns 
+	 */
+	setMaxVideoTrackCount(streamId, maxTrackCount) {
+		var jsCmd = {
+				streamId : streamId,
+				command : "setMaxVideoTrackCountCommand",
+				maxTrackCount : maxTrackCount,
+		};
+
+		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
+	}
+	
+	/**
+	 * Called by user
+	 * This message is used to send audio level in a conference.
+	 *
+	 * @param {*} value : audio lavel
+	 * @returns 
+	 */
+	updateAudioLevel(streamId, value) {
+		var jsCmd = {
+				streamId : streamId,
+				eventType : "UPDATE_AUDIO_LEVEL",
+				audioLevel : value,
+		};
+
+		this.sendData(streamId, JSON.stringify(jsCmd));
+	}
   
 
 	/**
@@ -1418,12 +1486,33 @@ export class WebRTCAdaptor
 	turnOnLocalCamera(streamId) {this.mediaManager.turnOnLocalCamera(streamId);}
 	muteLocalMic() {this.mediaManager.muteLocalMic();}
 	unmuteLocalMic() {this.mediaManager.unmuteLocalMic();}
-	switchDesktopCapture(streamId) {this.mediaManager.switchDesktopCapture(streamId);}
-	switchVideoCameraCapture(streamId, deviceId) {this.mediaManager.switchVideoCameraCapture(streamId, deviceId);}
-	switchDesktopCaptureWithCamera(streamId) {this.mediaManager.switchDesktopCaptureWithCamera(streamId);}
+	switchDesktopCapture(streamId) {
+		return this.mediaManager.switchDesktopCapture(streamId);
+	}
+	switchVideoCameraCapture(streamId, deviceId) {
+		return this.mediaManager.switchVideoCameraCapture(streamId, deviceId);
+	}
+	
+	/**
+	 * Called by User
+	 * to switch between front and back camera on mobile devices
+	 *
+	 * @param {*} streamId Id of the stream to be changed.
+	 * @param {*} facingMode it can be ""user" or "environment"
+	 *
+	 * This method is used to switch front and back camera.
+	 */
+	switchVideoCameraFacingMode(streamId, facingMode) {		
+		return this.mediaManager.switchVideoCameraFacingMode(streamId, facingMode);
+	}
+	
+	switchDesktopCaptureWithCamera(streamId) {
+		return this.mediaManager.switchDesktopCaptureWithCamera(streamId);
+	}
 	switchAudioInputSource(streamId, deviceId) {this.mediaManager.switchAudioInputSource(streamId, deviceId);}
 	setVolumeLevel(volumeLevel) {this.mediaManager.setVolumeLevel(volumeLevel);}
 	enableAudioLevelForLocalStream(levelCallback, period) {this.mediaManager.enableAudioLevelForLocalStream(levelCallback, period);}
+	applyConstraints(constraints){this.mediaManager.applyConstraints(constraints)};
 	
 	changeBandwidth(bandwidth, streamId) {
 		this.mediaManager.changeBandwidth(bandwidth, streamId);
@@ -1440,10 +1529,18 @@ export class WebRTCAdaptor
 	getVideoSender(streamId) { 
 		return this.mediaManager.getVideoSender(streamId); 
 	}
+	
+	openStream(mediaConstraints) {
+		return this.mediaManager.openStream(mediaConstraints);
+	}
 
-  closeStream() {
-    this.mediaManager.closeStream();
-  };
+    closeStream() {
+        return this.mediaManager.closeStream();
+    };
+  
+	applyConstraints(streamId, newConstaints) {
+		this.mediaManager.applyConstraints(streamId, newConstaints);
+	}
 
 }
 
