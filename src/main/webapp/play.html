@@ -48,7 +48,6 @@
 		Unmute
 	</button>
 
-
 	<script type="module">
 		/**
 		* This page accepts following arguments. 
@@ -91,6 +90,22 @@
 			link.rel = "stylesheet";
 			link.href = "css/external/video-js.css";
 			head.appendChild(link);
+
+			// These files should call after videojs file loaded completely
+			js.onload = function() {
+				
+				var videoJsQualityLevel = document.createElement("script");
+				videoJsQualityLevel.type = "text/javascript";
+				videoJsQualityLevel.src = "js/external/videojs-contrib-quality-levels.js";
+				head.appendChild(videoJsQualityLevel);
+
+				var videoJsQualityLevel = document.createElement("script");
+				videoJsQualityLevel.type = "text/javascript";
+				videoJsQualityLevel.src = "js/external/videojs-hls-quality-selector.min.js";
+				head.appendChild(videoJsQualityLevel);
+
+			}
+
 		}
 
 		if (playOrder.includes("dash")) 
@@ -423,6 +438,10 @@
 
 					if (autoPlay) {
 						player.ready(function () {
+							player.hlsQualitySelector({
+          						displayCurrentQuality: true,
+      						});
+
 							player.play();
 						});
 					}
