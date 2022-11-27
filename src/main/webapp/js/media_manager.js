@@ -1416,6 +1416,19 @@ export class MediaManager
 		}
 		return promise;
 	}
+
+	setCustomVideoSource(streamId, videoSource) {
+		if(this.localStream == null) {
+			this.gotStream(videoSource);
+		}
+		else {
+			this.updateVideoTrack(videoSource, streamId, onended, null);
+		}
+	}
+
+	closeCustomVideoSource(streamId) {
+		return this.switchVideoCameraCapture(streamId, null, null);
+	}
 }
 
 
