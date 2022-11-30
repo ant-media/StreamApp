@@ -17,6 +17,7 @@ export function VideoEffect() {
     this.edgeBlurRange = 4;
 
     this.init = function(webRTCAdaptor, streamId, virtualBackgroundImage) {
+        window.videoEffect = this;
         this.webRTCAdaptor = webRTCAdaptor;
         this.streamId = streamId;
         this.virtualBackgroundImage = virtualBackgroundImage;
