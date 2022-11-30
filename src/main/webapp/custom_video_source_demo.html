@@ -719,7 +719,7 @@ video {
 	function createSelfieSegmentation() {
 		selfieSegmentation = new SelfieSegmentation({
 			locateFile: (file) => {
-				return `js/external/selfie-segmentation/${file}`;
+				return `js/external/selfie-segmentation/` + file;
 			}
 		});
 		selfieSegmentation.setOptions({
