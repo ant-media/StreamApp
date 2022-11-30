@@ -363,6 +363,7 @@
 
 		function startPlayer(streamId, extension, token, subscriberId, subscriberCode) {
 
+			var errorCalled = false;
 			var type;
 			var liveStream = false;
 			if (extension == "mp4") {
@@ -414,6 +415,17 @@
 							trackingThreshold: 0
 						},
 					});
+
+					player.on('error', function (e) {
+					    console.log("There is an error with chunks");
+					    // We need to add this kind of check. If we don't add this kind of checkpoint, it will create an infinite loop
+					    if(!errorCalled){
+					     	setTimeout(() => {
+					    		errorCalled = true;
+ 								tryToPlay(streamId, token, extension, subscriberId, subscriberCode, hlsNoStreamCallback);
+							}, 2500)
+						}
+    				})
 
 					videojs.Hls.xhr.beforeRequest = function (options) {
 						options.uri = options.uri + "?token=" + token + "&subscriberId=" + subscriberId + "&subscriberCode=" + subscriberCode;
