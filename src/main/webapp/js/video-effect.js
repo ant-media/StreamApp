@@ -69,8 +69,8 @@ export function VideoEffect() {
         if (this.blurredEnabled || this.virtualBackgroundEnabled) {
             this.webRTCAdaptor.closeCustomVideoSource(this.streamId).then(function() {
                 console.log("custom video source closed");
-                //canvasStream.getTracks().forEach(track => track.stop());
-                //canvasStream = null;
+                window.videoEffect.canvasStream.getTracks().forEach(track => track.stop());
+                window.videoEffect.canvasStream = null;
             });
         }
         this.blurredEnabled = false;
@@ -84,7 +84,7 @@ export function VideoEffect() {
             this.canvasStream = this.effectCanvas.captureStream(20);
             newStream.addTrack(this.canvasStream.getVideoTracks()[0]);
             if (this.rawVideoStream) {
-                newStream.addTrack(this.rawVideoStream.getVideoTracks()[0]);
+                newStream.addTrack(this.rawVideoStream.getAudioTracks()[0]);
             }
             this.webRTCAdaptor.setCustomVideoSource(this.streamId, newStream);
         } else {
