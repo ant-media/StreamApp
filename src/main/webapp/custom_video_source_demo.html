@@ -627,9 +627,10 @@ video {
 	window.webRTCAdaptor = webRTCAdaptor;
 
 	let virtualBackgroundImage = document.getElementById("virtualBackgroundImage");
+	let rawLocalVideo = document.getElementById("rawLocalVideo");
 
 	let videoEffect = new VideoEffect();
-	videoEffect.init(webRTCAdaptor, streamId, virtualBackgroundImage);
+	videoEffect.init(webRTCAdaptor, streamId, virtualBackgroundImage, rawLocalVideo);
 
 	let virtualBackgroundButton = document.getElementById("virtualBackgroundButton");
 	virtualBackgroundButton.addEventListener("click", function() {
