@@ -565,7 +565,7 @@ video {
 					}
 				},
 				callbackError : function(error, message) {
-					//some of the possible errors, NotFoundError, SecurityError,PermissionDeniedError
+					//some possible errors, NotFoundError, SecurityError,PermissionDeniedError
 	
 					console.log("error callback: " +  JSON.stringify(error));
 					var errorMessage = JSON.stringify(error);
@@ -648,13 +648,6 @@ video {
 	let noEffectButton = document.getElementById("noEffectButton");
 	noEffectButton.addEventListener("click", function() {
 		videoEffect.removeEffect();
-	});
-
-	navigator.mediaDevices.getUserMedia({video: true, audio: true}).then(cameraStream => {
-		videoEffect.rawVideoStream = cameraStream;
-		videoEffect.rawLocalVideo.srcObject = cameraStream;
-		videoEffect.rawLocalVideo.play();
-		videoEffect.loadMediapipe();
 	});
 </script>
 </html>

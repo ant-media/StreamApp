@@ -44,6 +44,7 @@ export function VideoEffect() {
 
         this.playing();
         this.isSelfieSegmentationLoaded = true;
+        window.videoEffect.loadMediapipe();
     }
 
     this.enableVirtualBackground = function() {
@@ -68,7 +69,6 @@ export function VideoEffect() {
         // if one of virtual background or blur is enabled, close the canvas stream
         if (this.blurredEnabled || this.virtualBackgroundEnabled) {
             this.webRTCAdaptor.closeCustomVideoSource(this.streamId).then(function() {
-                console.log("custom video source closed");
                 window.videoEffect.canvasStream.getTracks().forEach(track => track.stop());
                 window.videoEffect.canvasStream = null;
             });
@@ -93,6 +93,13 @@ export function VideoEffect() {
     }
 
     this.loadMediapipe = function() {
+        if (videoEffect.rawVideoStream === null || videoEffect.rawLocalVideo.srcObject === null) {
+            navigator.mediaDevices.getUserMedia({video: true, audio: true}).then(cameraStream => {
+                window.videoEffect.rawVideoStream = cameraStream;
+                window.videoEffect.rawLocalVideo.srcObject = cameraStream;
+                window.videoEffect.rawLocalVideo.play();
+            });
+        }
         if (this.selfieSegmentation) return;
         this.playing();
     }
