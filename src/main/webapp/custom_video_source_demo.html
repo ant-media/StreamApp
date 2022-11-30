@@ -135,8 +135,8 @@ video {
 </body>
 <script type="module" lang="text/javascript" >
 	import {WebRTCAdaptor} from "./js/webrtc_adaptor.js"
-    import {getUrlParameter} from "./js/fetch.stream.js" 
-    import {SoundMeter} from "./js/soundmeter.js" 
+    import {getUrlParameter} from "./js/fetch.stream.js"
+	import {VideoEffect} from "./js/video-effect.js"
 	var debug = getUrlParameter("debug");
 	  if(debug == null) {
 		debug = false;
@@ -162,13 +162,6 @@ video {
 	});
 
 	var max_bandwidth_input = document.getElementById("maxBandwidthTextBox");
-
-	let effectCanvas = document.createElement('canvas');
-	effectCanvas.id="effectCanvas";
-	effectCanvas.width = 640;
-	effectCanvas.height = 480;
-	let ctx = effectCanvas.getContext("2d");
-	let isSelfieSegmentationLoaded = false;
 
 	var maxVideoBitrateKbps = 900;
 	var subscriberId = getUrlParameter("subscriberId");
@@ -399,8 +392,6 @@ video {
 	if (location.protocol.startsWith("https")) {
 		websocketURL = "wss://" + path;
 	}
-
-	websocketURL = "ws://localhost:5080/LiveApp/websocket";
 
 	var	webRTCAdaptor = null;
 
@@ -639,178 +630,32 @@ video {
 
 	window.webRTCAdaptor = webRTCAdaptor;
 
-	let blurredEnabled = false;
-	let virtualBackgroundEnabled = false;
-
-	let selfieSegmentation = null;
 	let virtualBackgroundImage = document.getElementById("virtualBackgroundImage");
-	let backgroundBlurRange = 3;
 
-	let edgeBlurRange = 4;
-
-	let rawLocalVideo = null;
-
-	rawLocalVideo = document.getElementById("rawLocalVideo");
-
-	let canvasStream = null;
-	let rawVideoStream = null;
-
-	function setCanvasStreamAsCustomVideoSource() {
-		if (isSelfieSegmentationLoaded) {
-			playing();
-			let newStream = new MediaStream();
-			canvasStream = effectCanvas.captureStream(20);
-			newStream.addTrack(canvasStream.getVideoTracks()[0]);
-			if (rawVideoStream) {
-				newStream.addTrack(rawVideoStream.getVideoTracks()[0]);
-			}
-			webRTCAdaptor.setCustomVideoSource(streamId, newStream);
-		} else {
-			setTimeout(setCanvasStreamAsCustomVideoSource, 1000);
-		}
-	}
+	let videoEffect = new VideoEffect();
+	window.videoEffect = videoEffect;
+	videoEffect.init(webRTCAdaptor, streamId, virtualBackgroundImage);
 
 	let virtualBackgroundButton = document.getElementById("virtualBackgroundButton");
 	virtualBackgroundButton.addEventListener("click", function() {
-		// if both virtual background and blur are disabled, set the canvas stream as custom video source
-		if (!blurredEnabled && !virtualBackgroundEnabled) {
-			setCanvasStreamAsCustomVideoSource();
-		}
-		blurredEnabled = false;
-		virtualBackgroundEnabled = true;
+		videoEffect.enableVirtualBackground();
 	});
 
 	let blurButton = document.getElementById("blurButton");
 	blurButton.addEventListener("click", function() {
-		// if both virtual background and blur are disabled, set the canvas stream as custom video source
-		if (!blurredEnabled && !virtualBackgroundEnabled) {
-			setCanvasStreamAsCustomVideoSource();
-		}
-		blurredEnabled = true;
-		virtualBackgroundEnabled = false;
+		videoEffect.enableBlur();
 	});
 
 	let noEffectButton = document.getElementById("noEffectButton");
 	noEffectButton.addEventListener("click", function() {
-		// if one of virtual background or blur is enabled, close the canvas stream
-		if (blurredEnabled || virtualBackgroundEnabled) {
-			webRTCAdaptor.closeCustomVideoSource(streamId).then(function() {
-				console.log("custom video source closed");
-				//canvasStream.getTracks().forEach(track => track.stop());
-				//canvasStream = null;
-			});
-		}
-		blurredEnabled = false;
-		virtualBackgroundEnabled = false;
+		videoEffect.removeEffect();
 	});
 
 	navigator.mediaDevices.getUserMedia({video: true, audio: true}).then(cameraStream => {
-		rawVideoStream = cameraStream;
-		rawLocalVideo.srcObject = cameraStream;
-		rawLocalVideo.play();
-		loadMediapipe();
+		videoEffect.rawVideoStream = cameraStream;
+		videoEffect.rawLocalVideo.srcObject = cameraStream;
+		videoEffect.rawLocalVideo.play();
+		videoEffect.loadMediapipe();
 	});
-
-	function loadMediapipe() {
-		if (selfieSegmentation) return;
-		createSelfieSegmentation();
-	}
-
-	function createSelfieSegmentation() {
-		selfieSegmentation = new SelfieSegmentation({
-			locateFile: (file) => {
-				return `js/external/selfie-segmentation/` + file;
-			}
-		});
-		selfieSegmentation.setOptions({
-			selfieMode: false,
-			modelSelection: 1,
-			effect: "background"
-		});
-		selfieSegmentation.onResults(onResults);
-
-		playing();
-
-		isSelfieSegmentationLoaded = true;
-	}
-
-	async function playing() {
-		if (rawLocalVideo.readyState === rawLocalVideo.HAVE_ENOUGH_DATA
-				&& selfieSegmentation !== undefined) {
-			await selfieSegmentation.send({image: rawLocalVideo});
-		} else {
-			setTimeout(playing, 100);
-		}
-	}
-
-	function drawSegmentationMask(segmentation) {
-		ctx.drawImage(segmentation, 0, 0, effectCanvas.width, effectCanvas.height);
-	}
-
-	function onResults(results) {
-		runPostProcessing(
-				results.image,
-				results.segmentationMask,
-				backgroundBlurRange
-		);
-		// if none of effects are enabled, stop sending image to sefie-segmentation
-		if (blurredEnabled || virtualBackgroundEnabled) {
-			setTimeout(playing, 100);
-		}
-	}
-
-	function runPostProcessing(image, segmentation, blurAmount) {
-		if (blurredEnabled) {
-			drawBlurBackground(image, segmentation, blurAmount);
-		} else if (virtualBackgroundEnabled) {
-			drawVirtualBackground(image, segmentation, virtualBackgroundImage);
-		} else {
-			drawImageDirectly(image);
-		}
-	}
-
-	function drawImageDirectly(image) {
-		ctx.save();
-		ctx.globalCompositeOperation = "source-over";
-		ctx.filter = "none";
-		ctx.drawImage(image, 0, 0, image.width, image.height);
-		ctx.restore();
-	}
-
-	function drawVirtualBackground(image, segmentation, virtualBackgroundImage) {
-		ctx.save();
-		ctx.filter = "none";
-		ctx.clearRect(0, 0, effectCanvas.width, effectCanvas.height);
-		ctx.drawImage(segmentation, 0, 0, effectCanvas.width, effectCanvas.height);
-		ctx.globalCompositeOperation = 'source-out';
-		ctx.drawImage(virtualBackgroundImage, 0, 0, virtualBackgroundImage.width, virtualBackgroundImage.height, 0, 0, effectCanvas.width, effectCanvas.height);
-		ctx.globalCompositeOperation = 'destination-atop';
-		ctx.drawImage(image, 0, 0, effectCanvas.width, effectCanvas.height);
-		ctx.restore();
-	}
-
-	function drawBlurBackground(image, segmentation, blurAmount) {
-		ctx.clearRect(0, 0, effectCanvas.width, effectCanvas.height);
-
-		ctx.globalCompositeOperation = "copy";
-		ctx.filter = "none";
-
-		ctx.filter = `blur(${edgeBlurRange}px)`;
-		drawSegmentationMask(segmentation);
-		ctx.globalCompositeOperation = "source-in";
-		ctx.filter = "none";
-
-		ctx.drawImage(image, 0, 0, effectCanvas.width, effectCanvas.height);
-
-		blurBackground(image, blurAmount);
-
-		ctx.restore();
-	}
-
-	function blurBackground(image, blurAmount) {
-		ctx.globalCompositeOperation = "destination-over";
-		ctx.filter = `blur(${blurAmount}px)`;
-		ctx.drawImage(image, 0, 0, effectCanvas.width, effectCanvas.height);
-	}
 </script>
 </html>
