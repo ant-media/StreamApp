@@ -166,7 +166,7 @@ export class WebRTCAdaptor
 		 * if candidate protocol is in the list below.
 		 */
 		this.candidateTypes = ["udp", "tcp"];
-		
+
 		/**
 		 * The values of the above fields are provided as this constructor parameter.
 		 * TODO: Also some other hidden parameters may be passed here
@@ -1555,6 +1555,14 @@ export class WebRTCAdaptor
   
 	applyConstraints(streamId, newConstaints) {
 		this.mediaManager.applyConstraints(streamId, newConstaints);
+	}
+
+	setCustomVideoSource(streamId ,videoSource) {
+		this.mediaManager.setCustomVideoSource(streamId ,videoSource);
+	}
+
+	closeCustomVideoSource(streamId) {
+		return this.mediaManager.closeCustomVideoSource(streamId);
 	}
 
 }
