@@ -79,6 +79,10 @@ export function VideoEffect() {
      * This method is used to activate the virtual background effect to the video stream.
      */
     this.enableVirtualBackground = function() {
+        if (!this.isInitialized) {
+            console.error("VideoEffect is not initialized!");
+            return;
+        }
         // if both virtual background and blur are disabled, set the canvas stream as custom video source
         if (!this.blurredEnabled && !this.virtualBackgroundEnabled) {
             this.setCanvasStreamAsCustomVideoSource();
@@ -91,6 +95,10 @@ export function VideoEffect() {
      * This method is used to activate the blur effect to the video stream.
      */
     this.enableBlur = function() {
+        if (!this.isInitialized) {
+            console.error("VideoEffect is not initialized!");
+            return;
+        }
         // if both virtual background and blur are disabled, set the canvas stream as custom video source
         if (!this.blurredEnabled && !this.virtualBackgroundEnabled) {
             this.setCanvasStreamAsCustomVideoSource();
@@ -103,6 +111,10 @@ export function VideoEffect() {
      * This method is used to disable the virtual background and blur effects.
      */
     this.removeEffect = function() {
+        if (!this.isInitialized) {
+            console.error("VideoEffect is not initialized!");
+            return;
+        }
         // if one of virtual background or blur is enabled, close the canvas stream
         if (this.blurredEnabled || this.virtualBackgroundEnabled) {
             this.webRTCAdaptor.closeCustomVideoSource(this.streamId).then(function() {
