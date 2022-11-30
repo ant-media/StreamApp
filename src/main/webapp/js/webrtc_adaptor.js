@@ -1476,6 +1476,21 @@ export class WebRTCAdaptor
 
 		this.sendData(streamId, JSON.stringify(jsCmd));
 	}
+	
+	/**
+ 	* Called by user
+ 	* This message is used to get debug data from server for debugging purposes in conference.
+ 	*
+ 	* @returns
+ 	*/
+	getDebugInfo(streamId) {
+		var jsCmd = {
+			streamId: streamId,
+			command: "getDebugInfo",
+		};
+
+		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
+	}
   
 
 	/**
