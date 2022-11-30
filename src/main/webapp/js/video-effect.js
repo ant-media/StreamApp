@@ -191,7 +191,7 @@ export function VideoEffect() {
             results.segmentationMask,
             window.videoEffect.backgroundBlurRange
         );
-        // if none of effects are enabled, stop sending image to sefie-segmentation
+        // if none of effects are enabled, stop sending image to selfie-segmentation
         if (window.videoEffect.blurredEnabled || window.videoEffect.virtualBackgroundEnabled) {
             setTimeout(window.videoEffect.playing, 100);
         }
