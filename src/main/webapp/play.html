@@ -48,7 +48,6 @@
 		Unmute
 	</button>
 
-
 	<script type="module">
 		/**
 		* This page accepts following arguments. 
@@ -80,10 +79,10 @@
 		var head = document.getElementsByTagName('head')[0];
 		if (playOrder.includes("hls") || playOrder.includes("vod")) {
 			//include videojs -> js
-			
+
 			var js = document.createElement("script");
 			js.type = "text/javascript";
-			js.src = "js/external/video.js";
+			js.src = "js/external/video.js"; //   js/external/video.js
 			head.appendChild(js);
 
 			//include videojs -> css
@@ -91,6 +90,22 @@
 			link.rel = "stylesheet";
 			link.href = "css/external/video-js.css";
 			head.appendChild(link);
+
+			// These files should call after videojs file loaded completely
+			js.onload = function() {
+				
+				var videoJsQualityLevel = document.createElement("script");
+				videoJsQualityLevel.type = "text/javascript";
+				videoJsQualityLevel.src = "js/external/videojs-contrib-quality-levels.min.js";
+				head.appendChild(videoJsQualityLevel);
+
+				var videoJsQualitySelector = document.createElement("script");
+				videoJsQualitySelector.type = "text/javascript";
+				videoJsQualitySelector.src = "js/external/videojs-hls-quality-selector.min.js";
+				head.appendChild(videoJsQualitySelector);
+
+			}
+
 		}
 
 		if (playOrder.includes("dash")) 
@@ -435,6 +450,22 @@
 
 					if (autoPlay) {
 						player.ready(function () {
+							player.hlsQualitySelector({
+          						displayCurrentQuality: true,
+      						});
+
+							// If there is no adaptive option in m3u8 no need to show quality selector
+      						let qualityLevels = player.qualityLevels();
+							qualityLevels.on('addqualitylevel', function (event) {
+							let qualityLevel = event.qualityLevel;
+							if (qualityLevel.height) {
+								qualityLevel.enabled = true;
+							} else {
+								qualityLevels.removeQualityLevel(qualityLevel);
+								qualityLevel.enabled = false;
+							}
+							});
+
 							player.play();
 						});
 					}
