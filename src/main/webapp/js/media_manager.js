@@ -1205,13 +1205,13 @@ export class MediaManager
 			this.blackFrameTimer = null;
 		}
 		if(this.localStream == null){
-			this.navigatorUserMedia(this.mediaConstraints, stream =>{
+			return this.navigatorUserMedia(this.mediaConstraints, stream =>{
 				this.gotStream(stream);
 			}, false);
 		}
 		//This method will get the camera track and replace it with dummy track
 		else {
-			this.navigatorUserMedia(this.mediaConstraints, stream =>{
+			return this.navigatorUserMedia(this.mediaConstraints, stream =>{
 				let choosenId;
 			 	if(streamId != null || typeof streamId != "undefined"){
 					choosenId = streamId;
