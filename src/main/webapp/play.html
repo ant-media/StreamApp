@@ -450,9 +450,12 @@
 
 					if (autoPlay) {
 						player.ready(function () {
-							player.hlsQualitySelector({
-          						displayCurrentQuality: true,
-      						});
+							// If it's already added to player, no need to add again
+							if(typeof player.hlsQualitySelector === "function"){
+								player.hlsQualitySelector({
+          							displayCurrentQuality: true,
+      							});
+							}
 
 							// If there is no adaptive option in m3u8 no need to show quality selector
       						let qualityLevels = player.qualityLevels();
