@@ -1498,7 +1498,7 @@ export class WebRTCAdaptor
 	 * You can find the details about them in media_manager.js
 	 */
 	turnOffLocalCamera(streamId) {this.mediaManager.turnOffLocalCamera(streamId);}
-	turnOnLocalCamera(streamId) {this.mediaManager.turnOnLocalCamera(streamId);}
+	turnOnLocalCamera(streamId) {return this.mediaManager.turnOnLocalCamera(streamId);}
 	muteLocalMic() {this.mediaManager.muteLocalMic();}
 	unmuteLocalMic() {this.mediaManager.unmuteLocalMic();}
 	switchDesktopCapture(streamId) {
