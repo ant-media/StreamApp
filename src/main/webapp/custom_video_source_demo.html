@@ -634,16 +634,19 @@ video {
 
 	let virtualBackgroundButton = document.getElementById("virtualBackgroundButton");
 	virtualBackgroundButton.addEventListener("click", function() {
+		videoEffect.streamId = streamIdBox.value;
 		videoEffect.enableVirtualBackground();
 	});
 
 	let blurButton = document.getElementById("blurButton");
 	blurButton.addEventListener("click", function() {
+		videoEffect.streamId = streamIdBox.value;
 		videoEffect.enableBlur();
 	});
 
 	let noEffectButton = document.getElementById("noEffectButton");
 	noEffectButton.addEventListener("click", function() {
+		videoEffect.streamId = streamIdBox.value;
 		videoEffect.removeEffect();
 	});
 </script>
