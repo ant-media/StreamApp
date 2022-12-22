@@ -2,3 +2,4 @@
 /.settings
 /target/
 /codesigning.asc
+/node_modules/
