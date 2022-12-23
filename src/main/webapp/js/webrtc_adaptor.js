@@ -1552,9 +1552,17 @@ export class WebRTCAdaptor
     closeStream() {
         return this.mediaManager.closeStream();
     };
-  
+
+	/**
+	 * @deprecated Since version 2.4.3+. Will be deleted in version 2.6.0. Use applyConstraints(newConstaints) instead.
+	 */
 	applyConstraints(streamId, newConstaints) {
 		this.mediaManager.applyConstraints(streamId, newConstaints);
+	}
+
+
+	applyConstraints(newConstaints) {
+		this.mediaManager.applyConstraints(newConstaints);
 	}
 
 	setCustomVideoSource(streamId ,videoSource) {
