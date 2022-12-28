@@ -29,6 +29,30 @@ export function VideoEffect() {
      * @param {HTMLElement} virtualBackgroundImage - Element of virtual background image. You should set the image source before calling this method.
      * @param {HTMLElement} rawLocalVideo - Element of raw local video. It's used to keep the raw video stream.
      */
+    this.deepar_Init = function (webRTCAdaptor, streamId, rawLocalVideo){
+        this.webRTCAdaptor = webRTCAdaptor;
+        this.streamId = streamId;
+        this.rawLocalVideo = rawLocalVideo;
+        this.createEffectCanvas();
+       // var canvas = document.createElement('canvas');
+
+        var deepAR = new DeepAR({
+            licenseKey: 'fdaad676ff58ff11f453db2d781073f105c94f14a8dc0f88c96049d4d20bf18aff2364181ac69a7a',
+            canvas: this.effectCanvas,
+            deeparWasmPath: './js/Deepar/wasm/deepar.wasm',
+            callbacks: {
+                onInitialize: function() {
+                    deepAR.startVideo(true);
+                    deepAR.switchEffect(0, 'slot',  './js/Deepar/effects/viking_helmet.deepar', function() {
+                    });
+                }
+            }
+        });
+        deepAR.downloadFaceTrackingModel("./js/Deepar/models/face/models-68-extreme.bin");
+        deepAR.setVideoElement(this.rawLocalVideo, true);
+        this.setCanvasStreamAsCustomVideoSource();
+
+    }
     this.init = function(webRTCAdaptor, streamId, virtualBackgroundImage, rawLocalVideo) {
         window.videoEffect = this;
 
@@ -36,7 +60,6 @@ export function VideoEffect() {
         this.streamId = streamId;
         this.virtualBackgroundImage = virtualBackgroundImage;
         this.rawLocalVideo = rawLocalVideo;
-
         this.createEffectCanvas();
         this.initializeSelfieSegmentation();
 
@@ -52,6 +75,7 @@ export function VideoEffect() {
         this.effectCanvas.width = 640;
         this.effectCanvas.height = 480;
         this.ctx = this.effectCanvas.getContext("2d");
+       // document.body.appendChild(this.effectCanvas);
     }
 
     /**
