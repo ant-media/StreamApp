@@ -239,6 +239,7 @@
     }
 
     function startPublishing() {
+        videoEffect.setCanvasStreamAsCustomVideoSource2();
         webRTCAdaptor.bandwidth = maxVideoBitrateKbps;
         streamId = streamIdBox.value;
         webRTCAdaptor.publish(streamId, token, subscriberId, subscriberCode, streamName, mainTrack);

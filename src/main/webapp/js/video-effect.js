@@ -5,6 +5,7 @@ import "./external/selfie-segmentation/selfie_segmentation.js";
  * It's compatible with Ant Media Server JavaScript SDK v2.5.2+
  */
 export function VideoEffect() {
+    this.mode;
     this.isInitialized = false;
     this.selfieSegmentation = null;
     this.webRTCAdaptor = null;
@@ -33,7 +34,13 @@ export function VideoEffect() {
         this.webRTCAdaptor = webRTCAdaptor;
         this.streamId = streamId;
         this.rawLocalVideo = rawLocalVideo;
-        this.createEffectCanvas();
+        //this.createEffectCanvas();
+        this.effectCanvas = document.createElement('canvas');
+        this.effectCanvas.id="effectCanvas";
+        this.effectCanvas.width = 640;
+        this.effectCanvas.height = 480;
+        document.body.appendChild(this.effectCanvas);
+        //this.ctx = this.effectCanvas.getContext("2d");
        // var canvas = document.createElement('canvas');
 
         var deepAR = new DeepAR({
@@ -50,7 +57,7 @@ export function VideoEffect() {
         });
         deepAR.downloadFaceTrackingModel("./js/Deepar/models/face/models-68-extreme.bin");
         deepAR.setVideoElement(this.rawLocalVideo, true);
-        this.setCanvasStreamAsCustomVideoSource();
+        this.setCanvasStreamAsCustomVideoSource2();
 
     }
     this.init = function(webRTCAdaptor, streamId, virtualBackgroundImage, rawLocalVideo) {
@@ -166,6 +173,19 @@ export function VideoEffect() {
         } else {
             // if mediapipe is not loaded, wait for 1 second and try again
             setTimeout(this.setCanvasStreamAsCustomVideoSource, 1000);
+        }
+    }
+
+    this.setCanvasStreamAsCustomVideoSource2 = function() {
+        let newStream = new MediaStream();
+            this.canvasStream = this.effectCanvas.captureStream(this.effectCanvasFPS);
+            newStream.addTrack(this.canvasStream.getVideoTracks()[0]);
+            if (this.rawVideoStream) {
+                newStream.addTrack(this.rawVideoStream.getAudioTracks()[0]);
+            }
+            var localVideo = document.getElementById("localVideo");
+            localVideo.srcObject = newStream;
+            this.webRTCAdaptor.setCustomVideoSource(this.streamId, newStream);
         }
     }
 
