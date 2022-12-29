@@ -77,7 +77,6 @@
         </div>
 
         <select id="select_effect">
-
         </select>
 
         <div class="dropdown-divider"></div>
@@ -248,8 +247,6 @@
     }
 
     function startPublishing() {
-        videoEffect.setCanvasStreamAsCustomVideoSource(true);
-        videoEffect.setOffscreenRenderingEnabled(true);
         webRTCAdaptor.bandwidth = maxVideoBitrateKbps;
         streamId = streamIdBox.value;
         webRTCAdaptor.publish(streamId, token, subscriberId, subscriberCode, streamName, mainTrack);

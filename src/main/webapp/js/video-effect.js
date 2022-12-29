@@ -5,7 +5,6 @@ import "./external/selfie-segmentation/selfie_segmentation.js";
  * It's compatible with Ant Media Server JavaScript SDK v2.5.2+
  */
 export function VideoEffect() {
-    this.mode;
     this.isInitialized = false;
     this.selfieSegmentation = null;
     this.webRTCAdaptor = null;
@@ -35,7 +34,6 @@ export function VideoEffect() {
         this.streamId = streamId;
         this.rawLocalVideo = rawLocalVideo;
         this.createEffectCanvas(true);
-        document.body.appendChild(this.effectCanvas);
         var deepAR = new DeepAR({
             licenseKey: API_Key,
             canvas: this.effectCanvas,
@@ -45,24 +43,26 @@ export function VideoEffect() {
                     deepAR.startVideo(true);
                     deepAR.switchEffect(0, 'slot', './js/Deepar/effects/viking_helmet.deepar', function () {
                     });
-                }
+                },
+
             }
         });
+        deepAR.callbacks.onVideoStarted=()=>{
+            this.setCanvasStreamAsCustomVideoSource(true);
+
+        }
         deepAR.downloadFaceTrackingModel("./js/Deepar/models/face/models-68-extreme.bin");
         deepAR.setVideoElement(this.rawLocalVideo, true);
-        this.setCanvasStreamAsCustomVideoSource(true);
         return deepAR;
     }
     this.init = function (webRTCAdaptor, streamId, virtualBackgroundImage, rawLocalVideo) {
         window.videoEffect = this;
-
         this.webRTCAdaptor = webRTCAdaptor;
         this.streamId = streamId;
         this.virtualBackgroundImage = virtualBackgroundImage;
         this.rawLocalVideo = rawLocalVideo;
         this.createEffectCanvas();
         this.initializeSelfieSegmentation();
-
         this.isInitialized = true;
     }
 
