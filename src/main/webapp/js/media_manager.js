@@ -1355,7 +1355,10 @@ export class MediaManager
       	// console.log("Added sound meter for stream: " + streamId + " = " + soundMeter.instant.toFixed(2));
     	});
   	}
-    
+
+	/**
+	 * @deprecated Since version 2.4.3+. Will be deleted in version 2.6.0. Use applyConstraints(newConstaints) instead.
+	 */
 	applyConstraints(streamId, newConstaints) {
 		this.applyConstraints(newConstaints);
 	}
