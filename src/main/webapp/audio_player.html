@@ -1,95 +1,20 @@
 <html>
 <head>
-<title>Ant Media Server WebRTC Audio Player</title>
+<title>WebRTC Samples > Audio Play</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta charset="UTF-8">
-<link rel="stylesheet"
-	href="css/external/bootstrap4/bootstrap.min.css"
-	 >
+<link rel="stylesheet" href="css/external/bootstrap4/bootstrap.min.css">
 <link rel="stylesheet" href="css/common.css" />
+<link rel="stylesheet" href="css/samples.css" />
 <script src="js/external/adapter-latest.js"></script>
-<style>
-video {
-	width: 100%;
-	max-width: 640px;
-}
-/* Space out content a bit */
-body {
-	padding-top: 20px;
-	padding-bottom: 20px;
-}
 
-/* Everything but the jumbotron gets side spacing for mobile first views */
-.header, .marketing, .footer {
-	padding-right: 15px;
-	padding-left: 15px;
-}
-
-/* Custom page header */
-.header {
-	padding-bottom: 20px;
-	border-bottom: 1px solid #e5e5e5;
-}
-/* Make the masthead heading the same height as the navigation */
-.header h3 {
-	margin-top: 0;
-	margin-bottom: 0;
-	line-height: 40px;
-}
-
-/* Custom page footer */
-.footer {
-	padding-top: 19px;
-	color: #777;
-	border-top: 1px solid #e5e5e5;
-}
-
-/* Customize container */
-@media ( min-width : 768px) {
-	.container {
-		max-width: 730px;
-	}
-}
-
-.container-narrow>hr {
-	margin: 30px 0;
-}
-
-/* Main marketing message and sign up button */
-.jumbotron {
-	text-align: center;
-	border-bottom: 1px solid #e5e5e5;
-}
-
-/* Responsive: Portrait tablets and up */
-@media screen and (min-width: 768px) {
-	/* Remove the padding we set earlier */
-	.header, .marketing, .footer {
-		padding-right: 0;
-		padding-left: 0;
-	}
-	/* Space out the masthead */
-	.header {
-		margin-bottom: 30px;
-	}
-	/* Remove the bottom border on the jumbotron for visual effect */
-	.jumbotron {
-		border-bottom: 0;
-	}
-}
-</style>
 </head>
 <body>
 
 	<div class="container">
 		<div class="header clearfix">
 			<div class="row">
-				<h3 class="col text-muted">WebRTC Audio Play</h3>
-				<nav class="col align-self-center">
-					<ul class="nav float-right">
-						<li><a href="http://antmedia.io">Contact</a></li>
-					</ul>
-				</nav>
+				<h3 class="col text-muted"><a href="samples.html">WebRTC Samples</a> > Audio Play</h3>
 			</div>
 		</div>
 
@@ -100,32 +25,27 @@ body {
 			<a href="https://antmedia.io">Try Enterprise Edition for free at antmedia.io</a> <br/><br/>
 			<a href="https://github.com/ant-media/Ant-Media-Server/wiki#community-edition--enterprise-edition" style="font-size:12px">Comparison between Community and Enterprise</a>		 
 			</div>
-			<p>
-			<!--  
-				<video id="remoteVideo" autoplay controls></video>
-				-->
+			<div class="form-group col-sm-12 text-center">
 				<audio id="remoteVideo" autoplay controls></audio>
-			</p>
+			</div>
 			<div class="form-group col-sm-12 text-left">
 				<input type="text" class="form-control"
 						id="streamName" name="streamIdTextBox" placeholder="Type stream ID">
 			</div>
-			<p>
+			<div class="form-group col-sm-12 text-center">
 				<button class="btn btn-primary"
 					id="start_play_button">Start Playing</button>
 				<button class="btn btn-primary"
 					id="stop_play_button">Stop Playing</button>
-
-			</p>
+			</div>
 		</div>
-		<footer class="footer">
-			<p>
-				<a href="http://antmedia.io">Ant Media Server Enterprise Edition</a>
-			</p>
+		<footer class="footer text-center">
+			<p><a href="http://antmedia.io">antmedia.io</a></p>
 		</footer>
 	</div>
-	<script src="js/external/jquery-3.4.1.min.js"  crossorigin="anonymous"></script>
-
+	<script src="js/external/jquery-3.4.1.min.js" crossorigin="anonymous"></script>
+	<script src="js/external/popper.min.js" crossorigin="anonymous"></script>
+	<script src="js/external/bootstrap.min.js" crossorigin="anonymous"></script>
 </body>
 <script type="module">
 	import {WebRTCAdaptor} from "./js/webrtc_adaptor.js"
