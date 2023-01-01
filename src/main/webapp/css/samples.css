@@ -9,7 +9,7 @@ video {
 }
 .header {
   padding-bottom: 20px;
-  border-bottom: 1px solid #e5e5e5;
+  /* border-bottom: 1px solid #e5e5e5; */
 }
 /* Custom page header */
 .header {
@@ -53,4 +53,11 @@ video {
 	border-style: groove;
 	border-width: thin;
 	background-color: white;
+}
+
+.embed-frame {
+	width:100%;
+	height:1080px;
+	overflow: auto;
+	border-width: 0px;
 }

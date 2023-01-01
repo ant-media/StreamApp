@@ -451,6 +451,8 @@ export class MediaManager
 				}
 				else {
 					console.warn(error);
+					//throw error if there is a promise
+					throw error;
 				}
 		});
 	}
