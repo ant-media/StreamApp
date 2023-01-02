@@ -1,0 +1,143 @@
+<html>
+<head>
+<title>WebRTC Samples > Audio Play</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="UTF-8">
+<link rel="stylesheet" href="../css/external/bootstrap4/bootstrap.min.css">
+<link rel="stylesheet" href="../css/common.css" />
+<link rel="stylesheet" href="../css/samples.css" />
+<script src="../js/external/adapter-latest.js"></script>
+
+</head>
+<body>
+	<div>
+		<div class="jumbotron">
+			<div class="alert alert-primary text-center enterprise-feature" role="alert" style="margin-top:-2em">
+			WebRTC Audio Playback is an Enterprise Edition. <br/>
+			<a href="https://antmedia.io">Try Enterprise Edition for free at antmedia.io</a> <br/><br/>
+			<a href="https://github.com/ant-media/Ant-Media-Server/wiki#community-edition--enterprise-edition" style="font-size:12px">Comparison between Community and Enterprise</a>		 
+			</div>
+			<div class="form-group col-sm-12 text-center">
+				<audio id="remoteVideo" autoplay controls></audio>
+			</div>
+			<div class="form-group col-sm-12 text-left">
+				<input type="text" class="form-control"
+						id="streamName" name="streamIdTextBox" placeholder="Type stream ID">
+			</div>
+			<div class="form-group col-sm-12 text-center">
+				<button class="btn btn-primary"
+					id="start_play_button">Start Playing</button>
+				<button class="btn btn-primary"
+					id="stop_play_button">Stop Playing</button>
+			</div>
+		</div>
+		<footer class="footer text-left">
+			<div class="row">
+				<div class="col-sm-6 text-left"><a target="_parent" href="https://github.com/ant-media/StreamApp/tree/master/src/main/webapp/samples/play_audio.html">View Source on Github</a></div>
+				<div class="col-sm-6 text-right">
+					<a href="http://antmedia.io" target="_parent">antmedia.io</a>
+				</div>
+			</div>
+		</footer>
+	</div>
+	<script src="../js/external/jquery-3.4.1.min.js" crossorigin="anonymous"></script>
+	<script src="../js/external/popper.min.js" crossorigin="anonymous"></script>
+	<script src="../js/external/bootstrap.min.js" crossorigin="anonymous"></script>
+</body>
+<script type="module">
+	import {WebRTCAdaptor} from "../js/webrtc_adaptor.js"
+	import {getUrlParameter} from "../js/fetch.stream.js" 
+    import { generateRandomString, getWebSocketURL } from "../js/utility.js"
+    
+	  var id = getUrlParameter("id");
+	  if(typeof id != "undefined") {
+		$("#streamName").val(id);
+	  }
+	  else {
+		id = getUrlParameter("name");
+		if (typeof id != "undefined") {
+			$("#streamName").val(id);
+		} 
+		else {
+			$("#streamName").val("stream1");
+		}
+	  }
+    
+
+	var start_publish_button = document.getElementById("start_play_button");
+	start_publish_button.addEventListener("click", startPlaying, false);
+	var stop_publish_button = document.getElementById("stop_play_button");
+	stop_publish_button.addEventListener("click", stopPlaying, false);
+
+	var streamNameBox = document.getElementById("streamName");
+	
+	var streamId;
+	function startPlaying() {
+		streamId = streamNameBox.value;
+		webRTCAdaptor.play(streamNameBox.value);
+	}
+
+	function stopPlaying() {
+		webRTCAdaptor.stop(streamId);
+	}
+
+	var pc_config = {
+		'iceServers' : [ {
+			'urls' : 'stun:stun1.l.google.com:19302'
+		} ]
+	};
+
+	var sdpConstraints = {
+		OfferToReceiveAudio : true,
+		OfferToReceiveVideo : true
+
+	};
+	var mediaConstraints = {
+		video : false,
+		audio : false
+	};
+	
+	var websocketURL = getWebSocketURL(location)
+	
+	var webRTCAdaptor = new WebRTCAdaptor({
+		websocket_url : websocketURL,
+		mediaConstraints : mediaConstraints,
+		peerconnection_config : pc_config,
+		sdp_constraints : sdpConstraints,
+		remoteVideoId : "remoteVideo",
+		isPlayMode: true,
+		debug: true,
+		callback : function(info, description) {
+			if (info == "initialized") {
+				console.log("initialized");
+				start_play_button.disabled = false;
+				stop_play_button.disabled = true;
+			} else if (info == "play_started") {
+				//joined the stream
+				console.log("play started");
+				start_play_button.disabled = true;
+				stop_play_button.disabled = false;
+			
+			} else if (info == "play_finished") {
+				//leaved the stream
+				console.log("play finished");
+				start_play_button.disabled = false;
+				stop_play_button.disabled = true;
+			}
+			else if (info == "closed") {
+				//console.log("Connection closed");
+				if (typeof description != "undefined") {
+					console.log("Connecton closed: " + JSON.stringify(description));
+				}
+			}
+		},
+		callbackError : function(error) {
+			//some of the possible errors, NotFoundError, SecurityError,PermissionDeniedError
+
+			console.log("error callback: " + JSON.stringify(error));
+			alert(JSON.stringify(error));
+		}
+	});
+
+</script>
+</html>

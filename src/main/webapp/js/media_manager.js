@@ -234,7 +234,7 @@ export class MediaManager
 	 * Called to get the available video and audio devices on the system
 	 */
 	getDevices(){
-		navigator.mediaDevices.enumerateDevices().then(devices => {
+		return navigator.mediaDevices.enumerateDevices().then(devices => {
 			var deviceArray = new Array();
 			let checkAudio = false
 			let checkVideo = false
@@ -268,8 +268,10 @@ export class MediaManager
 					alert("No input device found, publish is not possible");
 				}
 			}
+			return deviceArray;
 		}).catch(err => {
 			console.error("Cannot get devices -> error name: " + err.name + ": " + err.message);
+			throw err;
 		});
 	}
 
@@ -451,7 +453,10 @@ export class MediaManager
 				}
 				else {
 					console.warn(error);
+					
 				}
+				//throw error if there is a promise
+				throw error;
 		});
 	}
 
