@@ -17,9 +17,29 @@
 			</div>
 		</div>
 
-		<iframe src="samples/publish_audio.html" class="embed-frame"  allow="camera;microphone"></iframe>
+		<iframe src="samples/publish_audio.html" class="embed-frame" id="webrtc-audio-publish-frame" allow="camera;microphone"></iframe>
 			
 	</div>
+	<script  type="module">
+		import {getUrlParameter} from "./js/fetch.stream.js" 
+		import {getQueryParameter} from "./js/utility.js" 
+
+		let myIframe = document.getElementById("webrtc-audio-publish-frame");
+		let url_string = "samples/publish_audio.html";
+
+		var debug = getUrlParameter("debug");
+		if (debug == null) {
+			debug = false;
+		}
+		url_string += "?debug=" + debug;
+		url_string += getQueryParameter("id");
+
+		// It should be true
+		url_string += getQueryParameter("rtmpForward");
+
+		console.log(url_string);
+		myIframe.src = url_string;
+	</script>
 
 </body>
 
