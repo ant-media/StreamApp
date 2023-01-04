@@ -1,3 +1,5 @@
+import { getUrlParameter } from "./fetch.stream.js";
+
 export function generateRandomString(n) {
     let randomString = '';
     let characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -20,4 +22,14 @@ export function getWebSocketURL(location, rtmpForward) {
         websocketURL = "wss://" + path;
     }
     return websocketURL;
+}
+
+export function getQueryParameter(paramName) {
+	var value = getUrlParameter(paramName);
+    if (typeof value != "undefined") {
+        return "&" + paramName + "=" +value;
+    }
+    return "";
+	//if it does not match, it returns "undefined"
+
 }
