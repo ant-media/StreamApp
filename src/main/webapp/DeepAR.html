@@ -604,8 +604,8 @@
     let rawLocalVideo = document.getElementById("localVideo");
 
     let APIKey = "fdaad676ff58ff11f453db2d781073f105c94f14a8dc0f88c96049d4d20bf18aff2364181ac69a7a";
-    APIKey= getUrlParameter("APIKey") || APIKey;
-
+    APIKey= getUrlParameter("Apikey") || APIKey;
+    window.a=APIKey;
     let videoEffect = new VideoEffect();
     var deepAR = videoEffect.deepar_Init(webRTCAdaptor, streamId, rawLocalVideo, APIKey);
 
@@ -624,7 +624,9 @@
         'Hope',
         'Vendetta_Mask',
         'Fire_Effect',
-        'Elephant_Trunk'
+        'Elephant_Trunk',
+        'Emotions_Exaggerator',
+        'Emotion_Meter',
     ];
     for (var i = 0; i < effects.length; i++) {
         var option = document.createElement("option");
