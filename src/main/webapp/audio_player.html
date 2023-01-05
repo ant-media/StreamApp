@@ -25,10 +25,13 @@
 
             let myIframe = document.getElementById("audioPlayerIFrame");
             let url_string = "samples/play_audio.html";
-    
-            let adsURL = url_string+"?id=" +getUrlParameter("id");
-            console.log(adsURL);
-            myIframe.src = adsURL;
+			var id = getUrlParameter("id");
+
+			if (typeof id != "undefined") {
+				url_string += "?id="+id; 
+			}
+            console.log(url_string);
+            myIframe.src = url_string;
         </script>
 </body>
 
