@@ -60,7 +60,7 @@ export function VideoEffect() {
     this.initializeSelfieSegmentation = function() {
         this.selfieSegmentation = new SelfieSegmentation({
             locateFile: (file) => {
-                return `js/external/selfie-segmentation/` + file;
+                return `../js/external/selfie-segmentation/` + file;
             }
         });
 
