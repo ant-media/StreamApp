@@ -41,8 +41,7 @@ export function VideoEffect() {
             callbacks: {
                 onInitialize: function () {
                     deepAR.startVideo(true);
-                    deepAR.switchEffect(0, 'slot', './js/Deepar/effects/viking_helmet.deepar', function () {
-                    });
+
                 },
 
             }

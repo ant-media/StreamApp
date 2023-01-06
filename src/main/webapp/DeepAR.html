@@ -77,6 +77,7 @@
         </div>
         Select Effects :
         <select id="select_effect">
+            <option value="noeffect">No Effect</option>
         </select>
 
         <div class="dropdown-divider"></div>
@@ -637,6 +638,9 @@
     select_effect.onchange = () => {
         var selected_option = select_effect.options[select_effect.selectedIndex].text;
         console.log("effect changed", selected_option)
+        if( selected_option =="noeffect")
+            deepAR.pause();
+        
         deepAR.switchEffect(0, 'slot', "./js/Deepar/effects/" + selected_option + ".deepar");
     }
 </script>
