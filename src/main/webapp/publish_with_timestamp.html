@@ -1,163 +1,220 @@
 <html>
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta charset="UTF-8">
-<link rel="stylesheet" href="css/external/bootstrap4/bootstrap.min.css" />
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta charSet="UTF-8">
+	<link rel="stylesheet" href="css/external/bootstrap4/bootstrap.min.css"/>
 
-<script src="js/external/adapter-latest.js"></script>
-<script src="js/external/jquery-3.4.1.min.js"></script>
-<link rel="stylesheet" href="css/common.css" />
-<style>
-    video, canvas {
-        width: 100%;
-        max-width: 640px;
-    }
-    
-    /* Everything but the jumbotron gets side spacing for mobile first views */
-    .header, .marketing, .footer {
-        padding: 15px;
-    }
-    
-    /* Custom page header */
-    .header {
-        padding-bottom: 20px;
-    }
-    
-    /* Customize container */
-    @media ( min-width : 768px) {
-        .container {
-            max-width: 730px;
-        }
-    }
-    
-    .container-narrow>hr {
-        margin: 30px 0;
-    }
-    
-    /* Main marketing message and sign up button */
-    .jumbotron {
-        text-align: center;
-    }
-    
-    /* Responsive: Portrait tablets and up */
-    @media screen and (min-width: 768px) {
-        /* Remove the padding we set earlier */
-        .header, .marketing, .footer {
-            padding-right: 0;
-            padding-left: 0;
-        }
-    }
-    .options {
-            display:none;
-        }
-    
-    </style>
+	<script src="js/external/adapter-latest.js"></script>
+	<script src="js/external/jquery-3.4.1.min.js"></script>
+	<script id="vertex-shader-2d" type="x-shader/x-vertex">
+attribute vec2 a_position;
+attribute vec2 a_texCoord;
+
+uniform vec2 u_resolution;
+
+varying vec2 v_texCoord;
+
+void main() {
+   // convert the rectangle from pixels to 0.0 to 1.0
+   vec2 zeroToOne = a_position / u_resolution;
+
+   // convert from 0->1 to 0->2
+   vec2 zeroToTwo = zeroToOne * 2.0;
+
+   // convert from 0->2 to -1->+1 (clipspace)
+   vec2 clipSpace = zeroToTwo - 1.0;
+
+   gl_Position = vec4(clipSpace * vec2(1, -1), 0, 1);
+
+   // pass the texCoord to the fragment shader
+   // The GPU will interpolate this value between points.
+   v_texCoord = a_texCoord;
+}
+
+	</script>
+	<!-- fragment shader -->
+	<script id="fragment-shader-2d" type="x-shader/x-fragment">
+precision mediump float;
+
+// our textures
+uniform sampler2D u_image;
+uniform vec3 minColor;
+
+// the texCoords passed in from the vertex shader.
+varying vec2 v_texCoord;
+
+void main() {
+  vec4 color = texture2D(u_image, v_texCoord);
+
+  if (all(lessThan(color.rgb, minColor))) {
+    color = vec4(0);
+  }
+
+  gl_FragColor = color;
+
+  // premultiply alpha
+  gl_FragColor.rgb *= gl_FragColor.a;
+}
+
+	</script>
+	<script src="https://webglfundamentals.org/webgl/resources/webgl-utils.js"></script>
+
+	<link rel="stylesheet" href="css/common.css"/>
+	<style>
+		video, canvas {
+			width: 100%;
+			max-width: 640px;
+		}
+
+		/* Everything but the jumbotron gets side spacing for mobile first views */
+		.header, .marketing, .footer {
+			padding: 15px;
+		}
+
+		/* Custom page header */
+		.header {
+			padding-bottom: 20px;
+		}
+
+		/* Customize container */
+		@media ( min-width: 768px) {
+			.container {
+				max-width: 730px;
+			}
+		}
+
+		.container-narrow > hr {
+			margin: 30px 0;
+		}
+
+		/* Main marketing message and sign up button */
+		.jumbotron {
+			text-align: center;
+		}
+
+		/* Responsive: Portrait tablets and up */
+		@media screen and (min-width: 768px) {
+			/* Remove the padding we set earlier */
+			.header, .marketing, .footer {
+				padding-right: 0;
+				padding-left: 0;
+			}
+		}
+
+		.options {
+			display: none;
+		}
+
+	</style>
 </head>
 <body>
-	<div class="container">
+<div className="container">
 
-        <div class="header clearfix">
-			<div class="row">
-				<h3 class="col text-muted">WebRTC Publish</h3>
-				<nav class="col align-self-center">
-					<ul class="nav float-right">
-						<li><a href="http://antmedia.io">Contact</a></li>
-					</ul>
-				</nav>
-			</div>
+	<div className="header clearfix">
+		<div className="row">
+			<h3 className="col text-muted">WebRTC Publish</h3>
+			<nav className="col align-self-center">
+				<ul className="nav float-right">
+					<li><a href="http://antmedia.io">Contact</a></li>
+				</ul>
+			</nav>
 		</div>
-        <div class="jumbotron">
-            <div class="col-sm-12 form-group">
-                <canvas id="canvas" ></canvas>
-                <video id="localCameraView" autoplay controls muted playsinline style="display: none;"></video>
-		
-		
-            </div>
-
-            <div class="form-group col-sm-12 text-left">
-				<input type="text" class="form-control"
-						id="streamName" name="streamIdTextBox" placeholder="Type stream name">
-            </div>
-            
-            <div class="alert alert-warning" role="alert">
-				Sychronize your device with a Network Time Server.
-			</div>
-
-			<a style="display:block;margin:10px" href="https://github.com/ant-media/Ant-Media-Server/wiki/How-to-Measure-E2E-Latency" >Guide: How to Measure E2E Latency</a>
-
-
-            <div class="form-group">	
-                <button class="btn btn-primary" disabled
-                id="start_publish_button">Start Publishing</button>
-                <button class="btn btn-primary" disabled
-                id="stop_publish_button">Stop Publishing</button>
-            </div>	
-
-            <span class="badge badge-success" id="broadcastingInfo" style="font-size:14px;display:none"
-							style="display: none">Publishing</span>
-        </div>
-		<footer class="footer">
-			<p><a href="http://antmedia.io">Ant Media Server Enterprise Edition</a></p>
-		</footer>
-
 	</div>
+	<div className="jumbotron">
+		<div className="col-sm-12 form-group">
+			<canvas id="canvas"></canvas>
+			<video id="localCameraView" autoPlay controls muted playsinline style="display: none;"></video>
+
+
+		</div>
+
+		<div className="form-group col-sm-12 text-left">
+			<input type="text" className="form-control"
+				   id="streamName" name="streamIdTextBox" placeholder="Type stream name">
+		</div>
+
+		<div className="alert alert-warning" role="alert">
+			Sychronize your device with a Network Time Server.
+		</div>
+
+		<a style="display:block;margin:10px"
+		   href="https://github.com/ant-media/Ant-Media-Server/wiki/How-to-Measure-E2E-Latency">Guide: How to Measure
+			E2E Latency</a>
+
+
+		<div className="form-group">
+			<button className="btn btn-primary" disabled
+					id="start_publish_button">Start Publishing
+			</button>
+			<button className="btn btn-primary" disabled
+					id="stop_publish_button">Stop Publishing
+			</button>
+		</div>
+
+		<span className="badge badge-success" id="broadcastingInfo" style="font-size:14px;display:none"
+			  style="display: none">Publishing</span>
+	</div>
+	<footer className="footer">
+		<p><a href="http://antmedia.io">Ant Media Server Enterprise Edition</a></p>
+	</footer>
+
+</div>
 </body>
 <script type="module" lang="javascript">
-    import {WebRTCAdaptor} from "./js/webrtc_adaptor.js"
-    import {getUrlParameter} from "./js/fetch.stream.js" 
-	
-     var canvas = document.getElementById('canvas');
-     var localCameraView = null;
-     function draw() 
-     {
-      if (canvas.getContext && localCameraView != null) {
-        var ctx = canvas.getContext('2d');
+	import {WebRTCAdaptor} from "./js/webrtc_adaptor.js"
+	import {getUrlParameter} from "./js/fetch.stream.js"
 
-        canvas.width = localCameraView.videoWidth;
-        canvas.height = localCameraView.videoHeight;
+	var canvas = document.getElementById('canvas');
+	var localCameraView = null;
 
-        ctx.drawImage(localCameraView, 0, 0, canvas.width, canvas.height);
+	function draw() {
+		if (canvas.getContext && localCameraView != null) {
+			var ctx = canvas.getContext('webgl');
 
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-        ctx.font = "20px Arial";
-        var text = "Publish: " + Date.now();
-        var textMetrics = ctx.measureText(text);
-        ctx.fillRect(5, 20, textMetrics.width+ 10, 30);
-        
-        ctx.fillStyle = 'rgba(0, 0, 255, 1.0)';
-        
-        ctx.fillText(text, 10, 40);
-      }
-    }
+			canvas.width = localCameraView.videoWidth;
+			canvas.height = localCameraView.videoHeight;
 
- 
-    //capture stream from canvas
-    var localCanvasStream = canvas.captureStream(25);
+
+			//ctx.drawImage(localCameraView, 0, 0, canvas.width, canvas.height);
+			//ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+			// ctx.font = "20px Arial";
+			// var text = "Publish: " + Date.now();
+			// var textMetrics = ctx.measureText(text);
+			// ctx.fillRect(5, 20, textMetrics.width+ 10, 30);
+
+			//ctx.fillStyle = 'rgba(0, 0, 255, 1.0)';
+
+			// ctx.fillText(text, 10, 40);
+		}
+	}
+
+
+	//capture stream from canvas
+	var localCanvasStream = canvas.captureStream(25);
 
 
 	var token = getUrlParameter("token");
 
 	var camera_checkbox = document.getElementById("camera_checkbox");
 	var screen_share_checkbox = document.getElementById("screen_share_checkbox");
-  	var screen_share_with_camera_checkbox = document.getElementById("screen_share_with_camera_checkbox");
+	var screen_share_with_camera_checkbox = document.getElementById("screen_share_with_camera_checkbox");
 
 	var start_publish_button = document.getElementById("start_publish_button");
-	
+
 	var stop_publish_button = document.getElementById("stop_publish_button");
-	
+
 	var install_extension_link = document.getElementById("install_chrome_extension_link");
 
 	var streamNameBox = document.getElementById("streamName");
-	
+
 	var streamId;
-	
-	
+
+
 	var name = getUrlParameter("name");
-	if(name !== "undefined")
-	{
+	if (name !== "undefined") {
 		streamNameBox.value = name;
 	}
-	
+
 	// It should be true
 	var rtmpForward = getUrlParameter("rtmpForward");
 
@@ -166,63 +223,63 @@
 		webRTCAdaptor.publish(streamId, token);
 	}
 
-    start_publish_button.addEventListener("click", startPublishing, false);
+	start_publish_button.addEventListener("click", startPublishing, false);
 
 	function stopPublishing() {
 		webRTCAdaptor.stop(streamId);
 	}
 
-    stop_publish_button.addEventListener("click", stopPublishing, false);
-	
+	stop_publish_button.addEventListener("click", stopPublishing, false);
 
 
-    function startAnimation() {
+	function startAnimation() {
 
-        $("#broadcastingInfo").fadeIn(800, function () {
-          $("#broadcastingInfo").fadeOut(800, function () {
-        	var state = webRTCAdaptor.signallingState(streamId);
-            if (state != null && state != "closed") {
-            	var iceState = webRTCAdaptor.iceConnectionState(streamId);
-            	if (iceState != null && iceState != "failed" && iceState != "disconnected") {
-              		startAnimation();
-            	}
-            }
-          });
-        });
-      }
+		$("#broadcastingInfo").fadeIn(800, function () {
+			$("#broadcastingInfo").fadeOut(800, function () {
+				var state = webRTCAdaptor.signallingState(streamId);
+				if (state != null && state != "closed") {
+					var iceState = webRTCAdaptor.iceConnectionState(streamId);
+					if (iceState != null && iceState != "failed" && iceState != "disconnected") {
+						startAnimation();
+					}
+				}
+			});
+		});
+	}
 
 	var pc_config = null;
 
 	var sdpConstraints = {
-		OfferToReceiveAudio : false,
-		OfferToReceiveVideo : false
+		OfferToReceiveAudio: false,
+		OfferToReceiveVideo: false
 
 	};
-	
+
 	var mediaConstraints = {
-		video : true,
-		audio : true
+		video: true,
+		audio: true
 	};
 
-	var appName = location.pathname.substring(0, location.pathname.lastIndexOf("/")+1);
-	var path =  location.hostname + ":" + location.port + appName + "websocket?rtmpForward=" + rtmpForward;
-	var websocketURL =  "ws://" + path;
-	
+	var appName = location.pathname.substring(0, location.pathname.lastIndexOf("/") + 1);
+	var path = location.hostname + ":" + location.port + appName + "websocket?rtmpForward=" + rtmpForward;
+	var websocketURL = "ws://" + path;
+
 	if (location.protocol.startsWith("https")) {
 		websocketURL = "wss://" + path;
 	}
-	
+
 	var webRTCAdaptor;
+
 	function initWebRTCAdaptor(stream) {
 		webRTCAdaptor = new WebRTCAdaptor({
-			websocket_url : websocketURL,
-			mediaConstraints : mediaConstraints,
-			peerconnection_config : pc_config,
-			sdp_constraints : sdpConstraints,
-			localVideoId : "localVideo",
+			websocket_url: websocketURL,
+			mediaConstraints: mediaConstraints,
+			peerconnection_config: pc_config,
+			sdp_constraints: sdpConstraints,
+			localVideoId: "localVideo",
 			localStream: stream,
-			debug:true,
-			callback : function(info, obj) {
+			debug: true,
+			callback: function (info, obj) {
 				if (info == "initialized") {
 					console.log("initialized");
 					start_publish_button.disabled = false;
@@ -238,40 +295,33 @@
 					console.log("publish finished");
 					start_publish_button.disabled = false;
 					stop_publish_button.disabled = true;
-				}
-				else if (info == "browser_screen_share_supported") {
-				}
-				else if (info == "screen_share_stopped") {
-				}
-				else if (info == "closed") {
+				} else if (info == "browser_screen_share_supported") {
+				} else if (info == "screen_share_stopped") {
+				} else if (info == "closed") {
 					//console.log("Connection closed");
 					if (typeof obj != "undefined") {
 						console.log("Connecton closed: " + JSON.stringify(obj));
 					}
-				}
-				else if (info == "pong") {
+				} else if (info == "pong") {
 					//ping/pong message are sent to and received from server to make the connection alive all the time
 					//It's especially useful when load balancer or firewalls close the websocket connection due to inactivity
-				}
-				else if (info == "refreshConnection") {
+				} else if (info == "refreshConnection") {
 					startPublishing();
-				}
-				else if (info == "ice_connection_state_changed") {
-					console.log("iceConnectionState Changed: ",JSON.stringify(obj));
-				}
-				else if (info == "updated_stats") {
+				} else if (info == "ice_connection_state_changed") {
+					console.log("iceConnectionState Changed: ", JSON.stringify(obj));
+				} else if (info == "updated_stats") {
 					//obj is the PeerStats which has fields
-					 //averageOutgoingBitrate - kbits/sec
+					//averageOutgoingBitrate - kbits/sec
 					//currentOutgoingBitrate - kbits/sec
 					console.log("Average outgoing bitrate " + obj.averageOutgoingBitrate + " kbits/sec"
 							+ " Current outgoing bitrate: " + obj.currentOutgoingBitrate + " kbits/sec");
 
 				}
 			},
-			callbackError : function(error, message) {
+			callbackError: function (error, message) {
 				//some of the possible errors, NotFoundError, SecurityError,PermissionDeniedError
 
-				console.log("error callback: " +  JSON.stringify(error));
+				console.log("error callback: " + JSON.stringify(error));
 				var errorMessage = JSON.stringify(error);
 				if (typeof message != "undefined") {
 					errorMessage = message;
@@ -279,26 +329,20 @@
 				var errorMessage = JSON.stringify(error);
 				if (error.indexOf("NotFoundError") != -1) {
 					errorMessage = "Camera or Mic are not found or not allowed in your device";
-				}
-				else if (error.indexOf("NotReadableError") != -1 || error.indexOf("TrackStartError") != -1) {
+				} else if (error.indexOf("NotReadableError") != -1 || error.indexOf("TrackStartError") != -1) {
 					errorMessage = "Camera or Mic is being used by some other process that does not let read the devices";
-				}
-				else if(error.indexOf("OverconstrainedError") != -1 || error.indexOf("ConstraintNotSatisfiedError") != -1) {
+				} else if (error.indexOf("OverconstrainedError") != -1 || error.indexOf("ConstraintNotSatisfiedError") != -1) {
 					errorMessage = "There is no device found that fits your video and audio constraints. You may change video and audio constraints"
-				}
-				else if (error.indexOf("NotAllowedError") != -1 || error.indexOf("PermissionDeniedError") != -1) {
+				} else if (error.indexOf("NotAllowedError") != -1 || error.indexOf("PermissionDeniedError") != -1) {
 					errorMessage = "You are not allowed to access camera and mic.";
-				}
-				else if (error.indexOf("TypeError") != -1) {
+				} else if (error.indexOf("TypeError") != -1) {
 					errorMessage = "Video/Audio is required";
-				}
-				else if (error.indexOf("ScreenSharePermissionDenied") != -1) {
+				} else if (error.indexOf("ScreenSharePermissionDenied") != -1) {
 					errorMessage = "You are not allowed to access screen share";
 					camera_checkbox.checked = true;
 					screen_share_checkbox.checked = false;
 					screen_share_with_camera_checkbox.checked = false;
-				}
-				else if (error.indexOf("WebSocketNotConnected") != -1) {
+				} else if (error.indexOf("WebSocketNotConnected") != -1) {
 					errorMessage = "WebSocket Connection is disconnected.";
 				}
 				alert(errorMessage);
@@ -307,45 +351,175 @@
 	}
 
 
-    $(function() 
-    {
+	$(function () {
 		var id = getUrlParameter("id");
-        if(typeof id != "undefined") {
-            $("#streamName").val(id);
-        }
-        else {
-            id = getUrlParameter("name");
-            if (typeof id != "undefined") {
-                $("#streamName").val(id);
-            } 
-            else {
-                $("#streamName").val("stream1");
-            }
-        }
-        
-       
-
-         //get audio with getUserMedia
-        navigator.mediaDevices.getUserMedia({video: true, audio:true}).then(function (stream) {
-            //add audio track to the localstream which is captured from canvas
-            
-            window.stream = stream;
-            localCanvasStream.addTrack(stream.getAudioTracks()[0]);
-           
-            localCameraView = document.getElementById("localCameraView");
-            localCameraView.srcObject = stream;
-            localCameraView.play();
-
-            //update canvas for every 40ms
-            setInterval(function() { draw(); }, 40);
-
-            initWebRTCAdaptor(localCanvasStream);    	    
-        });
+		if (typeof id != "undefined") {
+			$("#streamName").val(id);
+		} else {
+			id = getUrlParameter("name");
+			if (typeof id != "undefined") {
+				$("#streamName").val(id);
+			} else {
+				$("#streamName").val("stream1");
+			}
+		}
 
 
+		//get audio with getUserMedia
+		navigator.mediaDevices.getUserMedia({video: true, audio: true}).then(function (stream) {
+			//add audio track to the localstream which is captured from canvas
 
-    });
-    window.localCanvasStream = localCanvasStream;
+			window.stream = stream;
+			localCanvasStream.addTrack(stream.getAudioTracks()[0]);
+
+			localCameraView = document.getElementById("localCameraView");
+			localCameraView.srcObject = stream;
+			localCameraView.play();
+
+			//update canvas for every 40ms
+			// setInterval(function() { draw(); }, 40);
+			localCameraView.addEventListener('playing', () => {
+				waitForFrame(localCameraView);
+			});
+
+			initWebRTCAdaptor(localCanvasStream);
+		});
+
+		function waitForFrame(video) {
+			const id = setInterval(() => {
+				if (video.currentTime > 0.1 && video.videoWidth > 0) {
+					clearInterval(id);
+					console.log("sdfsdf")
+					render(video);
+
+				}
+			});
+		}
+
+		function render(images) {
+			console.log(images)
+			// Get A WebGL context
+			/** @type {HTMLCanvasElement} */
+			var canvas = document.querySelector("#canvas");
+			var gl = canvas.getContext("webgl");
+			if (!gl) {
+				return;
+			}
+
+			var program = webglUtils.createProgramFromScripts(gl, ["vertex-shader-2d", "fragment-shader-2d"]);
+			gl.useProgram(program);
+
+			// look up where the vertex data needs to go.
+			var positionLocation = gl.getAttribLocation(program, "a_position");
+			var texcoordLocation = gl.getAttribLocation(program, "a_texCoord");
+
+			// Create a buffer to put three 2d clip space points in
+			var positionBuffer = gl.createBuffer();
+
+			// Bind it to ARRAY_BUFFER (think of it as ARRAY_BUFFER = positionBuffer)
+			gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+			// Set a rectangle the same size as the image.
+			setRectangle(gl, 0, 0, images.videoWidth, images.videoHeight);
+
+			// provide texture coordinates for the rectangle.
+			var texcoordBuffer = gl.createBuffer();
+			gl.bindBuffer(gl.ARRAY_BUFFER, texcoordBuffer);
+			gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+				0.0, 0.0,
+				1.0, 0.0,
+				0.0, 1.0,
+				0.0, 1.0,
+				1.0, 0.0,
+				1.0, 1.0,
+			]), gl.STATIC_DRAW);
+
+
+			// create 2 textures
+			var textures = [];
+			var texture = gl.createTexture();
+			gl.bindTexture(gl.TEXTURE_2D, texture);
+
+			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+
+			// lookup uniforms
+			var resolutionLocation = gl.getUniformLocation(program, "u_resolution");
+
+
+			function renderLoop() {
+				webglUtils.resizeCanvasToDisplaySize(gl.canvas);
+
+				gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+
+				// Clear the canvas
+				gl.clearColor(0, 0, 0, 1);
+				gl.clear(gl.COLOR_BUFFER_BIT);
+
+				// Tell it to use our program (pair of shaders)
+				gl.useProgram(program);
+
+				// Turn on the position attribute
+				gl.enableVertexAttribArray(positionLocation);
+
+				// Bind the position buffer.
+				gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+
+				// Tell the position attribute how to get data out of positionBuffer (ARRAY_BUFFER)
+				var size = 2;          // 2 components per iteration
+				var type = gl.FLOAT;   // the data is 32bit floats
+				var normalize = false; // don't normalize the data
+				var stride = 0;        // 0 = move forward size * sizeof(type) each iteration to get the next position
+				var offset = 0;        // start at the beginning of the buffer
+				gl.vertexAttribPointer(
+						positionLocation, size, type, normalize, stride, offset);
+
+				// Turn on the texcoord attribute
+				gl.enableVertexAttribArray(texcoordLocation);
+
+				// bind the texcoord buffer.
+				gl.bindBuffer(gl.ARRAY_BUFFER, texcoordBuffer);
+
+				var size = 2;          // 2 components per iteration
+				var type = gl.FLOAT;   // the data is 32bit floats
+				var normalize = false; // don't normalize the data
+				var stride = 0;        // 0 = move forward size * sizeof(type) each iteration to get the next position
+				var offset = 0;        // start at the beginning of the buffer
+				gl.vertexAttribPointer(texcoordLocation, size, type, normalize, stride, offset);
+
+				// set the resolution
+				gl.uniform2f(resolutionLocation, gl.canvas.width, gl.canvas.height);
+
+				gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, images);
+
+
+				// Draw the rectangle.
+				gl.drawArrays(gl.TRIANGLES, 0, 6);
+				requestAnimationFrame(renderLoop);
+			}
+
+			requestAnimationFrame(renderLoop);
+		}
+
+		function setRectangle(gl, x, y, width, height) {
+			var x1 = x;
+			var x2 = x + width;
+			var y1 = y;
+			var y2 = y + height;
+			gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+				x1, y1,
+				x2, y1,
+				x1, y2,
+				x1, y2,
+				x2, y1,
+				x2, y2,
+			]), gl.STATIC_DRAW);
+		}
+
+
+	});
+	window.localCanvasStream = localCanvasStream;
 </script>
 </html>
 
