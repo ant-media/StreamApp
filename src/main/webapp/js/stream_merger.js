@@ -136,7 +136,8 @@ export class StreamMerger {
         }
       }
     }
-    this.waitForFrame(stream);
+    if(!this.WebglNotSupported)
+      this.waitForFrame(stream);
 
   }
 
