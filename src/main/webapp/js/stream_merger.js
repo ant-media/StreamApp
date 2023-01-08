@@ -24,8 +24,10 @@ export class StreamMerger {
     this.canvas.setAttribute('width', this.width);
     this.canvas.setAttribute('height', this.height);
     this.canvas.setAttribute('id', "drawcanvas");
+    this.canvas.setAttribute('style', 'position:fixed; left: 0px; top:0px; display: none pointer-events: none; opacity:0;');
+
     document.body.appendChild(this.canvas);
-    this.ctx=this.getSupportedContext(this.canvas);
+    window.ctx = this.getSupportedContext(this.canvas);
     this.streamCount = 0;
     this.frameCount = 0;
 
@@ -36,7 +38,8 @@ export class StreamMerger {
     this.started = false;
     this.fps = 30;
   }
-  getSupportedContext(canvas){
+
+  getSupportedContext(canvas) {
     let context;
     try {
       context = canvas.getContext('webgl2');
@@ -45,11 +48,12 @@ export class StreamMerger {
         context = canvas.getContext('webgl');
       } catch (e) {
         context = canvas.getContext('2d');
-        this.WebglNotSupported=true;
+        this.WebglNotSupported = true;
       }
     }
     return context;
   }
+
   changeAspectRatio(ratio) {
     this.aspectRatio = ratio;
     console.log("Changing aspect ratio to: " + ratio);
@@ -136,7 +140,7 @@ export class StreamMerger {
         }
       }
     }
-    if(!this.WebglNotSupported)
+    if (!this.WebglNotSupported)
       this.waitForFrame(stream);
 
   }
@@ -165,7 +169,7 @@ export class StreamMerger {
   */
   resizeAndSortV2() {
     //Clears all of the canvas when sorted.
-    // this.ctx.clearRect(0, 0, this.width, this.height);
+    // window.ctx.clearRect(0, 0, this.width, this.height);
     console.log("Sorting the streams");
 
     let xindex = 0;
@@ -340,7 +344,7 @@ export class StreamMerger {
 
   start() {
     this.started = true
-    if(this.WebglNotSupported)
+    if (this.WebglNotSupported)
       this.requestAnimationFrameV2(this.draw.bind(this))
 
     // Get the result of merged stream canvas
@@ -368,10 +372,9 @@ export class StreamMerger {
     }
     this.streams.forEach((stream) => {
       // default draw function
-      console.log("stream")
       const width = stream.width;
       const height = stream.height;
-      this.ctx.drawImage(stream.element, stream.x, stream.y, width, height)
+      window.ctx.drawImage(stream.element, stream.x, stream.y, width, height)
       done()
     })
 
@@ -440,7 +443,6 @@ export class StreamMerger {
     const id = setInterval(() => {
       if (video.element.currentTime > 0.1 && video.element.videoWidth > 0) {
         clearInterval(id);
-        console.log("sdfsdf")
         this.render(video);
 
       }
@@ -449,54 +451,52 @@ export class StreamMerger {
 
   render(images) {
 
-    var program = webglUtils.createProgramFromScripts(this.ctx, ["vertex-shader-2d", "fragment-shader-2d"]);
-    this.ctx.useProgram(program);
+    var program = webglUtils.createProgramFromScripts(window.ctx, ["vertex-shader-2d", "fragment-shader-2d"]);
+    window.ctx.useProgram(program);
 
-    var positionLocation = this.ctx.getAttribLocation(program, "a_position");
-    var texcoordLocation = this.ctx.getAttribLocation(program, "a_texCoord");
-    var positionBuffer = this.ctx.createBuffer();
-    this.ctx.bindBuffer(this.ctx.ARRAY_BUFFER, positionBuffer);
-    this.setRectangle(this.ctx, images.x, images.y, images.width, images.height);
+    var positionLocation = window.ctx.getAttribLocation(program, "a_position");
+    var texcoordLocation = window.ctx.getAttribLocation(program, "a_texCoord");
+    var positionBuffer = window.ctx.createBuffer();
+    window.ctx.bindBuffer(window.ctx.ARRAY_BUFFER, positionBuffer);
+    this.setRectangle(window.ctx, images.x, images.y, images.width, images.height);
 
-    var texcoordBuffer = this.ctx.createBuffer();
-    this.ctx.bindBuffer(this.ctx.ARRAY_BUFFER, texcoordBuffer);
-    this.ctx.bufferData(this.ctx.ARRAY_BUFFER, new Float32Array([
+    var texcoordBuffer = window.ctx.createBuffer();
+    window.ctx.bindBuffer(window.ctx.ARRAY_BUFFER, texcoordBuffer);
+    window.ctx.bufferData(window.ctx.ARRAY_BUFFER, new Float32Array([
       0.0, 0.0,
       1.0, 0.0,
       0.0, 1.0,
       0.0, 1.0,
       1.0, 0.0,
       1.0, 1.0,
-    ]), this.ctx.STATIC_DRAW);
+    ]), window.ctx.STATIC_DRAW);
 
-    var texture = this.ctx.createTexture();
-    this.ctx.bindTexture(this.ctx.TEXTURE_2D, texture);
-    this.ctx.texParameteri(this.ctx.TEXTURE_2D, this.ctx.TEXTURE_WRAP_S, this.ctx.CLAMP_TO_EDGE);
-    this.ctx.texParameteri(this.ctx.TEXTURE_2D, this.ctx.TEXTURE_WRAP_T, this.ctx.CLAMP_TO_EDGE);
-    this.ctx.texParameteri(this.ctx.TEXTURE_2D, this.ctx.TEXTURE_MIN_FILTER, this.ctx.NEAREST);
-    this.ctx.texParameteri(this.ctx.TEXTURE_2D, this.ctx.TEXTURE_MAG_FILTER, this.ctx.NEAREST);
+    var texture = window.ctx.createTexture();
+    window.ctx.bindTexture(window.ctx.TEXTURE_2D, texture);
+    window.ctx.texParameteri(window.ctx.TEXTURE_2D, window.ctx.TEXTURE_WRAP_S, window.ctx.CLAMP_TO_EDGE);
+    window.ctx.texParameteri(window.ctx.TEXTURE_2D, window.ctx.TEXTURE_WRAP_T, window.ctx.CLAMP_TO_EDGE);
+    window.ctx.texParameteri(window.ctx.TEXTURE_2D, window.ctx.TEXTURE_MIN_FILTER, window.ctx.NEAREST);
+    window.ctx.texParameteri(window.ctx.TEXTURE_2D, window.ctx.TEXTURE_MAG_FILTER, window.ctx.NEAREST);
 
-    var resolutionLocation = this.ctx.getUniformLocation(program, "u_resolution");
+    var resolutionLocation = window.ctx.getUniformLocation(program, "u_resolution");
 
-    console.log(images.x, images.y, images.width, images.height);
-    console.log(this.ctx.canvas.width, this.ctx.canvas.height);
-    var self = this;
-    this.renderLoop=()=>{
-      webglUtils.resizeCanvasToDisplaySize(this.ctx.canvas);
-      this.ctx.viewport(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
-      this.ctx.useProgram(program);
-      this.ctx.enableVertexAttribArray(positionLocation);
-      this.ctx.bindBuffer(this.ctx.ARRAY_BUFFER, positionBuffer);
-      this.ctx.vertexAttribPointer(positionLocation, 2, this.ctx.FLOAT, false, 0, 0);
-      this.ctx.enableVertexAttribArray(texcoordLocation);
-      this.ctx.bindBuffer(this.ctx.ARRAY_BUFFER, texcoordBuffer);
-      this.ctx.vertexAttribPointer(texcoordLocation, 2, this.ctx.FLOAT, false, 0, 0);
-      this.ctx.uniform2f(resolutionLocation, this.ctx.canvas.width, this.ctx.canvas.height);
-      this.ctx.texImage2D(this.ctx.TEXTURE_2D, 0, this.ctx.RGBA, this.ctx.RGBA, this.ctx.UNSIGNED_BYTE, images.element);
-      this.ctx.drawArrays(this.ctx.TRIANGLES, 0, 6);
-      requestAnimationFrame(this.renderLoop);
+    function renderLoop() {
+      webglUtils.resizeCanvasToDisplaySize(window.ctx.canvas);
+      window.ctx.viewport(0, 0, window.ctx.canvas.width, window.ctx.canvas.height);
+      window.ctx.useProgram(program);
+      window.ctx.enableVertexAttribArray(positionLocation);
+      window.ctx.bindBuffer(window.ctx.ARRAY_BUFFER, positionBuffer);
+      window.ctx.vertexAttribPointer(positionLocation, 2, window.ctx.FLOAT, false, 0, 0);
+      window.ctx.enableVertexAttribArray(texcoordLocation);
+      window.ctx.bindBuffer(window.ctx.ARRAY_BUFFER, texcoordBuffer);
+      window.ctx.vertexAttribPointer(texcoordLocation, 2, window.ctx.FLOAT, false, 0, 0);
+      window.ctx.uniform2f(resolutionLocation, window.ctx.canvas.width, window.ctx.canvas.height);
+      window.ctx.texImage2D(window.ctx.TEXTURE_2D, 0, window.ctx.RGBA, window.ctx.RGBA, window.ctx.UNSIGNED_BYTE, images.element);
+      window.ctx.drawArrays(window.ctx.TRIANGLES, 0, 6);
+      requestAnimationFrame(renderLoop);
     }
-    window.webkitRequestAnimationFrame(this.renderLoop.bind(this));
+
+    requestAnimationFrame(renderLoop);
 
   }
 
@@ -505,13 +505,13 @@ export class StreamMerger {
     var x2 = x + width;
     var y1 = y;
     var y2 = y + height;
-    this.ctx.bufferData(this.ctx.ARRAY_BUFFER, new Float32Array([
+    window.ctx.bufferData(window.ctx.ARRAY_BUFFER, new Float32Array([
       x1, y1,
       x2, y1,
       x1, y2,
       x1, y2,
       x2, y1,
       x2, y2,
-    ]), this.ctx.STATIC_DRAW);
+    ]), window.ctx.STATIC_DRAW);
   }
 }
