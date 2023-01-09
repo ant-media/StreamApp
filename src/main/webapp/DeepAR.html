@@ -639,7 +639,7 @@
         var selected_option = select_effect.options[select_effect.selectedIndex].text;
         console.log("effect changed", selected_option)
         if( selected_option =="No Effect")
-            deepAR.pause();
+            deepAR.clearEffect('slot');
         
         deepAR.switchEffect(0, 'slot', "./js/Deepar/effects/" + selected_option + ".deepar");
     }
