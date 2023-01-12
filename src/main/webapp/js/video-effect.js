@@ -134,12 +134,9 @@ export class VideoEffect
 
     async processFrame() 
     {    
-        //if (this.rawLocalVideo.readyState == HTMLMediaElement.HAVE_ENOUGH_DATA) 
-        {
-            await this.selfieSegmentation.send({image: this.rawLocalVideo});
-        }
         
-    
+        await this.selfieSegmentation.send({image: this.rawLocalVideo});
+        
         //call if the effect name is not NO_EFFECT
         if (this.effectName != VideoEffect.NO_EFFECT) 
         {
