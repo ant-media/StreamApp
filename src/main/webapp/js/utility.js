@@ -34,18 +34,18 @@ export function getQueryParameter(paramName) {
 
 }
 
-export function updateBroadcastStatusInfo() {
+export function updateBroadcastStatusInfo(streamId) {
     $("#offlineInfo").hide();
     $("#broadcastingInfo").show();
     $("#playlink").attr("href", "../play.html?id=" + streamId)
     $("#playlink").show();
 
     setTimeout(function () {
-        var state = webRTCAdaptor.signallingState(streamId);
+        var state = window.webRTCAdaptor.signallingState(streamId);
         if (state != null && state != "closed") {
-            var iceState = webRTCAdaptor.iceConnectionState(streamId);
+            var iceState = window.webRTCAdaptor.iceConnectionState(streamId);
             if (iceState != null && iceState != "failed" && iceState != "disconnected") {
-                updateBroadcastStatusInfo();
+                updateBroadcastStatusInfo(streamId);
             }
             else {
                 $("#playlink").hide();

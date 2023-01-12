@@ -61,3 +61,28 @@ video {
 	overflow: auto;
 	border-width: 0px;
 }
+.backgroundImages {
+	cursor:pointer;
+	width: 64px;
+	height: 64px;
+	object-fit:cover;
+}
+.selected {
+	border:3px solid #007bff;
+}
+
+.custom-file-label {
+	background-color: transparent;
+	border-width: 0px;
+	height:100%;
+	/* right:auto; */
+	/* left:auto; */
+	padding-left:0px;
+	padding-right:0px;
+	position:relative;
+	left: auto;
+	right: a;
+}
+.custom-file-input {
+	position: absolute;
+}
