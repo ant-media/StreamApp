@@ -12,7 +12,7 @@ export class MediaManager
 		 * the maximum bandwith value that browser can send a stream
 		 * keep in mind that browser may send video less than this value
 		 */
-		this.bandwidth = 900; //kbps
+		this.bandwidth = 1200; //kbps
 				
 		/**
 		 * This flags enables/disables debug logging
@@ -208,6 +208,7 @@ export class MediaManager
 			this.mediaConstraints = { video:true, audio:true}; 
 			return this.openStream(this.mediaConstraints, this.mode);	
 		}
+		
 	}
 
 	/*
@@ -438,7 +439,7 @@ export class MediaManager
 	navigatorUserMedia(mediaConstraints, func, catch_error)
 	{
 		return navigator.mediaDevices.getUserMedia(mediaConstraints).then((stream) => {
-			if (typeof func != "undefined") {
+			if (typeof func != "undefined" || func != null) {
 				func(stream);
 			}
 			return stream;
@@ -831,7 +832,7 @@ export class MediaManager
 		if(typeof this.mediaConstraints.video != "undefined" && this.mediaConstraints.video != false){
 			this.mediaConstraints.video = true
 		}
-
+		//TODO: I don't think we need to get audio again. We just need to switch the video stream
 		return this.getMedia(this.mediaConstraints, audioConstraint, streamId);
 	}
 
@@ -853,6 +854,7 @@ export class MediaManager
 		if (typeof this.mediaConstraints.audio != "undefined" && this.mediaConstraints.audio != false) {
 			audioConstraint = this.mediaConstraints.audio;
 		}
+		//TODO: I don't think we need to get audio again. We just need to switch the video stream
 		return this.getMedia(this.mediaConstraints, audioConstraint, streamId);
 	}
 	
@@ -1423,19 +1425,6 @@ export class MediaManager
 			promise = this.setAudioInputSource(streamId, { audio: this.mediaConstraints.audio }, null);
 		}
 		return promise;
-	}
-
-	setCustomVideoSource(streamId, videoSource) {
-		if(this.localStream == null) {
-			this.gotStream(videoSource);
-		}
-		else {
-			this.updateVideoTrack(videoSource, streamId, onended, null);
-		}
-	}
-
-	closeCustomVideoSource(streamId) {
-		return this.switchVideoCameraCapture(streamId, null, null);
 	}
 }
 
