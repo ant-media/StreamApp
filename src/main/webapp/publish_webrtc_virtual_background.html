@@ -13,11 +13,11 @@
 	<div class="container">
 		<div class="header clearfix">
 			<div class="row">
-				<h3 class="col text-muted"><a href="samples.html">WebRTC Samples</a> > Publish</h3>
+				<h3 class="col text-muted"><a href="samples.html">WebRTC Samples</a> > Publish Virtual Background</h3>
 			</div>
 		</div>
 
-		<iframe src="samples/publish_webrtc.html" class="embed-frame" id="webrtc-publish-frame" allow="camera;microphone;display-capture"></iframe>
+		<iframe class="embed-frame" id="webrtc-publish-frame" allow="camera;microphone;display-capture"></iframe>
 			
 	</div>
 	<script  type="module">
@@ -25,24 +25,14 @@
 		import {getQueryParameter} from "./js/utility.js" 
 
 		let myIframe = document.getElementById("webrtc-publish-frame");
-		let url_string = "samples/publish_webrtc.html";
+		let url_string = "samples/publish_webrtc_virtual_background_frame.html";
 
 		var debug = getUrlParameter("debug");
 		if (debug == null) {
 			debug = false;
 		}
 		url_string += "?debug=" + debug;
-		url_string += getQueryParameter("subscriberId");
-	
-		url_string += getQueryParameter("subscriberCode");
-		url_string += getQueryParameter("streamName");
-		url_string += getQueryParameter("mainTrack");
-
-		url_string += getQueryParameter("token");
 		url_string += getQueryParameter("id");
-
-		// It should be true
-		url_string += getQueryParameter("rtmpForward");
 
 		console.log(url_string);
 		myIframe.src = url_string;
