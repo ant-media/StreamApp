@@ -1,6 +1,6 @@
 #!/bin/sh
-AMS_DIR=/usr/local/antmedia
-sudo -u usama mvn clean install -DskipTests -Dgpg.skip=true
+AMS_DIR=~/softwares/ant-media-server
+mvn clean install -DskipTests -Dgpg.skip=true
 OUT=$?
 
 if [ $OUT -ne 0 ]; then
@@ -15,6 +15,7 @@ OUT=$?
 if [ $OUT -ne 0 ]; then
     exit $OUT
 fi
+
 cd $AMS_DIR
 rm -r webapps/*App*
 bash create_app.sh LiveApp $AMS_DIR
