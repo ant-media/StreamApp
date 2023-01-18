@@ -750,8 +750,9 @@
 						overlay.style.display = "block";
 						setTimeout(function () { getVideo.play(); overlay.style.display = "none"; }, 2000);
 					}
-					else if (info == "server_will_close") {
-						console.log("Server will close soon");	
+					else if (info == "server_will_stop") {
+						console.log("Server will stop soon");
+						//No need to handle this event because "closed" event will be called soon
 					}
 
 				},
@@ -765,11 +766,17 @@
 					{
 						handleWebRTCConnectivity(noStreamCallback);
 					}
-					if (error == "notSetRemoteDescription") {
+					else if (error == "notSetRemoteDescription") {
 						/*
 						* If getting codec incompatible or remote description error, it will redirect HLS player.
 						*/
 						tryToPlay(streamId, token, hlsExtension, subscriberId, subscriberCode, hlsNoStreamCallback);
+					}
+					else if (error == "highResourceUsage") {
+						//disconnect when server reports high resource usage
+						//it will fire the "closed" callback and and it'll reconnect again.
+						//this is important when it's auto-scaling in the backend
+						webRTCAdaptor.closeWebSocket();
 					}
 					
 				}
