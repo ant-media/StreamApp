@@ -15,9 +15,13 @@ export class VideoEffect
     static DEBUG = false;
     /**
      * LOCATE_FILE_URL is optional, it's to give locate url of selfie segmentation
-     * If you would like to use CDN, just give "https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/"
+     * If you would like to use CDN, 
+     * Give "https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/"
+     * or give local file relative path "./js/external/selfie-segmentation" according to your file
      */
-    static LOCATE_FILE_URL = "./js/external/selfie-segmentation";
+     
+    //static LOCATE_FILE_URL = "./js/external/selfie-segmentation";
+    static LOCATE_FILE_URL = "https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation";
 
     #virtualBackgroundImage = null;
 
