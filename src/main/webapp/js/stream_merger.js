@@ -43,9 +43,13 @@ export class StreamMerger {
     let context;
     try {
       context = canvas.getContext('webgl2');
+      if(context==null)
+      throw new Error('webgl2 is not supported');
     } catch (e) {
       try {
         context = canvas.getContext('webgl');
+        if(context==null)
+          throw new Error('webgl is not supported');
       } catch (e) {
         context = canvas.getContext('2d');
         this.WebglNotSupported = true;
