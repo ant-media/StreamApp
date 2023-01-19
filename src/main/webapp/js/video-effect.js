@@ -1,66 +1,102 @@
 import "./external/selfie-segmentation/selfie_segmentation.js";
+import { WebRTCAdaptor } from "./webrtc_adaptor.js";
 
 /**
  * This class is used to apply a video effect to the video stream.
  * It's compatible with Ant Media Server JavaScript SDK v2.5.2+
+ * 
  */
-export function VideoEffect() {
-    this.isInitialized = false;
-    this.selfieSegmentation = null;
-    this.webRTCAdaptor = null;
-    this.streamId = null;
-    this.effectCanvas = null;
-    this.ctx = null;
-    this.isSelfieSegmentationLoaded = false;
-    this.canvasStream = null;
-    this.rawVideoStream = null;
-    this.rawLocalVideo = null;
-    this.virtualBackgroundImage = null;
-    this.blurredEnabled = false;
-    this.virtualBackgroundEnabled = false;
-    this.backgroundBlurRange = 3;
-    this.edgeBlurRange = 4;
-    this.effectCanvasFPS = 20;
+export class VideoEffect
+{    
+    static VIRTUAL_BACKGROUND = "virtual-background";
+    static BLUR_BACKGROUND = "blur-background";
+    static NO_EFFECT = "no-effect";
 
+    static DEBUG = false;
     /**
-     * This method is used to initialize the video effect.
-     * @param {WebRTCAdaptor} webRTCAdaptor - Ant Media Server JavaScript SDK instance
-     * @param {string} streamId - Stream ID
-     * @param {HTMLElement} virtualBackgroundImage - Element of virtual background image. You should set the image source before calling this method.
-     * @param {HTMLElement} rawLocalVideo - Element of raw local video. It's used to keep the raw video stream.
+     * LOCATE_FILE_URL is optional, it's to give locate url of selfie segmentation
+     * If you would like to use CDN, 
+     * Give "https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/"
+     * or give local file relative path "./js/external/selfie-segmentation" according to your file
      */
-    this.init = function(webRTCAdaptor, streamId, virtualBackgroundImage, rawLocalVideo) {
-        window.videoEffect = this;
+     
+    //static LOCATE_FILE_URL = "./js/external/selfie-segmentation";
+    static LOCATE_FILE_URL = "https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation";
 
+    #virtualBackgroundImage = null;
+
+    constructor(webRTCAdaptor) 
+    {
         this.webRTCAdaptor = webRTCAdaptor;
-        this.streamId = streamId;
-        this.virtualBackgroundImage = virtualBackgroundImage;
-        this.rawLocalVideo = rawLocalVideo;
+       
+        this.selfieSegmentation = null;
+        this.effectCanvas = null;
+        this.ctx = null;
+        this.rawLocalVideo = document.createElement('video');
+       
+        this.backgroundBlurRange = 3;
+        this.edgeBlurRange = 4;
+       
+        this.effectName = VideoEffect.NO_EFFECT;
 
-        this.createEffectCanvas();
+        this.startTime = 0;
+
+        this.statTimerId = -1;
+
+        this.renderedFrameCount = 0;
+        this.lastRenderedFrameCount = 0;
+        this.effectCanvasFPS = 0;
+        this.videoCallbackPeriodMs = 0;
+
         this.initializeSelfieSegmentation();
-
         this.isInitialized = true;
+       
+    }
+
+     /**
+     * This method is used to initialize the video effect.
+     * @param {HTMLElement} stream - Original stream to be manipulated.
+     */
+    init(stream) {
+        this.rawLocalVideo.srcObject = stream;
+        this.rawLocalVideo.muted = true;
+        this.rawLocalVideo.autoplay = true;
+        this.rawLocalVideo.play();
+       
+        let trackSettings = stream.getVideoTracks()[0].getSettings();
+        this.effectCanvasFPS = trackSettings.frameRate;
+        this.videoCallbackPeriodMs = 1000/this.effectCanvasFPS;
+
+        this.createEffectCanvas(trackSettings.width, trackSettings.height);
+        if (this.canvasStream) {
+            this.canvasStream.getTracks().forEach((track) => track.stop());
+            this.canvasStream = null;
+        }
+        this.canvasStream = this.effectCanvas.captureStream(this.effectCanvasFPS);        
+        return new Promise((resolve, reject) => {
+			resolve(this.canvasStream);
+		})
     }
 
     /**
      * This method is used to create the canvas element which is used to apply the video effect.
      */
-    this.createEffectCanvas = function() {
+    createEffectCanvas(width, height) {
         this.effectCanvas = document.createElement('canvas');
         this.effectCanvas.id="effectCanvas";
-        this.effectCanvas.width = 640;
-        this.effectCanvas.height = 480;
+        this.effectCanvas.width = width;
+        this.effectCanvas.height = height;
         this.ctx = this.effectCanvas.getContext("2d");
+        return this.effectCanvas;
     }
 
     /**
      * This method is used to initialize the selfie segmentation.
      */
-    this.initializeSelfieSegmentation = function() {
+    initializeSelfieSegmentation() {
         this.selfieSegmentation = new SelfieSegmentation({
             locateFile: (file) => {
-                return `js/external/selfie-segmentation/` + file;
+                return VideoEffect.LOCATE_FILE_URL + "/" + file;
             }
         });
 
@@ -69,115 +105,141 @@ export function VideoEffect() {
             modelSelection: 1 // 0: General Model, 1: Landscape Model - We use Landscape Model for better performance
         });
 
-        this.selfieSegmentation.onResults(this.onResults);
+        this.selfieSegmentation.onResults((results) => {
+            this.onResults(results);
+        });
 
-        this.isSelfieSegmentationLoaded = true;
-        window.videoEffect.loadSelfieSegmentation();
+    }
+
+    set virtualBackgroundImage(imageElement) {
+        this.#virtualBackgroundImage = imageElement;
+    }
+
+    startFpsCalculation() {
+        this.statTimerId = setInterval(()=> {
+            var currentTime = new Date().getTime();
+            var deltaTime = (currentTime - this.startTime) / 1000;
+            this.startTime = currentTime;
+
+            var fps = ( this.renderedFrameCount -  this.lastRenderedFrameCount) / deltaTime;
+            this.renderedFrameCount = this.lastRenderedFrameCount;
+            console.log("Fps: " + fps + "fps");
+
+        }, 1000);
+    }
+
+    stopFpsCalculation() {
+        if (this.statTimerId != -1) 
+        {
+            clearInterval(this.statTimerId);
+            this.statTimerId = -1;
+        }
+    }
+
+    async processFrame() 
+    {    
+        
+        await this.selfieSegmentation.send({image: this.rawLocalVideo});
+        
+        //call if the effect name is not NO_EFFECT
+        if (this.effectName != VideoEffect.NO_EFFECT) 
+        {
+            setTimeout(()=> {
+                this.processFrame();
+            }, this.videoCallbackPeriodMs);
+        }        
     }
 
     /**
-     * This method is used to activate the virtual background effect to the video stream.
+     * Enable effect 
+     * @param {} effectName 
      */
-    this.enableVirtualBackground = function() {
+    enableEffect(effectName) {
+        
         if (!this.isInitialized) {
             console.error("VideoEffect is not initialized!");
             return;
         }
-        // if both virtual background and blur are disabled, set the canvas stream as custom video source
-        if (!this.blurredEnabled && !this.virtualBackgroundEnabled) {
-            this.setCanvasStreamAsCustomVideoSource();
+        switch (effectName) {
+            case VideoEffect.VIRTUAL_BACKGROUND:
+            case VideoEffect.BLUR_BACKGROUND:
+            case VideoEffect.NO_EFFECT:
+            break;
+            default:
+                console.warn("Unknown effect name please use the constants VideoEffect.VIRTUAL_BACKGROUND,VideoEffect.BLUR_BACKGROUND or VideoEffect.NO_EFFECT ");
+                return;
         }
-        this.blurredEnabled = false;
-        this.virtualBackgroundEnabled = true;
-    }
+        var currentEffectName =  this.effectName;
+        this.effectName = effectName;
+        if (effectName == VideoEffect.VIRTUAL_BACKGROUND || effectName == VideoEffect.BLUR_BACKGROUND) {
+            
+            //check old effect name. If it's no effect, start the process
+            if (currentEffectName == VideoEffect.NO_EFFECT) 
+            {
+                if (VideoEffect.DEBUG) 
+                {
+                    this.startFpsCalculation();      
+                }
+                //We cannot use the localStream of the webrtc adaptor because it's gets stopped when updateVideoTrack is called
+                //get the video stream with current constraints and stop it when effects are disabled 
 
-    /**
-     * This method is used to activate the blur effect to the video stream.
-     */
-    this.enableBlur = function() {
-        if (!this.isInitialized) {
-            console.error("VideoEffect is not initialized!");
-            return;
+                //audio:true makes the trick to play the video in the background as well otherwise it stops playing
+                return navigator.mediaDevices.getUserMedia({video:this.webRTCAdaptor.mediaConstraints.video, audio:true}).then(localStream => 
+                {
+                    return this.init(localStream).then(processedStream => 
+                    {
+                        return this.webRTCAdaptor.updateVideoTrack(processedStream, this.webRTCAdaptor.publishStreamId, null, true).then(() => 
+                            {
+                                setTimeout(()=> {
+                                    this.processFrame();
+                                }, this.videoCallbackPeriodMs);
+                            }
+                        );
+                    }).catch(err => {
+                        //log and throw again to let the catch in the chain it
+                        console.error(err);
+                        throw err;
+                    });
+                }
+                );
+            }
+            else {
+                return new Promise((resolve, reject) => {
+                    resolve();
+                });
+            }
         }
-        // if both virtual background and blur are disabled, set the canvas stream as custom video source
-        if (!this.blurredEnabled && !this.virtualBackgroundEnabled) {
-            this.setCanvasStreamAsCustomVideoSource();
+        else {
+            
+            return new Promise((resolve, reject) => {
+                //Stop timer
+                this.stopFpsCalculation();
+            
+                this.#noEffect();
+                resolve();
+            })
         }
-        this.blurredEnabled = true;
-        this.virtualBackgroundEnabled = false;
     }
 
     /**
      * This method is used to disable the virtual background and blur effects.
      */
-    this.removeEffect = function() {
-        if (!this.isInitialized) {
-            console.error("VideoEffect is not initialized!");
-            return;
+    #noEffect() {
+
+        this.rawLocalVideo.pause();
+        if (this.canvasStream != null) {
+            this.canvasStream.getVideoTracks().forEach(track => track.stop());
         }
-        // if one of virtual background or blur is enabled, close the canvas stream
-        if (this.blurredEnabled || this.virtualBackgroundEnabled) {
-            this.webRTCAdaptor.closeCustomVideoSource(this.streamId).then(function() {
-                window.videoEffect.canvasStream.getTracks().forEach(track => track.stop());
-                window.videoEffect.canvasStream = null;
-            });
-        }
-        this.blurredEnabled = false;
-        this.virtualBackgroundEnabled = false;
+        
+        return this.webRTCAdaptor.switchVideoCameraCapture(this.webRTCAdaptor.publishStreamId);
     }
 
-    /**
-     * This method is used to prepare canvas stream and set the custom video source on Ant Media Server SDK.
-     */
-    this.setCanvasStreamAsCustomVideoSource = function() {
-        if (this.isSelfieSegmentationLoaded) {
-            this.playing();
-            let newStream = new MediaStream();
-            this.canvasStream = this.effectCanvas.captureStream(this.effectCanvasFPS);
-            newStream.addTrack(this.canvasStream.getVideoTracks()[0]);
-            if (this.rawVideoStream) {
-                newStream.addTrack(this.rawVideoStream.getAudioTracks()[0]);
-            }
-            this.webRTCAdaptor.setCustomVideoSource(this.streamId, newStream);
-        } else {
-            // if mediapipe is not loaded, wait for 1 second and try again
-            setTimeout(this.setCanvasStreamAsCustomVideoSource, 1000);
-        }
-    }
-
-    /**
-     * This method is used to prepare the raw video stream.
-     */
-    this.loadSelfieSegmentation = function() {
-        if (videoEffect.rawVideoStream === null || videoEffect.rawLocalVideo.srcObject === null) {
-            navigator.mediaDevices.getUserMedia({video: true, audio: true}).then(cameraStream => {
-                window.videoEffect.rawVideoStream = cameraStream;
-                window.videoEffect.rawLocalVideo.srcObject = cameraStream;
-                window.videoEffect.rawLocalVideo.play();
-            });
-        }
-        if (this.selfieSegmentation) return;
-        this.playing();
-    }
-
-    /**
-     * This method is used to send raw video stream to mediapipe.
-     * @returns {Promise<void>}
-     */
-    this.playing = async function() {
-        if (window.videoEffect.rawLocalVideo.readyState === window.videoEffect.rawLocalVideo.HAVE_ENOUGH_DATA
-            && window.videoEffect.selfieSegmentation !== undefined) {
-            await window.videoEffect.selfieSegmentation.send({image: window.videoEffect.rawLocalVideo});
-        } else {
-            setTimeout(window.videoEffect.playing, 100);
-        }
-    }
 
     /**
      * This method is used to draw the segmentation mask.
      * @param segmentation
      */
-    this.drawSegmentationMask = function(segmentation) {
+    drawSegmentationMask(segmentation) {
         this.ctx.drawImage(segmentation, 0, 0, this.effectCanvas.width, this.effectCanvas.height);
     }
 
@@ -185,33 +247,25 @@ export function VideoEffect() {
      * This method is called by mediapipe when the segmentation mask is ready.
      * @param results
      */
-    this.onResults = function(results) {
-        window.videoEffect.runPostProcessing(
-            results.image,
-            results.segmentationMask,
-            window.videoEffect.backgroundBlurRange
-        );
-        // if none of effects are enabled, stop sending image to selfie-segmentation
-        if (window.videoEffect.blurredEnabled || window.videoEffect.virtualBackgroundEnabled) {
-            setTimeout(window.videoEffect.playing, 100);
-        }
-    }
-
-    this.runPostProcessing = function(image, segmentation, blurAmount) {
-        if (this.blurredEnabled) {
-            this.drawBlurBackground(image, segmentation, blurAmount);
-        } else if (this.virtualBackgroundEnabled) {
-            this.drawVirtualBackground(image, segmentation, this.virtualBackgroundImage);
-        } else {
-            this.drawImageDirectly(image);
-        }
+    onResults(results) {
+       
+        this.renderedFrameCount++;
+        if (this.effectName == VideoEffect.BLUR_BACKGROUND) {
+            this.drawBlurBackground(results.image, results.segmentationMask, this.backgroundBlurRange);
+        } 
+        else if (this.effectName == VideoEffect.VIRTUAL_BACKGROUND) {
+            this.drawVirtualBackground(results.image, results.segmentationMask, this.#virtualBackgroundImage);
+        } 
+        else {
+            this.drawImageDirectly(results.image);
+        }       
     }
 
     /**
      * This method is used to draw the raw frame directly to the canvas.
      * @param image
      */
-    this.drawImageDirectly = function(image) {
+    drawImageDirectly(image) {
         this.ctx.save();
         this.ctx.globalCompositeOperation = "source-over";
         this.ctx.filter = "none";
@@ -225,13 +279,13 @@ export function VideoEffect() {
      * @param segmentation
      * @param virtualBackgroundImage
      */
-    this.drawVirtualBackground = function(image, segmentation, virtualBackgroundImage) {
+    drawVirtualBackground(image, segmentation, virtualBackgroundImage) {
         this.ctx.save();
         this.ctx.filter = "none";
         this.ctx.clearRect(0, 0, this.effectCanvas.width, this.effectCanvas.height);
         this.ctx.drawImage(segmentation, 0, 0, this.effectCanvas.width, this.effectCanvas.height);
         this.ctx.globalCompositeOperation = 'source-out';
-        this.ctx.drawImage(virtualBackgroundImage, 0, 0, virtualBackgroundImage.width, virtualBackgroundImage.height, 0, 0, this.effectCanvas.width, this.effectCanvas.height);
+        this.ctx.drawImage(virtualBackgroundImage, 0, 0, virtualBackgroundImage.naturalWidth, virtualBackgroundImage.naturalHeight, 0, 0, this.effectCanvas.width, this.effectCanvas.height);
         this.ctx.globalCompositeOperation = 'destination-atop';
         this.ctx.drawImage(image, 0, 0, this.effectCanvas.width, this.effectCanvas.height);
         this.ctx.restore();
@@ -243,7 +297,7 @@ export function VideoEffect() {
      * @param segmentation
      * @param blurAmount
      */
-    this.drawBlurBackground = function(image, segmentation, blurAmount) {
+    drawBlurBackground(image, segmentation, blurAmount) {
         this.ctx.clearRect(0, 0, this.effectCanvas.width, this.effectCanvas.height);
 
         this.ctx.globalCompositeOperation = "copy";
@@ -264,3 +318,22 @@ export function VideoEffect() {
     }
 
 }
+
+WebRTCAdaptor.register((webrtcAdaptorInstance) => 
+{
+    let videoEffect = new VideoEffect(webrtcAdaptorInstance);
+
+    Object.defineProperty(webrtcAdaptorInstance, "enableEffect", {
+        value: function(effectName) {
+            return videoEffect.enableEffect(effectName);
+        }
+    });
+
+    Object.defineProperty(webrtcAdaptorInstance, "setBackgroundImage", {
+        value: function(imageElement) {
+            videoEffect.virtualBackgroundImage = imageElement;
+        }
+    });
+
+});
+

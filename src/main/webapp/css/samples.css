@@ -1,0 +1,89 @@
+video {
+	width: 100%;
+	max-width: 640px;
+}
+
+/* Everything but the jumbotron gets side spacing for mobile first views */
+.header, .marketing, .footer {
+	padding: 15px;
+}
+.header {
+  padding-bottom: 20px;
+  /* border-bottom: 1px solid #e5e5e5; */
+}
+/* Custom page header */
+.header {
+	padding-bottom: 20px;
+}
+
+/* Customize container */
+@media ( min-width : 768px) {
+	.container {
+		max-width: 730px;
+	}
+}
+
+.container-narrow>hr {
+	margin: 0px 0;
+}
+
+/* Main marketing message and sign up button */
+.jumbotron {
+	text-align: center;
+	padding: 2em;
+}
+#stats_panel {
+	display: none;
+}
+
+/* Responsive: Portrait tablets and up */
+@media screen and (min-width: 768px) {
+	/* Remove the padding we set earlier */
+	.header, .marketing, .footer {
+		padding-right: 0;
+		padding-left: 0;
+	}
+}
+.options {
+		display:none;
+	}
+.message_area {
+	height: 300px;
+	overflow-y: auto;
+	border-style: groove;
+	border-width: thin;
+	background-color: white;
+}
+
+.embed-frame {
+	width:100%;
+	height:1080px;
+	overflow: auto;
+	border-width: 0px;
+}
+.backgroundImages {
+	cursor:pointer;
+	width: 64px;
+	height: 64px;
+	object-fit:cover;
+}
+.selected {
+	border:3px solid #007bff;
+}
+
+.custom-file-label {
+	background-color: transparent;
+	border-width: 0px;
+	height:100%;
+	/* right:auto; */
+	/* left:auto; */
+	padding-left:0px;
+	padding-right:0px;
+	position:relative;
+	left: auto;
+	right: a;
+}
+.custom-file-input {
+	position: absolute;
+	left: 0;	
+}
