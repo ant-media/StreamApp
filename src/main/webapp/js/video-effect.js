@@ -52,7 +52,30 @@ export class VideoEffect
         this.isInitialized = true;
        
     }
+    deepar_Init = function (webRTCAdaptor, streamId, rawLocalVideo, API_Key) {
+        this.webRTCAdaptor = webRTCAdaptor;
+        this.webRTCAdaptor.publishStreamId = streamId;
+        this.rawLocalVideo = rawLocalVideo;
+        this.createEffectCanvas(true,500,500);
+        var deepAR = new DeepAR({
+            licenseKey: API_Key,
+            canvas: this.effectCanvas,
+            deeparWasmPath: './js/Deepar/wasm/deepar.wasm',
+            callbacks: {
+                onInitialize: function () {
+                    deepAR.startVideo(true);
+                },
 
+            }
+        });
+        deepAR.callbacks.onVideoStarted=()=>{
+            this.canvasStream = this.effectCanvas.captureStream(30);        
+            this.webRTCAdaptor.updateVideoTrack(this.canvasStream, this.webRTCAdaptor.publishStreamId, null, true)
+        }
+        deepAR.downloadFaceTrackingModel("./js/Deepar/models/face/models-68-extreme.bin");
+        deepAR.setVideoElement(this.rawLocalVideo, true);
+        return deepAR;
+    }
      /**
      * This method is used to initialize the video effect.
      * @param {HTMLElement} stream - Original stream to be manipulated.
@@ -67,7 +90,7 @@ export class VideoEffect
         this.effectCanvasFPS = trackSettings.frameRate;
         this.videoCallbackPeriodMs = 1000/this.effectCanvasFPS;
 
-        this.createEffectCanvas(trackSettings.width, trackSettings.height);
+        this.createEffectCanvas(isdeepar,trackSettings.width, trackSettings.height);
         if (this.canvasStream) {
             this.canvasStream.getTracks().forEach((track) => track.stop());
             this.canvasStream = null;
@@ -81,11 +104,12 @@ export class VideoEffect
     /**
      * This method is used to create the canvas element which is used to apply the video effect.
      */
-    createEffectCanvas(width, height) {
+    createEffectCanvas(deepar,width, height) {
         this.effectCanvas = document.createElement('canvas');
         this.effectCanvas.id="effectCanvas";
         this.effectCanvas.width = width;
         this.effectCanvas.height = height;
+        if (!deepar)
         this.ctx = this.effectCanvas.getContext("2d");
         return this.effectCanvas;
     }
