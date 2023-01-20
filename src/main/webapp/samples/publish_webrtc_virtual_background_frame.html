@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebRTC Samples > Publish Virtual Background</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="../css/external/bootstrap4/bootstrap.min.css">
+    <link rel="stylesheet" href="../css/common.css" />
+    <link rel="stylesheet" href="../css/samples.css" />
+    <script src="../js/external/adapter-latest.js"></script>
+</head>
+<body>
+    <div>
+
+        <div class="jumbotron">
+            <div class="col-sm-12 form-group">
+                <video id="localVideo" autoplay muted controls playsinline ></video>
+                <img id="virtualBackgroundImage" src="../images/virtual-background.png" hidden />
+            </div>
+
+            <div class="form-group col-sm-12 text-left">
+                <input type="text" class="form-control" id="streamId" name="streamIdTextBox"
+                    placeholder="Type stream ID">
+            </div>
+
+            <div class="form-group col-sm-12 text-center">
+                Select Background
+            </div>
+           <div class="form-inline col-sm-12 text-center" id="virtualBackgrounds">
+                <div class="col-sm-2">
+                    <img src="../images/noeffect-background.png"  id="noeffect" class="backgroundImages selected" />
+                </div>
+                <div class="col-sm-2">
+                    <img src="../images/blur-background.png" id="blur" class="backgroundImages " />
+                </div>
+                <div class="col-sm-2">
+                    <img src="../images/virtual-background.png" id="antMediaBackground" class="backgroundImages "/>
+                </div>
+                <div class="col-sm-2">
+                    <img src="../images/cloud-background.png" class="backgroundImages "/>
+                </div>
+                <div class="col-sm-2 custom-file" style="height:64px">
+                   
+                    <img src="../images/image-upload.png" class="custom-file-label" />
+                   <input type="file" class="custom-file-input" id="customFile" style="height:100%;" accept=".jpg, .png, .jpeg">
+                </div>
+           </div>
+
+
+            <div class="form-group col-sm-12 text-center" id="offlineInfo">
+                <div class="form-group col-sm-4 offset-sm-4 text-center" style="margin-bottom: 16px;font-size:1em;">
+                    <a href="" target="_blank">&nbsp;</a> <!-- this is a place holder to keep the same alignment -->
+                </div>
+                <div class="form-group col-sm-4 offset-sm-4 text-center" style="font-size:1.2em">
+                    <span class="badge  badge-secondary">Status: Offline</span>
+                </div>
+            </div>
+            <div class="form-group col-sm-12 text-center" id="broadcastingInfo" style="display: none;">
+                <div class="form-group text-center" style="margin-bottom: 8px;margin-top: 16px;font-size:1em;">
+                    <a href="" id="playlink" target="_blank" data-toggle="tooltip" title="Opens in New Tab">Play with
+                        WebRTC</a>
+                </div>
+                <div class="form-group text-center" style="font-size:1.2em">
+                    <span class="badge  badge-success">Status: Publishing</span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <button class="btn btn-primary" disabled id="start_publish_button">Start Publishing</button>
+                <button class="btn btn-primary" disabled id="stop_publish_button">Stop Publishing</button>
+            </div>
+        </div>
+        <footer class="footer text-left">
+			<div class="row">
+				<div class="col-sm-6 text-left"><a target="_parent" href="https://github.com/ant-media/StreamApp/tree/master/src/main/webapp/samples/publish_webrtc_virtual_background_frame.html">View Source on Github</a></div>
+				<div class="col-sm-6 text-right">
+					<a href="http://antmedia.io" target="_parent">antmedia.io</a>
+				</div>
+			</div>
+		</footer>
+    </div>
+    <script src="../js/external/jquery-3.4.1.min.js" crossorigin="anonymous"></script>
+    <script src="../js/external/popper.min.js" crossorigin="anonymous"></script>
+    <script src="../js/external/bootstrap.min.js" crossorigin="anonymous"></script>
+</body>
+<script type="module" lang="text/javascript">
+    import { WebRTCAdaptor } from "../js/webrtc_adaptor.js"
+    import { getUrlParameter } from "../js/fetch.stream.js"
+    import { VideoEffect } from "../js/video-effect.js"
+    import { generateRandomString, getWebSocketURL, errorHandler , updateBroadcastStatusInfo} from "../js/utility.js"
+
+    var debug = getUrlParameter("debug");
+    if (debug == null) {
+        debug = false;
+    }
+
+    function init() {
+        var id = getUrlParameter("id");
+        if (typeof id != "undefined") {
+            $("#streamId").val(id);
+        }
+        else {
+            id = getUrlParameter("name");
+            if (typeof id != "undefined") {
+                $("#streamId").val(id);
+            }
+            else {
+                $("#streamId").val("streamId_" + generateRandomString(9));
+            }
+        }
+
+        $(".backgroundImages").click(enableVirtualBackground);
+
+        $('input[type="file"]').change(function(e){
+                var url = URL.createObjectURL(e.target.files[0]);
+                $("#virtualBackgrounds div:last").before("<div class=\"col-sm-2\"><img src=\"../images/cloud-background.png\" class=\"backgroundImages\"/></div>");
+                $("#virtualBackgrounds div").eq(-2).children("img").attr("src", url);
+                $(".backgroundImages").click(enableVirtualBackground);
+
+            });
+    }
+    $(function () {
+        init();
+    });
+
+    var start_publish_button = document.getElementById("start_publish_button");
+    start_publish_button.addEventListener("click", startPublishing, false);
+    var stop_publish_button = document.getElementById("stop_publish_button");
+    stop_publish_button.addEventListener("click", stopPublishing, false);
+
+    var streamIdBox = document.getElementById("streamId");
+
+    var streamId;
+
+    function startPublishing() {
+        streamId = streamIdBox.value;
+        webRTCAdaptor.publish(streamId);
+    }
+
+    function stopPublishing() {
+        webRTCAdaptor.stop(streamId);
+    }
+
+    function enableVirtualBackground() {
+        $(".backgroundImages").removeClass("selected");
+        var effectName;
+        if ($(this).attr("id") == "blur") {
+            effectName = VideoEffect.BLUR_BACKGROUND;
+        }
+        else if ($(this).attr("id") == "noeffect") {
+            effectName = VideoEffect.NO_EFFECT;
+        }
+        else {
+            effectName = VideoEffect.VIRTUAL_BACKGROUND;
+            webRTCAdaptor.setBackgroundImage(this);
+        }
+        webRTCAdaptor.enableEffect(effectName).then(() => {
+            console.log("Effect: "+ effectName+" is enabled");
+        }).catch(err => {
+            console.error("Effect: "+ effectName+" is not enabled. Error is " + err);
+            alert(err.name);
+        });
+        $(this).addClass("selected");
+        
+    }
+
+    var pc_config = {
+        'iceServers': [{
+            'urls': 'stun:stun1.l.google.com:19302'
+        }]
+    };
+    /* 
+    //sample turn configuration
+    {
+     var pc_config = {  iceServers: [
+                            { 
+                                  urls: "",
+                                  username: "",
+                                  credential: "",
+                            }
+                        ]
+                    };
+    };
+    */
+    var sdpConstraints = {
+        OfferToReceiveAudio: false,
+        OfferToReceiveVideo: false
+    };
+
+    var mediaConstraints = {
+        video: {
+            aspectRatio:16/9,
+            frameRate: 20,
+        },
+        audio: false,
+    };
+
+    var websocketURL = getWebSocketURL(location);
+
+    var webRTCAdaptor = null;
+
+    function initWebRTCAdaptor(publishImmediately) {
+        webRTCAdaptor = new WebRTCAdaptor({
+            websocket_url: websocketURL,
+            mediaConstraints: mediaConstraints,
+            peerconnection_config: pc_config,
+            sdp_constraints: sdpConstraints,
+            localVideoElement: document.getElementById("localVideo"),
+            debug: debug,
+            bandwidth: 1200,
+            dataChannelEnabled: true,
+            callback: (info, obj) => {
+                if (info == "initialized") {
+                    console.log("initialized");
+                    start_publish_button.disabled = false;
+                    stop_publish_button.disabled = true;
+                    if (publishImmediately) {
+                        webRTCAdaptor.publish(streamId, token, subscriberId, subscriberCode, streamName)
+                    }
+                    
+
+                } else if (info == "publish_started") {
+                    //stream is being published
+                    console.log("publish started");
+                    start_publish_button.disabled = true;
+                    stop_publish_button.disabled = false;
+                    updateBroadcastStatusInfo(streamId);
+           
+                } else if (info == "publish_finished") {
+                    //stream is being finished
+                    console.log("publish finished");
+                    start_publish_button.disabled = false;
+                    stop_publish_button.disabled = true;
+                }
+                else if (info == "browser_screen_share_supported") {
+                    console.log("browser screen share supported");
+                }
+                else if (info == "screen_share_stopped") {
+                    //choose the first video source. It may not be correct for all cases. 
+                    console.log("screen share stopped");
+                }
+                else if (info == "closed") {
+                    if (typeof obj != "undefined") {
+                        console.log("Connecton closed: " + JSON.stringify(obj));
+                    }
+                }
+                else if (info == "ice_connection_state_changed") {
+                    console.log("iceConnectionState Changed: ", JSON.stringify(obj));
+                }
+                else if (info == "updated_stats") {
+                    //obj is the PeerStats which has fields
+                    //averageOutgoingBitrate - kbits/sec
+                    //currentOutgoingBitrate - kbits/sec
+                    console.log("Average outgoing bitrate " + obj.averageOutgoingBitrate + " kbits/sec"
+                        + " Current outgoing bitrate: " + obj.currentOutgoingBitrate + " kbits/sec"
+                        + " video source width: " + obj.resWidth + " video source height: " + obj.resHeight
+                        + "frame width: " + obj.frameWidth + " frame height: " + obj.frameHeight
+                        + " video packetLost: " + obj.videoPacketsLost + " audio packetsLost: " + obj.audioPacketsLost
+                        + " video RTT: " + obj.videoRoundTripTime + " audio RTT: " + obj.audioRoundTripTime
+                        + " video jitter: " + obj.videoJitter + " audio jitter: " + obj.audioJitter);
+
+                }
+                else if (info == "session_restored") {
+                    start_publish_button.disabled = true;
+                    stop_publish_button.disabled = false;
+                    updateBroadcastStatusInfo();
+                    console.log(info + "notification received");
+                }
+                else {
+                    console.log(info + " notification received");
+                }
+            },
+            callbackError: function (error, message) {
+                //some possible errors, NotFoundError, SecurityError,PermissionDeniedError
+
+                errorHandler(error, message);
+            }
+        });
+
+        window.webRTCAdaptor = webRTCAdaptor;
+    }
+
+
+    
+    let virtualBackgroundImage = document.getElementById("virtualBackgroundImage");
+    VideoEffect.LOCATE_FILE_URL = "https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation";
+    VideoEffect.DEBUG = true;
+    
+    initWebRTCAdaptor(false);   
+</script>
+
+</html>

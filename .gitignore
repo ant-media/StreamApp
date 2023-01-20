@@ -2,5 +2,5 @@
 /.settings
 /target/
 /codesigning.asc
-/node_modules/
+node_modules
 /dist
