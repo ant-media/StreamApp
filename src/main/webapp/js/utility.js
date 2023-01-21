@@ -34,10 +34,13 @@ export function getQueryParameter(paramName) {
 
 }
 
-export function updateBroadcastStatusInfo(streamId) {
+export function updateBroadcastStatusInfo(streamId, linkUrl) {
     $("#offlineInfo").hide();
     $("#broadcastingInfo").show();
-    $("#playlink").attr("href", "../play.html?id=" + streamId)
+    if (linkUrl === undefined) {
+        linkUrl = "../play.html?id=" + streamId;
+    }
+    $("#playlink").attr("href", linkUrl)
     $("#playlink").show();
 
     setTimeout(function () {
@@ -45,7 +48,7 @@ export function updateBroadcastStatusInfo(streamId) {
         if (state != null && state != "closed") {
             var iceState = window.webRTCAdaptor.iceConnectionState(streamId);
             if (iceState != null && iceState != "failed" && iceState != "disconnected") {
-                updateBroadcastStatusInfo(streamId);
+                updateBroadcastStatusInfo(streamId, linkUrl);
             }
             else {
                 $("#playlink").hide();
