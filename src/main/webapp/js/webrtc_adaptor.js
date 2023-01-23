@@ -49,16 +49,33 @@ export class WebRTCAdaptor
 
 	constructor(initialValues){
 		/**
-		 * Used while initializing the PeerConnection
+		 * PeerConnection configuration while initializing the PeerConnection. 
 		 * https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection/RTCPeerConnection#parameters
+		 * 
+		 * More than one STURN and/or TURN servers can be added.  Here is a typical turn server configuration
+		 *  
+		 *	{ 
+	     * 	  urls: "",
+		 *	  username: "",
+		 *    credential: "",
+		 *	}
+		 *
+		 *  Default value is the google stun server	
 		 */
-		this.peerconnection_config = null;
+		this.peerconnection_config = {
+			'iceServers' : [ {
+				'urls' : 'stun:stun1.l.google.com:19302'
+			} ]
+		};
 
 		/**
 		 * Used while creating SDP (answer or offer)
 		 * https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection/createOffer#parameters
 		 */
-		this.sdp_constraints = null;
+		this.sdp_constraints = {
+			OfferToReceiveAudio : false,
+			OfferToReceiveVideo : false
+		};;
 
 		/**
 		 * This keeps the PeerConnections for each stream id.
@@ -299,7 +316,7 @@ export class WebRTCAdaptor
 	 * 	-start websocket connection
 	 */
 	initialize() {
-		if (!this.isPlayMode && !this.onlyDataChannel && typeof this.mediaConstraints != "undefined" && this.mediaManager.localStream == null) {
+		if (!this.isPlayMode && !this.onlyDataChannel && this.mediaManager.localStream == null) {
 			//we need local stream because it not a play mode
 			this.mediaManager.initLocalStream().then(() => 
 			{
