@@ -626,8 +626,7 @@
         'Vendetta_Mask',
         'Fire_Effect',
         'Elephant_Trunk',
-        'Emotions_Exaggerator',
-        'Emotion_Meter',
+        'Emotions_Exaggerator'
     ];
     for (var i = 0; i < effects.length; i++) {
         var option = document.createElement("option");
@@ -637,10 +636,11 @@
     }
     select_effect.onchange = () => {
         var selected_option = select_effect.options[select_effect.selectedIndex].text;
-        console.log("effect changed", selected_option)
-        if( selected_option =="No Effect")
+        console.log("effect changed", selected_option);
+        if( selected_option =="No Effect"){
             deepAR.clearEffect('slot');
-        
+            return;
+        }
         deepAR.switchEffect(0, 'slot', "./js/Deepar/effects/" + selected_option + ".deepar");
     }
 </script>
