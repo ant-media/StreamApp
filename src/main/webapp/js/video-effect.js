@@ -90,7 +90,7 @@ export class VideoEffect
         this.effectCanvasFPS = trackSettings.frameRate;
         this.videoCallbackPeriodMs = 1000/this.effectCanvasFPS;
 
-        this.createEffectCanvas(isdeepar,trackSettings.width, trackSettings.height);
+        this.createEffectCanvas(false,trackSettings.width, trackSettings.height);
         if (this.canvasStream) {
             this.canvasStream.getTracks().forEach((track) => track.stop());
             this.canvasStream = null;
