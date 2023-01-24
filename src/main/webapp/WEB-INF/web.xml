@@ -80,6 +80,15 @@
 		<filter-name>DashStatisticsFilter</filter-name>
 		<url-pattern>/streams/*</url-pattern>
 	</filter-mapping>
+	<filter>
+		<filter-name>WaitingViewerFilter</filter-name>
+		<filter-class>io.antmedia.filter.WaitingViewerFilter</filter-class>
+		<async-supported>true</async-supported>
+	</filter>
+	<filter-mapping>
+		<filter-name>WaitingViewerFilter</filter-name>
+		<url-pattern>/streams/*</url-pattern>
+	</filter-mapping>
 	
 	<filter>
 		<filter-name>CorsFilter</filter-name>
