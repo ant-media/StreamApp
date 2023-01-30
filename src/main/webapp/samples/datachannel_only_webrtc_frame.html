@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>WebRTC Samples > Data Channel Only</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="UTF-8">
+<link rel="stylesheet" href="../css/external/bootstrap4/bootstrap.min.css">
+<link rel="stylesheet" href="../css/common.css" />
+<link rel="stylesheet" href="../css/samples.css" />
+<script src="../js/external/adapter-latest.js"></script>
+</head>
+<body>
+	<div>
+		
+
+		<div class="jumbotron">
+			<div class="alert alert-primary text-center enterprise-feature" role="alert" style="margin-top:-2em">
+				WebRTC Data Channel is an Enterprise Edition. <br/>
+			<a href="https://antmedia.io">Try Enterprise Edition for free at antmedia.io</a> <br/><br/>
+			<a href="https://github.com/ant-media/Ant-Media-Server/wiki#community-edition--enterprise-edition" style="font-size:12px">Comparison between Community and Enterprise</a>		 
+			</div>
+			<div class="form-group col-sm-12 text-left">
+				<input type="text" class="form-control"
+						id="streamName" name="streamIdTextBox" placeholder="Type stream name">
+			</div>
+			<div class="form-group col-sm-12 text-left">
+				<label>Data Channel Messages</label>
+				<textarea class="form-control" id="dataMessagesTextarea" style="font-size:12px" rows="10"></textarea>
+				<div class="form-row">
+					<div class="form-group col-sm-10">
+						<input type="text" class="form-control" id="dataTextbox" placeholder="Write your message to send">
+					</div>
+					<div class="form-group col-sm-2">
+					<button type="button" id="send" class="btn btn-outline-primary btn-block">Send</button>
+					</div>
+				</div>
+			</div>
+
+			<div class="form-group col-sm-12 text-center" id="offlineInfo" >
+				<div class="form-group col-sm-4 offset-sm-4 text-center" style="margin-bottom: 8px;font-size:1em;">
+					<a href="" target="_blank">&nbsp;</a> <!-- this is a place holder to keep the same alignment -->
+				</div>
+				<div class="form-group col-sm-4 offset-sm-4 text-center" style="font-size:1.2em">
+					<span class="badge  badge-secondary">Status: Offline</span>
+				</div>
+			</div>
+			<div class="form-group col-sm-12 text-center" id="broadcastingInfo" style="display: none;">
+				<div class="form-group text-center"  style="margin-bottom: 8px;font-size:1em;">
+					<a href="" id="playlink" target="_blank" data-toggle="tooltip" title="Opens in New Tab">Join channel in a New Tab</a>
+				</div>
+				<div class="form-group text-center" style="font-size:1.2em">
+					<span class="badge  badge-success" >Status: Connected</span>
+				</div>
+			</div>
+
+			<div class="form-group">	
+				<button class="btn btn-primary" disabled
+					id="connect_channel_button">Join Channel</button>
+				<button class="btn btn-primary" disabled
+					id="disconnect_channel_button">Disconnect</button>
+			</div>			
+		</div>
+		<footer class="footer text-left">
+			<div class="row">
+				<div class="col-sm-6 text-left"><a target="_parent" href="https://github.com/ant-media/StreamApp/tree/master/src/main/webapp/samples/datachannel_only_webrtc_frame.html">View Source on Github</a></div>
+				<div class="col-sm-6 text-right">
+					<a href="http://antmedia.io" target="_parent">antmedia.io</a>
+				</div>
+			</div>
+		</footer>
+	</div>
+	<script src="../js/external/jquery-3.4.1.min.js"  crossorigin="anonymous"></script>
+	<script src="../js/external/popper.min.js" crossorigin="anonymous"></script>
+	<script src="../js/external/bootstrap.min.js"  crossorigin="anonymous"></script>
+</body>
+<script type="module" lang="javascript">
+	import {WebRTCAdaptor} from "../js/webrtc_adaptor.js"
+    import {getUrlParameter} from "../js/fetch.stream.js" 
+    import { generateRandomString, getWebSocketURL, errorHandler , updateBroadcastStatusInfo} from "../js/utility.js"
+
+	var debug = getUrlParameter("debug");
+	if(debug == null) {
+		debug = false;
+	}
+
+    function init () {
+	  var id = getUrlParameter("id");
+	  if(typeof id != "undefined") {
+		$("#streamName").val(id);
+	  }
+	  else {
+		id = getUrlParameter("name");
+		if (typeof id != "undefined") {
+			$("#streamName").val(id);
+		} 
+		else {
+			$("#streamName").val("streamId_" + generateRandomString(9));
+		}
+	  }
+    }
+	$(function() {
+		init();
+
+	});
+
+	var isChannelCreator = false;
+	
+	//TODO: Migrate these methods to Jquery
+	var connect_channel_button = document.getElementById("connect_channel_button");
+	connect_channel_button.addEventListener("click", connectChannel, false);
+	var disconnect_channel_button = document.getElementById("disconnect_channel_button");
+	disconnect_channel_button.addEventListener("click", disconnectChannel, false);
+	var send = document.getElementById("send");
+	send.addEventListener("click", sendData, false);
+	
+	var streamNameBox = document.getElementById("streamName");
+	streamNameBox.value = "stream1";
+	
+	var streamId;
+	
+	document.querySelector('#dataTextbox').addEventListener('keypress', function (e) {
+    	if (e.key === 'Enter') {
+			sendData();
+    	}
+	});
+	
+	function createChannel() {
+		isChannelCreator = true;
+		streamId = streamNameBox.value;
+		webRTCAdaptor.publish(streamId);
+	}
+
+	function connectChannel() {
+		/*
+		 * It tries to connect to the channel. If channel does not exist, it creates.
+		 */
+		isChannelCreator = false;
+		streamId = streamNameBox.value;
+		webRTCAdaptor.play(streamId);
+	}
+
+	function disconnectChannel() {
+		if(isChannelCreator) {
+			var txt;
+			if (confirm("You have created this channel. If you disconnect, everyone will be disconnected. Do you still want to disconnect?")) {
+				webRTCAdaptor.stop(streamId);
+			} 
+		}
+		else {
+			webRTCAdaptor.stop(streamId);
+		}
+	}
+	
+	function sendData() {
+		try {
+			var iceState = webRTCAdaptor.iceConnectionState(streamId);
+            if (iceState != null && iceState != "failed" && iceState != "disconnected") {
+            
+				webRTCAdaptor.sendData($("#streamName").val(), $("#dataTextbox").val());
+				$("#dataMessagesTextarea").append("Sent: " + $("#dataTextbox").val() + "\r\n");
+				$("#dataTextbox").val("");
+			}
+			else {
+				alert("It is not connected. Please Join Channel");
+			}
+		}
+		catch (exception) {
+			console.error(exception);
+			alert("Message cannot be sent. Make sure you've enabled data channel on server web panel");
+		}
+	}
+	
+	var	webRTCAdaptor = null;
+
+	function initWebRTCAdaptor() 
+	{
+		webRTCAdaptor = new WebRTCAdaptor({
+				websocket_url : getWebSocketURL(location),
+				debug:debug,
+				onlyDataChannel:true,
+				callback : (info, obj) => {
+					if (info == "initialized") {
+						console.log("initialized");
+						connect_channel_button.disabled = false;
+						disconnect_channel_button.disabled = true;
+						
+					} else if (info == "publish_started") {
+						//stream is being published
+						console.log("publish started");
+						connect_channel_button.disabled = true;
+						disconnect_channel_button.disabled = false;
+						updateBroadcastStatusInfo(streamId, "../datachannel.html?id="+streamId);
+					} else if (info == "publish_finished") {
+						//stream is being finished
+						console.log("publish finished");
+						connect_channel_button.disabled = false;
+						disconnect_channel_button.disabled = true;
+					}
+					else if (info == "play_started") {
+						//joined the stream
+						console.log("play started");
+						connect_channel_button.disabled = true;
+						disconnect_channel_button.disabled = false;
+						
+						updateBroadcastStatusInfo(streamId, "../datachannel.html?id="+streamId);
+
+					} else if (info == "play_finished") {
+						//leaved the stream
+						console.log("play finished");
+						connect_channel_button.disabled = false;
+						disconnect_channel_button.disabled = true;
+					}
+					else if (info == "closed") {
+						//console.log("Connection closed");
+						if (typeof obj != "undefined") {
+							console.log("Connecton closed: " + JSON.stringify(obj));
+						}
+					}
+					else if (info == "data_received") {
+						console.log("Data received: " + obj.data + " type: " + obj.type + " for stream: " + obj.streamId);
+						$("#dataMessagesTextarea").append("Received: " + obj.data + "\r\n");
+					}
+					else {
+						console.log( info + " notification received");
+					}
+				},
+				callbackError : function(error, message) {
+	
+					if (error.indexOf("no_stream_exist") != -1) {
+						/* if no stream exist, create the channel*/
+						createChannel();
+					}
+					else {
+						errorHandler(error, message);
+					}
+					
+				}
+			});
+			window.webRTCAdaptor = webRTCAdaptor;
+	}
+	
+	//initialize the WebRTCAdaptor
+	initWebRTCAdaptor();
+</script>
+</html>

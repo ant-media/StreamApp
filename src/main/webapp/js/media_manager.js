@@ -39,7 +39,10 @@ export class MediaManager
 		/**
 		 * initial media constraints provided by the user
 		 */
-		this.mediaConstraints = null;
+		this.mediaConstraints = {
+			video : true,
+			audio : true
+		};;
 
 		/**
 		 * this is the callback function to get video/audio sender from WebRTCAdaptor

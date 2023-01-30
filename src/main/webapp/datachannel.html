@@ -1,399 +1,43 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-<title>Ant Media Server WebRTC Publish</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta charset="UTF-8">
-<link rel="stylesheet" href="css/external/bootstrap4/bootstrap.min.css">
-
-<script src="js/external/adapter-latest.js"></script>
-<link rel="stylesheet" href="css/common.css" />
-<style>
-video {
-	width: 100%;
-	max-width: 640px;
-}
-
-/* Everything but the jumbotron gets side spacing for mobile first views */
-.header, .marketing, .footer {
-	padding: 15px;
-}
-
-/* Custom page header */
-.header {
-	padding-bottom: 20px;
-}
-
-/* Customize container */
-@media ( min-width : 768px) {
-	.container {
-		max-width: 730px;
-	}
-}
-
-.container-narrow>hr {
-	margin: 30px 0;
-}
-
-/* Main marketing message and sign up button */
-.jumbotron {
-	text-align: center;
-}
-
-/* Responsive: Portrait tablets and up */
-@media screen and (min-width: 768px) {
-	/* Remove the padding we set earlier */
-	.header, .marketing, .footer {
-		padding-right: 0;
-		padding-left: 0;
-	}
-}
-
-</style>
+	<title>WebRTC Samples > Data Channel Only</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta charset="UTF-8">
+	<link rel="stylesheet" href="css/external/bootstrap4/bootstrap.min.css">
+	<link rel="stylesheet" href="css/samples.css" />
 </head>
+
 <body>
 	<div class="container">
 		<div class="header clearfix">
 			<div class="row">
-				<h3 class="col text-muted">WebRTC Data Channel</h3>
-				<nav class="col align-self-center">
-					<ul class="nav float-right">
-						<li><a href="http://antmedia.io">Contact</a></li>
-					</ul>
-				</nav>
+				<h3 class="col text-muted"><a href="samples.html">WebRTC Samples</a> > Data Channel Only</h3>
 			</div>
 		</div>
 
-		<div class="jumbotron">
-			<div class="alert alert-primary text-center enterprise-feature" role="alert" style="margin-top:-2em">
-				WebRTC Data Channel is an Enterprise Edition. <br/>
-			<a href="https://antmedia.io">Try Enterprise Edition for free at antmedia.io</a> <br/><br/>
-			<a href="https://github.com/ant-media/Ant-Media-Server/wiki#community-edition--enterprise-edition" style="font-size:12px">Comparison between Community and Enterprise</a>		 
-			</div>
-			<div class="form-group col-sm-12 text-left">
-				<input type="text" class="form-control"
-						id="streamName" name="streamIdTextBox" placeholder="Type stream name">
-			</div>
-			<div class="dropdown-divider"></div>
-			<div class="form-group col-sm-12 text-left options">
-				<label>Data Channel Messages</label>
-				<textarea class="form-control" id="dataMessagesTextarea" style="font-size:10px" rows="8"></textarea>
-				<div class="form-row">
-					<div class="form-group col-sm-10">
-						<input type="text" class="form-control" id="dataTextbox" placeholder="Write your message to send players">
-					</div>
-					<div class="form-group col-sm-2">
-					<button type="button" id="send" class="btn btn-outline-primary btn-block">Send</button>
-					</div>
-				</div>
-			</div>
-
-			<span class="badge badge-warning"  style="font-size:14px; margin:15px;">Make sure Data channel is enabled on App Settings. Otherwise it does not work</span>
-
-
-			<div class="form-group">	
-				<button class="btn btn-primary" disabled
-					id="connect_channel_button">Join Channel</button>
-				<button class="btn btn-primary" disabled
-					id="disconnect_channel_button">Disconnect</button>
-			</div>			
-
-			<span class="badge badge-success" id="broadcastingInfo" style="font-size:14px;display:none"
-							style="display: none">Publishing</span>
-			<div class="dropdown-divider"></div>			
-		</div>
-		<footer class="footer text-center">
-			<p><a href="http://antmedia.io">Ant Media Server</a></p>
-		</footer>
+		<iframe class="embed-frame" id="webrtc-publish-frame" allow="camera;microphone;display-capture"></iframe>
+			
 	</div>
-	<script src="js/external/jquery-3.4.1.min.js"  crossorigin="anonymous"></script>
-	<script src="js/external/popper.min.js" crossorigin="anonymous"></script>
-	<script src="js/external/bootstrap.min.js"  crossorigin="anonymous"></script>
+	<script  type="module">
+		import {getUrlParameter} from "./js/fetch.stream.js" 
+		import {getQueryParameter} from "./js/utility.js" 
+
+		let myIframe = document.getElementById("webrtc-publish-frame");
+		let url_string = "samples/datachannel_only_webrtc_frame.html";
+
+		var debug = getUrlParameter("debug");
+		if (debug == null) {
+			debug = false;
+		}
+		url_string += "?debug=" + debug;
+			
+		url_string += getQueryParameter("id");
+
+		console.log(url_string);
+		myIframe.src = url_string;
+	</script>
+
 </body>
-<script type="module" lang="javascript">
-	import {WebRTCAdaptor} from "./js/webrtc_adaptor.js"
-    import {getUrlParameter} from "./js/fetch.stream.js" 
-	var debug = getUrlParameter("debug");
-	  if(debug == null) {
-		debug = false;
-		}
-
-    function init () {
-	  var id = getUrlParameter("id");
-	  if(typeof id != "undefined") {
-		$("#streamName").val(id);
-	  }
-	  else {
-		id = getUrlParameter("name");
-		if (typeof id != "undefined") {
-			$("#streamName").val(id);
-		} 
-		else {
-			$("#streamName").val("stream1");
-		}
-	  }
-    }
-	$(function() {
-		init();
-
-	});
-
-	var subscriberId = getUrlParameter("subscriberId");
-	var subscriberCode = getUrlParameter("subscriberCode");
-	var isChannelCreator = false;
-	
-	//TODO: Migrate these methods to Jquery
-	var connect_channel_button = document.getElementById("connect_channel_button");
-	connect_channel_button.addEventListener("click", connectChannel, false);
-	var disconnect_channel_button = document.getElementById("disconnect_channel_button");
-	disconnect_channel_button.addEventListener("click", disconnectChannel, false);
-	var send = document.getElementById("send");
-	send.addEventListener("click", sendData, false);
-	
-	document.getElementById("streamName").defaultValue = "Goofy"
-	var streamNameBox = document.getElementById("streamName");
-	streamNameBox.value = "stream1";
-	
-	var streamId;
-	
-	var token = getUrlParameter("token");
-
-	document.querySelector('#dataTextbox').addEventListener('keypress', function (e) {
-    	if (e.key === 'Enter') {
-			sendData();
-    	}
-	});
-	
-	function createChannel() {
-		isChannelCreator = true;
-		streamId = streamNameBox.value;
-		webRTCAdaptor.publish(streamId, token, subscriberId, subscriberCode);
-	}
-
-	function connectChannel() {
-
-		/*
-		It tries to connect to the channel. If channel does not exist, it creates
-		*/
-		isChannelCreator = false;
-		streamId = streamNameBox.value;
-		webRTCAdaptor.play(streamNameBox.value, token, "", [], subscriberId, subscriberCode);
-	}
-
-	function disconnectChannel() {
-		if(isChannelCreator) {
-			var txt;
-			if (confirm("You have created this channel. If you disconnect, everyone disconnect. Do you still want to disconnect?")) {
-				webRTCAdaptor.stop(streamId);
-			} 
-		}
-		else {
-			webRTCAdaptor.stop(streamId);
-		}
-	}
-	
-	function sendData() {
-		try {
-			var iceState = webRTCAdaptor.iceConnectionState(streamId);
-            if (iceState != null && iceState != "failed" && iceState != "disconnected") {
-            
-				webRTCAdaptor.sendData($("#streamName").val(), $("#dataTextbox").val());
-				$("#dataMessagesTextarea").append("Sent: " + $("#dataTextbox").val() + "\r\n");
-				$("#dataTextbox").val("");
-			}
-			else {
-				alert("WebRTC publishing is not active. Please click Start Publishing first")
-			}
-		}
-		catch (exception) {
-			console.error(exception);
-			alert("Message cannot be sent. Make sure you've enabled data channel on server web panel");
-		}
-	}
-	  
-	
-	function checkAndRepublishIfRequired() {
-	 	var iceState = webRTCAdaptor.iceConnectionState(streamId);
-		console.log("Ice state checked = " + iceState);
-
-	  	if (iceState == null || iceState == "failed" || iceState == "disconnected"){
-	  		webRTCAdaptor.stop(streamId);
-	  		webRTCAdaptor.closePeerConnection(streamId);
-	  		webRTCAdaptor.closeWebSocket();
-	  		initWebRTCAdaptor(true, autoRepublishEnabled);
-		  }	
-	}
-
-    function startAnimation() {
-        $("#broadcastingInfo").fadeIn(800, function () {
-          $("#broadcastingInfo").fadeOut(800, function () {
-        		var state = webRTCAdaptor.signallingState(streamId);
-            if (state != null && state != "closed") {
-            	var iceState = webRTCAdaptor.iceConnectionState(streamId);
-            	if (iceState != null && iceState != "failed" && iceState != "disconnected") {
-              		startAnimation();
-            	}
-            }
-          });
-        });
-      }
-
-	var pc_config = {
-			'iceServers' : [ {
-				'urls' : 'stun:stun1.l.google.com:19302'
-			} ]
-		};
-	/* 
-	//sample turn configuration
-	{
-       iceServers: [
-                    { urls: "",
-                      username: "",
-                      credential: "",
-                    }
-                   ]
-    };
-    */
-
-	var sdpConstraints = {
-		OfferToReceiveAudio : false,
-		OfferToReceiveVideo : false
-	};
-	
-	var mediaConstraints = {
-		video : false,
-		audio : false
-	};
-
-	var appName = location.pathname.substring(0, location.pathname.lastIndexOf("/")+1);
-	var path =  location.hostname + ":" + location.port + appName + "websocket";
-	var websocketURL =  "ws://" + path;
-	
-	if (location.protocol.startsWith("https")) {
-		websocketURL = "wss://" + path;
-	}
-
-	var	webRTCAdaptor = null;
-
-	function initWebRTCAdaptor(publishImmediately, autoRepublishEnabled) 
-	{
-		webRTCAdaptor = new WebRTCAdaptor({
-				websocket_url : websocketURL,
-				mediaConstraints : mediaConstraints,
-				peerconnection_config : pc_config,
-				sdp_constraints : sdpConstraints,
-				debug:debug,
-				onlyDataChannel:true,
-				callback : (info, obj) => {
-					if (info == "initialized") {
-						console.log("initialized");
-						connect_channel_button.disabled = false;
-						disconnect_channel_button.disabled = true;
-						if (publishImmediately) {
-							webRTCAdaptor.publish(streamId, token)
-						}
-						
-					} else if (info == "publish_started") {
-						//stream is being published
-						console.log("publish started");
-						connect_channel_button.disabled = true;
-						disconnect_channel_button.disabled = false;
-						startAnimation();
-					} else if (info == "publish_finished") {
-						//stream is being finished
-						console.log("publish finished");
-						connect_channel_button.disabled = false;
-						disconnect_channel_button.disabled = true;
-					}
-					else if (info == "play_started") {
-						//joined the stream
-						console.log("play started");
-						connect_channel_button.disabled = true;
-						disconnect_channel_button.disabled = false;
-						webRTCAdaptor.getStreamInfo(streamId); 
-
-					} else if (info == "play_finished") {
-						//leaved the stream
-						console.log("play finished");
-						connect_channel_button.disabled = false;
-						disconnect_channel_button.disabled = true;
-					}
-					else if (info == "closed") {
-						//console.log("Connection closed");
-						if (typeof obj != "undefined") {
-							console.log("Connecton closed: " + JSON.stringify(obj));
-						}
-					}
-					else if (info == "pong") {
-						//ping/pong message are sent to and received from server to make the connection alive all the time
-						//It's especially useful when load balancer or firewalls close the websocket connection due to inactivity
-					}
-					else if (info == "refreshConnection") {
-						checkAndRepublishIfRequired();
-					}
-					else if (info == "ice_connection_state_changed") {
-						console.log("iceConnectionState Changed: ",JSON.stringify(obj));
-					}
-					else if (info == "data_received") {
-						console.log("Data received: " + obj.data + " type: " + obj.type + " for stream: " + obj.streamId);
-						$("#dataMessagesTextarea").append("Received: " + obj.data + "\r\n");
-					}
-					else {
-						console.log( info + " notification received");
-					}
-				},
-				callbackError : function(error, message) {
-					//some of the possible errors, NotFoundError, SecurityError,PermissionDeniedError
-	
-					console.log("error callback: " +  JSON.stringify(error));
-					var errorMessage = JSON.stringify(error);
-					if (typeof message != "undefined") {
-						errorMessage = message;
-					}
-					var errorMessage = JSON.stringify(error);
-					if (error.indexOf("NotFoundError") != -1) {
-						errorMessage = "Camera or Mic are not found or not allowed in your device";
-					}
-					else if (error.indexOf("NotReadableError") != -1 || error.indexOf("TrackStartError") != -1) {
-						errorMessage = "Camera or Mic is being used by some other process that does not let read the devices";
-					}
-					else if(error.indexOf("OverconstrainedError") != -1 || error.indexOf("ConstraintNotSatisfiedError") != -1) {
-						errorMessage = "There is no device found that fits your video and audio constraints. You may change video and audio constraints"
-					}
-					else if (error.indexOf("NotAllowedError") != -1 || error.indexOf("PermissionDeniedError") != -1) {
-						errorMessage = "You are not allowed to access camera and mic.";
-					}
-					else if (error.indexOf("TypeError") != -1) {
-						errorMessage = "Video/Audio is required";
-					}
-					else if (error.indexOf("getUserMediaIsNotAllowed") != -1){
-						errorMessage = "You are not allowed to reach devices from an insecure origin, please enable ssl";
-					}
-					else if (error.indexOf("streamIdInUse") != -1){
-						errorMessage = "There is already existing "+streamId+" channel. Click to Connect Channel button if you want to connect that channel.";
-					}
-					else if (error.indexOf("ScreenSharePermissionDenied") != -1) {
-						errorMessage = "You are not allowed to access screen share";
-						$(".video-source").first().prop("checked", true);						
-					}
-					else if (error.indexOf("WebSocketNotConnected") != -1) {
-						errorMessage = "WebSocket Connection is disconnected.";
-					}
-					else if (error.indexOf("no_stream_exist" != -1)) {
-						/* if no stream exist, create the channel*/
-						createChannel();
-					}
-
-					if (error.indexOf("no_stream_exist") == -1) {
-						//show alert if it's not no_stream_exist
-						alert(errorMessage);
-					}
-					
-				}
-			});
-	}
-	
-	//initialize the WebRTCAdaptor
-	initWebRTCAdaptor(false, false);
-</script>
 </html>
