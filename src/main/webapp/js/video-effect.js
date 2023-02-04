@@ -4,10 +4,10 @@ import { WebRTCAdaptor } from "./webrtc_adaptor.js";
 /**
  * This class is used to apply a video effect to the video stream.
  * It's compatible with Ant Media Server JavaScript SDK v2.5.2+
- * 
+ *
  */
 export class VideoEffect
-{    
+{
     static VIRTUAL_BACKGROUND = "virtual-background";
     static BLUR_BACKGROUND = "blur-background";
     static NO_EFFECT = "no-effect";
@@ -15,28 +15,28 @@ export class VideoEffect
     static DEBUG = false;
     /**
      * LOCATE_FILE_URL is optional, it's to give locate url of selfie segmentation
-     * If you would like to use CDN, 
+     * If you would like to use CDN,
      * Give "https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/"
      * or give local file relative path "./js/external/selfie-segmentation" according to your file
      */
-     
+
     //static LOCATE_FILE_URL = "./js/external/selfie-segmentation";
     static LOCATE_FILE_URL = "https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation";
 
     #virtualBackgroundImage = null;
 
-    constructor(webRTCAdaptor) 
+    constructor(webRTCAdaptor)
     {
         this.webRTCAdaptor = webRTCAdaptor;
-       
+
         this.selfieSegmentation = null;
         this.effectCanvas = null;
         this.ctx = null;
         this.rawLocalVideo = document.createElement('video');
-       
+
         this.backgroundBlurRange = 3;
         this.edgeBlurRange = 4;
-       
+
         this.effectName = VideoEffect.NO_EFFECT;
 
         this.startTime = 0;
@@ -50,7 +50,7 @@ export class VideoEffect
 
         this.initializeSelfieSegmentation();
         this.isInitialized = true;
-       
+
     }
     deepar_Init = function (webRTCAdaptor, streamId, rawLocalVideo, API_Key) {
         this.webRTCAdaptor = webRTCAdaptor;
@@ -60,7 +60,7 @@ export class VideoEffect
         var deepAR = new DeepAR({
             licenseKey: API_Key,
             canvas: this.effectCanvas,
-            deeparWasmPath: './js/Deepar/wasm/deepar.wasm',
+            deeparWasmPath: './js/external/Deepar/wasm/deepar.wasm',
             callbacks: {
                 onInitialize: function () {
                     deepAR.startVideo(true);
@@ -69,10 +69,10 @@ export class VideoEffect
             }
         });
         deepAR.callbacks.onVideoStarted=()=>{
-            this.canvasStream = this.effectCanvas.captureStream(30);        
+            this.canvasStream = this.effectCanvas.captureStream(30);
             this.webRTCAdaptor.updateVideoTrack(this.canvasStream, this.webRTCAdaptor.publishStreamId, null, true)
         }
-        deepAR.downloadFaceTrackingModel("./js/Deepar/models/face/models-68-extreme.bin");
+        deepAR.downloadFaceTrackingModel("./js/external/Deepar/models/face/models-68-extreme.bin");
         deepAR.setVideoElement(this.rawLocalVideo, true);
         return deepAR;
     }
@@ -85,7 +85,7 @@ export class VideoEffect
         this.rawLocalVideo.muted = true;
         this.rawLocalVideo.autoplay = true;
         this.rawLocalVideo.play();
-       
+
         let trackSettings = stream.getVideoTracks()[0].getSettings();
         this.effectCanvasFPS = trackSettings.frameRate;
         this.videoCallbackPeriodMs = 1000/this.effectCanvasFPS;
@@ -95,7 +95,7 @@ export class VideoEffect
             this.canvasStream.getTracks().forEach((track) => track.stop());
             this.canvasStream = null;
         }
-        this.canvasStream = this.effectCanvas.captureStream(this.effectCanvasFPS);        
+        this.canvasStream = this.effectCanvas.captureStream(this.effectCanvasFPS);
         return new Promise((resolve, reject) => {
 			resolve(this.canvasStream);
 		})
@@ -153,33 +153,33 @@ export class VideoEffect
     }
 
     stopFpsCalculation() {
-        if (this.statTimerId != -1) 
+        if (this.statTimerId != -1)
         {
             clearInterval(this.statTimerId);
             this.statTimerId = -1;
         }
     }
 
-    async processFrame() 
-    {    
-        
+    async processFrame()
+    {
+
         await this.selfieSegmentation.send({image: this.rawLocalVideo});
-        
+
         //call if the effect name is not NO_EFFECT
-        if (this.effectName != VideoEffect.NO_EFFECT) 
+        if (this.effectName != VideoEffect.NO_EFFECT)
         {
             setTimeout(()=> {
                 this.processFrame();
             }, this.videoCallbackPeriodMs);
-        }        
+        }
     }
 
     /**
-     * Enable effect 
-     * @param {} effectName 
+     * Enable effect
+     * @param {} effectName
      */
     enableEffect(effectName) {
-        
+
         if (!this.isInitialized) {
             console.error("VideoEffect is not initialized!");
             return;
@@ -196,23 +196,23 @@ export class VideoEffect
         var currentEffectName =  this.effectName;
         this.effectName = effectName;
         if (effectName == VideoEffect.VIRTUAL_BACKGROUND || effectName == VideoEffect.BLUR_BACKGROUND) {
-            
+
             //check old effect name. If it's no effect, start the process
-            if (currentEffectName == VideoEffect.NO_EFFECT) 
+            if (currentEffectName == VideoEffect.NO_EFFECT)
             {
-                if (VideoEffect.DEBUG) 
+                if (VideoEffect.DEBUG)
                 {
-                    this.startFpsCalculation();      
+                    this.startFpsCalculation();
                 }
                 //We cannot use the localStream of the webrtc adaptor because it's gets stopped when updateVideoTrack is called
-                //get the video stream with current constraints and stop it when effects are disabled 
+                //get the video stream with current constraints and stop it when effects are disabled
 
                 //audio:true makes the trick to play the video in the background as well otherwise it stops playing
-                return navigator.mediaDevices.getUserMedia({video:this.webRTCAdaptor.mediaConstraints.video, audio:true}).then(localStream => 
+                return navigator.mediaDevices.getUserMedia({video:this.webRTCAdaptor.mediaConstraints.video, audio:true}).then(localStream =>
                 {
-                    return this.init(localStream).then(processedStream => 
+                    return this.init(localStream).then(processedStream =>
                     {
-                        return this.webRTCAdaptor.updateVideoTrack(processedStream, this.webRTCAdaptor.publishStreamId, null, true).then(() => 
+                        return this.webRTCAdaptor.updateVideoTrack(processedStream, this.webRTCAdaptor.publishStreamId, null, true).then(() =>
                             {
                                 setTimeout(()=> {
                                     this.processFrame();
@@ -234,11 +234,11 @@ export class VideoEffect
             }
         }
         else {
-            
+
             return new Promise((resolve, reject) => {
                 //Stop timer
                 this.stopFpsCalculation();
-            
+
                 this.#noEffect();
                 resolve();
             })
@@ -254,7 +254,7 @@ export class VideoEffect
         if (this.canvasStream != null) {
             this.canvasStream.getVideoTracks().forEach(track => track.stop());
         }
-        
+
         return this.webRTCAdaptor.switchVideoCameraCapture(this.webRTCAdaptor.publishStreamId);
     }
 
@@ -272,17 +272,17 @@ export class VideoEffect
      * @param results
      */
     onResults(results) {
-       
+
         this.renderedFrameCount++;
         if (this.effectName == VideoEffect.BLUR_BACKGROUND) {
             this.drawBlurBackground(results.image, results.segmentationMask, this.backgroundBlurRange);
-        } 
+        }
         else if (this.effectName == VideoEffect.VIRTUAL_BACKGROUND) {
             this.drawVirtualBackground(results.image, results.segmentationMask, this.#virtualBackgroundImage);
-        } 
+        }
         else {
             this.drawImageDirectly(results.image);
-        }       
+        }
     }
 
     /**
@@ -343,7 +343,7 @@ export class VideoEffect
 
 }
 
-WebRTCAdaptor.register((webrtcAdaptorInstance) => 
+WebRTCAdaptor.register((webrtcAdaptorInstance) =>
 {
     let videoEffect = new VideoEffect(webrtcAdaptorInstance);
 
