@@ -56,7 +56,7 @@ export class VideoEffect
         this.webRTCAdaptor = webRTCAdaptor;
         this.webRTCAdaptor.publishStreamId = streamId;
         this.rawLocalVideo = rawLocalVideo;
-        this.createEffectCanvas(true,500,500);
+        this.createEffectCanvas(500,500);
         var deepAR = new DeepAR({
             licenseKey: API_Key,
             canvas: this.effectCanvas,
@@ -90,12 +90,15 @@ export class VideoEffect
         this.effectCanvasFPS = trackSettings.frameRate;
         this.videoCallbackPeriodMs = 1000/this.effectCanvasFPS;
 
-        this.createEffectCanvas(false,trackSettings.width, trackSettings.height);
+        this.createEffectCanvas(trackSettings.width, trackSettings.height);
+        this.ctx = this.effectCanvas.getContext("2d");
+
         if (this.canvasStream) {
             this.canvasStream.getTracks().forEach((track) => track.stop());
             this.canvasStream = null;
         }
         this.canvasStream = this.effectCanvas.captureStream(this.effectCanvasFPS);
+
         return new Promise((resolve, reject) => {
 			resolve(this.canvasStream);
 		})
@@ -104,13 +107,11 @@ export class VideoEffect
     /**
      * This method is used to create the canvas element which is used to apply the video effect.
      */
-    createEffectCanvas(deepar,width, height) {
+    createEffectCanvas(width, height) {
         this.effectCanvas = document.createElement('canvas');
         this.effectCanvas.id="effectCanvas";
         this.effectCanvas.width = width;
         this.effectCanvas.height = height;
-        if (!deepar)
-        this.ctx = this.effectCanvas.getContext("2d");
         return this.effectCanvas;
     }
 
