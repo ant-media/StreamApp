@@ -187,6 +187,8 @@ export class VideoEffect
     /**
      * Enable effect
      * @param {} effectName
+     * @param deepARApiKey
+     * @param deepARModel
      */
     async enableEffect(effectName, deepARApiKey, deepARModel) {
 
