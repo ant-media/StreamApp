@@ -43,6 +43,8 @@ export class VideoEffect
     //static LOCATE_FILE_URL = "./js/external/selfie-segmentation";
     static LOCATE_FILE_URL = "https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation";
 
+    static DEEP_AR_FOLDER_ROOT_URL = "../js/external/Deepar";
+
     #virtualBackgroundImage = null;
 
     constructor(webRTCAdaptor)
@@ -258,7 +260,7 @@ export class VideoEffect
                 return;
             }
             if (currentEffectName === VideoEffect.DEEPAR) {
-                this.deepAR.switchEffect(0, 'slot', "./js/external/Deepar/effects/" + deepARModel + ".deepar");
+                this.deepAR.switchEffect(0, 'slot', VideoEffect.DEEP_AR_FOLDER_ROOT_URL + "/effects/" + deepARModel + ".deepar");
                 return ;
             } else if (currentEffectName === VideoEffect.BLUR_BACKGROUND || currentEffectName === VideoEffect.VIRTUAL_BACKGROUND) {
                 //Stop timer
@@ -270,7 +272,7 @@ export class VideoEffect
             let deepAR = new DeepAR({
                 licenseKey: deepARApiKey,
                 canvas: canvas,
-                deeparWasmPath: './js/external/Deepar/wasm/deepar.wasm',
+                deeparWasmPath: VideoEffect.DEEP_AR_FOLDER_ROOT_URL + '/wasm/deepar.wasm',
                 callbacks: {
                     onInitialize: function () {
                         deepAR.startVideo(true);
@@ -281,9 +283,9 @@ export class VideoEffect
             this.deepAR.callbacks.onVideoStarted=()=>{
                 this.canvasStream = canvas.captureStream(30);
                 this.webRTCAdaptor.updateVideoTrack(this.canvasStream, this.webRTCAdaptor.publishStreamId, null, true)
-                this.deepAR.switchEffect(0, 'slot', "./js/external/Deepar/effects/" + deepARModel + ".deepar");
+                this.deepAR.switchEffect(0, 'slot', VideoEffect.DEEP_AR_FOLDER_ROOT_URL + "/effects/" + deepARModel + ".deepar");
             }
-            this.deepAR.downloadFaceTrackingModel("./js/external/Deepar/models/face/models-68-extreme.bin");
+            this.deepAR.downloadFaceTrackingModel(VideoEffect.DEEP_AR_FOLDER_ROOT_URL + "/models/face/models-68-extreme.bin");
             this.deepAR.setVideoElement(this.rawLocalVideo, true);
         } else {
             if (currentEffectName === VideoEffect.DEEPAR) {
