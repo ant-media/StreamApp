@@ -8,9 +8,29 @@ import { WebRTCAdaptor } from "./webrtc_adaptor.js";
  */
 export class VideoEffect
 {
+    static DEEPAR = "deepar";
     static VIRTUAL_BACKGROUND = "virtual-background";
     static BLUR_BACKGROUND = "blur-background";
     static NO_EFFECT = "no-effect";
+
+    static deepARModelList = [
+        'viking_helmet',
+        'MakeupLook',
+        'Split_View_Look',
+        'Stallone',
+        'flower_face',
+        'galaxy_background_web',
+        'Humanoid',
+        'Neon_Devil_Horns',
+        'Ping_Pong',
+        'Pixel_Hearts',
+        'Snail',
+        'Hope',
+        'Vendetta_Mask',
+        'Fire_Effect',
+        'Elephant_Trunk',
+        'Emotions_Exaggerator'
+    ];
 
     static DEBUG = false;
     /**
@@ -34,6 +54,8 @@ export class VideoEffect
         this.ctx = null;
         this.rawLocalVideo = document.createElement('video');
 
+        this.deepAR = null;
+
         this.backgroundBlurRange = 3;
         this.edgeBlurRange = 4;
 
@@ -52,45 +74,20 @@ export class VideoEffect
         this.isInitialized = true;
 
     }
-    deepar_Init = function (webRTCAdaptor, streamId, rawLocalVideo, API_Key) {
-        this.webRTCAdaptor = webRTCAdaptor;
-        this.webRTCAdaptor.publishStreamId = streamId;
-        this.rawLocalVideo = rawLocalVideo;
-        this.createEffectCanvas(500,500);
-        var deepAR = new DeepAR({
-            licenseKey: API_Key,
-            canvas: this.effectCanvas,
-            deeparWasmPath: './js/external/Deepar/wasm/deepar.wasm',
-            callbacks: {
-                onInitialize: function () {
-                    deepAR.startVideo(true);
-                },
 
-            }
-        });
-        deepAR.callbacks.onVideoStarted=()=>{
-            this.canvasStream = this.effectCanvas.captureStream(30);
-            this.webRTCAdaptor.updateVideoTrack(this.canvasStream, this.webRTCAdaptor.publishStreamId, null, true)
-        }
-        deepAR.downloadFaceTrackingModel("./js/external/Deepar/models/face/models-68-extreme.bin");
-        deepAR.setVideoElement(this.rawLocalVideo, true);
-        return deepAR;
-    }
      /**
-     * This method is used to initialize the video effect.
-     * @param {HTMLElement} stream - Original stream to be manipulated.
+      * This method is used to initialize the video effect.
+      * @param {HTMLElement} stream - Original stream to be manipulated.
+      * @returns {Promise<void>}
      */
-    init(stream) {
-        this.rawLocalVideo.srcObject = stream;
-        this.rawLocalVideo.muted = true;
-        this.rawLocalVideo.autoplay = true;
-        this.rawLocalVideo.play();
+    async init(stream) {
+        await this.setRawLocalVideo(stream);
 
         let trackSettings = stream.getVideoTracks()[0].getSettings();
         this.effectCanvasFPS = trackSettings.frameRate;
         this.videoCallbackPeriodMs = 1000/this.effectCanvasFPS;
 
-        this.createEffectCanvas(trackSettings.width, trackSettings.height);
+        this.effectCanvas = this.createEffectCanvas(trackSettings.width, trackSettings.height);
         this.ctx = this.effectCanvas.getContext("2d");
 
         if (this.canvasStream) {
@@ -105,14 +102,26 @@ export class VideoEffect
     }
 
     /**
+     * This method is used to set raw local video.
+     * @param stream
+     * @returns {Promise<void>}
+     */
+    setRawLocalVideo(stream) {
+        this.rawLocalVideo.srcObject = stream;
+        this.rawLocalVideo.muted = true;
+        this.rawLocalVideo.autoplay = true;
+        return this.rawLocalVideo.play();
+    }
+
+    /**
      * This method is used to create the canvas element which is used to apply the video effect.
      */
     createEffectCanvas(width, height) {
-        this.effectCanvas = document.createElement('canvas');
-        this.effectCanvas.id="effectCanvas";
-        this.effectCanvas.width = width;
-        this.effectCanvas.height = height;
-        return this.effectCanvas;
+        let effectCanvas = document.createElement('canvas');
+        effectCanvas.id="effectCanvas";
+        effectCanvas.width = width;
+        effectCanvas.height = height;
+        return effectCanvas;
     }
 
     /**
@@ -154,7 +163,7 @@ export class VideoEffect
     }
 
     stopFpsCalculation() {
-        if (this.statTimerId != -1)
+        if (this.statTimerId !== -1)
         {
             clearInterval(this.statTimerId);
             this.statTimerId = -1;
@@ -167,7 +176,7 @@ export class VideoEffect
         await this.selfieSegmentation.send({image: this.rawLocalVideo});
 
         //call if the effect name is not NO_EFFECT
-        if (this.effectName != VideoEffect.NO_EFFECT)
+        if (this.effectName !== VideoEffect.NO_EFFECT)
         {
             setTimeout(()=> {
                 this.processFrame();
@@ -179,13 +188,14 @@ export class VideoEffect
      * Enable effect
      * @param {} effectName
      */
-    enableEffect(effectName) {
+    async enableEffect(effectName, deepARApiKey, deepARModel) {
 
         if (!this.isInitialized) {
             console.error("VideoEffect is not initialized!");
             return;
         }
         switch (effectName) {
+            case VideoEffect.DEEPAR:
             case VideoEffect.VIRTUAL_BACKGROUND:
             case VideoEffect.BLUR_BACKGROUND:
             case VideoEffect.NO_EFFECT:
@@ -196,10 +206,16 @@ export class VideoEffect
         }
         var currentEffectName =  this.effectName;
         this.effectName = effectName;
-        if (effectName == VideoEffect.VIRTUAL_BACKGROUND || effectName == VideoEffect.BLUR_BACKGROUND) {
+
+        if (currentEffectName === VideoEffect.DEEPAR && effectName !== VideoEffect.DEEPAR) {
+            this.deepAR.shutdown();
+            this.deepAR = null;
+        }
+
+        if (effectName === VideoEffect.VIRTUAL_BACKGROUND || effectName === VideoEffect.BLUR_BACKGROUND) {
 
             //check old effect name. If it's no effect, start the process
-            if (currentEffectName == VideoEffect.NO_EFFECT)
+            if (currentEffectName === VideoEffect.NO_EFFECT || currentEffectName === VideoEffect.DEEPAR)
             {
                 if (VideoEffect.DEBUG)
                 {
@@ -233,9 +249,45 @@ export class VideoEffect
                     resolve();
                 });
             }
-        }
-        else {
+        } else if (effectName === VideoEffect.DEEPAR) {
+            if (deepARApiKey === undefined || deepARApiKey === null || deepARApiKey === ""
+                || deepARModel === undefined || deepARModel === null || deepARModel === "") {
+                console.error("DeepAR API key or DeepAR Model is not set!");
+                return;
+            }
+            if (currentEffectName === VideoEffect.DEEPAR) {
+                this.deepAR.switchEffect(0, 'slot', "./js/external/Deepar/effects/" + deepARModel + ".deepar");
+                return ;
+            } else if (currentEffectName === VideoEffect.BLUR_BACKGROUND || currentEffectName === VideoEffect.VIRTUAL_BACKGROUND) {
+                //Stop timer
+                this.stopFpsCalculation();
 
+                await this.#noEffect();
+            }
+            let canvas = this.createEffectCanvas(500,500);
+            let deepAR = new DeepAR({
+                licenseKey: deepARApiKey,
+                canvas: canvas,
+                deeparWasmPath: './js/external/Deepar/wasm/deepar.wasm',
+                callbacks: {
+                    onInitialize: function () {
+                        deepAR.startVideo(true);
+                    },
+                }
+            });
+            this.deepAR = deepAR;
+            this.deepAR.callbacks.onVideoStarted=()=>{
+                this.canvasStream = canvas.captureStream(30);
+                this.webRTCAdaptor.updateVideoTrack(this.canvasStream, this.webRTCAdaptor.publishStreamId, null, true)
+                this.deepAR.switchEffect(0, 'slot', "./js/external/Deepar/effects/" + deepARModel + ".deepar");
+            }
+            this.deepAR.downloadFaceTrackingModel("./js/external/Deepar/models/face/models-68-extreme.bin");
+            this.deepAR.setVideoElement(this.rawLocalVideo, true);
+        } else {
+            if (currentEffectName === VideoEffect.DEEPAR) {
+                let localStream = await navigator.mediaDevices.getUserMedia({video:this.webRTCAdaptor.mediaConstraints.video, audio:true});
+                await this.setRawLocalVideo(localStream);
+            }
             return new Promise((resolve, reject) => {
                 //Stop timer
                 this.stopFpsCalculation();
@@ -349,8 +401,8 @@ WebRTCAdaptor.register((webrtcAdaptorInstance) =>
     let videoEffect = new VideoEffect(webrtcAdaptorInstance);
 
     Object.defineProperty(webrtcAdaptorInstance, "enableEffect", {
-        value: function(effectName) {
-            return videoEffect.enableEffect(effectName);
+        value: function(effectName, deepARApiKey, deepARModel) {
+            return videoEffect.enableEffect(effectName, deepARApiKey, deepARModel);
         }
     });
 

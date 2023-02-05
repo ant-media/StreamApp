@@ -514,46 +514,33 @@
 
     window.webRTCAdaptor = webRTCAdaptor;
     let select_effect = document.getElementById("select_effect");
-    let rawLocalVideo = document.getElementById("localVideo");
 
     let APIKey = "fdaad676ff58ff11f453db2d781073f105c94f14a8dc0f88c96049d4d20bf18aff2364181ac69a7a";
     APIKey= getUrlParameter("Apikey") || APIKey;
     window.a=APIKey;
-    let videoEffect = new VideoEffect(webRTCAdaptor);
-    var deepAR = videoEffect.deepar_Init(webRTCAdaptor, streamId, rawLocalVideo, APIKey);
 
-    var effects = [
-        'viking_helmet',
-        'MakeupLook',
-        'Split_View_Look',
-        'Stallone',
-        'flower_face',
-        'galaxy_background_web',
-        'Humanoid',
-        'Neon_Devil_Horns',
-        'Ping_Pong',
-        'Pixel_Hearts',
-        'Snail',
-        'Hope',
-        'Vendetta_Mask',
-        'Fire_Effect',
-        'Elephant_Trunk',
-        'Emotions_Exaggerator'
-    ];
-    for (let i = 0; i < effects.length; i++) {
+    var effectName = VideoEffect.NO_EFFECT;
+
+    for (let i = 0; i < VideoEffect.deepARModelList.length; i++) {
         let option = document.createElement("option");
-        option.value = effects[i];
-        option.text = effects[i];
+        option.value = VideoEffect.deepARModelList[i];
+        option.text = VideoEffect.deepARModelList[i];
         select_effect.appendChild(option);
     }
     select_effect.onchange = () => {
         let selected_option = select_effect.options[select_effect.selectedIndex].text;
-        console.log("effect changed", selected_option);
         if( selected_option === "No Effect"){
-            deepAR.clearEffect('slot');
-            return;
+            effectName = VideoEffect.NO_EFFECT;
+        } else {
+            effectName = VideoEffect.DEEPAR;
         }
-        deepAR.switchEffect(0, 'slot', "./js/external/Deepar/effects/" + selected_option + ".deepar");
+        console.log("effect changed", selected_option);
+        webRTCAdaptor.enableEffect(effectName, APIKey, selected_option).then(() => {
+            console.log("Effect: "+ effectName+" is enabled");
+        }).catch(err => {
+            console.error("Effect: "+ effectName+" is not enabled. Error is " + err);
+            alert(err.name);
+        });
     }
 </script>
 </html>
