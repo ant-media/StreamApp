@@ -481,7 +481,8 @@ export class EmbeddedPlayer {
 
 	            if (errors["error"] == "no_stream_exist" || errors["error"] == "WebSocketNotConnected"
 	                || errors["error"] == "not_initialized_yet" || errors["error"] == "data_store_not_available"
-	                || errors["error"] == "highResourceUsage" || errors["error"] == "unauthorized_access") {
+	                || errors["error"] == "highResourceUsage" || errors["error"] == "unauthorized_access"
+	                || errors["error"] == "user_blocked") {
 
 	                //handle high resource usage and not authroized errors && websocket disconnected
 	                //Even if webrtc adaptor has auto reconnect scenario, we dispose the videojs immediately in tryNextTech
