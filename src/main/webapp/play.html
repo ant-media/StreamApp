@@ -480,9 +480,28 @@
 				}
 				else {
 					player = dashjs.MediaPlayer().create();
+					player.extend("RequestModifier", function () {
+						return {
+							modifyRequestHeader: function (xhr, {url}) {
+								return xhr;
+							},
+							modifyRequestURL: function (url) {
+								var modifiedUrl = ""
+								if(!url.includes("token")){
+									modifiedUrl = url + "?token=" + token
+								}else{
+									modifiedUrl = url
+								}
+								console.log(modifiedUrl)
+								return  modifiedUrl
+							},
+							modifyRequest(request) {
+
+							},
+						};
+        			});
 
 					player.updateSettings({ 'streaming': { 'lowLatencyEnabled': true } });
-
 					player.updateSettings({
 						'streaming': {
 							'liveDelay': targetLatency,
@@ -491,8 +510,7 @@
 							"liveCatchupLatencyThreshold": 30,
 						}
 					});
-
-					player.initialize(document.querySelector("#video-player"), "streams/" + streamId + "." + extension + "?token=" + token, false);
+					player.initialize(document.querySelector("#video-player"), "streams/" + streamId + "." + extension , false);
 
 					if (mute) {
 						player.setMute(true);
