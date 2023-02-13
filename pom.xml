@@ -28,6 +28,26 @@
 			<comments>A business-friendly OSS license</comments>
 		</license>
 	</licenses>
+	<repositories>
+        <repository>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <id>central</id>
+            <name>Central Repository</name>
+            <url>https://repo.maven.apache.org/maven2</url>
+        </repository>
+        <repository>
+            <id>sonatype-snapshots</id>
+            <name>Sonatype Snapshots</name>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+        </repository>
+        <repository>
+            <id>sonatype-releases</id>
+            <name>Sonatype Releases</name>
+            <url>https://oss.sonatype.org/content/repositories/releases</url>
+        </repository>
+    </repositories>
 	<distributionManagement>
 		<snapshotRepository>
 			<id>ossrh</id>
