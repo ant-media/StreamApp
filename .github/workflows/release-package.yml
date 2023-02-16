@@ -4,8 +4,6 @@ on:
   push:
     tags:
       - ams-v**
-    branches:
-      - issue-4824
 
 jobs:
   publish-npmjs:
