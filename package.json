@@ -25,7 +25,7 @@
   },
   "homepage": "https://github.com/ant-media/StreamApp#readme",
   "dependencies": {
-    "@babel-cli": "^7.19.6"
+    "@babel/cli": "^7.19.6"
   },
   "devDependencies": {
     "@babel/plugin-transform-modules-commonjs": "^7.19.6"
