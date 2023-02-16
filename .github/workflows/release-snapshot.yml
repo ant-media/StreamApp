@@ -1,0 +1,35 @@
+name: publish Node.js Package
+on:
+  push:
+    branches:
+      - master
+jobs:
+  publish-npmjs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.ACCESS_TOKEN }}
+      - run: git config --global user.name '${{ secrets.GIT_USERNAME }}'
+      - run: git config --global user.email '${{ secrets.GIT_EMAIL }}'
+      - uses: actions/setup-node@v3
+        with:
+         node-version: '16.x'
+         registry-url: 'https://registry.npmjs.org'
+      - uses: actions/setup-java@v3
+        with:
+          java-version: '11'
+          distribution: 'adopt'
+      - name: Update The Snapshot
+        id: get_version
+        run: echo "::set-output name=VERSION::$(echo ${GITHUB_REF##*/} | cut -d v -f 2)"
+      - run: npm install --include=dev
+      - run: npm install --save-dev @babel/cli
+      - run: npm run compile
+      - run: echo "LATEST_SNAPSHOT_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" >> $GITHUB_ENV
+      - run: echo "PREVIOUS_SNAPSHOT_VERSION=$(npm view ${{ secrets.NPM_USERNAME }}/webrtc_adaptor dist-tags --json | jq .SNAPSHOT --raw-output)" >> $GITHUB_ENV
+      - run: npm unpublish ${{ secrets.NPM_USERNAME }}/webrtc_adaptor@${{ env.PREVIOUS_SNAPSHOT_VERSION }}
+      - run: npm version ${{ env.LATEST_SNAPSHOT_VERSION }}"-`date +"%Y-%b-%d-%I-%M"`"  --no-git-tag-version
+      - run: npm publish --tag SNAPSHOT
+        env:
+          NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
