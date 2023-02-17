@@ -24,6 +24,17 @@ export function getWebSocketURL(location, rtmpForward) {
     return websocketURL;
 }
 
+export function getSrtURL(location, id, port) {
+    var appName = location.pathname.substring(1, location.pathname.indexOf("/", 1) + 1);
+    return "srt://" + location.hostname + ":" + port + "?streamid="+ appName + id;
+    
+}
+
+export function getRtmpUrl(location, id) {
+    var appName = location.pathname.substring(1, location.pathname.indexOf("/", 1) + 1);
+    return "rtmp://" + location.hostname + "/" + appName + id;    
+}
+
 export function getQueryParameter(paramName) {
 	var value = getUrlParameter(paramName);
     if (typeof value != "undefined") {
