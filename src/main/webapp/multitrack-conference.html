@@ -108,6 +108,10 @@ body {
 	</div>
 
 	<div class="jumbotron">
+	   <div class="alert alert-primary text-center enterprise-feature" role="alert" style="margin-top:-2em">
+				WebRTC Conference is an enterprise edition feature. <br/>
+				<a href="https://antmedia.io">Try Enterprise Edition for free at antmedia.io</a> <br/><br/>
+		</div>
 		<div id="players" class="row">
 			<div class="col-sm-3">
 				<video id="localVideo" autoplay muted controls playsinline></video>
@@ -421,7 +425,7 @@ body {
 	function publish(streamId, token) {
 		publishStreamId = streamId;
 		streamId = streamId;
-		webRTCAdaptor.publish(publishStreamId, token, "", "", streamName, roomNameBox.value,"{someKey:somveValue}");
+		webRTCAdaptor.publish(publishStreamId, token, "", "", streamName, roomNameBox.value,"{someKey:someValue}");
 	}
 
 	function streamInformation(obj) {

@@ -36,6 +36,7 @@ video{
 .jumbotron {
 	text-align: center;
 	padding: 2em;
+	padding-top: 3em;
 }
 #stats_panel {
 	display: none;
