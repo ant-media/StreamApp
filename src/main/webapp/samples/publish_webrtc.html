@@ -191,6 +191,18 @@
 	var subscriberCode = getUrlParameter("subscriberCode");
 	var streamName = getUrlParameter("streamName");
 	var mainTrack = getUrlParameter("mainTrack");
+	var playType = getUrlParameter("play");
+	var playTitle;
+	if (playType == "hls") {
+		playTitle = "HLS";
+	}
+	else if (playType == "dash") {
+		playTitle = "Dash";
+	}
+	else {
+		playTitle = "WebRTC";
+		playType = "webrtc";
+	}
 
 	//TODO: Migrate these methods to Jquery
 	var start_publish_button = document.getElementById("start_publish_button");
@@ -439,7 +451,8 @@
 	function startAnimation() {
 		$("#offlineInfo").hide();
 		$("#broadcastingInfo").show();
-		$("#playlink").attr("href", "../play.html?id=" + streamId)
+		$("#playlink").attr("href", "../play.html?id=" + streamId+"&playOrder="+playType);
+		$("#playlink").text("Play with " + playTitle);
 		$("#playlink").show();
 
 		setTimeout(function () {

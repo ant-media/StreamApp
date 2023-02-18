@@ -1,6 +1,11 @@
-video {
+video{
 	width: 100%;
 	max-width: 640px;
+}
+.embedded-player {
+	width: 100%;
+	max-width: 640px;
+	height: 480px;
 }
 
 /* Everything but the jumbotron gets side spacing for mobile first views */
