@@ -65,7 +65,8 @@ export class WebRTCAdaptor
 		this.peerconnection_config = {
 			'iceServers' : [ {
 				'urls' : 'stun:stun1.l.google.com:19302'
-			} ]
+			} ],
+			sdpSemantics: 'unified-plan'
 		};
 
 		/**
@@ -608,9 +609,8 @@ export class WebRTCAdaptor
 	 */
 	onTrack(event, streamId)
 	{
-		console.log("onTrack");
+		console.log("onTrack for stream");
 		if (this.remoteVideo != null) {
-			//this.remoteVideo.srcObject = event.streams[0];
 			if (this.remoteVideo.srcObject !== event.streams[0]) {
 				this.remoteVideo.srcObject = event.streams[0];
 				console.log('Received remote stream');
@@ -623,9 +623,12 @@ export class WebRTCAdaptor
 					streamId: streamId,
 					trackId: this.idMapping[streamId][event.transceiver.mid],
 			}
+			this.notifyEventListeners("newTrackAvailable", dataObj);
+			
+			//deprecated. Listen newTrackAvailable in callback. It's kept for backward compatibility
 			this.notifyEventListeners("newStreamAvailable", dataObj);
+			
 		}
-
 	}
 
 	/**

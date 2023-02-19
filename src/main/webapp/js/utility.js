@@ -85,6 +85,7 @@ export function errorHandler(error, message) {
     else {
          errorMessage = JSON.stringify(error);
     }
+
     if (error.indexOf("WebSocketNotConnected") != -1) {
         errorMessage = "WebSocket Connection is disconnected.";
     }
@@ -121,11 +122,14 @@ export function errorHandler(error, message) {
         else if (error.indexOf("UnsecureContext") != -1) {
             errorMessage = "Please Install SSL(https). Camera and mic cannot be opened because of unsecure context. ";
         }
+        else if (error.indexOf('no_stream_exist') != -1) {
+            errorMessage = 'There is no active stream to play';
+        }
         else {
             errorMessage = error
         }
         alert(errorMessage);
-
+        
     }
     console.error(errorMessage);
     if (message !== undefined) {
