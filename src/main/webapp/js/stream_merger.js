@@ -2,41 +2,52 @@
 
 export class StreamMerger{
   constructor(width, height, autoMode, aspectRatio){
-      this.streams = [];
-      this.width = width;
-      this.height = height;
-      const AudioContext = window.AudioContext || window.webkitAudioContext
-      this.audioCtx = new AudioContext();
-      this.audioDestination = this.audioCtx.createMediaStreamDestination()
-      this.autoMode = autoMode;
+    this.streams = [];
+    this.width = width;
+    this.height = height;
+    const AudioContext = window.AudioContext || window.webkitAudioContext
+    this.audioCtx = new AudioContext();
+    this.audioDestination = this.audioCtx.createMediaStreamDestination()
+    this.autoMode = autoMode;
 
-      this.aspectRatio = aspectRatio;
-      this.stream_height = height;
-      this.stream_width = width;
+    this.aspectRatio = aspectRatio;
+    this.stream_height = height;
+    this.stream_width = width;
 
-      //4:3 portrait mode stream width height
-      this.pwidth = 0
-      this.pheight = 0
+    //4:3 portrait mode stream width height
+    this.pwidth = 0
+    this.pheight = 0
 
-      //4:3 vertical mode stream width height
-      this.vwidth = 0
-      this.wheight = 0;
+    //4:3 vertical mode stream width height
+    this.vwidth = 0
+    this.wheight = 0;
 
-      this.canvas = document.createElement('canvas');
-      this.canvas.setAttribute('width', this.width);
-      this.canvas.setAttribute('height', this.height);
-      this.ctx = this.canvas.getContext('2d');
+    const mix_video_canvas = document.getElementById("mix_video");
+    this.scene = new THREE.Scene();
+    this.renderer = new THREE.WebGLRenderer();
+    window.b=this.renderer
+    this.renderer.setSize( this.width, this.height );
+    mix_video_canvas.appendChild(this.renderer.domElement);
+    this.camera = new THREE.OrthographicCamera( window.innerWidth / - 2, window.innerWidth / 2, window.innerHeight / 2, window.innerHeight / - 2, -1000, 1000 );
+    window.c=this.camera
+    this.renderer.setAnimationLoop(this.animate.bind(this));
 
-      this.streamCount = 0;
-      this.frameCount = 0;
+    this.canvas = mix_video_canvas.childNodes[0];
+    //this.canvas.setAttribute('width', this.width);
+    //this.canvas.setAttribute('height', this.height);
+    //this.ctx = this.canvas.getContext('2d');
 
-      // delay node for video sync
-      this.videoSyncDelayNode = this.audioCtx.createDelay(5.0)
-      this.videoSyncDelayNode.connect(this.audioDestination)
+    this.streamCount = 0;
+    this.frameCount = 0;
 
-      this.started = false;
-      this.fps = 30;
-  }
+    // delay node for video sync
+    this.videoSyncDelayNode = this.audioCtx.createDelay(5.0)
+    this.videoSyncDelayNode.connect(this.audioDestination)
+
+    this.started = false;
+    this.fps = 30;
+
+}
 
   changeAspectRatio(ratio){
     this.aspectRatio = ratio;
@@ -100,6 +111,22 @@ export class StreamMerger{
         stream.audioSource.connect(stream.audioGainNode).connect(this.audioDestination) // Default is direct connect
       }
       stream.element = videoElement
+      const videoTexture = new THREE.VideoTexture(stream.element);
+      videoTexture.needsUpdate = true;
+      const videoMaterial = new THREE.MeshBasicMaterial({
+          map: videoTexture,
+          side: THREE.FrontSide,
+          toneMapped: false,
+      });
+      videoMaterial.needsUpdate = true;
+
+      //Create screen
+      const screen = new THREE.PlaneGeometry(window.innerWidth, window.innerWidth);
+      const videoScreen = new THREE.Mesh(screen, videoMaterial);
+      this.scene.add(videoScreen);
+      stream.videoScreen=videoScreen;
+      stream.screen=screen;
+
       this.streams.push(stream);
 
       if(this.autoMode == true){
@@ -321,7 +348,30 @@ export class StreamMerger{
             extraStreams --;
             remainingStreams -= (yNumber + 1);
           }
+          const width = stream.width;
+          const height = stream.height;
+        //stream.videoScreen.scale.set( 110 /stream.width, 110 /stream.height, 1 );
+          stream.videoScreen.scale.x=(stream.height/this.canvas.height)
+          stream.videoScreen.scale.y=(stream.width/this.canvas.width)
+  
+          let vector = new THREE.Vector3();
+          vector.set(
+              ((stream.x) / this.canvas.width) * 2 - 1,
+              - ((stream.y) / this.canvas.height) * 2 + 1,
+              0
+          );
+          vector.unproject(this.camera);
+     
+          stream.videoScreen.position.x = vector.x +(stream.width)
+          stream.videoScreen.position.y = vector.y +(-stream.height)
+          window.a=stream
+          console.log(stream.x,stream.x,stream.width,stream.height)
         }
+  
+        this.renderer.setSize( this.canvas.width,cropHeight );
+  
+       // this.canvas.setAttribute('height', cropHeight);
+        
       }
       this.canvas.setAttribute('height', cropHeight);
     }
@@ -401,7 +451,9 @@ export class StreamMerger{
         this.resizeAndSortV2();
       }
     }
-
+    animate() {
+      this.renderer.render( this.scene, this.camera );
+    }
     stop() {
       this.started = false
     
