@@ -13,7 +13,7 @@
 	<div class="container">
 		<div class="header clearfix">
 			<div class="row">
-				<h3 class="col text-muted"><a href="samples.html">WebRTC Samples</a> > Publish</h3>
+				<h3 class="col text-muted" id="title"><a href="samples.html">WebRTC Samples</a> > WebRTC Publish & </h3>
 			</div>
 		</div>
 
@@ -44,8 +44,27 @@
 		// It should be true
 		url_string += getQueryParameter("rtmpForward");
 
+		url_string += getQueryParameter("play");
+
 		console.log(url_string);
 		myIframe.src = url_string;
+
+		var playType = getUrlParameter("play");
+		var playTitle = "WebRTC";
+		if (playType == "webrtc") {
+			playTitle = "WebRTC";
+		}
+		else if (playType == "hls") {
+			playTitle = "HLS";
+		}
+		else if (playType == "dash") {
+			playTitle = "Dash";
+		}
+
+		let title = document.getElementById("title");
+		title.innerHTML += playTitle + " Play";
+
+
 	</script>
 
 </body>
