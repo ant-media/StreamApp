@@ -998,10 +998,10 @@ export class WebRTCAdaptor
 				this.remotePeerConnection[streamId].createAnswer(this.sdp_constraints)
 				.then(configuration =>
 						{
-					console.log("created answer for stream id: " + streamId);
-					//support for stereo
-          			configuration.sdp = configuration.sdp.replace("useinbandfec=1", "useinbandfec=1; stereo=1");
-					this.gotDescription(configuration, streamId);
+							console.log("created answer for stream id: " + streamId);
+							//support for stereo
+		          			configuration.sdp = configuration.sdp.replace("useinbandfec=1", "useinbandfec=1; stereo=1");
+							this.gotDescription(configuration, streamId);
 						})
 						.catch((error) =>
 								{
@@ -1426,35 +1426,41 @@ export class WebRTCAdaptor
 	sendData(streamId, data) 
 	{
 		var CHUNK_SIZE = 16000;
-		var dataChannel = this.remotePeerConnection[streamId].dataChannel;
-        var length = data.length || data.size || data.byteLength;
-		var sent = 0;
-
-		if(typeof data === 'string' || data instanceof String){
-			dataChannel.send(data);
+		if (this.remotePeerConnection[streamId] !== undefined) 
+		{
+			var dataChannel = this.remotePeerConnection[streamId].dataChannel;
+	        var length = data.length || data.size || data.byteLength;
+			var sent = 0;
+	
+			if(typeof data === 'string' || data instanceof String){
+				dataChannel.send(data);
+			}
+			else {
+				var token = Math.floor(Math.random() * 999999);
+				let header = new Int32Array(2);
+				header[0] = token;
+				header[1] = length;
+	
+				dataChannel.send(header);
+	
+				var sent = 0;
+				while(sent < length) {
+					var size = Math.min(length-sent, CHUNK_SIZE);
+					var buffer = new Uint8Array(size+4);
+					var tokenArray = new Int32Array(1);
+					tokenArray[0] = token;
+					buffer.set(new Uint8Array(tokenArray.buffer, 0, 4), 0);
+	
+					var chunk = data.slice(sent, sent+size);
+					buffer.set(new Uint8Array(chunk), 4);
+					sent += size;
+	
+					dataChannel.send(buffer);
+				}
+			}
 		}
 		else {
-			var token = Math.floor(Math.random() * 999999);
-			let header = new Int32Array(2);
-			header[0] = token;
-			header[1] = length;
-
-			dataChannel.send(header);
-
-			var sent = 0;
-			while(sent < length) {
-				var size = Math.min(length-sent, CHUNK_SIZE);
-				var buffer = new Uint8Array(size+4);
-				var tokenArray = new Int32Array(1);
-				tokenArray[0] = token;
-				buffer.set(new Uint8Array(tokenArray.buffer, 0, 4), 0);
-
-				var chunk = data.slice(sent, sent+size);
-				buffer.set(new Uint8Array(chunk), 4);
-				sent += size;
-
-				dataChannel.send(buffer);
-			}
+			console.warn("Send data is called for undefined peer connection with stream id: " + streamId);
 		}
 	}
 
