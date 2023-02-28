@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<title>WebRTC Samples > Publish & Play</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta charset="UTF-8">
+	<link rel="stylesheet" href="css/external/bootstrap4/bootstrap.min.css">
+	<link rel="stylesheet" href="css/samples.css" />
+</head>
+
+<body>
+	<div class="container">
+		<div class="header clearfix">
+			<div class="row">
+				<h3 class="col text-muted" id="title"><a href="samples.html">WebRTC Samples</a> > </h3>
+			</div>
+		</div>
+
+		<iframe class="embed-frame" id="sample-frame"></iframe>
+			
+	</div>
+	<script  type="module">
+		import {getUrlParameter} from "./js/fetch.stream.js" 
+		import {getQueryParameter} from "./js/utility.js" 
+
+		let myIframe = document.getElementById("sample-frame");
+		let url_string = "samples/rtmp_srt_publish_and_play_sample.html";
+
+		var publishType = getUrlParameter("publish");
+		var playType = getUrlParameter("play");
+
+		url_string += "?publish=" + publishType;
+		url_string += "&play=" + playType;
+		url_string += getQueryParameter("id");
+
+		console.log(url_string);
+		myIframe.src = url_string;
+
+		
+		var publishTitle;
+		if (publishType == "srt") {
+			publishTitle = "SRT";
+		}
+		else {
+			publishTitle = "RTMP";
+		}
+		
+		var playTitle = "WebRTC";
+		if (playType == "webrtc") {
+			playTitle = "WebRTC";
+		}
+		else if (playType == "hls") {
+			playTitle = "HLS";
+		}
+		else if (playType == "dash") {
+			playTitle = "Dash";
+		}
+
+		let title = document.getElementById("title");
+		title.innerHTML += publishTitle + " Publish & " + playTitle + " Play";
+	</script>
+
+</body>
+</html>
