@@ -712,19 +712,6 @@
 				}
 				else if (infos["info"] == "ice_connection_state_changed") {
 					console.debug("ice connection state changed to " + infos["obj"].state);
-					if (infos["obj"].state == "connected") {
-						setPlaceHolderVisibility(false);
-						setHLSWebRTCElementsVisibility(false);
-						playWebRTCVideo();
-					}
-					else if (infos["obj"].state == "disconnected") {
-						setHLSWebRTCElementsVisibility(true);
-						setPlaceHolderVisibility(true);
-						//webrtc connection was not succesfull, switch the next play type(playOrder) if available
-						if (typeof noStreamCallback != "undefined") {
-							noStreamCallback();
-						}
-					}
 				}
 				else if (infos["info"] == "resolutionChangeInfo") {
 					console.log("Resolution is changed to " + infos["obj"]["streamHeight"]);

@@ -1,8 +1,8 @@
 /*! @name @antmedia/videojs-webrtc-plugin @version 1.1.0 @license MIT */
 (function (global, factory) {
   typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory(require('video.js')) :
-  typeof define === 'function' && define.amd ? define(['video.js'], factory) :
-  (global = typeof globalThis !== 'undefined' ? globalThis : global || self, global.videojsWebrtcPlugin = factory(global.videojs));
+      typeof define === 'function' && define.amd ? define(['video.js'], factory) :
+          (global = typeof globalThis !== 'undefined' ? globalThis : global || self, global.videojsWebrtcPlugin = factory(global.videojs));
 }(this, (function (videojs) { 'use strict';
 
   function _interopDefaultLegacy (e) { return e && typeof e === 'object' && 'default' in e ? e : { 'default': e }; }
@@ -82,71 +82,71 @@
 
         switch (obj.command) {
           case COMMANDS.TAKE_CANDIDATE:
-            {
-              _this.webrtcadaptor.takeCandidate(obj.streamId, obj.label, obj.candidate);
+          {
+            _this.webrtcadaptor.takeCandidate(obj.streamId, obj.label, obj.candidate);
 
-              break;
-            }
+            break;
+          }
 
           case COMMANDS.TAKE_CONFIGURATION:
-            {
-              _this.webrtcadaptor.takeConfiguration(obj.streamId, obj.sdp, obj.type, obj.idMapping);
+          {
+            _this.webrtcadaptor.takeConfiguration(obj.streamId, obj.sdp, obj.type, obj.idMapping);
 
-              break;
-            }
+            break;
+          }
 
           case COMMANDS.STOP:
-            {
-              _this.webrtcadaptor.closePeerConnection(obj.streamId);
+          {
+            _this.webrtcadaptor.closePeerConnection(obj.streamId);
 
-              break;
-            }
+            break;
+          }
 
           case COMMANDS.ERROR:
-            {
-              _this.callbackError(obj.definition);
+          {
+            _this.callbackError(obj.definition);
 
-              break;
-            }
+            break;
+          }
 
           case COMMANDS.NOTIFICATION:
-            {
-              _this.callback(obj.definition, obj);
+          {
+            _this.callback(obj.definition, obj);
 
-              if (obj.definition === 'play_finished' || obj.definition === 'publish_finished') {
-                _this.webrtcadaptor.closePeerConnection(obj.streamId);
-              }
-
-              break;
+            if (obj.definition === 'play_finished' || obj.definition === 'publish_finished') {
+              _this.webrtcadaptor.closePeerConnection(obj.streamId);
             }
+
+            break;
+          }
 
           case COMMANDS.STREAM_INFORMATION:
-            {
-              _this.callback(obj.command, obj);
+          {
+            _this.callback(obj.command, obj);
 
-              break;
-            }
+            break;
+          }
 
           case COMMANDS.PONG:
-            {
-              _this.callback(obj.command);
+          {
+            _this.callback(obj.command);
 
-              break;
-            }
+            break;
+          }
 
           case COMMANDS.TRACK_LIST:
-            {
-              _this.callback(obj.command, obj);
+          {
+            _this.callback(obj.command, obj);
 
-              break;
-            }
+            break;
+          }
 
           case COMMANDS.PEER_MESSAGE_COMMAND:
-            {
-              _this.callback(obj.command, obj);
+          {
+            _this.callback(obj.command, obj);
 
-              break;
-            }
+            break;
+          }
         }
       };
 
@@ -642,21 +642,22 @@
     PLAY_FINISHED: 'play_finished',
     CLOSED: 'closed',
     STREAM_INFORMATION: 'streamInformation',
-    RESOLUTION_CHANGE_INFO: 'resolutionChangeInfo'
+    RESOLUTION_CHANGE_INFO: 'resolutionChangeInfo',
+    ICE_CONNECTION_STATE_CHANGED: 'ice_connection_state_changed'
   };
 
   function createCommonjsModule(fn, basedir, module) {
-  	return module = {
-  	  path: basedir,
-  	  exports: {},
-  	  require: function (path, base) {
+    return module = {
+      path: basedir,
+      exports: {},
+      require: function (path, base) {
         return commonjsRequire(path, (base === undefined || base === null) ? module.path : base);
       }
-  	}, fn(module, module.exports), module.exports;
+    }, fn(module, module.exports), module.exports;
   }
 
   function commonjsRequire () {
-  	throw new Error('Dynamic requires are not currently supported by @rollup/plugin-commonjs');
+    throw new Error('Dynamic requires are not currently supported by @rollup/plugin-commonjs');
   }
 
   var assertThisInitialized = createCommonjsModule(function (module) {
@@ -831,6 +832,7 @@
     _proto.initiateWebRTCAdaptor = function initiateWebRTCAdaptor(source, options) {
       var _this2 = this;
 
+      var iceConnected = false;
       this.options = videojs__default['default'].mergeOptions(defaults, options);
       this.source = source;
       this.source.pcConfig = {
@@ -848,53 +850,66 @@
         sdpConstraints: this.source.sdpConstraints,
         player: this.player,
         callback: function callback(info, obj) {
+          _this2.player.trigger('webrtc-info', {
+            obj: obj,
+            info: info
+          });
+
           switch (info) {
             case ANT_CALLBACKS.INITIALIZED:
-              {
-                _this2.initializedHandler();
+            {
+              _this2.initializedHandler();
 
-                break;
+              break;
+            }
+
+            case ANT_CALLBACKS.ICE_CONNECTION_STATE_CHANGED:
+            {
+              if (obj.state === 'connected' || obj.state === 'completed') {
+                iceConnected = true;
               }
+
+              break;
+            }
 
             case ANT_CALLBACKS.PLAY_STARTED:
-              {
-                _this2.joinStreamHandler(obj);
+            {
+              _this2.joinStreamHandler(obj);
 
-                break;
-              }
+              break;
+            }
 
             case ANT_CALLBACKS.PLAY_FINISHED:
-              {
-                _this2.leaveStreamHandler(obj);
+            {
+              _this2.leaveStreamHandler(obj); //  if play_finished event is received, it has two meanings
+              //  1.stream is really finished
+              //  2.ice connection cannot be established and server reports play_finished event
+              //  check that publish may start again
 
-                break;
+
+              if (iceConnected) {
+                //  webrtc connection was successful and try to play again with webrtc
+                setTimeout(function () {
+                  this.streamInformationHandler(obj);
+                }, 3000);
               }
+
+              break;
+            }
 
             case ANT_CALLBACKS.STREAM_INFORMATION:
-              {
-                _this2.streamInformationHandler(obj);
+            {
+              _this2.streamInformationHandler(obj);
 
-                break;
-              }
+              break;
+            }
 
             case ANT_CALLBACKS.RESOLUTION_CHANGE_INFO:
-              {
-                _this2.resolutionChangeHandler(obj);
+            {
+              _this2.resolutionChangeHandler(obj);
 
-                break;
-              }
-
-            default:
-              {
-                _this2.defaultHandler(info);
-
-                _this2.player.trigger('webrtc-info', {
-                  obj: obj,
-                  info: info
-                });
-
-                break;
-              }
+              break;
+            }
           }
         },
         callbackError: function callbackError(error) {
@@ -1013,16 +1028,6 @@
           _this3.player.play();
         }
       }, 2000);
-    }
-    /**
-     * default handler.
-     *
-     * @param {string} info callback event info
-     */
-    ;
-
-    _proto.defaultHandler = function defaultHandler(info) {// eslint-disable-next-line no-console
-      // console.log(info + ' notification received');
     };
 
     _proto.changeStreamQuality = function changeStreamQuality(value) {
