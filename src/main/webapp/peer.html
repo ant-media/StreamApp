@@ -24,9 +24,8 @@
 		</div>
 		
 		<div class="alert alert-primary text-center enterprise-feature" role="alert">
-				WebRTC Peer to Peer is an Enterprise Edition. <br/>
+				WebRTC Peer to Peer is an enterprise edition feature. <br/>
 			<a href="https://antmedia.io">Try Enterprise Edition for free at antmedia.io</a> <br/><br/>
-			<a href="https://github.com/ant-media/Ant-Media-Server/wiki#community-edition--enterprise-edition" style="font-size:12px">Comparison between Community and Enterprise</a>		 
 		</div>
 			
 		<video id="localVideo" autoplay muted controls playsinline width="480"></video>
@@ -63,11 +62,11 @@
 	leave_button.addEventListener("click", leave, false);
 	var turn_on_camera = document.getElementById("turn_on_camera");
 	turn_on_camera.addEventListener("click", turnOnLocalCamera, false);
-	var turn_off_camera = document.getElementById("turn_on_camera");
+	var turn_off_camera = document.getElementById("turn_off_camera");
 	turn_off_camera.addEventListener("click", turnOffLocalCamera, false);
 	var mute_mic = document.getElementById("mute_mic");
 	mute_mic.addEventListener("click", muteLocalMic, false);
-	var unmute_mic = document.getElementById("mute_mic");
+	var unmute_mic = document.getElementById("unmute_mic");
 	unmute_mic.addEventListener("click", unmuteLocalMic, false);
 
 
@@ -83,11 +82,11 @@
 	}
 	
 	function turnOffLocalCamera() {
-		webRTCAdaptor.turnOffLocalCamera();
+		webRTCAdaptor.turnOffLocalCamera(streamNameBox.value);
 	}
 	
 	function turnOnLocalCamera() {
-		webRTCAdaptor.turnOnLocalCamera();
+		webRTCAdaptor.turnOnLocalCamera(streamNameBox.value);
 	}
 	
 	function muteLocalMic(){

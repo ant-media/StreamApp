@@ -49,6 +49,7 @@
 	<bean id="acceptOnlyStreamsWithWebhook" class="io.antmedia.security.AcceptOnlyStreamsWithWebhook"/>
 	
 	<bean id="hls.viewerstats" class="io.antmedia.statistic.HlsViewerStats" />
+	<bean id="dash.viewerstats" class="io.antmedia.statistic.DashViewerStats" />
 	
 	<bean id="token.service"
 		class="#{ T(io.antmedia.rest.RestServiceBase).isEnterprise() ? 'io.antmedia.enterprise.security.TokenService' : 'io.antmedia.security.MockTokenService' }">
@@ -65,7 +66,7 @@
     <bean id="streamAcceptFilter" class="io.antmedia.filter.StreamAcceptFilter"/>
 
 	<!-- Defines the web handler which acts as an applications endpoint -->
-	<bean id="web.handler" class="io.antmedia.enterprise.streamapp.StreamApplication">
+	<bean id="web.handler" class="#{ T(io.antmedia.rest.RestServiceBase).isEnterprise() ? 'io.antmedia.enterprise.webrtc.WebRTCApplication' : 'io.antmedia.AntMediaApplicationAdapter' }">
 		<property name="appSettings" ref="app.settings" />
 		<property name="dataStoreFactory" ref="dataStoreFactory" />
 		<property name="streamAcceptFilter" ref="streamAcceptFilter"/>

@@ -1,3 +1,6 @@
 .DS_Store
 /.settings
 /target/
+/codesigning.asc
+node_modules
+/dist

@@ -1,0 +1,894 @@
+<!doctype html>
+  <html lang="en" class="room">
+  <head>
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="robots" content="index, follow">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="language" content="English">
+    <title>Ant Media | Video Call</title>
+    <meta name="description" content="Ant Media Video Call">
+    <meta name="author" content="Ant Media">
+    <meta name="title" content="Ant Media | Video Call">
+    <meta property="og:locale" content="en_US">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Ant Media | Video Call">
+    <meta property="og:description" content="Ant Media Video Call">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="css/external/bootstrap4/bootstrap.min.css">
+    <!-- Animate CSS -->
+    <link rel="stylesheet" href="css/external/animate.css">
+    <!-- Customize CSS -->
+    <link rel="stylesheet" href="css/style.css">
+    <!-- Favicon -->
+    <link rel="shortcut icon" href="images/favicon.ico" type="image/x-icon">
+    <link rel="icon" href="images/favicon.ico" type="image/x-icon">
+
+    <script src="js/external/adapter-latest.js"></script>
+  </head>
+
+  <body class="animate__animated animate__fadeIn animate__fast">
+      <div class="container h-100" id="entrance-screen">
+        <div class="row h-100 justify-content-center align-items-center">
+          <form class="col-md-auto col-md-6">
+            <div class="logo"><img src="images/ant-media-logo.svg"></div>
+            <div class="logo-text">CONFERENCE CALL</div>
+            <p>Start a video conference call now with Ant Media!</p>
+            <div class="form-group">
+              <label for="formGroupExampleInput">Your Name</label>
+              <input type="text" class="form-control" id="streamNameInput" value="Guest">
+            </div>
+            <a id="enterButton" href="javascript:;" class="btn btn-primary">Login</a>
+          </form>   
+        </div>
+      </div>
+
+    <div class="local-video-content">
+      <div class="me-small-screen">
+        <video id="localVideo" class="screen" autoplay="" muted="" playsinline=""></video>
+      </div>
+    </div>
+
+    <div class="publisher-content chat-active" id="conference-screen" style="display:none;">
+      <div class="persons d-none">
+        <div class="row" id="players">
+        </div>
+      </div>
+    </div>
+
+    <footer class="chat-active">
+      <div class="container-fluid">
+        <div class="row">
+          <div class="col-sm-12 col-md-3">
+            <div class="room-name">            
+            <span></span><img class="logo-compact" src="images/ant-media-emblem.svg"></span>
+            <span id="date"></span> | <span id="roomName"></span></div>
+          </div>
+          <div class="col-sm-12 col-md-6">
+            <div class="icons">
+              <span>
+                <a href="javascript:;" id="turn_off_camera_button" class="camera-on active"><img
+                    src="images/icons/camera-on.svg"></a>
+                <a href="javascript:;" id="turn_on_camera_button" class="camera-off"><img src="images/icons/camera-off.svg"></a>
+              </span>
+              <span>
+                <a href="javascript:;" id="mute_mic_button" class="microphone-on active"><img
+                    src="images/icons/microphone-on.svg"></a>
+                <a href="javascript:;" id="unmute_mic_button" class="microphone-off"><img
+                    src="images/icons/microphone-off.svg"></a>
+              </span>
+              <span>
+                <a href="javascript:;" id="screen_share_on_button" class="screen-off active"><img
+                    src="images/icons/screen-share-off.svg"></a>
+                <a href="javascript:;" id="screen_share_off_button" class="screen-on"><img
+                    src="images/icons/screen-share-on.svg"></a>
+              </span>
+              <span><a href="#" class="chat-on"><img src="images/icons/chat.svg"></a></span>
+              <span><a href="javascript:;" id="close_call_button"><img src="images/icons/close-call.svg"></a></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+            <div class="chat">
+
+              <div class="header">
+                <h2>Messages</h2>
+                <a href="#" class="close chat-close" data-dismiss="modal" aria-label="Close">
+                  <img src="images/icons/close.svg">
+                </a>
+              </div>
+
+              <ul id="chat">
+              </ul>
+              <div class="footer">
+                <form id="messageBoxForm" class="form-inline">
+                  <div class="input-group">
+                    <input type="text" id="dataTextbox" class="form-control" placeholder="Type your message">
+                    <a class="send"><img src="images/icons/send.svg"></a>
+                  </div>
+                </form>
+              </div>
+            </div>
+
+            <!-- Share Modal -->
+            <div class="modal fade modal-share" id="shareUrlLocationModal" tabindex="-1" role="dialog" aria-labelledby="shareUrlLocationModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered" role="document">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title" id="shareUrlLocationModalLabel">Send an invitation to your conference</h5>
+                  <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <img src="images/icons/close.svg">
+                  </button>
+                </div>
+                <div class="modal-body">
+                  <form class="form-inline">
+                    <div class="input-group">
+                      <input id="locationHref" type="text" class="form-control">
+                      <div class="input-group-prepend">
+                        <div class="input-group-text"><a onClick="copyWindowLocation()" href="javascript:;"><img src="images/icons/copy.svg"></a></div>
+                      </div>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <script src="js/external/jquery-3.3.1.slim.min.js"></script>
+        <script src="js/external/popper.min.js"></script>
+        <script src="js/external/bootstrap.min.js"></script>
+
+      </body>
+
+      <script type="module">
+       import {WebRTCAdaptor} from "./js/webrtc_adaptor.js"
+       import {getUrlParameter} from "./js/fetch.stream.js" 
+
+    /**
+    * This page accepts 7 arguments through url parameter
+    * 1. "streamId": the stream id to publish stream. It's optional. ?streamId=stream1
+    * 2. "playOnly": If it's true, user does not publish stream. It only play streams in the room.
+    * 3. "token": It's experimental. 
+    * 4. "roomName": The id of the conference room which requested streams belongs to
+    * 5. "streamName": Stream name of stream
+    * 6. "subscriberId": It's experimental. 
+    * 7. "subscriberCode": It's experimental. 
+    */  
+
+    var token = getUrlParameter("token");
+    var publishStreamId = getUrlParameter("streamId");
+    var streamName = getUrlParameter("streamName");
+    var playOnly = getUrlParameter("playOnly");
+    var roomName = getUrlParameter("roomName");
+    var subscriberId = getUrlParameter("subscriberId");
+    var subscriberCode = getUrlParameter("subscriberCode");
+    var isChatActive = false;
+    var isPlaying = false;
+    var fullScreenId = -1;
+
+    if(roomName == null){
+      roomName="room1";
+    }
+
+    if(streamName == null)
+    {
+      streamName="Guest";
+    }
+
+    document.getElementById("streamNameInput").value = streamName;
+
+
+    if(playOnly == null) {
+      playOnly = false;
+    }
+
+    var dateSpan = document.getElementById("date");
+    dateSpan.innerHTML = formatAMPM(new Date);
+    setInterval(() => {      
+     dateSpan.innerHTML = formatAMPM(new Date);
+   }, 60000);
+   
+   
+    var statusTimerId = setInterval(() => {      
+        updateStatus();
+    }, 5000);
+    
+    var roomNameSpan = document.getElementById("roomName");
+    roomNameSpan.innerHTML = roomName;
+
+    // camera and microphone on off
+    $(document).ready(function() {
+      $( ".camera-on" ).click(function() {
+        $(this).removeClass( "active" );
+        $(this).next().addClass( "active" );
+      });
+      $( ".camera-off" ).click(function() {
+        $(this).removeClass( "active" );
+        $(this).prev().addClass( "active" );
+      });
+      $( ".microphone-on" ).click(function() {
+        $(this).removeClass( "active" );
+        $(this).next().addClass( "active" );
+      });
+      $( ".microphone-off" ).click(function() {
+        $(this).removeClass( "active" );
+        $(this).prev().addClass( "active" );
+      });
+      $( ".screen-on" ).click(function() {
+        $(this).removeClass( "active" );
+        $(this).prev().addClass( "active" );
+      });
+      $( ".screen-off" ).click(function() {
+        $(this).removeClass( "active" );
+        $(this).next().addClass( "active" );
+      });
+    });
+
+    // chat on off
+    $(document).ready(function() {
+      $( ".chat-on" ).click(function() {
+        $( ".chat-active"  ).toggleClass( "active" );
+        $( ".chat"  ).toggleClass( "active" );
+        if(isChatActive){
+          isChatActive = false;
+        }
+        else{
+          isChatActive = true;
+        }
+      });
+      $( ".chat-close" ).click(function() {
+        $( ".chat-active"  ).removeClass( "active" );
+        $( ".chat"  ).removeClass( "active" );
+        isChatActive = false;
+      });
+    });
+
+    //var fullscreen_button = document.getElementById("fullscreen_button");
+    //fullscreen_button.addEventListener("click", fullscreenLocalCamera,false)
+
+    var turn_off_camera_button = document.getElementById("turn_off_camera_button");
+    turn_off_camera_button.addEventListener("click", turnOffLocalCamera,false)
+    var turn_on_camera_button = document.getElementById("turn_on_camera_button");
+    turn_on_camera_button.addEventListener("click", turnOnLocalCamera,false)
+    var mute_mic_button = document.getElementById("mute_mic_button");
+    mute_mic_button.addEventListener("click", muteLocalMic,false)
+    var unmute_mic_button = document.getElementById("unmute_mic_button");
+    unmute_mic_button.addEventListener("click", unmuteLocalMic,false)
+    var screen_share_on_button = document.getElementById("screen_share_on_button");
+    screen_share_on_button.addEventListener("click", startScreenShare,false);
+    var screen_share_off_button = document.getElementById("screen_share_off_button");
+    screen_share_off_button.addEventListener("click", stopScreenShare,false);
+    var send = document.getElementsByClassName('send')[0];
+    send.addEventListener("click", sendData, false);
+
+
+    var enter_button = document.getElementById("enterButton");
+    enter_button.addEventListener("click", enter, false);
+
+    var close_call_button = document.getElementById("close_call_button");
+    close_call_button.addEventListener("click", exit, false);
+    
+
+    var roomOfStream = new Array();
+    var streamIdList = new Array();
+    var streamDetailsList = new Array();
+
+    var isDataChannelOpen = false;
+    var isMicMuted = false;
+    var isCameraOff = false;
+    var isScreenSharing = false;
+    var isChatActive = false;
+    var roomTimerId = -1;
+    
+    var isPinned = false;
+
+    function enter() {
+      streamName = document.getElementById("streamNameInput").value;
+
+      joinRoom();
+
+      var conferenceDiv = document.getElementById("conference-screen");
+      conferenceDiv.style.display="block";
+
+      var entranceDiv = document.getElementById("entrance-screen");
+      entranceDiv.style.display="none";
+    }
+
+    function exit() {
+      leaveRoom();
+      var conferenceDiv = document.getElementById("conference-screen");
+      conferenceDiv.style.display="none";
+
+      var entranceDiv = document.getElementById("entrance-screen");
+      entranceDiv.style.display="block";
+    }
+
+  function startScreenShare() {
+    isScreenSharing = true;
+    webRTCAdaptor.switchDesktopCapture(publishStreamId);
+    handleScreenShareButtons();
+  }
+
+  function stopScreenShare() {
+    if(isScreenSharing) {
+      isScreenSharing = false;
+      handleScreenShareButtons();
+    }
+
+    if(!isCameraOff) {
+      webRTCAdaptor.switchVideoCameraCapture(publishStreamId);
+    }
+    else{
+      webRTCAdaptor.turnOffLocalCamera(publishStreamId);
+      isCameraOff = true;
+      handleCameraButtons();
+    }
+  }
+
+
+  function sendData() {
+    try {
+      var iceState = webRTCAdaptor.iceConnectionState(publishStreamId);
+      if (iceState != null && iceState != "failed" && iceState != "disconnected") {
+        if($("#dataTextbox").val().length != 0){
+          webRTCAdaptor.sendData(publishStreamId, $("#dataTextbox").val());
+          $("#chat").append("<li class=\"me\"><div class=\"entete\"><h3>"+formatAMPM(new Date)+", Today &nbsp</h3><h2> "+streamName+" </h2><span class=\"status me-dot\"></span></div><div class=\"triangle\"></div><div class=\"message\">"+$("#dataTextbox").val()+"</div></li>");
+          $("#dataTextbox").val("");
+        }
+      }
+      else {
+        alert("WebRTC publishing is not active. Please click Start Publishing first")
+      }
+    }
+    catch (exception) {
+      console.error(exception);
+      alert("Message cannot be sent. Make sure you've enabled data channel on server web panel");
+    }
+  }
+
+  $("#messageBoxForm").submit(function() {
+    sendData();
+    return false;
+  });
+
+  function formatAMPM(date) {
+    var hours = date.getHours();
+    var minutes = date.getMinutes();
+    var ampm = hours >= 12 ? 'pm' : 'am';
+    hours = hours % 12;
+    hours = hours ? hours : 12; // the hour '0' should be '12'
+    minutes = minutes < 10 ? '0'+minutes : minutes;
+    var strTime = hours + ':' + minutes + ' ' + ampm;
+    return strTime;
+  }
+
+  function getStreamName(streamId){
+   var remoteStreamName = "Guest";
+
+   streamDetailsList.forEach((item) => {
+    if(item.streamId == streamId && item.streamName != null){
+      remoteStreamName = item.streamName
+    }
+  });
+   return remoteStreamName;
+ }
+
+ function turnOffLocalCamera() {
+  isCameraOff = true;
+  if(!isScreenSharing){
+    webRTCAdaptor.turnOffLocalCamera(publishStreamId);
+    handleCameraButtons();
+    sendNotificationEvent("CAM_TURNED_OFF");
+  }
+}
+
+function turnOnLocalCamera() {
+
+  handleScreenShareButtons();
+
+  webRTCAdaptor.turnOnLocalCamera(publishStreamId);
+  isCameraOff = false;
+  handleCameraButtons();
+  sendNotificationEvent("CAM_TURNED_ON");
+}
+
+function muteLocalMic(){
+  webRTCAdaptor.muteLocalMic();
+  isMicMuted = true;
+  handleMicButtons();
+  sendNotificationEvent("MIC_MUTED");
+}
+
+function unmuteLocalMic() {
+  webRTCAdaptor.unmuteLocalMic();
+  isMicMuted = false;
+  handleMicButtons();
+  sendNotificationEvent("MIC_UNMUTED");
+}
+
+function sendNotificationEvent(eventType, payload) {
+  if(isDataChannelOpen) {
+    var notEvent = { streamId: publishStreamId, eventType:eventType, payload: payload};
+    webRTCAdaptor.sendData(publishStreamId, JSON.stringify(notEvent));
+  } else {
+    console.log("Could not send the notification because data channel is not open.");
+  }
+}
+
+
+function handleScreenShareButtons() {
+  if(isScreenSharing) {
+    screen_share_off_button.classList.add("active");
+    screen_share_on_button.classList.remove("active");
+  } else {
+    screen_share_on_button.classList.add("active");
+    screen_share_off_button.classList.remove("active");
+  }
+}
+
+function handleCameraButtons() {
+  if(isCameraOff) {
+    turn_off_camera_button.disabled = true;
+    turn_on_camera_button.disabled = false;
+  } else {
+    turn_off_camera_button.disabled = false;
+    turn_on_camera_button.disabled = true;
+  }
+}
+
+function handleMicButtons() {
+  if(isMicMuted) {
+    mute_mic_button.disabled = true;
+    unmute_mic_button.disabled = false;
+  } else {
+    mute_mic_button.disabled = false;
+    unmute_mic_button.disabled = true;
+  }
+}
+
+function handleNotificationEvent(obj) {
+  //console.log("Received data : ", obj.data);
+  var notificationEvent = JSON.parse(obj.data);
+  if(notificationEvent != null && typeof(notificationEvent) == "object") {
+    var eventStreamId = notificationEvent.streamId;
+    var eventType = notificationEvent.eventType;
+
+    if(eventType == "CAM_TURNED_OFF") {
+      console.log("Camera turned off for : ", eventStreamId);
+    } else if (eventType == "CAM_TURNED_ON"){
+      console.log("Camera turned on for : ", eventStreamId);
+    } else if (eventType == "MIC_MUTED"){
+      console.log("Microphone muted for : ", eventStreamId);
+    } else if (eventType == "MIC_UNMUTED"){
+      console.log("Microphone unmuted for : ", eventStreamId);
+    } else if (eventType == "AUDIO_TRACK_ASSIGNMENT"){     
+      var assignments = notificationEvent.assignments;
+      
+      assignments.forEach(item => {
+        var trackId = item.trackId;
+        var audioLevel = item.audioLevel;
+        
+        console.log(trackId+" - "+audioLevel);
+      });
+    } else if (eventType == "UPDATE_STATUS"){
+      var payload = notificationEvent.payload;
+      if(payload.pinnedId == publishStreamId) {
+        isPinned = true;
+      }
+    }
+  }
+}
+function joinRoom() {
+  webRTCAdaptor.joinRoom(roomName, publishStreamId);
+}
+
+function leaveRoom() {
+  webRTCAdaptor.leaveFromRoom(roomName);
+}
+
+function publish(publishStreamId, token, subscriberId, subscriberCode, streamName) {
+  webRTCAdaptor.publish(publishStreamId, token, subscriberId, subscriberCode, streamName, roomName,"{someKey:somveValue}");
+}
+
+function streamInformation(obj) {
+  webRTCAdaptor.play(obj.streamId, token,	roomName);
+}
+
+function updateStatus() {
+	var payload = {streamId:publishStreamId, pinnedId:fullScreenId, mic:isMicMuted, camera:isCameraOff};
+	sendNotificationEvent("UPDATE_STATUS", payload);
+	
+    var requestedMediaConstraints = {
+          width: isPinned ? 1080 : 360,
+          height: isPinned ? 720 : 240,
+    }	
+	
+    webRTCAdaptor.applyConstraints(payload.streamId, requestedMediaConstraints);
+    console.log("current reslution:"+requestedMediaConstraints.height);
+    isPinned = false;
+}
+
+
+function playVideo(obj) {
+
+  var room = roomName;
+  console.log("new stream available with id: " + obj.streamId + "on the room:" + room);
+
+  var index = obj.trackId.substring("ARDAMSx".length);
+
+	if(index == room || index == publishStreamId) {
+		return;
+	}
+
+  var video = document.getElementById("remoteVideo"+index);
+  var videoColumn = document.getElementById("streamId"+index);
+
+  if (video == null) {
+    createRemoteVideo(index);
+    video = document.getElementById("remoteVideo"+index);
+    video.srcObject = new MediaStream();  
+  }
+
+  video.srcObject.addTrack(obj.track)
+  obj.track.onmute = event => {
+			var remove = true;
+			video.srcObject.getTracks().forEach(function(item) {
+				if(!item.muted) {
+					remove = false;
+				}
+			});
+			if(remove) {
+				removeRemoteVideo(index);
+			}
+		};
+}
+
+function createRemoteVideo(streamId) {
+
+  generateStreamCol(streamId);
+
+  if(fullScreenId == -1) {  
+    doLayout(streamIdList.length);
+  }
+
+  if(isChatActive){
+    document.getElementsByClassName('publisher-content')[0].classList.add("active");
+  }
+}
+
+function doLayout(playerCount) {
+   if(streamIdList.length >= 1){
+    document.getElementsByClassName('persons')[0].className = "persons";
+  }
+
+  if(playerCount == 1){
+    document.getElementsByClassName('publisher-content')[0].className = "publisher-content chat-active one-user";
+  }
+
+  if(playerCount == 2){
+    document.getElementsByClassName('publisher-content')[0].className = "publisher-content chat-active two-user";
+  }
+
+  if(playerCount == 3){
+    document.getElementsByClassName('publisher-content')[0].className = "publisher-content chat-active there-user";
+  }
+
+  if(playerCount == 4){
+    document.getElementsByClassName('publisher-content')[0].className = "publisher-content chat-active four-user";
+  }
+
+  if(playerCount > 4){
+    document.getElementsByClassName('publisher-content')[0].className = "publisher-content chat-active multi-user-3column";
+  }
+
+  if(playerCount > 9){
+    document.getElementsByClassName('publisher-content')[0].className = "publisher-content chat-active multi-user-4column";
+  }
+
+  if(playerCount > 12){
+    document.getElementsByClassName('publisher-content')[0].className = "publisher-content chat-active multi-user-5column";
+  }
+}
+
+function makeFullScreen(streamId) {
+	var divId="streamId"+streamId;
+    if(fullScreenId == streamId) {
+	  document.getElementById(divId).classList.remove("selected");
+      document.getElementById(divId).classList.add("unselected");
+      fullScreenId = -1;
+      doLayout(streamIdList.length);
+    }
+	else {
+      document.getElementsByClassName('publisher-content')[0].className = "publisher-content chat-active fullscreen-layout";
+	  if(fullScreenId != -1) {
+        document.getElementById("streamId"+fullScreenId).classList.remove("selected");
+        document.getElementById("streamId"+fullScreenId).classList.add("unselected");
+      }
+      document.getElementById(divId).classList.remove("unselected");
+      document.getElementById(divId).classList.add("selected");
+      fullScreenId = streamId;
+	}
+}
+
+function generateStreamCol(streamId){
+  var streamName = getStreamName(streamId);
+  console.log(streamId+" ==> "+streamName);
+  const div = document.createElement('div');
+  div.className = "col unselected";
+  div.id="streamId"+streamId;
+  div.innerHTML = "<div class='person'>"
+    +"<video id='remoteVideo"+streamId+"' class='screen' autoplay playsinline></video>"
+    +"<div class='overlay'><span>"+streamName+"   </span>"
+    +"<span><a href=\"javascript:makeFullScreen('"+streamId+"');\"><img src='images/icons/fullscreen.svg'></a></span>"
+    +"</div></div>"
+   
+   if(streamId.startsWith("audioTrack")) {
+     div.style.display = "none";
+   }
+
+  document.getElementById('players').appendChild(div);
+}
+
+function removeRemoteVideo(streamId) {
+  var video = document.getElementById("remoteVideo"+streamId);
+  if (video != null) {
+    var player = document.getElementById("streamId" + streamId);
+    video.srcObject = null;
+    document.getElementById("players").removeChild(player);
+    var streamIdIndex= streamIdList.indexOf(streamId);
+    //remove streamId from the streamIdList array
+    streamIdList.splice(streamIdIndex, 1);
+
+    if(streamIdList.length == 0){
+      document.getElementsByClassName('persons')[0].className = "persons d-none";
+      if(isChatActive){
+        document.getElementsByClassName('publisher-content')[0].classList.add("active");
+      }
+    }
+
+    if(fullScreenId == -1) {  
+      doLayout(streamIdList.length);
+    }
+
+    if(document.getElementsByClassName('publisher-content')[0] != null && isChatActive){
+     document.getElementsByClassName('publisher-content')[0].classList.add("active");
+   }
+
+ }
+}
+
+
+var pc_config = {
+ 'iceServers' : [ {
+  'urls' : 'stun:stun1.l.google.com:19302'
+} ]
+};
+
+var sdpConstraints = {
+  OfferToReceiveAudio : false,
+  OfferToReceiveVideo : false
+
+};
+
+var mediaConstraints = {
+  video: {
+    width: { max: 640 },
+    height: { max: 480 }
+  },
+  audio: true
+}
+
+function checkTrackStatus(streamIdList){
+  streamIdList.forEach(function(item) {
+    var video = document.getElementById("remoteVideo"+item);
+    if(video != null && !video.srcObject.active){
+      removeRemoteVideo(item);
+      playVideo(item);
+    }
+  });
+}
+
+var appName = location.pathname.substring(0, location.pathname
+ .lastIndexOf("/") + 1);
+var path = location.hostname + ":" + location.port + appName + "websocket";
+var websocketURL = "ws://" + path;
+
+if (location.protocol.startsWith("https")) {
+  websocketURL = "wss://" + path;
+}
+
+var webRTCAdaptor = new WebRTCAdaptor(	
+{
+  websocket_url : websocketURL,
+  mediaConstraints : mediaConstraints,
+  peerconnection_config : pc_config,
+  sdp_constraints : sdpConstraints,
+  localVideoId : "localVideo",
+  isPlayMode : playOnly,
+  debug : true,
+  callback : (info, obj) => {
+   if (info == "initialized") {
+    console.log("initialized");
+  } 
+  else if (info == "joinedTheRoom") {
+    var room = obj.ATTR_ROOM_NAME;
+		roomOfStream[obj.streamId] = room;
+		console.log("joined the room: "+ roomOfStream[obj.streamId]);
+    console.debug(obj)
+
+		publishStreamId = obj.streamId;
+    streamIdList = obj.streams;
+    streamDetailsList = obj.streamList;
+		console.debug(streamIdList);
+
+		if(playOnly) {
+			isCameraOff = true;
+			handleCameraButtons();
+			webRTCAdaptor.play(roomName, token, roomName, streamIdList);	
+		}
+		else {
+      publish(obj.streamId, token, subscriberId, subscriberCode, streamName);
+    }
+
+    roomTimerId = setInterval(() => {			
+      webRTCAdaptor.getRoomInfo(roomName, publishStreamId);
+    }, 5000);
+  }
+  else if (info == "newStreamAvailable") {
+    playVideo(obj);          
+  } 
+  else if (info == "publish_started") {
+	  //stream is being published
+		console.debug("publish started to room: "
+			+ roomOfStream[obj.streamId]);
+
+		webRTCAdaptor.getRoomInfo(roomName, publishStreamId);
+	} 
+  else if (info == "publish_finished") {
+	  //stream is being finished
+    console.debug("publish finished");
+  } 
+  else if (info == "screen_share_stopped") {
+    console.log("screen share stopped");
+  }
+  else if (info == "browser_screen_share_supported") {
+    screen_share_on_button.disabled = false;
+		console.log("browser screen share supported");
+  } 
+  else if (info == "leavedFromRoom") {
+    var room = obj.ATTR_ROOM_NAME;
+		console.debug("leaved from the room:" + room);
+		if (roomTimerId != null)
+		{
+			clearInterval(roomTimerId);
+			clearInterval(statusTimerId);
+		}
+						
+		if (streamsList != null) {
+			streamsList.forEach(function(item) {
+			  removeRemoteVideo(item);
+		  });
+		}
+		// we need to reset streams list
+		streamsList = new Array();
+    streamDetailsList = new Array();
+		isPlaying = false;
+    publishStreamId = null;
+  } 
+  else if (info == "closed") {
+    if (typeof obj != "undefined") {
+    console.log("Connecton closed: "
+      + JSON.stringify(obj));
+    }
+  } 
+  else if (info == "play_finished") {
+    console.log("play_finished");
+    removeRemoteVideo(obj.streamId);
+    isPlaying = false;
+  } 
+  else if (info == "streamInformation") {
+    streamInformation(obj);
+  } 
+  else if (info == "roomInformation") {
+    var tempList = obj.streams;
+		tempList.push("!"+publishStreamId);
+		if(!isPlaying) {
+			webRTCAdaptor.play(roomName, token, roomName, tempList);	
+			isPlaying = true;
+		}
+    //Lastly updates the current streamlist with the fetched one.
+    streamIdList=obj.streams;
+    streamDetailsList = obj.streamList;
+
+    //Check video tracks active/inactive status
+    checkTrackStatus(streamIdList);
+  }
+  else if (info == "data_channel_opened") {
+    console.log("Data Channel open for stream id", obj );
+    isDataChannelOpen = true;
+  } 
+  else if (info == "data_channel_closed") {
+    console.log("Data Channel closed for stream id", obj );
+    isDataChannelOpen = false;
+  } 
+  else if(info == "data_received") {
+    try {
+      handleNotificationEvent(obj);
+    } catch(e) {
+      var remoteStreamName = getStreamName(obj.streamId);
+      $("#chat").append("<li class=\"you\"><div class=\"entete\"><h3>"+formatAMPM(new Date)+", Today &nbsp</h3><h2> "+remoteStreamName+"&nbsp</h2><span class=\"status you-dot\"></span></div><div class=\"triangle\"></div><div class=\"message\">"+obj.data+"</div></li>");
+    }
+  }
+},
+callbackError : function(error, message) {
+	//some of the possible errors, NotFoundError, SecurityError,PermissionDeniedError
+  if(error.indexOf("publishTimeoutError") != -1 && roomTimerId != null){
+    clearInterval(roomTimerId);
+  }
+
+  console.log("error callback: " + JSON.stringify(error));
+  var errorMessage = JSON.stringify(error);
+  if (typeof message != "undefined") {
+    errorMessage = message;
+  }
+  var errorMessage = JSON.stringify(error);
+  if (error.indexOf("NotFoundError") != -1) {
+    errorMessage = "Camera or Mic are not found or not allowed in your device.";
+  } else if (error.indexOf("NotReadableError") != -1
+  || error.indexOf("TrackStartError") != -1) {
+    errorMessage = "Camera or Mic is being used by some other process that does not not allow these devices to be read.";
+  } else if (error.indexOf("OverconstrainedError") != -1
+  || error.indexOf("ConstraintNotSatisfiedError") != -1) {
+    errorMessage = "There is no device found that fits your video and audio constraints. You may change video and audio constraints."
+  } else if (error.indexOf("NotAllowedError") != -1
+  || error.indexOf("PermissionDeniedError") != -1) {
+    errorMessage = "You are not allowed to access camera and mic.";
+    stopScreenShare();
+  } else if (error.indexOf("TypeError") != -1) {
+    errorMessage = "Video/Audio is required.";
+  } else if (error.indexOf("UnsecureContext") != -1) {
+    errorMessage = "Fatal Error: Browser cannot access camera and mic because of unsecure context. Please install SSL and access via https";
+  } else if (error.indexOf("WebSocketNotSupported") != -1) {
+    errorMessage = "Fatal Error: WebSocket not supported in this browser";
+  } else if (error.indexOf("no_stream_exist") != -1) {
+    //TODO: removeRemoteVideo(error.streamId);
+  } else if(error.indexOf("data_channel_error") != -1) {
+    errorMessage = "There was a error during data channel communication";
+  } else if (error.indexOf("ScreenSharePermissionDenied") != -1) {
+    errorMessage = "You are not allowed to access screen share";
+    stopScreenShare();
+  } 
+
+  alert(errorMessage);
+  }
+});
+
+function getWindowLocation(){
+  document.getElementById("locationHref").value=window.location.href;
+}
+
+function copyWindowLocation(){
+
+  var copyText = document.getElementById("locationHref");
+
+  /* Select the text field */
+  copyText.select();
+  copyText.setSelectionRange(0, 99999); /* For mobile devices */
+
+  /* Copy the text inside the text field */
+  document.execCommand("copy");
+}
+
+window.getWindowLocation = getWindowLocation
+window.copyWindowLocation = copyWindowLocation
+window.makeFullScreen = makeFullScreen 
+</script>
+
+</html>

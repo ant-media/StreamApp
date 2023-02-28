@@ -1,267 +1,47 @@
+<!DOCTYPE html>
 <html>
+
 <head>
-<title>Ant Media Server WebRTC Audio Publish</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta charset="UTF-8">
-<link rel="stylesheet"
-	href="css/external/bootstrap4/bootstrap.min.css"
-	 >
-<link rel="stylesheet" href="css/common.css" />	
-<script src="js/external/adapter-latest.js"></script>
-<script
-		src="js/external/jquery-3.4.1.min.js"></script>
-		
-
-<style>
-video {
-	width: 100%;
-	max-width: 640px;
-}
-/* Space out content a bit */
-body {
-	padding-top: 20px;
-	padding-bottom: 20px;
-}
-
-/* Everything but the jumbotron gets side spacing for mobile first views */
-.header, .marketing, .footer {
-	padding-right: 15px;
-	padding-left: 15px;
-}
-
-/* Custom page header */
-.header {
-	padding-bottom: 20px;
-	border-bottom: 1px solid #e5e5e5;
-}
-/* Make the masthead heading the same height as the navigation */
-.header h3 {
-	margin-top: 0;
-	margin-bottom: 0;
-	line-height: 40px;
-}
-
-/* Custom page footer */
-.footer {
-	padding-top: 19px;
-	color: #777;
-	border-top: 1px solid #e5e5e5;
-}
-
-/* Customize container */
-@media ( min-width : 768px) {
-	.container {
-		max-width: 730px;
-	}
-}
-
-.container-narrow>hr {
-	margin: 30px 0;
-}
-
-/* Main marketing message and sign up button */
-.jumbotron {
-	text-align: center;
-	border-bottom: 1px solid #e5e5e5;
-}
-
-/* Responsive: Portrait tablets and up */
-@media screen and (min-width: 768px) {
-	/* Remove the padding we set earlier */
-	.header, .marketing, .footer {
-		padding-right: 0;
-		padding-left: 0;
-	}
-	/* Space out the masthead */
-	.header {
-		margin-bottom: 30px;
-	}
-	/* Remove the bottom border on the jumbotron for visual effect */
-	.jumbotron {
-		border-bottom: 0;
-	}
-}
-</style>
+	<title>WebRTC Samples > Audio Publish</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta charset="UTF-8">
+	<link rel="stylesheet" href="css/external/bootstrap4/bootstrap.min.css">
+	<link rel="stylesheet" href="css/samples.css" />
 </head>
+
 <body>
 	<div class="container">
-
 		<div class="header clearfix">
 			<div class="row">
-				<h3 class="col text-muted">WebRTC Audio Publish</h3>
-				<nav class="col align-self-center">
-					<ul class="nav float-right">
-						<li><a href="http://antmedia.io">Contact</a></li>
-					</ul>
-				</nav>
+				<h3 class="col text-muted"><a href="samples.html">WebRTC Samples</a> > Audio Publish</h3>
 			</div>
 		</div>
 
-		<div class="jumbotron">
-
-			<div class="alert alert-primary text-center enterprise-feature" role="alert" style="margin-top:-2em">
-			WebRTC Audio Publish is an Enterprise Edition. <br/>
-			<a href="https://antmedia.io">Try Enterprise Edition for free at antmedia.io</a> <br/><br/>
-			<a href="https://github.com/ant-media/Ant-Media-Server/wiki#community-edition--enterprise-edition" style="font-size:12px">Comparison between Community and Enterprise</a>		 
-			</div>
-			<p>
-				<audio id="localVideo" autoplay controls muted></audio>
-			</p>
-
-			<div style="margin-top:10px; margin-bottom:20px;">Microphone Gain: <br><input type=range id="volume_change_input" min=0 max=1 value=1 step=0.01></div>
-
-			<p>
-				<input type="text" class="form-control" value="stream1"
-					id="streamName" placeholder="Type stream name">
-			</p>
-			<p>
-				<button class="btn btn-primary" disabled
-					id="start_publish_button">Start Publishing</button>
-				<button class="btn btn-primary" disabled
-					id="stop_publish_button">Stop Publishing</button>
-			</p>
-
-						<span class="label label-success" id="broadcastingInfo" style="font-size:14px;display:none"
-							style="display: none">Publishing</span>
-
-		</div>
-		<footer class="footer">
-			<p><a href="http://antmedia.io">Ant Media Server Enterprise Edition</a></p>
-		</footer>
-
+		<iframe src="samples/publish_audio.html" class="embed-frame" id="webrtc-audio-publish-frame" allow="camera;microphone"></iframe>
+			
 	</div>
-</body>
-<script type="module">
-	import {WebRTCAdaptor} from "./js/webrtc_adaptor.js"
+	<script  type="module">
+		import {getUrlParameter} from "./js/fetch.stream.js" 
+		import {getQueryParameter} from "./js/utility.js" 
 
-	var start_publish_button = document.getElementById("start_publish_button");
-	start_publish_button.addEventListener("click", startPublishing, false);
-	var stop_publish_button = document.getElementById("stop_publish_button");
-	stop_publish_button.addEventListener("click", stopPublishing, false);
+		let myIframe = document.getElementById("webrtc-audio-publish-frame");
+		let url_string = "samples/publish_audio.html";
 
-	var streamNameBox = document.getElementById("streamName");
-	
-	var streamId;
-
-	var volume_change_input = document.getElementById("volume_change_input");
-	volume_change_input.addEventListener("change", changeVolume);
-
-	function changeVolume(){
-	/**
-   	* Change the gain levels on the input selector.
-   	*/
-   	if(document.getElementById('volume_change_input') != null){
-   		webRTCAdaptor.currentVolume = this.value;
-       	if(webRTCAdaptor.soundOriginGainNode != null){
-       		webRTCAdaptor.soundOriginGainNode.gain.value = this.value; // Any number between 0 and 1.
-       	}
-   	}
-    }
-
-	function startPublishing() {
-		streamId = streamNameBox.value;
-		webRTCAdaptor.publish(streamId);
-	}
-
-	function stopPublishing() {
-		webRTCAdaptor.stop(streamId);
-	}
-	
-    function startAnimation() {
-
-        $("#broadcastingInfo").fadeIn(800, function () {
-          $("#broadcastingInfo").fadeOut(800, function () {
-        	var state = webRTCAdaptor.signallingState(streamId);
-            if (state != null && state != "closed") {
-            	var iceState = webRTCAdaptor.iceConnectionState(streamId);
-            	if (iceState != null && iceState != "failed" && iceState != "disconnected") {
-              		startAnimation();
-            	}
-            }
-          });
-        });
-
-      }
-
-	var pc_config = null;
-
-	var sdpConstraints = {
-		OfferToReceiveAudio : false,
-		OfferToReceiveVideo : false
-
-	};
-	
-	var mediaConstraints = {
-		video : false,
-		audio : true
-	};
-
-	var appName = location.pathname.substring(0, location.pathname.lastIndexOf("/")+1);
-	var websocketURL = "ws://" + location.hostname + ":" + location.port + appName + "websocket";
-	
-	if (location.protocol.startsWith("https")) {
-		websocketURL = "wss://" + location.hostname + ":" + location.port + appName + "websocket";
-	}
-	
-	
-	var webRTCAdaptor = new WebRTCAdaptor({
-		websocket_url : websocketURL,
-		mediaConstraints : mediaConstraints,
-		peerconnection_config : pc_config,
-		sdp_constraints : sdpConstraints,
-		localVideoId : "localVideo",
-		debug:true,
-		callback : function(info, description) {
-			if (info == "initialized") {
-				console.log("initialized");
-				start_publish_button.disabled = false;
-				stop_publish_button.disabled = true;
-			} else if (info == "publish_started") {
-				//stream is being published
-				console.log("publish started");
-				start_publish_button.disabled = true;
-				stop_publish_button.disabled = false;
-				startAnimation();
-			} else if (info == "publish_finished") {
-				//stream is being finished
-				console.log("publish finished");
-				start_publish_button.disabled = false;
-				stop_publish_button.disabled = true;
-			}
-			else if (info == "closed") {
-				//console.log("Connection closed");
-				if (typeof description != "undefined") {
-					console.log("Connecton closed: " + JSON.stringify(description));
-				}
-			}
-		},
-		callbackError : function(error, message) {
-			//some of the possible errors, NotFoundError, SecurityError,PermissionDeniedError
-            
-			console.log("error callback: " +  JSON.stringify(error));
-			var errorMessage = JSON.stringify(error);
-			if (typeof message != "undefined") {
-				errorMessage = message;
-			}
-			var errorMessage = JSON.stringify(error);
-			if (error.indexOf("NotFoundError") != -1) {
-				errorMessage = "Camera or Mic are not found or not allowed in your device";
-			}
-			else if (error.indexOf("NotReadableError") != -1 || error.indexOf("TrackStartError") != -1) {
-				errorMessage = "Camera or Mic is being used by some other process that does not let read the devices";
-			}
-			else if(error.indexOf("OverconstrainedError") != -1 || error.indexOf("ConstraintNotSatisfiedError") != -1) {
-				errorMessage = "There is no device found that fits your video and audio constraints. You may change video and audio constraints"
-			}
-			else if (error.indexOf("NotAllowedError") != -1 || error.indexOf("PermissionDeniedError") != -1) {
-				errorMessage = "You are not allowed to access camera and mic.";
-			}
-			else if (error.indexOf("TypeError") != -1) {
-				errorMessage = "Video/Audio is required";
-			}
-		
-			alert(errorMessage);
+		var debug = getUrlParameter("debug");
+		if (debug == null) {
+			debug = false;
 		}
-	});
-</script>
+		url_string += "?debug=" + debug;
+		url_string += getQueryParameter("id");
+
+		// It should be true
+		url_string += getQueryParameter("rtmpForward");
+
+		console.log(url_string);
+		myIframe.src = url_string;
+	</script>
+
+</body>
+
+
 </html>

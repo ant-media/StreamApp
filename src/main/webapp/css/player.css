@@ -1,43 +1,44 @@
 
 body {
-  	font-family: 'Poppins', sans-serif !important;
-  	background-color: black !important;
+    font-family: 'Poppins', sans-serif !important;
+    background-color: black !important;
 }
 
 #video_container{
-	display: none;
+    display: none;
 }
 
 #video_info {
-	color: white !important;
-	position: absolute;
-	top:30%;
-	left: 50%;
-	text-align:center;
-	font-size: 27px !important;
-	font-family: inherit !important;
-	line-height: 1.4 !important;
-  	-webkit-transform: translate(-50%, -50%);
-  	transform: translate(-50%, -50%);
+    color: white !important;
+    position: absolute;
+    top:30%;
+    left: 50%;
+    text-align:center;
+    font-size: 27px !important;
+    font-family: inherit !important;
+    line-height: 1.4 !important;
+    -webkit-transform: translate(-50%, -50%);
+    transform: translate(-50%, -50%);
 }
 
 #video-player{
-	position: absolute;
+    position: absolute;
     top: 0;
     left: 0; 
-	overflow: hidden;
-	width: 100% !important;
-	height: 100% !important;
+    overflow: hidden;
+    width: 100% !important;
+    height: 100% !important;
+    text-align: center;
 }
 
 #remoteVideo{
-	position: absolute;
-	top: 0;
+    position: absolute;
+    top: 0;
     left: 0;
     overflow: hidden;
-	height: 100% !important;
-	width: 100% !important; 
-	display: none; 
+    height: 100% !important;
+    width: 100% !important; 
+    display: none; 
 }
 
 #networkWarning {
@@ -50,8 +51,8 @@ body {
     margin: 1em;
     background-color: #fff3cd;
     border-color: #ffeeba;
-	border-radius: .25em;
-	display: none;
+    border-radius: .25em;
+    display: none;
 }
 #unmuteButton {
     display: none;
@@ -71,4 +72,22 @@ body {
 
 #unmuteButton:hover {
    background-color: #555;
+}
+
+#video-overlay {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform:translate(-50%, -50%);
+    /*
+    bottom: 50%;
+    right: 50%;
+
+    */
+    display: none; 
+    z-index: 9999999;
+    text-align: center;
+}
+#video-overlay img{
+    width: 25%;
 }

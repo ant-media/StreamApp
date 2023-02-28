@@ -75,9 +75,8 @@ video, canvas {
 
 		<div class="jumbotron">
 			<div class="alert alert-primary text-center enterprise-feature" role="alert" style="margin-top:-2em">
-				WebRTC Playback is an Enterprise Edition. <br/>
+				WebRTC Playback is an enterprise edition feature. <br/>
 			<a href="https://antmedia.io">Try Enterprise Edition for free at antmedia.io</a> <br/><br/>
-			<a href="https://github.com/ant-media/Ant-Media-Server/wiki#community-edition--enterprise-edition" style="font-size:12px">Comparison between Community and Enterprise</a>		 
 			</div>
 			<div class="col-sm-12 form-group">
 				<canvas id="canvas" ></canvas>
@@ -236,7 +235,7 @@ video, canvas {
 
 	var awsRekog = document.getElementById("AWSrekognition");
 	awsRekog.addEventListener("click", toggleOptions, false);
-	var enableRekognition = false;
+	var enableRekognition = true;
 
 	var publish_offset = document.getElementById("publisherOffset");
 	var play_offset= document.getElementById("playerOffset");
@@ -686,8 +685,8 @@ video, canvas {
 				 
 			}
 			else if (info == "data_received") {
-				console.log("Data received: " + obj.event.data + " type: " + obj.event.type + " for stream: " + obj.streamId);
-				$("#dataMessagesTextarea").append("Received: " + obj.event.data + "\r\n");
+				console.log("Data received: " + obj.data + " type: " + obj.type + " for stream: " + obj.streamId);
+				$("#dataMessagesTextarea").append("Received: " + obj.data + "\r\n");
 			}
 			else if (info == "bitrateMeasurement") {
 

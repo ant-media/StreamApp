@@ -4,7 +4,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<meta charset="UTF-8">
 	<link rel="stylesheet"
-		  href="css/external//bootstrap4/bootstrap.min.css"
+		  href="css/external/bootstrap4/bootstrap.min.css"
 		   >
 	<script src="js/external/adapter-latest.js"></script>
 	<script src="js/external/jquery-3.4.1.min.js"></script>
@@ -20,6 +20,30 @@ video {
 body {
 	padding-top: 20px;
 	padding-bottom: 20px;
+}
+#notification {
+    margin-left:110px;
+    width:65%;
+    z-index:105;
+    text-align:center;
+    font-weight:normal;
+    font-size:14px;
+    font-weight:bold;
+    color:white;
+    background-color:#ff4800;
+    padding:5px;
+}
+#notification span.dismiss {
+    border:2px solid #FFF;
+    padding:0 5px;
+    cursor:pointer;
+    float:right;
+    margin-right:10px;
+}
+#notification a {
+    color:white;
+    text-decoration:none;
+    font-weight:bold
 }
 
 /* Everything but the jumbotron gets side spacing for mobile first views */
@@ -100,29 +124,38 @@ body {
 
 	<div class="jumbotron">
 		<div class="alert alert-primary text-center enterprise-feature" role="alert" style="margin-top:-2em">
-				WebRTC Conference is an Enterprise Edition. <br/>
-			<a href="https://antmedia.io">Try Enterprise Edition for free at antmedia.io</a> <br/><br/>
-			<a href="https://github.com/ant-media/Ant-Media-Server/wiki#community-edition--enterprise-edition" style="font-size:12px">Comparison between Community and Enterprise</a>		 
+				WebRTC Conference is an enterprise edition feature. <br/>
+			<a href="https://antmedia.io">Try Enterprise Edition for free at antmedia.io</a> <br/>
 			</div>
-		<div id="players">
-			<div class="col-sm-3">
-				<video id="localVideo" autoplay muted controls playsinline></video>
-				<div style="margin-top:10px;" class="col-sm-8 offset-sm-2">Microphone Gain: <input type=range id=volume_change_input min=0 max=1 value=1 step=0.01></div>
+		<div class="alert alert-primary text-center" role="alert" style="margin-top:-2em">
+				This conference solution is deprecated. Please use performance efficient <a href="multitrack-conference.html">Multitrack Conferencing</a>
+			 <br/>
+		</div>	
+		<div id="players" class="row">
+			<div class="col-sm-3" >
+				<video style="margin-top:23px;" id="localVideo" autoplay muted controls playsinline></video>
+				<div style="margin-top:10px;display: none;"  class="col-sm-8 offset-sm-2">Microphone Gain: <input type=range id=volume_change_input min=0 max=1 value=1 step=0.01></div>
 			</div>
 		</div>
 
-		<div class="row">
+		<div class="row" style="padding: 15px;">
 			<div class="col-sm-8 offset-sm-2">
-				<p>
+				<div style="padding:5px" class="form-check form-check-inline col-sm-10" >
 					<input type="text" class="form-control" value="room1"
 						   id="roomName" placeholder="Type room name">
-				</p>
-				<p>
+				</div>
+				<div style="padding-top:5px;padding-bottom: 25px;">  
+					<input type="checkbox" class="form-check-input" id="enableMCU">
+					<label for="enableMCU" class="form-check-label">Enable MCU</label>
+					<a href=" https://antmedia.io/mcu-conference/" target="_blank" style="font-size: 12px;">(What is MCU and How to use?)</a>
+
+				</div>
+				<div style="padding:5px">
 					<button class="btn btn-primary" disabled
 							id="join_publish_button">Join Room</button>
 					<button class="btn btn-primary" disabled
 							id="stop_publish_button">Leave Room</button>
-				</p>
+				</div>
 
 				<div style="padding:10px">
 					<button id="turn_off_camera_button" class="btn btn-outline-primary"  >Turn off Camera</button>
@@ -130,6 +163,10 @@ body {
 
 					<button id="mute_mic_button" class="btn btn-outline-primary">Mute Local Mic</button>
 					<button id="unmute_mic_button" disabled  class="btn btn-outline-primary">Unmute Local Mic</button>
+				</div>
+				
+				<div id="notification" style="display: none;">
+					<span class="dismiss"><a title="dismiss this notification">x</a></span>
 				</div>
 
 				<div class="form-check form-check-inline" >
@@ -223,6 +260,10 @@ body {
 	mute_mic_button.addEventListener("click", muteLocalMic,false)
 	var unmute_mic_button = document.getElementById("unmute_mic_button");
 	unmute_mic_button.addEventListener("click", unmuteLocalMic,false)
+	var mcuChbx = document.getElementById("enableMCU");
+
+	var dominantSpeakerFinderId = null;
+	var checkSpeakingStreamIds = new Array();
 
 	//Handles radio buttons for screen share feature
 	if (document.querySelector('input[name="videoSource"]')) {
@@ -233,6 +274,9 @@ body {
     			});
   		});
 	}
+
+	var mutedAlertPresent = false;
+	$("#notification").append('Are you talking? Microphone is muted');
 
 	var roomNameBox = document.getElementById("roomName");
 
@@ -253,7 +297,7 @@ body {
 			  webRTCAdaptor.switchDesktopCaptureWithCamera(publishStreamId);
 		}
 		else {
-  			webRTCAdaptor.switchVideoCameraCapture(publishStreamId, chbx.value);
+  			webRTCAdaptor.switchVideoCameraCapture(publishStreamId);
   		}
 	}
 
@@ -276,13 +320,15 @@ body {
 		isMicMuted = true;
 		handleMicButtons();
 		sendNotificationEvent("MIC_MUTED");
+		webRTCAdaptor.enableAudioLevelWhenMuted()
 	}
 
 	function unmuteLocalMic() {
 		webRTCAdaptor.unmuteLocalMic();
 		isMicMuted = false;
-    handleMicButtons();
+    	handleMicButtons();
 		sendNotificationEvent("MIC_UNMUTED");
+		webRTCAdaptor.disableAudioLevelWhenMuted();
 	}
 
 	function sendNotificationEvent(eventType) {
@@ -314,10 +360,38 @@ body {
 			unmute_mic_button.disabled = true;
 		}
 	}
+	function findDominantSpeaker(streamSoundList){
+		var tmpMax = 0;
+		var tmpStreamId = null;
+		var threshold = 0.01;
+		
+		for(let i = 0; i < streamsList.length; i++){
+			let nextStreamId = streamsList[i];
+			let tmpValue = streamSoundList[nextStreamId]
+			if( tmpValue > threshold ){
+				if(tmpValue > tmpMax){
+					tmpMax = tmpValue;
+					tmpStreamId = nextStreamId;
+				}
+			}
+		}
+		if(tmpStreamId != null){
+			if(checkSpeakingStreamIds[tmpStreamId] == null || typeof checkSpeakingStreamIds[tmpStreamId] == "undefined"){
+				var icon = document.getElementById("audio"+tmpStreamId);
+				icon.style.visibility="visible";
+				checkSpeakingStreamIds[tmpStreamId] = true;
+				setTimeout(()=> {
+					var icon = document.getElementById("audio"+tmpStreamId);
+					icon.style.visibility="hidden";
+					checkSpeakingStreamIds[tmpStreamId] = null;
+				},1000)
+			}
+		}
+	}
 
 	function handleNotificationEvent(obj) {
-		console.log("Received data : ", obj.event.data);
-		var notificationEvent = JSON.parse(obj.event.data);
+		console.log("Received data : ", obj.data);
+		var notificationEvent = JSON.parse(obj.data);
 		if(notificationEvent != null && typeof(notificationEvent) == "object") {
 		  var eventStreamId = notificationEvent.streamId;
 		  var eventTyp = notificationEvent.eventType;
@@ -335,8 +409,8 @@ body {
 	}
 
 	function joinRoom() {
-
-		webRTCAdaptor.joinRoom(roomNameBox.value, streamId, "legacy");
+		var mode = mcuChbx.checked ? "mcu" : "legacy";
+		webRTCAdaptor.joinRoom(roomNameBox.value, streamId, mode);
 	}
 
 	function leaveRoom() {
@@ -371,13 +445,15 @@ body {
 		}
 
 		video.srcObject = obj.stream;
+
+		webRTCAdaptor.enableAudioLevel(obj.stream, obj.streamId)
 	}
 
 	function createRemoteVideo(streamId) {
 		var player = document.createElement("div");
 		player.className = "col-sm-3";
 		player.id = "player"+streamId;
-		player.innerHTML = '<video id="remoteVideo'+streamId+'"controls autoplay playsinline></video>';
+		player.innerHTML = '<img id="audio'+streamId+'"src="images/audio.png" style="visibility: hidden;"></image>' + '<video id="remoteVideo'+streamId+'"controls autoplay playsinline></video>';
 		document.getElementById("players").appendChild(player);
 	}
 
@@ -504,9 +580,20 @@ body {
 						roomTimerId = setInterval(() => {			
 							webRTCAdaptor.getRoomInfo(roomNameBox.value, publishStreamId);
 						}, 5000);
+
+						if(streamsList.length > 0){
+							dominantSpeakerFinderId = setInterval(() => {			
+							webRTCAdaptor.getSoundLevelList(streamsList);
+						}, 200);
+						}
 					}
 					else if (info == "newStreamAvailable") {
 						playVideo(obj);
+						if(dominantSpeakerFinderId == null){
+							dominantSpeakerFinderId = setInterval(() => {			
+							webRTCAdaptor.getSoundLevelList(streamsList);
+							}, 200);
+						}
 					} 
 					else if (info == "publish_started") {
 						//stream is being published
@@ -515,13 +602,16 @@ body {
 						join_publish_button.disabled = true;
 						stop_publish_button.disabled = false;
 						startAnimation();
-					} 
+					}
 					else if (info == "publish_finished") {
 						//stream is being finished
 						console.debug("publish finished");
 					} 
 					else if (info == "screen_share_stopped") {
 						console.log("screen share stopped");
+					}
+					else if (info == "gotSoundList"){
+						findDominantSpeaker(obj);
 					}
 					else if (info == "browser_screen_share_supported") {
 						screen_share_checkbox.disabled = false;
@@ -536,7 +626,9 @@ body {
 						if (roomTimerId != null)
 						{
 							clearInterval(roomTimerId);
+							clearInterval(dominantSpeakerFinderId);
 						}
+						dominantSpeakerFinderId = null;
 
 						join_publish_button.disabled = false;
 						stop_publish_button.disabled = true;
@@ -593,6 +685,26 @@ body {
 					} 
 					else if(info == "data_received") {
 						handleNotificationEvent(obj);
+					}
+					else if (info == "speaking_but_muted") {
+						if(!mutedAlertPresent){
+							mutedAlertPresent = true
+							$("#notification").fadeIn("slow");
+							$(".dismiss").click(function(){
+								$("#notification").fadeOut("slow");
+								mutedAlertPresent = false;
+							});
+
+							setTimeout(()=>{
+								$("#notification").fadeOut("slow");
+								mutedAlertPresent = false;
+							}, 3000)
+						}
+          }	
+					else if(info == "session_restored"){
+						handleCameraButtons();
+						startAnimation();
+						console.log(info + "notification received");
 					}
 				},
 				callbackError : function(error, message) {

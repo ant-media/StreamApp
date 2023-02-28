@@ -20,10 +20,26 @@
 		<listener-class>org.red5.logging.ContextLoggingListener
 		</listener-class>
 	</listener>
+	
+	<context-param>
+        <param-name>logbackDisableServletContainerInitializer</param-name>
+        <param-value>true</param-value>
+    </context-param>
+	
 
 	<listener>
 		<listener-class>io.antmedia.filter.TokenSessionFilter</listener-class>
 	</listener>
+	<!--  Put RestProxyFilter to the top of the Filter list -->
+	<filter>
+		<filter-name>RestProxyFilter</filter-name>
+		<filter-class>io.antmedia.filter.RestProxyFilter</filter-class>
+		<async-supported>true</async-supported>
+	</filter>
+	<filter-mapping>
+		<filter-name>RestProxyFilter</filter-name>
+		<url-pattern>/rest/v2/broadcasts/*</url-pattern>
+	</filter-mapping>
 
 	<filter>
 		<filter-name>springSecurityFilterChain</filter-name>
@@ -41,9 +57,7 @@
 	</filter>
 	<filter-mapping>
 		<filter-name>TokenFilter</filter-name>
-		<url-pattern>*.m3u8</url-pattern>
-		<url-pattern>*.ts</url-pattern>
-		<url-pattern>*.mp4</url-pattern>
+		<url-pattern>/streams/*</url-pattern>
 	</filter-mapping>
 	
 	<filter>
@@ -53,8 +67,7 @@
 	</filter>
 	<filter-mapping>
 		<filter-name>HttpForwardFilter</filter-name>
-		<url-pattern>*.m3u8</url-pattern>
-		<url-pattern>*.mp4</url-pattern>
+		<url-pattern>/streams/*</url-pattern>
 	</filter-mapping>
 
 	<filter>
@@ -64,8 +77,19 @@
 	</filter>
 	<filter-mapping>
 		<filter-name>HlsStatisticsFilter</filter-name>
-		<url-pattern>*.m3u8</url-pattern>
+		<url-pattern>/streams/*</url-pattern>
 	</filter-mapping>
+
+	<filter>
+		<filter-name>DashStatisticsFilter</filter-name>
+		<filter-class>io.antmedia.filter.DashStatisticsFilter</filter-class>
+		<async-supported>true</async-supported>
+	</filter>
+	<filter-mapping>
+		<filter-name>DashStatisticsFilter</filter-name>
+		<url-pattern>/streams/*</url-pattern>
+	</filter-mapping>
+	
 	<filter>
 		<filter-name>CorsFilter</filter-name>
 		<filter-class>io.antmedia.filter.CorsHeaderFilter</filter-class>
@@ -77,6 +101,14 @@
 		 	<param-name>cors.allowed.methods</param-name>
 		 	<param-value>GET,POST,HEAD,OPTIONS,PUT,DELETE</param-value>
 		 </init-param>
+		 
+		 <!-- cors.allowed.origins -> * and credentials are not supported at the same time.  
+		 If you set to cors.allowed.origins to specific domains and support credentials open the below lines
+		 <init-param>
+            <param-name>cors.support.credentials</param-name>
+            <param-value>true</param-value>
+         </init-param>
+         -->
 		 <init-param>
 		 	<param-name>cors.allowed.headers</param-name>
             <param-value>Accept, Origin, X-Requested-With, Access-Control-Request-Headers, Content-Type, Access-Control-Request-Method, Authorization</param-value>
@@ -147,6 +179,11 @@
 		<extension>m4s</extension>
 		<mime-type>video/iso.segment</mime-type>
 	</mime-mapping>
+	
+	<mime-mapping>
+		<extension>mjs</extension>
+		<mime-type>text/javascript</mime-type>
+	</mime-mapping>
 
 	<filter>
 		<filter-name>RestJWTAuthenticationFilter</filter-name>
@@ -156,6 +193,16 @@
 	<filter-mapping>
 		<filter-name>RestJWTAuthenticationFilter</filter-name>
 		<url-pattern>/rest/*</url-pattern>
+	</filter-mapping>
+	
+	<filter>
+		<filter-name>ContentSecurityPolicyHeaderFilter</filter-name>
+		<filter-class>io.antmedia.filter.ContentSecurityPolicyHeaderFilter</filter-class>
+		<async-supported>true</async-supported>
+	</filter>
+	<filter-mapping>
+		<filter-name>ContentSecurityPolicyHeaderFilter</filter-name>
+		<url-pattern>/*</url-pattern>
 	</filter-mapping>
 
 	<filter>
