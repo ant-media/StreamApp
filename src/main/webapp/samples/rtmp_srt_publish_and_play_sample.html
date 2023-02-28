@@ -1,0 +1,87 @@
+<html>
+<head>
+<title>WebRTC Samples > Audio Play</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="UTF-8">
+<link rel="stylesheet" href="../css/external/bootstrap4/bootstrap.min.css">
+<link rel="stylesheet" href="../css/common.css" />
+<link rel="stylesheet" href="../css/samples.css" />
+<script src="../js/external/adapter-latest.js"></script>
+
+</head>
+<body>
+	<div>
+		<div class="jumbotron">
+			<div class="alert alert-primary text-center enterprise-feature" role="alert" style="margin-top:-2em">
+			WebRTC Playback is an enterprise edition feature. <br/>
+			<a href="https://antmedia.io">Try Enterprise Edition for free at antmedia.io</a> <br/><br/>
+			</div>
+			<div class="form-group col-sm-12 text-center">
+				<iframe id="embedded-player" class="embedded-player" ></iframe>
+			</div>
+			<div class="form-group col-sm-12 text-center">
+				<div class="form-group col-sm-12 text-center">
+					Publish Stream to <div id="urlToPublish"></div>
+				</div>
+				<div class="form-group text-center" style="margin-bottom: 8px;font-size:1em;">
+					<a id="documentLink" target="_blank" data-toggle="tooltip" title="" data-original-title="Opens in New Tab">Learn How to Publish</a>
+				</div>
+			</div>
+		</div>
+		<footer class="footer text-left">
+			<div class="row">
+				<div class="col-sm-6 text-left"><a target="_parent" href="https://github.com/ant-media/StreamApp/tree/master/src/main/webapp/samples/rtmp_srt_publish_and_play_sample.html">View Source on Github</a></div>
+				<div class="col-sm-6 text-right">
+					<a href="http://antmedia.io" target="_parent">antmedia.io</a>
+				</div>
+			</div>
+		</footer>
+	</div>
+	<script src="../js/external/jquery-3.4.1.min.js" crossorigin="anonymous"></script>
+	<script src="../js/external/popper.min.js" crossorigin="anonymous"></script>
+	<script src="../js/external/bootstrap.min.js" crossorigin="anonymous"></script>
+</body>
+<script type="module">
+	import {WebRTCAdaptor} from "../js/webrtc_adaptor.js"
+	import {getUrlParameter} from "../js/fetch.stream.js" 
+    import { generateRandomString, getSrtURL, getRtmpUrl } from "../js/utility.js"
+    
+	var id = getUrlParameter("id");	  
+
+	var streamId = "stream1";
+	if (typeof id != "undefined") {
+		streamId = id;
+	}
+	else {
+		streamId = "streamId_" + generateRandomString(9);
+	}
+    
+	var publishType = getUrlParameter("publish");
+	var playType = getUrlParameter("play");
+
+	var url;
+	var documentLink;
+	if (publishType == "srt") {
+		url = getSrtURL(location, streamId, 4200);
+		documentLink = "https://antmedia.io/docs/category/srt/";
+	}
+	else {
+		url = getRtmpUrl(location, streamId);
+		documentLink = "https://antmedia.io/docs/category/rtmp/";
+	}
+
+	if (playType != "webrtc" && playType != "hls" && playType != "dash") {
+		playType = "webrtc";
+	}
+
+	let embeddedPlayer = document.getElementById("embedded-player");
+	embeddedPlayer.src = "../play.html?id=" + streamId + "&playOrder="+playType;	
+
+	let publishingURL = document.getElementById("urlToPublish");
+	publishingURL.innerText = url;
+
+	let documentLinkTag = document.getElementById("documentLink");
+	documentLinkTag.href = documentLink
+
+</script>
+</html>

@@ -1,55 +1,15 @@
 <!doctype html>
 <html lang="en">
 <head>
-<title>Ant Media Server WebRTC Player</title>
+<title>WebRTC Samples > Play</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta charset="UTF-8">
 <link rel="stylesheet" href="css/external/bootstrap4/bootstrap.min.css" />
 <script src="js/external/adapter-latest.js"></script>
+<link rel="stylesheet" href="css/samples.css" />
 <link rel="stylesheet" href="css/common.css" />
 <style>
-video {
-	width: 100%;
-	max-width: 640px;
-}
 
-/* Everything but the jumbotron gets side spacing for mobile first views */
-.header, .marketing, .footer {
-	padding: 15px;
-}
-
-/* Custom page header */
-.header {
-	padding-bottom: 20px;
-}
-
-/* Customize container */
-@media ( min-width : 768px) {
-	.container {
-		max-width: 730px;
-	}
-}
-
-.container-narrow>hr {
-	margin: 30px 0;
-}
-
-/* Main marketing message and sign up button */
-.jumbotron {
-	text-align: center;
-}
-
-/* Responsive: Portrait tablets and up */
-@media screen and (min-width: 768px) {
-	/* Remove the padding we set earlier */
-	.header, .marketing, .footer {
-		padding-right: 0;
-		padding-left: 0;
-	}
-}
-.options {
-		display:none;
-	}
 #video-overlay {
 	position: absolute;
 	left: 25%;
@@ -62,13 +22,6 @@ video {
 	width: 25%;
 }
 
-.message_area {
-	height: 300px;
-	overflow-y: auto;
-	border-style: groove;
-	border-width: thin;
-	background-color: white;
-}
 </style>
 </head>
 <body>
@@ -76,21 +29,15 @@ video {
 	<div class="container">
 		<div class="header clearfix">
 			<div class="row">
-				<h3 class="col text-muted">WebRTC Play</h3>
-				<nav class="col align-self-center">
-					<ul class="nav float-right">
-						<li><a href="http://antmedia.io">Contact</a></li>
-					</ul>
-				</nav>
+				<h3 class="col text-muted"><a href="samples.html">WebRTC Samples</a> > Play</h3>
 			</div>
 		</div>
 
 
 		<div class="jumbotron">
 			<div class="alert alert-primary text-center enterprise-feature" role="alert" style="margin-top:-2em">
-				WebRTC Playback is an Enterprise Edition. <br/>
+				WebRTC Playback is an enterprise edition feature. <br/>
 				<a href="https://antmedia.io">Try Enterprise Edition for free at antmedia.io</a> <br/><br/>
-				<a href="https://github.com/ant-media/Ant-Media-Server/wiki#community-edition--enterprise-edition" style="font-size:12px">Comparison between Community and Enterprise</a>		 
 			</div>
 			<div class="col-sm-12 form-group">
 				<div id='video-overlay'>
@@ -169,9 +116,7 @@ video {
 
 		</div>
 		<footer class="footer text-center">
-			<p>
-				<a href="http://antmedia.io">Ant Media Server</a>
-			</p>
+			<p><a href="http://antmedia.io">antmedia.io</a></p>
 		</footer>
 	</div>
 

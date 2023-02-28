@@ -40,6 +40,7 @@
 	<bean id="acceptOnlyStreamsWithWebhook" class="io.antmedia.security.AcceptOnlyStreamsWithWebhook"/>
 	
 	<bean id="hls.viewerstats" class="io.antmedia.statistic.HlsViewerStats" />
+	<bean id="dash.viewerstats" class="io.antmedia.statistic.DashViewerStats" />
 	
 	<bean id="token.service"
 		class="#{ T(io.antmedia.rest.RestServiceBase).isEnterprise() ? 'io.antmedia.enterprise.security.TokenService' : 'io.antmedia.security.MockTokenService' }">

@@ -8,6 +8,7 @@
 	<script src="js/external/adapter-latest.js"></script>
 
 	<link href="css/player.css" rel="stylesheet">
+
 </head>
 
 <body>
@@ -23,27 +24,22 @@
 		</div>
 	</div>
 
-	<!-- HLS Player -->
+	<!-- HLS & WebRTC Player -->
 	<div id="video_container">
 		<video id="video-player" class="video-js vjs-default-skin vjs-big-play-centered" controls preload="auto">
 			<p class="vjs-no-js">
 				To view this video please enable JavaScript, and consider upgrading
 				to a web browser that <a href="http://videojs.com/html5-video-support/" target="_blank">supports
-					HTML5 video</a>
+				HTML5 video</a>
 			</p>
 		</video>
 	</div>
 
-	<!-- WebRTC Player -->
-
-	<video id="remoteVideo" controls playsinline></video>
-
 	<!-- 360 player is added dynamically -->
-	
 
 	<div id="networkWarning">Your connection isn't fast enough to play this stream!</div>
 	<img id="play_button" src="images/play.png" onclick="playWebRTCVideo()"
-		style="position: absolute; top: 30px; left: 30px; display: none;" />
+	style="position: absolute; top: 30px; left: 30px; display: none;" />
 
 
 	<!-- Mute/Unmute Video Button -->
@@ -51,10 +47,9 @@
 		Unmute
 	</button>
 
-
 	<script type="module">
 		/**
-		* This page accepts following arguments. 
+		* This page accepts following arguments.
 		* 1. "id": the stream id to play.It is mandatory
 		* 2. "token": the token to play stream. It's mandatory if token security is enabled on server side.
 		* 3. "autoplay": To start playing automatically if streams is available. Optional. Default value is true
@@ -64,12 +59,11 @@
 		* 6. "playType": the order which play type is used in playing. Optional. Default value is "mp4,webm".
 		*     possible values are "webm,mp4"","mp4","webm","mov"
 		* 7. "targetLatency": To define target latency for the DASH player. Optional. Default value is 3.
-		* 8. "is360": To play the stream in 360. Default value is false. 
+		* 8. "is360": To play the stream in 360. Default value is false.
 		*/
 
-		import { WebRTCAdaptor } from "./js/webrtc_adaptor.js"
 		import { getUrlParameter, isMobile, tryToPlay, tryToVODPlay } from "./js/fetch.stream.js";
-		
+
 		var playOrder = getUrlParameter("playOrder");
 		if (playOrder == null) {
 			playOrder = ["webrtc", "hls"];
@@ -79,24 +73,54 @@
 		}
 		//make play order global to let the other module access it
 		window.playOrder = playOrder;
-		
+
 		var head = document.getElementsByTagName('head')[0];
-		if (playOrder.includes("hls") || playOrder.includes("vod")) {
-			//include videojs -> js
-			
-			var js = document.createElement("script");
-			js.type = "text/javascript";
-			js.src = "js/external/video.js";
-			head.appendChild(js);
+		if (playOrder.includes("hls") || playOrder.includes("vod") || playOrder.includes("webrtc")) {
 
 			//include videojs -> css
-			var link = document.createElement("link");
-			link.rel = "stylesheet";
-			link.href = "css/external/video-js.css";
-			head.appendChild(link);
+			var videoJsExternalCss = document.createElement("link");
+			videoJsExternalCss.setAttribute("rel", "stylesheet");
+			videoJsExternalCss.setAttribute("type", "text/css");
+			videoJsExternalCss.setAttribute("href", "css/external/video-js.css");
+			document.head.appendChild(videoJsExternalCss);
+
+			//include videojs -> js
+			var videoJsExternalJs = document.createElement("script");
+			videoJsExternalJs.type = "text/javascript";
+			videoJsExternalJs.src = "js/external/video.js";
+			videoJsExternalJs.async = false;
+			document.head.appendChild(videoJsExternalJs);
+
+			// These files should call after videojs file loaded completely
+			videoJsExternalJs.onload = function() {
+
+				var videoJsQualityLevel = document.createElement("script");
+				videoJsQualityLevel.type = "text/javascript";
+				videoJsQualityLevel.src = "js/external/videojs-contrib-quality-levels.min.js";
+				head.appendChild(videoJsQualityLevel);
+
+				var videoJsQualitySelector = document.createElement("script");
+				videoJsQualitySelector.type = "text/javascript";
+				videoJsQualitySelector.src = "js/external/videojs-hls-quality-selector.min.js";
+				head.appendChild(videoJsQualitySelector);
+
+			}
 		}
 
-		if (playOrder.includes("dash")) 
+		if(playOrder.includes("webrtc")){
+			var webrtcVideoJsExternalCss = document.createElement("link");
+			webrtcVideoJsExternalCss.setAttribute("rel", "stylesheet");
+			webrtcVideoJsExternalCss.setAttribute("type", "text/css");
+			webrtcVideoJsExternalCss.setAttribute("href", "css/videojs-webrtc-plugin.css");
+			document.head.appendChild(webrtcVideoJsExternalCss);
+
+			var webrtcVideoJsExternalJs = document.createElement("script");
+			webrtcVideoJsExternalJs.type = "text/javascript";
+			webrtcVideoJsExternalJs.src = "js/videojs-webrtc-plugin.js";
+			webrtcVideoJsExternalJs.async = false;
+			document.head.appendChild(webrtcVideoJsExternalJs);
+		}
+		if (playOrder.includes("dash"))
 		{
 			var js = document.createElement("script");
 			js.type = "text/javascript";
@@ -110,19 +134,19 @@
 			hlsJS.type = "text/javascript";
 			hlsJS.src = "js/external/hls.js";
 			head.appendChild(hlsJS);
-			
+
 			var aframeJS = document.createElement("script");
 			aframeJS.type = "text/javascript";
 			aframeJS.src = "js/external/aframe.min.js";
 
 			aframeJS.onload = function() {
 				var aScene = document.createElement("a-scene");
-				aScene.innerHTML = "<a-videosphere src=\"#remoteVideo\" rotation=\"0 180 0\" style=\"background-color: antiquewhite\"></a-videosphere>";
+				aScene.innerHTML = "<a-videosphere src=\"#video-player\" rotation=\"0 180 0\" style=\"background-color: antiquewhite\"></a-videosphere>";
 				var body = document.getElementsByTagName('body')[0];
 				body.appendChild(aScene);
 			}
 			head.appendChild(aframeJS);
-			
+
 
 			is360 = true;
 		}
@@ -131,8 +155,8 @@
 		}
 
 		window.is360 = is360;
-		
-		
+
+		var handleConnectivityCallDateTimeMs = 0;
 
 
 		var streamId = getUrlParameter("id");
@@ -184,7 +208,7 @@
 
 		var unMuteButton = document.getElementById("unmuteButton");
 		var placeHolder = document.getElementById("video_info");
-		var player = document.getElementById("remoteVideo");
+		var player = document.getElementById("video-player");
 
 		var iceConnected = false;
 
@@ -194,8 +218,8 @@
 		function createVrVideo() {
 			var vrScene = document.createElement("a-scene");
 			vrScene.style.display = "none";
-			vrScene.innerHTML = '<a-videosphere src="#remoteVideo" rotation="0 180 0" style="background-color: antiquewhite"></a-videosphere>';
-			var remoteVideoNode = document.getElementById("remoteVideo");
+			vrScene.innerHTML = '<a-videosphere src="#video-player" rotation="0 180 0" style="background-color: antiquewhite"></a-videosphere>';
+			var remoteVideoNode = document.getElementById("video-player");
 			remoteVideoNode.parentNode.insertBefore(vrScene, remoteVideoNode.nextSibling);
 		}
 
@@ -215,7 +239,6 @@
 			}
 		}
 
-		var webRTCAdaptor = null;
 		var streamsFolder = "streams";
 
 		function genericCallback(currentTech) {
@@ -247,12 +270,7 @@
 
 				if (tech == "webrtc") {
 					// It means there is no HLS stream, so try to play WebRTC stream
-					if (webRTCAdaptor == null) {
-						initializeWebRTCPlayer(streamId, token, webrtcNoStreamCallback);
-					}
-					else {
-						webRTCAdaptor.getStreamInfo(streamId);
-					}
+					initializeWebRTCPlayer(streamId, token, webrtcNoStreamCallback);
 				}
 				else if (tech == "hls") {
 					tryToPlay(streamId, token, hlsExtension, subscriberId, subscriberCode, hlsNoStreamCallback);
@@ -270,7 +288,7 @@
 		 * In some cases user may want to remove HLS from the order and force to play WebRTC only
 		 * in these cases player only waits for WebRTC streams
 		 */
-			genericCallback("webrtc");
+		 genericCallback("webrtc");
 		}
 
 		function hlsNoStreamCallback() {
@@ -291,17 +309,8 @@
 			genericCallback("dash");
 		}
 
-		function setHLSElementsVisibility(show) {
+		function setHLSWebRTCElementsVisibility(show) {
 			document.getElementById("video_container").style.display = show == true ? "block" : "none";
-		}
-
-		function hideWebRTCElements() {
-			setWebRTCElementsVisibility(false);
-			document.getElementById("play_button").style.display = "none";
-		}
-
-		function setWebRTCElementsVisibility(show) {
-			document.getElementById("remoteVideo").style.display = show == true ? "block" : "none";
 		}
 
 		function setPlaceHolderVisibility(show) {
@@ -313,22 +322,20 @@
 		}
 
 		function playWebRTCVideo() {
-			setWebRTCElementsVisibility(true);
+			setHLSWebRTCElementsVisibility(true);
 
-			if (is360) {
+			if (is360 && mute) {
 				unMuteButton.style.display = "block";
+				unMuteButton.innerText = "Unmute";
+			} else if(is360) {
+				unMuteButton.style.display = "block";
+				unMuteButton.innerText = "Mute";
+			} else {
+				unMuteButton.style.display = "none";
 			}
 
-			if (mute) {
-				document.getElementById("remoteVideo").muted = true;
-				unMuteButton.innerText = "Unmute";
-			}
-			else {
-				document.getElementById("remoteVideo").muted = false;
-				unMuteButton.innerText = "Mute";
-			}
 			if (autoPlay) {
-				document.getElementById("remoteVideo").play().then(function (value) {
+				player.play().then(function (value) {
 					//autoplay started
 					document.getElementById("play_button").style.display = "none";
 
@@ -341,7 +348,6 @@
 
 
 		function initializePlayer(streamId, extension, token, subscriberId, subscriberCode) {
-			hideWebRTCElements();
 			startPlayer(streamId, extension, token, subscriberId, subscriberCode)
 		}
 
@@ -351,6 +357,7 @@
 
 		function startPlayer(streamId, extension, token, subscriberId, subscriberCode) {
 
+			var errorCalled = false;
 			var type;
 			var liveStream = false;
 			if (extension == "mp4") {
@@ -389,7 +396,7 @@
 				preview = streamId.substring(0, streamId.indexOf("_adaptive"));
 			}
 
-			var player = document.getElementById('remoteVideo');
+			var player = document.getElementById('video-player');
 
 			if (!is360) {
 				// If it's not dash, play with videojs
@@ -401,29 +408,35 @@
 						liveTracker: {
 							trackingThreshold: 0
 						},
+						html5: {
+    					vhs: {
+      							limitRenditionByPlayerDimensions: false
+    						}
+    					}
 					});
+
+					player.on('error', function (e) {
+					    console.log("There is an error with chunks");
+					    // We need to add this kind of check. If we don't add this kind of checkpoint, it will create an infinite loop
+					    if(!errorCalled){
+					     	setTimeout(() => {
+					    		errorCalled = true;
+ 								tryToPlay(streamId, token, extension, subscriberId, subscriberCode, hlsNoStreamCallback);
+							}, 2500)
+						}
+    				})
 
 					videojs.Hls.xhr.beforeRequest = function (options) {
 						options.uri = options.uri + "?token=" + token + "&subscriberId=" + subscriberId + "&subscriberCode=" + subscriberCode;
 						return options;
 					};
 
-					if (token != null || typeof token != "undefined") {
-						player.src({
-							src: "streams/" + streamId + "." + extension + "?token=" + token,
-							type: type,
-							withCredentials: true,
+					player.src({
+						src: "streams/" + streamId + "." + extension,
+						type: type,
+						withCredentials: true,
+					});
 
-						});
-					}
-					else {
-						player.src({
-							src: "streams/" + streamId + "." + extension,
-							type: type,
-							withCredentials: true,
-
-						});
-					}
 
 					player.poster("previews/" + preview + ".png");
 
@@ -436,15 +449,53 @@
 
 					if (autoPlay) {
 						player.ready(function () {
+							// If it's already added to player, no need to add again
+							if(typeof player.hlsQualitySelector === "function"){
+								player.hlsQualitySelector({
+          							displayCurrentQuality: true,
+      							});
+							}
+
+							// If there is no adaptive option in m3u8 no need to show quality selector
+      						let qualityLevels = player.qualityLevels();
+							qualityLevels.on('addqualitylevel', function (event) {
+							let qualityLevel = event.qualityLevel;
+							if (qualityLevel.height) {
+								qualityLevel.enabled = true;
+							} else {
+								qualityLevels.removeQualityLevel(qualityLevel);
+								qualityLevel.enabled = false;
+							}
+							});
+
 							player.play();
 						});
 					}
 				}
 				else {
 					player = dashjs.MediaPlayer().create();
+					player.extend("RequestModifier", function () {
+						return {
+							modifyRequestHeader: function (xhr, {url}) {
+								return xhr;
+							},
+							modifyRequestURL: function (url) {
+								var modifiedUrl = ""
+								if(!url.includes("token")){
+									modifiedUrl = url + "?token=" + token
+								}else{
+									modifiedUrl = url
+								}
+								console.log(modifiedUrl)
+								return  modifiedUrl
+							},
+							modifyRequest(request) {
+
+							},
+						};
+        			});
 
 					player.updateSettings({ 'streaming': { 'lowLatencyEnabled': true } });
-
 					player.updateSettings({
 						'streaming': {
 							'liveDelay': targetLatency,
@@ -453,8 +504,7 @@
 							"liveCatchupLatencyThreshold": 30,
 						}
 					});
-
-					player.initialize(document.querySelector("#video-player"), "streams/" + streamId + "." + extension + "?token=" + token, false);
+					player.initialize(document.querySelector("#video-player"), "streams/" + streamId + "." + extension , false);
 
 					if (mute) {
 						player.setMute(true);
@@ -477,7 +527,7 @@
 				if (extension == hlsExtension) {
 
 					// We need to call again due to creating 360 video elements
-					player = document.getElementById('remoteVideo');
+					player = document.getElementById('video-player');
 
 					if (mute) {
 						player.muted = true;
@@ -505,7 +555,7 @@
 				}
 				else {
 					// We need to call again due to creating 360 video elements
-					player = document.getElementById('remoteVideo');
+					player = document.getElementById('video-player');
 
 					player.src = "streams/" + streamId + "." + extension + "?token=" + token + "&subscriberId=" + subscriberId + "&subscriberCode=" + subscriberCode;
 
@@ -522,7 +572,7 @@
 				}
 
 				if (autoPlay) {
-					document.getElementById("remoteVideo").play().then(function (value) {
+					document.getElementById("video-player").play().then(function (value) {
 						//autoplay started
 						document.getElementById("play_button").style.display = "none";
 						unMuteButton.innerText = "Unmute";
@@ -536,15 +586,13 @@
 
 
 			if (!is360) {
-				setHLSElementsVisibility(true);
-				setWebRTCElementsVisibility(false);
+				setHLSWebRTCElementsVisibility(true);
 				if (typeof player.ready != "undefined") {
 					player.ready(function () {
 						var player = this;
 						player.on('ended', function () {
 							console.log("is360: " + is360 + " Playing has been finished");
-							hideWebRTCElements();
-							setHLSElementsVisibility(false);
+							setHLSWebRTCElementsVisibility(false);
 							setPlaceHolderVisibility(true);
 							tryToPlay(streamId, token, extension, subscriberId, subscriberCode, hlsNoStreamCallback);
 						});
@@ -553,20 +601,46 @@
 
 			}
 			else if (is360) {
-				setHLSElementsVisibility(false);
+				setHLSWebRTCElementsVisibility(false);
 				player.addEventListener("ended", (e) => {
 					console.log("is360: " + is360 + " Playing has been finished");
-					hideWebRTCElements();
-					setHLSElementsVisibility(false);
+					setHLSWebRTCElementsVisibility(false);
 					setPlaceHolderVisibility(true);
 					tryToPlay(streamId, token, extension, subscriberId, subscriberCode, hlsNoStreamCallback);
 				});
-				setWebRTCElementsVisibility(true);
 			}
 			else {
 				console.log("player ready is not available. List playing may not be continous");
 			}
 			setPlaceHolderVisibility(false);
+		}
+
+		function handleWebRTCConnectivity(noStreamCallback)
+		{
+			var currentTimeMs = (new Date()).getTime();
+			//call if it's more than 3 seconds older
+			if (currentTimeMs >  (handleConnectivityCallDateTimeMs + 3000))
+			{
+				handleConnectivityCallDateTimeMs = currentTimeMs;
+				if (iceConnected)
+				{
+					//webrtc connection was successful and try to play again with webrtc
+					setTimeout(function () {
+						webRTCAdaptor.getStreamInfo(streamId);
+					}, 3000);
+					console.log("Trying to play with webrtc again");
+				}
+				else
+				{
+					//webrtc connection was not succesfull, switch the next play type(playOrder) if available
+					if (typeof noStreamCallback != "undefined") {
+						noStreamCallback();
+						console.log("Trying to play with other tech than webrtc if available");
+					}
+				}
+				//make the flag false to try other technologies
+				iceConnected = false;
+			}
 		}
 
 
@@ -575,140 +649,108 @@
 			if (is360) {
 				show360ElementsVisibility();
 			}
-			setHLSElementsVisibility(false);
 
-			var pc_config = {
-				'iceServers': [{
-					'urls': 'stun:stun1.l.google.com:19302'
-				}]
-			};
-
-
-			var sdpConstraints = {
-				OfferToReceiveAudio: true,
-				OfferToReceiveVideo: true
-
-			};
-			var mediaConstraints = {
-				video: false,
-				audio: false
-			};
+			setHLSWebRTCElementsVisibility(false);
+			setPlaceHolderVisibility(true);
 
 			var appName = location.pathname.substring(0, location.pathname.lastIndexOf("/") + 1);
-			var path = location.hostname + ":" + location.port + appName + "websocket";
+			var path = location.hostname + ":" + location.port + appName + streamId + ".webrtc";
 			var websocketURL = "ws://" + path;
 
 			if (location.protocol.startsWith("https")) {
 				websocketURL = "wss://" + path;
 			}
 
-			iceConnected = false;
+			player = videojs('video-player');
 
-			//webRTCAdaptor is a global variable
-			webRTCAdaptor = new WebRTCAdaptor({
-				websocket_url: websocketURL,
-				mediaConstraints: mediaConstraints,
-				peerconnection_config: pc_config,
-				sdp_constraints: sdpConstraints,
-				remoteVideoId: "remoteVideo",
-				isPlayMode: true,
-				debug: true,
-				callback: function (info, description) {
-					if (info == "initialized") {
-						console.log("initialized");
-						iceConnected = false;
-						webRTCAdaptor.getStreamInfo(streamId);
-					}
-					else if (info == "streamInformation") {
-						console.log("stream information");
-						webRTCAdaptor.play(streamId, token, "",[] ,subscriberId, subscriberCode);
-					}
-					else if (info == "play_started") {
-						//joined the stream
-						console.log("play started");
-						setPlaceHolderVisibility(false);
-						setHLSElementsVisibility(false);
-						playWebRTCVideo();
-					} else if (info == "play_finished") {
-						//leaved the stream
-						console.log("play finished");
-						setHLSElementsVisibility(false);
-						hideWebRTCElements();
-						setPlaceHolderVisibility(true);
-						//if play_finished event is received, it has two meanings
-						//1. stream is really finished 
-						//2. ice connection cannot be established and server reports play_finished event
-						//check that publish may start again
-						if (iceConnected) {
-							//webrtc connection was successful and try to play again with webrtc
-							setTimeout(function () {
-								webRTCAdaptor.getStreamInfo(streamId);
-							}, 3000);
-						}
-						else {
-							//webrtc connection was not succesfull, switch the next play type(playOrder) if available 
-							if (typeof noStreamCallback != "undefined") {
-								noStreamCallback();
-							}
-						}
-					}
-					else if (info == "closed") {
-						//console.log("Connection closed");
-						if (typeof description != "undefined") {
-							console.log("Connecton closed: " + JSON.stringify(description));
-						}
-					}
-					else if (info == "bitrateMeasurement") {
+			player.src({
+				src: websocketURL,
+				iceServers: '[ { "urls": "stun:stun1.l.google.com:19302" } ]'
+			});
 
-						if (!document.getElementById("remoteVideo").paused) {
-							document.getElementById("play_button").style.display = "none";
-						}
+			player.on('webrtc-info', function(event, infos) {
+				if (infos["info"] == "initialized") {
+					console.log("initialized");
+				}
+				else if (infos["info"] == "play_started") {
+					//joined the stream
+					console.log("play started");
+					setPlaceHolderVisibility(false);
+					setHLSWebRTCElementsVisibility(false);
+					playWebRTCVideo();
+				}
+				else if (infos["info"] == "play_finished") {
+					//leaved the stream
+					console.log("play finished");
+					setHLSWebRTCElementsVisibility(true);
+					setPlaceHolderVisibility(true);
+					//webrtc connection was not succesfull, switch the next play type(playOrder) if available
+					if (typeof noStreamCallback != "undefined") {
+						noStreamCallback();
+					}
+				}
+				else if (infos["info"] == "closed") {
+					//console.log("Connection closed");
+					if (typeof infos["obj"] != "undefined") {
+						console.log("Connecton closed: " + JSON.stringify(infos["obj"]));
+					}
+				}
+				else if (infos["info"] == "bitrateMeasurement") {
 
-						console.debug(description);
-						if (description.audioBitrate + description.videoBitrate > description.targetBitrate) {
-							document.getElementById("networkWarning").style.display = "block";
-							setTimeout(function () {
-								document.getElementById("networkWarning").style.display = "none";
-							}, 3000);
-						}
+					if (!document.getElementById("video-player").paused) {
+						document.getElementById("play_button").style.display = "none";
 					}
-					else if (info == "ice_connection_state_changed") {
-						console.debug("ice connection state changed to " + description.state);
-						if (description.state == "connected" || description.state == "completed") {
-							//it means the ice connection has been established
-							iceConnected = true;
-						}
-					}
-					else if (info == "resolutionChangeInfo") {
-						console.log("Resolution is changed to " + description["streamHeight"]);
-						let getVideo = document.getElementById("remoteVideo");
-						let overlay = document.getElementById('video-overlay');
-						getVideo.pause();
-						overlay.style.display = "block";
-						setTimeout(function () { getVideo.play(); overlay.style.display = "none"; }, 2000);
+					else if (info == "server_will_stop") {
+						console.log("Server will stop soon");
+						//No need to handle this event because "closed" event will be called soon
 					}
 
-				},
-				callbackError: function (error) {
-					//some of the possible errors, NotFoundError, SecurityError,PermissionDeniedError
-
-					console.log("error callback: " + JSON.stringify(error));
-
-					if (error == "no_stream_exist") {
-
-						if (typeof noStreamCallback != "undefined") {
-							noStreamCallback();
-						}
+					console.debug(infos["obj"]);
+					if (infos["obj"].audioBitrate + infos["obj"].videoBitrate > infos["obj"].targetBitrate) {
+						document.getElementById("networkWarning").style.display = "block";
+						setTimeout(function () {
+							document.getElementById("networkWarning").style.display = "none";
+						}, 3000);
 					}
-					if (error == "notSetRemoteDescription") {
+				}
+				else if (infos["info"] == "ice_connection_state_changed") {
+					console.debug("ice connection state changed to " + infos["obj"].state);
+				}
+				else if (infos["info"] == "resolutionChangeInfo") {
+					console.log("Resolution is changed to " + infos["obj"]["streamHeight"]);
+					let getVideo = document.getElementById("video-player");
+					let overlay = document.getElementById('video-overlay');
+					getVideo.pause();
+					overlay.style.display = "block";
+					setTimeout(function () { getVideo.play(); overlay.style.display = "none"; }, 2000);
+				}
+			});
+
+			player.on('webrtc-error', function(event, errors) {
+				//some of the possible errors, NotFoundError, SecurityError,PermissionDeniedError
+				console.log("error callback: " + JSON.stringify(errors));
+
+				if (errors["error"] == "no_stream_exist") {
+
+					if (typeof noStreamCallback != "undefined") {
+						noStreamCallback();
+					}
+				}
+				else if (errors["error"] == "notSetRemoteDescription") {
 						/*
 						* If getting codec incompatible or remote description error, it will redirect HLS player.
 						*/
 						tryToPlay(streamId, token, hlsExtension, subscriberId, subscriberCode, hlsNoStreamCallback);
-
-					}
 				}
 			});
+
+			if (mute) {
+				player.muted(true);
+			}
+			else{
+				player.muted(false);
+			}
+
 		}
 
 		function main() {
@@ -727,34 +769,34 @@
 				else {
 					/*
 					 * Check that which one is in the first order
-					*/
-					if (playOrder[0] == "webrtc") {
-						initializeWebRTCPlayer(streamId, token, subscriberId, subscriberCode, webrtcNoStreamCallback);
-					}
-					else if (playOrder[0] == "hls") {
-						tryToPlay(streamId, token, hlsExtension, subscriberId, subscriberCode, hlsNoStreamCallback);
-					}
-					else if (playOrder[0] == "vod") {
-						tryToVODPlay(streamId, token, subscriberId, subscriberCode, vodNoStreamCallback, playType);
-					}
-					else if (playOrder[0] == "dash") {
-						tryToPlay(streamId, token, dashExtension, subscriberId, subscriberCode, dashNoStreamCallback);
-					}
-					else {
-						alert("Unsupported play order requested. Supported formats are webrtc and hls. Use something like playOrder=webrtc,hls");
+					 */
+					 if (playOrder[0] == "webrtc") {
+					 	initializeWebRTCPlayer(streamId, token, subscriberId, subscriberCode, webrtcNoStreamCallback);
+					 }
+					 else if (playOrder[0] == "hls") {
+					 	tryToPlay(streamId, token, hlsExtension, subscriberId, subscriberCode, hlsNoStreamCallback);
+					 }
+					 else if (playOrder[0] == "vod") {
+					 	tryToVODPlay(streamId, token, subscriberId, subscriberCode, vodNoStreamCallback, playType);
+					 }
+					 else if (playOrder[0] == "dash") {
+					 	tryToPlay(streamId, token, dashExtension, subscriberId, subscriberCode, dashNoStreamCallback);
+					 }
+					 else {
+					 	alert("Unsupported play order requested. Supported formats are webrtc and hls. Use something like playOrder=webrtc,hls");
+					 }
 					}
 				}
+				else {
+					alert("No stream specified. Please add ?id={STREAM_ID}  to the url");
+				}
 			}
-			else {
-				alert("No stream specified. Please add ?id={STREAM_ID}  to the url");
-			}
-		}
 
-		window.addEventListener('load', function() {
+			window.addEventListener('load', function() {
 			//run main method after everything is loaded
-    		main();
+			main();
 		});
-		
+
 	</script>
 
 </body>

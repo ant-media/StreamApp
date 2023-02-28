@@ -3,7 +3,6 @@ import {WebSocketAdaptor} from "./websocket_adaptor.js"
 import {MediaManager} from "./media_manager.js" 
 import {SoundMeter} from "./soundmeter.js" 
 
-
 /**
  * This structure is used to handle large size data channel messages (like image)
  * which should be splitted into chunks while sending and receiving.
@@ -39,18 +38,44 @@ class ReceivingMessage{
  */
 export class WebRTCAdaptor
 {
+	static pluginInitMethods = new Array();
+	/**
+	 * Register plugins to the WebRTCAdaptor
+	 * @param {*} plugin 
+	 */
+	static register(pluginInitMethod) {
+		WebRTCAdaptor.pluginInitMethods.push(pluginInitMethod);
+	}
+
 	constructor(initialValues){
 		/**
-		 * Used while initializing the PeerConnection
+		 * PeerConnection configuration while initializing the PeerConnection. 
 		 * https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection/RTCPeerConnection#parameters
+		 * 
+		 * More than one STURN and/or TURN servers can be added.  Here is a typical turn server configuration
+		 *  
+		 *	{ 
+	     * 	  urls: "",
+		 *	  username: "",
+		 *    credential: "",
+		 *	}
+		 *
+		 *  Default value is the google stun server	
 		 */
-		this.peerconnection_config = null;
+		this.peerconnection_config = {
+			'iceServers' : [ {
+				'urls' : 'stun:stun1.l.google.com:19302'
+			} ]
+		};
 
 		/**
 		 * Used while creating SDP (answer or offer)
 		 * https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection/createOffer#parameters
 		 */
-		this.sdp_constraints = null;
+		this.sdp_constraints = {
+			OfferToReceiveAudio : false,
+			OfferToReceiveVideo : false
+		};;
 
 		/**
 		 * This keeps the PeerConnections for each stream id.
@@ -166,9 +191,20 @@ export class WebRTCAdaptor
 		 * if candidate protocol is in the list below.
 		 */
 		this.candidateTypes = ["udp", "tcp"];
-		
+
+
 		/**
-		 * The values of the above fields are provided as this constructor parameter.
+		 * Method to call when there is an event happened
+		 */
+		this.callback = null;
+
+		/**
+		 * Method to call when there is an error happened 
+		 */
+		this.callbackError = null;
+
+		/**
+		 * PAY ATTENTION: The values of the above fields are provided as this constructor parameter.
 		 * TODO: Also some other hidden parameters may be passed here
 		 */
 		for(var key in initialValues) {
@@ -180,7 +216,7 @@ export class WebRTCAdaptor
 		/**
 		 * The html video tag for receiver is got here
 		 */
-		this.remoteVideo = document.getElementById(this.remoteVideoId);
+		this.remoteVideo = this.remoteVideoElement || document.getElementById(this.remoteVideoId);
 
 		/**
 		  * Keeps the sound meters for each connection. Its index is stream id
@@ -193,6 +229,16 @@ export class WebRTCAdaptor
 		 this.soundLevelList = new Array();
 
 		/**
+		 * This is the event listeners that WebRTC Adaptor calls when there is a new event happened 
+		 */
+		this.eventListeners = new Array(); 
+
+		/**
+		 * This is the error event listeners that WebRTC Adaptor calls when there is an error happened
+		 */
+		this.errorEventListeners = new Array();
+
+		/**
 		 * All media management works for teh local stream are made by @MediaManager class.
 		 * for details please check @MediaManager
 		 */
@@ -200,14 +246,69 @@ export class WebRTCAdaptor
 			userParameters : initialValues,
 			webRTCAdaptor : this,
 
-			callback : (info, obj) => {this.callback(info, obj)},
-			callbackError : (error, message) => {this.callbackError(error, message)},
+			callback : (info, obj) => {this.notifyEventListeners(info, obj)},
+			callbackError : (error, message) => {this.notifyErrorEventListeners(error, message)},
 			getSender : (streamId, type) => {return this.getSender(streamId, type)},
 		});				
 		
 		//Initialize the local stream (if needed) and web socket connection
 		this.initialize();
-	} 
+	}
+
+	/**
+	 * Init plugins 
+	 */
+	initPlugins() {
+		WebRTCAdaptor.pluginInitMethods.forEach((initMethod) => {
+			initMethod(this);
+		});
+	}
+
+	/**
+	 * Add event listener to be notified. This is generally for plugins
+	 * @param {*} listener 
+	 */
+	addEventListener(listener) {
+		this.eventListeners.push(listener);
+	}
+
+	/**
+	 * Add error event listener to be notified. Thisis generally for plugins
+	 * @param {*} errorListener 
+	 */
+	addErrorEventListener(errorListener) {
+		this.errorEventListeners.push(errorListener);
+	}
+
+	/**
+	 * Notify event listeners and callback method
+	 * @param {*} info 
+	 * @param {*} obj 
+	 */
+	notifyEventListeners(info, obj) {
+		this.eventListeners.forEach((listener) => {
+			listener(info, obj);
+		});
+		if (this.callback != null) {
+			this.callback(info, obj);
+		}
+	}
+
+	/**
+	 * Notify error event listeners and callbackError method
+	 * @param {*} error 
+	 * @param {*} message 
+	 */
+	notifyErrorEventListeners(error, message) {
+		this.errorEventListeners.forEach((listener) => {
+			listener(error, message);
+		});
+		if (this.callbackError != null) {
+			this.callbackError(error, message);
+		}
+	}
+
+
 
 	/**
 	 * Called by constuctor to 
@@ -215,10 +316,20 @@ export class WebRTCAdaptor
 	 * 	-start websocket connection
 	 */
 	initialize() {
-		if (!this.isPlayMode && !this.onlyDataChannel && typeof this.mediaConstraints != "undefined" && this.mediaManager.localStream == null) {
+		if (!this.isPlayMode && !this.onlyDataChannel && this.mediaManager.localStream == null) {
 			//we need local stream because it not a play mode
-			this.mediaManager.initLocalStream();
+			this.mediaManager.initLocalStream().then(() => 
+			{
+				this.initPlugins();
+				this.checkWebSocketConnection();			
+			}).catch(error => {
+				console.warn(error);
+				throw error;
+			});
+			//return here because initialized message should be delivered after local stream is initialized
+			return;
 		}
+		this.initPlugins();
 		this.checkWebSocketConnection();
 	}
 
@@ -240,53 +351,47 @@ export class WebRTCAdaptor
 		//TODO: should refactor the repeated code  
 		this.publishStreamId = streamId;
 		this.mediaManager.publishStreamId = streamId;
-		if (this.onlyDataChannel) {
-			var jsCmd = {
-				command : "publish",
-				streamId : streamId,
-				token : token,
-				subscriberId: typeof subscriberId !== undefined ? subscriberId : "" ,
-				subscriberCode: typeof subscriberCode !== undefined ? subscriberCode : "",
-				streamName : typeof streamName !== undefined ? streamName : "" ,
-				mainTrack : typeof mainTrack !== undefined ? mainTrack : "" ,
-				video: false,
-				audio: false,
-				metaData: metaData,
-			};
+		if (this.onlyDataChannel) 
+		{
+			this.sendPublishCommand(streamId, token, subscriberId, subscriberCode, streamName, mainTrack, metaData, false, false);			
 		}
 		//If it started with playOnly mode and wants to publish now
-		else if(this.mediaManager.localStream == null){
-			this.mediaManager.navigatorUserMedia(this.mediaConstraints, (stream => {
-				this.mediaManager.gotStream(stream);
-				var jsCmd = {
-					command : "publish",
-					streamId : streamId,
-					token : token,
-					subscriberId: typeof subscriberId !== undefined ? subscriberId : "" ,
-					subscriberCode: typeof subscriberCode !== undefined ? subscriberCode : "",
-					streamName : typeof streamName !== undefined ? streamName : "" ,
-					mainTrack : typeof mainTrack !== undefined ? mainTrack : "" ,				
-					video: this.mediaManager.localStream.getVideoTracks().length > 0 ? true : false,
-					audio: this.mediaManager.localStream.getAudioTracks().length > 0 ? true : false,
-					metaData: metaData,
-				};
-				this.webSocketAdaptor.send(JSON.stringify(jsCmd));
-			}), false);
+ 		else if(this.mediaManager.localStream == null)
+ 		{
+			this.mediaManager.initLocalStream().then(() => 
+			{
+				var videoEnabled = this.mediaManager.localStream.getVideoTracks().length > 0 ? true : false;
+				var audioEnabled = this.mediaManager.localStream.getAudioTracks().length > 0 ? true : false;
+				this.sendPublishCommand(streamId, token, subscriberId, subscriberCode, streamName, mainTrack, metaData, videoEnabled, audioEnabled)
+					
+			}).catch(error => {
+				console.warn(error);
+				throw error;
+			});
 		} 
-		else{
-			var jsCmd = {
-					command : "publish",
-					streamId : streamId,
-					token : token,
-					subscriberId: typeof subscriberId !== undefined ? subscriberId : "" ,
-					subscriberCode: typeof subscriberCode !== undefined ? subscriberCode : "",
-					streamName : typeof streamName !== undefined ? streamName : "" ,
-					mainTrack : typeof mainTrack !== undefined ? mainTrack : "" ,
-					video: this.mediaManager.localStream.getVideoTracks().length > 0 ? true : false,
-					audio: this.mediaManager.localStream.getAudioTracks().length > 0 ? true : false,
-					metaData: metaData,
-			};
+		else
+		{
+			var videoEnabled = this.mediaManager.localStream.getVideoTracks().length > 0 ? true : false;
+			var audioEnabled = this.mediaManager.localStream.getAudioTracks().length > 0 ? true : false;
+			this.sendPublishCommand(streamId, token, subscriberId, subscriberCode, streamName, mainTrack, metaData, videoEnabled, audioEnabled)
+	
 		}
+		
+	}
+	
+	sendPublishCommand(streamId, token, subscriberId, subscriberCode, streamName, mainTrack, metaData, videoEnabled, audioEnabled) {
+		var jsCmd = {
+			command : "publish",
+			streamId : streamId,
+			token : token,
+			subscriberId: typeof subscriberId !== undefined ? subscriberId : "" ,
+			subscriberCode: typeof subscriberCode !== undefined ? subscriberCode : "",
+			streamName : typeof streamName !== undefined ? streamName : "" ,
+			mainTrack : typeof mainTrack !== undefined ? mainTrack : "" ,				
+			video: videoEnabled,
+			audio: audioEnabled,
+			metaData: metaData,
+		};
 		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
 	}
 
@@ -518,7 +623,7 @@ export class WebRTCAdaptor
 					streamId: streamId,
 					trackId: this.idMapping[streamId][event.transceiver.mid],
 			}
-			this.callback("newStreamAvailable", dataObj);
+			this.notifyEventListeners("newStreamAvailable", dataObj);
 		}
 
 	}
@@ -571,7 +676,7 @@ export class WebRTCAdaptor
 			else {
 				console.log("Candidate's protocol(full sdp: "+ event.candidate.candidate +") is not supported. Supported protocols: " + this.candidateTypes);
 				if (event.candidate.candidate != "") { //
-					this.callbackError("protocol_not_supported", "Support protocols: " + this.candidateTypes.toString() + " candidate: " + event.candidate.candidate);
+					this.notifyErrorEventListeners("protocol_not_supported", "Support protocols: " + this.candidateTypes.toString() + " candidate: " + event.candidate.candidate);
 				}
 			}
 		}
@@ -596,7 +701,7 @@ export class WebRTCAdaptor
 			};
 			console.log("channel status: ", dataChannel.readyState);
 			if (dataChannel.readyState != "closed") {
-				this.callbackError("data_channel_error", obj);
+				this.notifyErrorEventListeners("data_channel_error", obj);
 			}
 		};
 
@@ -609,7 +714,7 @@ export class WebRTCAdaptor
 			var data = obj.data;
 
 			if(typeof data === 'string' || data instanceof String){
-				this.callback("data_received", obj);
+				this.notifyEventListeners("data_received", obj);
 			}
 			else {
 				var length = data.length || data.size || data.byteLength;
@@ -637,7 +742,7 @@ export class WebRTCAdaptor
 
 				if(msg.size == msg.received) {
 					obj.data = msg.data;
-					this.callback("data_received", obj);
+					this.notifyEventListeners("data_received", obj);
 				}
 			}
 		};
@@ -645,12 +750,12 @@ export class WebRTCAdaptor
 		dataChannel.onopen = () => {
 			this.remotePeerConnection[streamId].dataChannel = dataChannel;
 			console.log("Data channel is opened");
-			this.callback("data_channel_opened", streamId)
+			this.notifyEventListeners("data_channel_opened", streamId)
 		};
 
 		dataChannel.onclose = () => {
 			console.log("Data channel is closed");
-			this.callback("data_channel_closed", streamId);
+			this.notifyEventListeners("data_channel_closed", streamId);
 		};
 	}
 
@@ -671,7 +776,8 @@ export class WebRTCAdaptor
 			if (!this.playStreamId.includes(streamId))
 			{
 				if(this.mediaManager.localStream != null) {
-					this.remotePeerConnection[streamId].addStream(this.mediaManager.localStream);
+					//AddStream is deprecated thus updated to the addTrack after version 2.4.2.1
+					this.mediaManager.localStream.getTracks().forEach(track => this.remotePeerConnection[streamId].addTrack(track, this.mediaManager.localStream));
 				}
 			}
 			this.remotePeerConnection[streamId].onicecandidate = event => {
@@ -729,7 +835,7 @@ export class WebRTCAdaptor
 
 			this.remotePeerConnection[streamId].oniceconnectionstatechange = event => {
 				var obj = {state:this.remotePeerConnection[streamId].iceConnectionState, streamId:streamId};
-				this.callback("ice_connection_state_changed",obj);
+				this.notifyEventListeners("ice_connection_state_changed",obj);
 
 				//
 				if (!this.isPlayMode && !this.playStreamId.includes(streamId)) {
@@ -892,10 +998,10 @@ export class WebRTCAdaptor
 				this.remotePeerConnection[streamId].createAnswer(this.sdp_constraints)
 				.then(configuration =>
 						{
-					console.log("created answer for stream id: " + streamId);
-					//support for stereo
-          			configuration.sdp = configuration.sdp.replace("useinbandfec=1", "useinbandfec=1; stereo=1");
-					this.gotDescription(configuration, streamId);
+							console.log("created answer for stream id: " + streamId);
+							//support for stereo
+		          			configuration.sdp = configuration.sdp.replace("useinbandfec=1", "useinbandfec=1; stereo=1");
+							this.gotDescription(configuration, streamId);
 						})
 						.catch((error) =>
 								{
@@ -912,7 +1018,7 @@ export class WebRTCAdaptor
 				 * This error generally occurs in codec incompatibility.
 				 * AMS for a now supports H.264 codec. This error happens when some browsers try to open it from VP8.
 				 */
-				this.callbackError("notSetRemoteDescription");
+				this.notifyErrorEventListeners("notSetRemoteDescription");
 			}
 		});
 
@@ -1014,34 +1120,6 @@ export class WebRTCAdaptor
 		});
 	};
 
-	/**
-	 * Called internally to get the video sender of the published stream.
-	 * 	 streamId: unique id for the stream 
-	 */
-	getVideoSender(streamId) 
-	{
-		var videoSender = null;
-		if ((adapter.browserDetails.browser === 'chrome' ||
-				(adapter.browserDetails.browser === 'firefox' ||
-					adapter.browserDetails.browser === 'safari' &&
-						adapter.browserDetails.version >= 64)) &&
-						'RTCRtpSender' in window &&
-						'setParameters' in window.RTCRtpSender.prototype)
-		{
-			if (this.remotePeerConnection[streamId] != null) {
-				const senders = this.remotePeerConnection[streamId].getSenders();
-
-				for (let i = 0; i < senders.length; i++) {
-					if (senders[i].track != null && senders[i].track.kind == "video") {
-						videoSender = senders[i];
-						break;
-					}
-				}
-			}
-
-		}
-		return videoSender;
-	}
 
 	/**
 	* Toggle video track on the server side.
@@ -1250,7 +1328,7 @@ export class WebRTCAdaptor
 			this.remotePeerConnectionStats[streamId].audioJitterAverageDelay = audioJitterAverageDelay;
 
 
-			this.callback("updated_stats", this.remotePeerConnectionStats[streamId]);
+			this.notifyEventListeners("updated_stats", this.remotePeerConnectionStats[streamId]);
 
 		});
 	}
@@ -1290,7 +1368,7 @@ export class WebRTCAdaptor
 	 checkWebSocketConnection()
 	 {
 		 if (this.webSocketAdaptor == null || (this.webSocketAdaptor.isConnected() == false && this.webSocketAdaptor.isConnecting() == false) ) {
-			 this.webSocketAdaptor = new WebSocketAdaptor({websocket_url : this.websocket_url, webrtcadaptor : this, callback : this.callback, callbackError : this.callbackError, debug : this.debug});
+			 this.webSocketAdaptor = new WebSocketAdaptor({websocket_url : this.websocket_url, webrtcadaptor : this, callback : (info, obj) => { this.notifyEventListeners(info,obj); }, callbackError : (error, message) => { this.notifyErrorEventListeners(error, message) }, debug : this.debug});
 		 }
 	 }
 
@@ -1348,35 +1426,41 @@ export class WebRTCAdaptor
 	sendData(streamId, data) 
 	{
 		var CHUNK_SIZE = 16000;
-		var dataChannel = this.remotePeerConnection[streamId].dataChannel;
-        var length = data.length || data.size || data.byteLength;
-		var sent = 0;
-
-		if(typeof data === 'string' || data instanceof String){
-			dataChannel.send(data);
+		if (this.remotePeerConnection[streamId] !== undefined) 
+		{
+			var dataChannel = this.remotePeerConnection[streamId].dataChannel;
+	        var length = data.length || data.size || data.byteLength;
+			var sent = 0;
+	
+			if(typeof data === 'string' || data instanceof String){
+				dataChannel.send(data);
+			}
+			else {
+				var token = Math.floor(Math.random() * 999999);
+				let header = new Int32Array(2);
+				header[0] = token;
+				header[1] = length;
+	
+				dataChannel.send(header);
+	
+				var sent = 0;
+				while(sent < length) {
+					var size = Math.min(length-sent, CHUNK_SIZE);
+					var buffer = new Uint8Array(size+4);
+					var tokenArray = new Int32Array(1);
+					tokenArray[0] = token;
+					buffer.set(new Uint8Array(tokenArray.buffer, 0, 4), 0);
+	
+					var chunk = data.slice(sent, sent+size);
+					buffer.set(new Uint8Array(chunk), 4);
+					sent += size;
+	
+					dataChannel.send(buffer);
+				}
+			}
 		}
 		else {
-			var token = Math.floor(Math.random() * 999999);
-			let header = new Int32Array(2);
-			header[0] = token;
-			header[1] = length;
-
-			dataChannel.send(header);
-
-			var sent = 0;
-			while(sent < length) {
-				var size = Math.min(length-sent, CHUNK_SIZE);
-				var buffer = new Uint8Array(size+4);
-				var tokenArray = new Int32Array(1);
-				tokenArray[0] = token;
-				buffer.set(new Uint8Array(tokenArray.buffer, 0, 4), 0);
-
-				var chunk = data.slice(sent, sent+size);
-				buffer.set(new Uint8Array(chunk), 4);
-				sent += size;
-
-				dataChannel.send(buffer);
-			}
+			console.warn("Send data is called for undefined peer connection with stream id: " + streamId);
 		}
 	}
 
@@ -1417,7 +1501,7 @@ export class WebRTCAdaptor
 		for(let i = 0; i < streamsList.length; i++){
 			this.soundLevelList[streamsList[i]] = this.soundMeters[streamsList[i]].instant.toFixed(2); 
 		}
-		this.callback("gotSoundList" , this.soundLevelList);
+		this.notifyEventListeners("gotSoundList" , this.soundLevelList);
 	}
 
 	/**
@@ -1436,6 +1520,95 @@ export class WebRTCAdaptor
 		}
 		return sender;
 	}
+	
+	/**
+	 * Called by user
+	 * 
+	 * @param {*} videoTrackId : track id associated with pinned video
+	 * @param {*} streamId : streamId of the pinned video
+ 	 * @param {*} enabled : true | false
+	 * @returns 
+	 */
+	assignVideoTrack(videoTrackId, streamId, enabled) {
+		var jsCmd = {
+				command : "assignVideoTrackCommand",
+				streamId : streamId,
+				videoTrackId : videoTrackId,
+				enabled : enabled,
+		};
+
+		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
+	}
+	
+	/**
+	 * Called by user
+	 * video tracks may be less than the participants count
+	 * so these parameters are used for assigning video tracks to participants.
+	 * This message is used to make pagination in conference.
+	 *
+	 * @param {*} offset : start index for participant list to play
+	 * @param {*} size : number of the participants to play
+	 * @returns 
+	 */
+	updateVideoTrackAssignments(streamId, offset, size) {
+		var jsCmd = {
+				streamId : streamId,
+				command : "updateVideoTrackAssignmentsCommand",
+				offset : offset,
+				size : size,
+		};
+
+		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
+	}
+	
+	/**
+	 * Called by user
+	 * This message is used to set max video track count in a conference.
+	 *
+	 * @param {*} maxTrackCount : maximum video track count
+	 * @returns 
+	 */
+	setMaxVideoTrackCount(streamId, maxTrackCount) {
+		var jsCmd = {
+				streamId : streamId,
+				command : "setMaxVideoTrackCountCommand",
+				maxTrackCount : maxTrackCount,
+		};
+
+		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
+	}
+	
+	/**
+	 * Called by user
+	 * This message is used to send audio level in a conference.
+	 *
+	 * @param {*} value : audio lavel
+	 * @returns 
+	 */
+	updateAudioLevel(streamId, value) {
+		var jsCmd = {
+				streamId : streamId,
+				eventType : "UPDATE_AUDIO_LEVEL",
+				audioLevel : value,
+		};
+
+		this.sendData(streamId, JSON.stringify(jsCmd));
+	}
+	
+	/**
+ 	* Called by user
+ 	* This message is used to get debug data from server for debugging purposes in conference.
+ 	*
+ 	* @returns
+ 	*/
+	getDebugInfo(streamId) {
+		var jsCmd = {
+			streamId: streamId,
+			command: "getDebugInfo",
+		};
+
+		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
+	}
   
 
 	/**
@@ -1443,18 +1616,91 @@ export class WebRTCAdaptor
 	 * You can find the details about them in media_manager.js
 	 */
 	turnOffLocalCamera(streamId) {this.mediaManager.turnOffLocalCamera(streamId);}
-	turnOnLocalCamera(streamId) {this.mediaManager.turnOnLocalCamera(streamId);}
+	turnOnLocalCamera(streamId) {return this.mediaManager.turnOnLocalCamera(streamId);}
 	muteLocalMic() {this.mediaManager.muteLocalMic();}
 	unmuteLocalMic() {this.mediaManager.unmuteLocalMic();}
-	switchDesktopCapture(streamId) {this.mediaManager.switchDesktopCapture(streamId);}
-	switchVideoCameraCapture(streamId, deviceId) {this.mediaManager.switchVideoCameraCapture(streamId, deviceId);}
-	switchDesktopCaptureWithCamera(streamId) {this.mediaManager.switchDesktopCaptureWithCamera(streamId);}
+	switchDesktopCapture(streamId) {
+		return this.mediaManager.switchDesktopCapture(streamId);
+	}
+
+	/**
+	 * Switch to Video camera capture again. Updates the video track on the fly as well. 
+	 * @param {string} streamId 
+	 * @param {string} deviceId 
+	 * @returns {Promise}
+	 */
+	switchVideoCameraCapture(streamId, deviceId) {
+		return this.mediaManager.switchVideoCameraCapture(streamId, deviceId);
+	}
+
+	/**
+	 * Update video track of the stream. Updates the video track on the fly as well.
+	 * @param {string} stream 
+	 * @param {string} streamId 
+	 * @param {function} onEndedCallback 
+	 * @param {boolean} stopDesktop 
+	 * @returns {Promise}
+	 */
+	updateVideoTrack(stream, streamId, onEndedCallback, stopDesktop) {
+		return this.mediaManager.updateVideoTrack(stream, streamId, onEndedCallback, stopDesktop);
+	}
+	
+	/**
+	 * Called by User
+	 * to switch between front and back camera on mobile devices
+	 *
+	 * @param {*} streamId Id of the stream to be changed.
+	 * @param {*} facingMode it can be ""user" or "environment"
+	 *
+	 * This method is used to switch front and back camera.
+	 */
+	switchVideoCameraFacingMode(streamId, facingMode) {		
+		return this.mediaManager.switchVideoCameraFacingMode(streamId, facingMode);
+	}
+	
+	switchDesktopCaptureWithCamera(streamId) {
+		return this.mediaManager.switchDesktopCaptureWithCamera(streamId);
+	}
 	switchAudioInputSource(streamId, deviceId) {this.mediaManager.switchAudioInputSource(streamId, deviceId);}
 	setVolumeLevel(volumeLevel) {this.mediaManager.setVolumeLevel(volumeLevel);}
 	enableAudioLevelForLocalStream(levelCallback, period) {this.mediaManager.enableAudioLevelForLocalStream(levelCallback, period);}
-	changeBandwidth(bandwidth, streamId) {this.mediaManager.changeBandwidth(bandwidth, streamId);};
-	enableAudioLevelWhenMuted() {this.mediaManager.enableAudioLevelWhenMuted()};
-	disableAudioLevelWhenMuted() {this.mediaManager.disableAudioLevelWhenMuted()};
+	applyConstraints(constraints){this.mediaManager.applyConstraints(constraints)};
+	
+	changeBandwidth(bandwidth, streamId) {
+		this.mediaManager.changeBandwidth(bandwidth, streamId);
+	}
+	
+	enableAudioLevelWhenMuted() {
+		this.mediaManager.enableAudioLevelWhenMuted();
+	}
+	
+	disableAudioLevelWhenMuted() {
+		this.mediaManager.disableAudioLevelWhenMuted(); 
+	}
+	
+	getVideoSender(streamId) { 
+		return this.mediaManager.getVideoSender(streamId); 
+	}
+	
+	openStream(mediaConstraints) {
+		return this.mediaManager.openStream(mediaConstraints);
+	}
+
+    closeStream() {
+        return this.mediaManager.closeStream();
+    };
+
+	/**
+	 * @deprecated Since version 2.4.3+. Will be deleted in version 2.6.0. Use applyConstraints(newConstaints) instead.
+	 */
+	applyConstraints(streamId, newConstaints) {
+		this.mediaManager.applyConstraints(streamId, newConstaints);
+	}
+
+
+	applyConstraints(newConstaints) {
+		this.mediaManager.applyConstraints(newConstaints);
+	}
 }
 
 
