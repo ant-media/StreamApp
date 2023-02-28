@@ -18,7 +18,7 @@ jobs:
           distribution: 'adopt'	
       - name: Update The Snapshot	
         id: get_version	
-        run: echo "::set-output name=VERSION::$(echo ${GITHUB_REF##*/} | cut -d v -f 2)"	
+        run: echo "VERSION=$(echo ${GITHUB_REF##*/} | cut -d v -f 2)" >> $GITHUB_OUTPUT
       - run: npm install --include=dev	
       - run: npm install --save-dev @babel/cli	
       - run: npm run compile	
