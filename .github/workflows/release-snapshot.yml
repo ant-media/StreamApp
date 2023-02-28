@@ -2,7 +2,7 @@ name: publish Node.js Package
 on:	
   push:	
     branches:	
-      - master	
+      - automate-npm-push-snapshot	
 jobs:	
   publish-npmjs:	
     runs-on: ubuntu-latest	
@@ -28,7 +28,6 @@ jobs:
       - run: npm run compile	
       - run: echo "LATEST_SNAPSHOT_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" >> $GITHUB_ENV	
       - run: echo "PREVIOUS_SNAPSHOT_VERSION=$(npm view ${{ secrets.NPM_USERNAME }}/webrtc_adapter dist-tags --json | jq .SNAPSHOT --raw-output)" >> $GITHUB_ENV	
-      - run: npm unpublish ${{ secrets.NPM_USERNAME }}/webrtc_adapter@${{ env.PREVIOUS_SNAPSHOT_VERSION }}	
       - run: npm version ${{ env.LATEST_SNAPSHOT_VERSION }}"-`date +"%Y-%b-%d-%I-%M"`"  --no-git-tag-version	
       - run: npm publish --tag SNAPSHOT	
         env:	
