@@ -321,18 +321,14 @@
 		function playWebRTCVideo() {
 			setHLSWebRTCElementsVisibility(true);
 
-			if (is360) {
+			if (is360 && mute) {
 				unMuteButton.style.display = "block";
-			}
-
-			if (mute) {
-				player.muted = true;
 				unMuteButton.innerText = "Unmute";
-			}
-			else {
-				player.muted = false;
+			} else if(is360) {
+				unMuteButton.style.display = "block";
 				unMuteButton.innerText = "Mute";
 			}
+
 			if (autoPlay) {
 				player.play().then(function (value) {
 					//autoplay started
