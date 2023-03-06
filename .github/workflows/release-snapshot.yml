@@ -24,7 +24,7 @@ jobs:
       - run: npm run compile	
       - run: echo "LATEST_SNAPSHOT_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" >> $GITHUB_ENV	
       - run: echo "PREVIOUS_SNAPSHOT_VERSION=$(npm view @antmedia/webrtc_adaptor dist-tags --json | jq .SNAPSHOT --raw-output)" >> $GITHUB_ENV
-      - run: npm deprecate -f @antmedia/webrtc_adaptor@${{ env.PREVIOUS_SNAPSHOT_VERSION }}
+      - run: npm deprecate @antmedia/webrtc_adaptor@${{ env.PREVIOUS_SNAPSHOT_VERSION }}
         env:	
           NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
       - run: npm version ${{ env.LATEST_SNAPSHOT_VERSION }}"-`date +"%Y-%b-%d-%I-%M"`"  --no-git-tag-version	
