@@ -1,0 +1,31 @@
+name: publish Node.js Package	
+on:	
+  push:	
+    branches:	
+      - master	
+jobs:	
+  publish-npmjs:	
+    runs-on: ubuntu-latest	
+    steps:	
+      - uses: actions/checkout@v3	
+      - uses: actions/setup-node@v3	
+        with:	
+         node-version: '16.x'	
+         registry-url: 'https://registry.npmjs.org'	
+      - uses: actions/setup-java@v3	
+        with:	
+          java-version: '11'	
+          distribution: 'adopt'	
+      - name: Update The Snapshot	
+        id: get_version	
+        run: echo "VERSION=$(echo ${GITHUB_REF##*/} | cut -d v -f 2)" >> $GITHUB_OUTPUT
+      - run: npm install --include=dev	
+      - run: npm install --save-dev @babel/cli	
+      - run: npm run compile	
+      - run: echo "LATEST_SNAPSHOT_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" >> $GITHUB_ENV	
+        env:	
+          NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
+      - run: npm version ${{ env.LATEST_SNAPSHOT_VERSION }}"-`date +"%Y-%b-%d-%I-%M"`"  --no-git-tag-version	
+      - run: npm publish --tag SNAPSHOT	
+        env:	
+          NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}	
