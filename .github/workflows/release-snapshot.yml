@@ -2,7 +2,7 @@ name: publish Node.js Package
 on:	
   push:	
     branches:	
-      - automate-npm-push-snapshot	
+      - master	
 jobs:	
   publish-npmjs:	
     runs-on: ubuntu-latest	
