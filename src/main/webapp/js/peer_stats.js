@@ -11,6 +11,8 @@ export class PeerStats {
 		this.totalFramesEncodedCount = 0;
         this.lastBytesReceived = 0;
         this.lastBytesSent = 0;
+        this.totalVideoPacketsSent = 0;
+        this.totalAudioPacketsSent = 0;
         this.currentTimestamp = 0;
         this.lastTime = 0;
         this.timerId = 0;
