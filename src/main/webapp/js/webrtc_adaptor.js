@@ -1177,6 +1177,8 @@ export class WebRTCAdaptor
 			var fractionLost = -1;
 			var currentTime = -1;
 			var bytesSent = -1;
+			var videoPacketsSent = -1;
+			var audioPacketsSent = -1;
 			var audioLevel = -1;
 			var qlr = "";
 			var framesEncoded = -1;
@@ -1220,6 +1222,12 @@ export class WebRTCAdaptor
 				}
 				else if (value.type == "outbound-rtp")
 				{//TODO: SPLIT AUDIO AND VIDEO BITRATES
+					if (value.kind == "audio") {
+						audioPacketsSent = value.packetsSent;
+					}
+					else if (value.kind == "video") {
+						videoPacketsSent = value.packetsSent;
+					}
 					bytesSent += value.bytesSent
 					currentTime = value.timestamp
 					qlr = value.qualityLimitationReason;
@@ -1308,6 +1316,8 @@ export class WebRTCAdaptor
 			this.remotePeerConnectionStats[streamId].fractionLost = fractionLost;
 			this.remotePeerConnectionStats[streamId].currentTime = currentTime;
 			this.remotePeerConnectionStats[streamId].totalBytesSent = bytesSent;
+			this.remotePeerConnectionStats[streamId].totalVideoPacketsSent = videoPacketsSent;
+			this.remotePeerConnectionStats[streamId].totalAudioPacketsSent = audioPacketsSent;
 			this.remotePeerConnectionStats[streamId].audioLevel = audioLevel;
 			this.remotePeerConnectionStats[streamId].qualityLimitationReason = qlr;
 			this.remotePeerConnectionStats[streamId].totalFramesEncoded = framesEncoded;
