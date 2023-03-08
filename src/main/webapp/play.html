@@ -727,7 +727,8 @@
 				//some of the possible errors, NotFoundError, SecurityError,PermissionDeniedError
 				console.log("error callback: " + JSON.stringify(errors));
 
-				if (errors["error"] == "no_stream_exist") {
+				if (errors["error"] == "no_stream_exist"  || errors["error"] == "WebSocketNotConnected"
+						|| errors["error"] == "not_initialized_yet" || errors["error"] == "data_store_not_available") {
 
 					if (typeof noStreamCallback != "undefined") {
 						noStreamCallback();
