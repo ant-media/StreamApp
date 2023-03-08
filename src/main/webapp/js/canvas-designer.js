@@ -1,6 +1,6 @@
 'use strict';
 
-(function() {
+(function () {
 
     var is = {
         isLine: false,
@@ -18,7 +18,7 @@
         isImage: false,
         isPdf: false,
 
-        set: function(shape) {
+        set: function (shape) {
             var cache = this;
 
             cache.isLine = cache.isArrow = cache.isArc = cache.isDragLastPath = cache.isDragAllPaths = cache.isRectangle = cache.isQuadraticCurve = cache.isBezierCurve = cache.isPencil = cache.isMarker = cache.isEraser = cache.isText = cache.isImage = cache.isPdf = false;
@@ -80,7 +80,7 @@
         tempContext = getContext('temp-canvas');
 
     var common = {
-        updateTextArea: function() {
+        updateTextArea: function () {
             var c = common,
                 toFixed = c.toFixed,
                 getPoint = c.getPoint,
@@ -93,17 +93,17 @@
             if (!isAbsolutePoints && isShortenCode) c.relativeShortened(toFixed, getPoint);
             if (!isAbsolutePoints && !isShortenCode) c.relativeNOTShortened(toFixed, getPoint);
         },
-        toFixed: function(input) {
+        toFixed: function (input) {
             return Number(input).toFixed(1);
         },
-        getPoint: function(pointToCompare, compareWith, prefix) {
+        getPoint: function (pointToCompare, compareWith, prefix) {
             if (pointToCompare > compareWith) pointToCompare = prefix + ' + ' + (pointToCompare - compareWith);
             else if (pointToCompare < compareWith) pointToCompare = prefix + ' - ' + (compareWith - pointToCompare);
             else pointToCompare = prefix;
 
             return pointToCompare;
         },
-        absoluteShortened: function() {
+        absoluteShortened: function () {
             var output = '',
                 length = points.length,
                 i = 0,
@@ -118,7 +118,7 @@
 
             this.prevProps = null;
         },
-        absoluteNOTShortened: function(toFixed) {
+        absoluteNOTShortened: function (toFixed) {
             var tempArray = [],
                 i, point, p;
 
@@ -175,7 +175,7 @@
 
             this.prevProps = null;
         },
-        relativeShortened: function(toFixed, getPoint) {
+        relativeShortened: function (toFixed, getPoint) {
             var i = 0,
                 point, p, length = points.length,
                 output = '',
@@ -307,7 +307,7 @@
 
             this.prevProps = null;
         },
-        relativeNOTShortened: function(toFixed, getPoint) {
+        relativeNOTShortened: function (toFixed, getPoint) {
             var i, point, p, length = points.length,
                 output = '',
                 x = 0,
@@ -478,7 +478,7 @@
 
             +
             '}',
-        strokeOrFill: function(p) {
+        strokeOrFill: function (p) {
             if (!this.prevProps || this.prevProps !== p.join(',')) {
                 this.prevProps = p.join(',');
 
@@ -488,7 +488,7 @@
             return 'strokeOrFill();';
         },
         prevProps: null,
-        shortenHelper: function(name, p1, p2) {
+        shortenHelper: function (name, p1, p2) {
             var result = '[\'' + name + '\', [' + p1.join(', ') + ']';
 
             if (!this.prevProps || this.prevProps !== p2.join(',')) {
@@ -631,7 +631,7 @@
     }
 
     function clone(obj) {
-        if (obj === null || typeof(obj) !== 'object' || 'isActiveClone' in obj)
+        if (obj === null || typeof (obj) !== 'object' || 'isActiveClone' in obj)
             return obj;
 
         if (obj instanceof Date)
@@ -659,21 +659,21 @@
     }
 
     var drawHelper = {
-        redraw: function() {
+        redraw: function () {
             tempContext.clearRect(0, 0, innerWidth, innerHeight);
             context.clearRect(0, 0, innerWidth, innerHeight);
 
             var i, point, length = points.length;
             for (i = 0; i < length; i++) {
                 point = points[i];
-                // point[0] != 'pdf' && 
+                // point[0] != 'pdf' &&
                 if (point && point.length && this[point[0]]) {
                     this[point[0]](context, point[1], point[2]);
                 }
                 // else warn
             }
         },
-        getOptions: function(opt) {
+        getOptions: function (opt) {
             opt = opt || {};
             return [
                 opt.lineWidth || lineWidth,
@@ -686,7 +686,7 @@
                 opt.font || font
             ];
         },
-        handleOptions: function(context, opt, isNoFillStroke) {
+        handleOptions: function (context, opt, isNoFillStroke) {
             opt = opt || this.getOptions();
 
             context.globalAlpha = opt[3];
@@ -706,28 +706,28 @@
                 context.fill();
             }
         },
-        line: function(context, point, options) {
+        line: function (context, point, options) {
             context.beginPath();
             context.moveTo(point[0], point[1]);
             context.lineTo(point[2], point[3]);
 
             this.handleOptions(context, options);
         },
-        pencil: function(context, point, options) {
+        pencil: function (context, point, options) {
             context.beginPath();
             context.moveTo(point[0], point[1]);
             context.lineTo(point[2], point[3]);
 
             this.handleOptions(context, options);
         },
-        marker: function(context, point, options) {
+        marker: function (context, point, options) {
             context.beginPath();
             context.moveTo(point[0], point[1]);
             context.lineTo(point[2], point[3]);
 
             this.handleOptions(context, options);
         },
-        arrow: function(context, point, options) {
+        arrow: function (context, point, options) {
             var mx = point[0];
             var my = point[1];
 
@@ -757,30 +757,30 @@
 
             this.handleOptions(context, options);
         },
-        text: function(context, point, options) {
+        text: function (context, point, options) {
             this.handleOptions(context, options);
             context.fillStyle = textHandler.getFillColor(options[2]);
             context.fillText(point[0].substr(1, point[0].length - 2), point[1], point[2]);
         },
-        arc: function(context, point, options) {
+        arc: function (context, point, options) {
             context.beginPath();
             context.arc(point[0], point[1], point[2], point[3], 0, point[4]);
 
             this.handleOptions(context, options);
         },
-        rect: function(context, point, options) {
+        rect: function (context, point, options) {
             this.handleOptions(context, options, true);
 
             context.strokeRect(point[0], point[1], point[2], point[3]);
             context.fillRect(point[0], point[1], point[2], point[3]);
         },
-        image: function(context, point, options) {
+        image: function (context, point, options) {
             this.handleOptions(context, options, true);
 
             var image = imageHandler.images[point[5]];
             if (!image) {
                 var image = new Image();
-                image.onload = function() {
+                image.onload = function () {
                     var index = imageHandler.images.length;
 
                     imageHandler.lastImageURL = image.src;
@@ -795,13 +795,13 @@
 
             context.drawImage(image, point[1], point[2], point[3], point[4]);
         },
-        pdf: function(context, point, options) {
+        pdf: function (context, point, options) {
             this.handleOptions(context, options, true);
 
             var image = pdfHandler.images[point[5]];
             if (!image) {
                 var image = new Image();
-                image.onload = function() {
+                image.onload = function () {
                     var index = imageHandler.images.length;
 
                     pdfHandler.lastPage = image.src;
@@ -817,14 +817,14 @@
             context.drawImage(image, point[1], point[2], point[3], point[4]);
             pdfHandler.reset_pos(point[1], point[2]);
         },
-        quadratic: function(context, point, options) {
+        quadratic: function (context, point, options) {
             context.beginPath();
             context.moveTo(point[0], point[1]);
             context.quadraticCurveTo(point[2], point[3], point[4], point[5]);
 
             this.handleOptions(context, options);
         },
-        bezier: function(context, point, options) {
+        bezier: function (context, point, options) {
             context.beginPath();
             context.moveTo(point[0], point[1]);
             context.bezierCurveTo(point[2], point[3], point[4], point[5], point[6], point[7]);
@@ -841,7 +841,7 @@
             pointsToMove: 'all',
             startingIndex: 0
         },
-        mousedown: function(e) {
+        mousedown: function (e) {
             if (isControlKeyPressed) {
                 copy();
                 paste();
@@ -990,7 +990,7 @@
 
             g.ismousedown = true;
         },
-        mouseup: function() {
+        mouseup: function () {
             var g = this.global;
 
             if (is.isDragLastPath) {
@@ -1001,7 +1001,7 @@
 
             g.ismousedown = false;
         },
-        mousemove: function(e) {
+        mousemove: function (e) {
             var x = e.pageX - canvas.offsetLeft,
                 y = e.pageY - canvas.offsetTop,
                 g = this.global;
@@ -1014,7 +1014,7 @@
 
             if (is.isDragLastPath) this.init();
         },
-        init: function() {
+        init: function () {
             if (!points.length) return;
 
             var p = points[points.length - 1],
@@ -1137,10 +1137,10 @@
                 tempContext.fill();
             }
         },
-        isPointInPath: function(x, y, first, second) {
+        isPointInPath: function (x, y, first, second) {
             return x > first - 10 && x < first + 10 && y > second - 10 && y < second + 10;
         },
-        getPoint: function(point, prev, otherPoint) {
+        getPoint: function (point, prev, otherPoint) {
             if (point > prev) {
                 point = otherPoint + (point - prev);
             } else {
@@ -1149,7 +1149,7 @@
 
             return point;
         },
-        getXYWidthHeight: function(x, y, prevX, prevY, oldPoints) {
+        getXYWidthHeight: function (x, y, prevX, prevY, oldPoints) {
             if (oldPoints.pointsToMove == 'stretch-first') {
                 if (x > prevX) {
                     oldPoints.x = oldPoints.x + (x - prevX);
@@ -1202,7 +1202,7 @@
 
             return oldPoints;
         },
-        dragShape: function(x, y) {
+        dragShape: function (x, y) {
             if (!this.global.ismousedown) return;
 
             tempContext.clearRect(0, 0, innerWidth, innerHeight);
@@ -1220,7 +1220,7 @@
             g.prevX = x;
             g.prevY = y;
         },
-        end: function() {
+        end: function () {
             if (!points.length) return;
 
             tempContext.clearRect(0, 0, innerWidth, innerHeight);
@@ -1228,7 +1228,7 @@
             var point = points[points.length - 1];
             drawHelper[point[0]](context, point[1], point[2]);
         },
-        dragAllPaths: function(x, y) {
+        dragAllPaths: function (x, y) {
             var g = this.global,
                 prevX = g.prevX,
                 prevY = g.prevY,
@@ -1362,7 +1362,7 @@
                 }
             }
         },
-        dragLastPath: function(x, y) {
+        dragLastPath: function (x, y) {
             // if last past is undefined?
             if (!points[points.length - 1]) return;
 
@@ -1662,7 +1662,7 @@
         ismousedown: false,
         prevX: 0,
         prevY: 0,
-        mousedown: function(e) {
+        mousedown: function (e) {
             var x = e.pageX - canvas.offsetLeft,
                 y = e.pageY - canvas.offsetTop;
 
@@ -1673,7 +1673,7 @@
 
             t.ismousedown = true;
 
-            // make sure that pencil is drawing shapes even 
+            // make sure that pencil is drawing shapes even
             // if mouse is down but mouse isn't moving
             tempContext.lineCap = 'round';
             pencilDrawHelper.pencil(tempContext, [t.prevX, t.prevY, x, y]);
@@ -1683,7 +1683,7 @@
             t.prevX = x;
             t.prevY = y;
         },
-        mouseup: function(e) {
+        mouseup: function (e) {
             var x = e.pageX - canvas.offsetLeft,
                 y = e.pageY - canvas.offsetTop;
 
@@ -1701,7 +1701,7 @@
 
             this.ismousedown = false;
         },
-        mousemove: function(e) {
+        mousemove: function (e) {
             var x = e.pageX - canvas.offsetLeft,
                 y = e.pageY - canvas.offsetTop;
 
@@ -1724,18 +1724,18 @@
 
     var pencilDrawHelper = clone(drawHelper);
 
-    pencilDrawHelper.getOptions = function() {
-		pencilLineWidth = document.getElementById('line-width-text').value;
-		pencilStrokeStyle = document.getElementById('stroke-style').value;
+    pencilDrawHelper.getOptions = function () {
+        pencilLineWidth = document.getElementById('line-width-text').value;
+        pencilStrokeStyle = document.getElementById('stroke-style').value;
 
-	return [pencilLineWidth, pencilStrokeStyle, fillStyle, globalAlpha, globalCompositeOperation, lineCap, lineJoin, font];
-}
+        return [pencilLineWidth, pencilStrokeStyle, fillStyle, globalAlpha, globalCompositeOperation, lineCap, lineJoin, font];
+    }
 
     var markerHandler = {
         ismousedown: false,
         prevX: 0,
         prevY: 0,
-        mousedown: function(e) {
+        mousedown: function (e) {
             var x = e.pageX - canvas.offsetLeft,
                 y = e.pageY - canvas.offsetTop;
 
@@ -1746,7 +1746,7 @@
 
             t.ismousedown = true;
 
-            // make sure that pencil is drawing shapes even 
+            // make sure that pencil is drawing shapes even
             // if mouse is down but mouse isn't moving
             tempContext.lineCap = 'round';
             markerDrawHelper.line(tempContext, [t.prevX, t.prevY, x, y]);
@@ -1756,10 +1756,10 @@
             t.prevX = x;
             t.prevY = y;
         },
-        mouseup: function(e) {
+        mouseup: function (e) {
             this.ismousedown = false;
         },
-        mousemove: function(e) {
+        mousemove: function (e) {
             var x = e.pageX - canvas.offsetLeft,
                 y = e.pageY - canvas.offsetTop;
 
@@ -1783,7 +1783,7 @@
 
     var markerDrawHelper = clone(drawHelper);
 
-    markerDrawHelper.getOptions = function() {
+    markerDrawHelper.getOptions = function () {
         return [markerLineWidth, markerStrokeStyle, fillStyle, markerGlobalAlpha, globalCompositeOperation, lineCap, lineJoin, font];
     }
 
@@ -1791,7 +1791,7 @@
         ismousedown: false,
         prevX: 0,
         prevY: 0,
-        mousedown: function(e) {
+        mousedown: function (e) {
             var x = e.pageX - canvas.offsetLeft,
                 y = e.pageY - canvas.offsetTop;
 
@@ -1810,10 +1810,10 @@
             t.prevX = x;
             t.prevY = y;
         },
-        mouseup: function(e) {
+        mouseup: function (e) {
             this.ismousedown = false;
         },
-        mousemove: function(e) {
+        mousemove: function (e) {
             var x = e.pageX - canvas.offsetLeft,
                 y = e.pageY - canvas.offsetTop;
 
@@ -1836,12 +1836,12 @@
         selectedFontFamily: 'Arial',
         selectedFontSize: '15',
         lastFillStyle: '',
-        onShapeSelected: function() {
+        onShapeSelected: function () {
             tempContext.canvas.style.cursor = 'text';
             this.x = this.y = this.pageX = this.pageY = 0;
             this.text = '';
         },
-        onShapeUnSelected: function() {
+        onShapeUnSelected: function () {
             this.text = '';
             this.showOrHideTextTools('hide');
             tempContext.canvas.style.cursor = 'default';
@@ -1850,7 +1850,7 @@
                 clearInterval(this.blinkCursorInterval);
             }
         },
-        getFillColor: function(color) {
+        getFillColor: function (color) {
             color = (color || fillStyle).toLowerCase();
 
             if (color == 'rgba(255, 255, 255, 0)' || color == 'transparent' || color === 'white') {
@@ -1859,7 +1859,7 @@
 
             return color;
         },
-        writeText: function(keyPressed, isBackKeyPressed) {
+        writeText: function (keyPressed, isBackKeyPressed) {
             if (!is.isText) return;
 
             if (isBackKeyPressed) {
@@ -1871,7 +1871,7 @@
             textHandler.text += keyPressed;
             textHandler.fillText(textHandler.text);
         },
-        fillText: function(text) {
+        fillText: function (text) {
             if (!is.isText) return;
 
             tempContext.clearRect(0, 0, tempContext.canvas.width, tempContext.canvas.height);
@@ -1885,7 +1885,7 @@
         },
         blinkCursorInterval: null,
         index: 0,
-        blinkCursor: function() {
+        blinkCursor: function () {
             textHandler.index++;
             if (textHandler.index % 2 == 0) {
                 textHandler.fillText(textHandler.text + '|');
@@ -1893,7 +1893,7 @@
                 textHandler.fillText(textHandler.text);
             }
         },
-        getOptions: function() {
+        getOptions: function () {
             var options = {
                 font: textHandler.selectedFontSize + 'px "' + textHandler.selectedFontFamily + '"',
                 fillStyle: textHandler.getFillColor(),
@@ -1907,11 +1907,11 @@
             font = options.font;
             return options;
         },
-        appendPoints: function() {
+        appendPoints: function () {
             var options = textHandler.getOptions();
             points[points.length] = ['text', ['"' + textHandler.text + '"', textHandler.x, textHandler.y], drawHelper.getOptions(options)];
         },
-        mousedown: function(e) {
+        mousedown: function (e) {
             if (!is.isText) return;
 
             if (textHandler.text.length) {
@@ -1936,9 +1936,11 @@
 
             this.showTextTools();
         },
-        mouseup: function(e) {},
-        mousemove: function(e) {},
-        showOrHideTextTools: function(show) {
+        mouseup: function (e) {
+        },
+        mousemove: function (e) {
+        },
+        showOrHideTextTools: function (show) {
             if (show === 'hide') {
                 if (this.lastFillStyle.length) {
                     fillStyle = this.lastFillStyle;
@@ -1958,7 +1960,7 @@
             this.fontSizeBox.style.top = this.y + 'px';
             this.fontFamilyBox.style.top = this.y + 'px';
         },
-        showTextTools: function() {
+        showTextTools: function () {
             if (!this.fontFamilyBox || !this.fontSizeBox) return;
 
             this.unselectAllFontFamilies();
@@ -1966,8 +1968,8 @@
 
             this.showOrHideTextTools('show');
 
-            this.eachFontFamily(function(child) {
-                child.onclick = function(e) {
+            this.eachFontFamily(function (child) {
+                child.onclick = function (e) {
                     e.preventDefault();
 
                     textHandler.showOrHideTextTools('hide');
@@ -1978,8 +1980,8 @@
                 child.style.fontFamily = child.innerHTML;
             });
 
-            this.eachFontSize(function(child) {
-                child.onclick = function(e) {
+            this.eachFontSize(function (child) {
+                child.onclick = function (e) {
                     e.preventDefault();
 
                     textHandler.showOrHideTextTools('hide');
@@ -1990,35 +1992,35 @@
                 // child.style.fontSize = child.innerHTML + 'px';
             });
         },
-        eachFontFamily: function(callback) {
+        eachFontFamily: function (callback) {
             var childs = this.fontFamilyBox.querySelectorAll('li');
             for (var i = 0; i < childs.length; i++) {
                 callback(childs[i]);
             }
         },
-        unselectAllFontFamilies: function() {
-            this.eachFontFamily(function(child) {
+        unselectAllFontFamilies: function () {
+            this.eachFontFamily(function (child) {
                 child.className = '';
                 if (child.innerHTML === textHandler.selectedFontFamily) {
                     child.className = 'font-family-selected';
                 }
             });
         },
-        eachFontSize: function(callback) {
+        eachFontSize: function (callback) {
             var childs = this.fontSizeBox.querySelectorAll('li');
             for (var i = 0; i < childs.length; i++) {
                 callback(childs[i]);
             }
         },
-        unselectAllFontSizes: function() {
-            this.eachFontSize(function(child) {
+        unselectAllFontSizes: function () {
+            this.eachFontSize(function (child) {
                 child.className = '';
                 if (child.innerHTML === textHandler.selectedFontSize) {
                     child.className = 'font-size-selected';
                 }
             });
         },
-        onReturnKeyPressed: function() {
+        onReturnKeyPressed: function () {
             if (!textHandler.text || !textHandler.text.length) return;
             var fontSize = parseInt(textHandler.selectedFontSize) || 15;
             this.mousedown({
@@ -2044,7 +2046,7 @@
             arcRangeContainer: null,
             arcRange: null
         },
-        mousedown: function(e) {
+        mousedown: function (e) {
             var g = this.global;
 
             var x = e.pageX - canvas.offsetLeft,
@@ -2055,7 +2057,7 @@
 
             g.ismousedown = true;
         },
-        mouseup: function(e) {
+        mouseup: function (e) {
             var g = this.global;
 
             var x = e.pageX - canvas.offsetLeft,
@@ -2098,7 +2100,7 @@
 
             this.fixAllPoints();
         },
-        mousemove: function(e) {
+        mousemove: function (e) {
             var g = this.global;
 
             var x = e.pageX - canvas.offsetLeft,
@@ -2120,7 +2122,7 @@
                 }
             }
         },
-        fixAllPoints: function() {
+        fixAllPoints: function () {
             var toFixed = this.toFixed;
 
             for (var i = 0; i < points.length; i++) {
@@ -2134,14 +2136,14 @@
                 }
             }
         },
-        init: function() {
+        init: function () {
             var markIsClockwise = find('is-clockwise'),
                 g = this.global;
 
             g.arcRangeContainer = find('arc-range-container');
             g.arcRange = find('arc-range');
 
-            addEvent(markIsClockwise, 'change', function(e) {
+            addEvent(markIsClockwise, 'change', function (e) {
                 g.isClockwise = markIsClockwise.checked;
 
                 g.arcRange.value = arcHandler.toFixed(g.arcRange.value);
@@ -2162,7 +2164,7 @@
             addEvent(arcRange, 'keydown', this.arcRangeHandler);
             addEvent(arcRange, 'focus', this.arcRangeHandler);
         },
-        arcRangeHandler: function(e) {
+        arcRangeHandler: function (e) {
             var g = arcHandler.global,
                 arcRange = g.arcRange;
 
@@ -2185,10 +2187,10 @@
                 }
             }
         },
-        toFixed: function(input) {
+        toFixed: function (input) {
             return Number(input).toFixed(1);
         },
-        end: function() {
+        end: function () {
             var g = this.global;
 
             g.arcRangeContainer.style.display = 'none';
@@ -2207,7 +2209,7 @@
         ismousedown: false,
         prevX: 0,
         prevY: 0,
-        mousedown: function(e) {
+        mousedown: function (e) {
             var x = e.pageX - canvas.offsetLeft,
                 y = e.pageY - canvas.offsetTop;
 
@@ -2218,7 +2220,7 @@
 
             t.ismousedown = true;
         },
-        mouseup: function(e) {
+        mouseup: function (e) {
             var x = e.pageX - canvas.offsetLeft,
                 y = e.pageY - canvas.offsetTop;
 
@@ -2229,7 +2231,7 @@
                 t.ismousedown = false;
             }
         },
-        mousemove: function(e) {
+        mousemove: function (e) {
             var x = e.pageX - canvas.offsetLeft,
                 y = e.pageY - canvas.offsetTop;
 
@@ -2248,7 +2250,7 @@
         prevX: 0,
         prevY: 0,
         arrowSize: 10,
-        mousedown: function(e) {
+        mousedown: function (e) {
             var x = e.pageX - canvas.offsetLeft,
                 y = e.pageY - canvas.offsetTop;
 
@@ -2259,7 +2261,7 @@
 
             t.ismousedown = true;
         },
-        mouseup: function(e) {
+        mouseup: function (e) {
             var x = e.pageX - canvas.offsetLeft,
                 y = e.pageY - canvas.offsetTop;
 
@@ -2270,7 +2272,7 @@
                 t.ismousedown = false;
             }
         },
-        mousemove: function(e) {
+        mousemove: function (e) {
             var x = e.pageX - canvas.offsetLeft,
                 y = e.pageY - canvas.offsetTop;
 
@@ -2288,7 +2290,7 @@
         ismousedown: false,
         prevX: 0,
         prevY: 0,
-        mousedown: function(e) {
+        mousedown: function (e) {
             var x = e.pageX - canvas.offsetLeft,
                 y = e.pageY - canvas.offsetTop;
 
@@ -2299,7 +2301,7 @@
 
             t.ismousedown = true;
         },
-        mouseup: function(e) {
+        mouseup: function (e) {
             var x = e.pageX - canvas.offsetLeft,
                 y = e.pageY - canvas.offsetTop;
 
@@ -2311,7 +2313,7 @@
             }
 
         },
-        mousemove: function(e) {
+        mousemove: function (e) {
             var x = e.pageX - canvas.offsetLeft,
                 y = e.pageY - canvas.offsetTop;
 
@@ -2334,7 +2336,7 @@
             isFirstStep: true,
             isLastStep: false
         },
-        mousedown: function(e) {
+        mousedown: function (e) {
             var g = this.global;
 
             var x = e.pageX - canvas.offsetLeft,
@@ -2351,7 +2353,7 @@
                 this.end(x, y);
             }
         },
-        mouseup: function(e) {
+        mouseup: function (e) {
             var g = this.global;
 
             var x = e.pageX - canvas.offsetLeft,
@@ -2365,7 +2367,7 @@
                 g.isLastStep = true;
             }
         },
-        mousemove: function(e) {
+        mousemove: function (e) {
             var x = e.pageX - canvas.offsetLeft,
                 y = e.pageY - canvas.offsetTop;
 
@@ -2381,7 +2383,7 @@
                 drawHelper.quadratic(tempContext, [g.prevX, g.prevY, g.controlPointX, g.controlPointY, x, y]);
             }
         },
-        end: function(x, y) {
+        end: function (x, y) {
             var g = this.global;
 
             if (!g.ismousedown) return;
@@ -2413,7 +2415,7 @@
             isSecondStep: false,
             isLastStep: false
         },
-        mousedown: function(e) {
+        mousedown: function (e) {
             var g = this.global;
 
             var x = e.pageX - canvas.offsetLeft,
@@ -2438,7 +2440,7 @@
                 g.isLastStep = true;
             }
         },
-        mouseup: function(e) {
+        mouseup: function (e) {
             var g = this.global;
 
             var x = e.pageX - canvas.offsetLeft,
@@ -2452,7 +2454,7 @@
                 g.isSecondStep = true;
             }
         },
-        mousemove: function(e) {
+        mousemove: function (e) {
             var x = e.pageX - canvas.offsetLeft,
                 y = e.pageY - canvas.offsetTop;
 
@@ -2472,7 +2474,7 @@
                 drawHelper.bezier(tempContext, [g.prevX, g.prevY, g.firstControlPointX, g.firstControlPointY, g.secondControlPointX, g.secondControlPointY, x, y]);
             }
         },
-        end: function(x, y) {
+        end: function (x, y) {
             var g = this.global;
 
             if (!g.ismousedown) return;
@@ -2492,43 +2494,43 @@
         }
     };
 
-	var zoomHandler = {
-    	scale: 1.0,
-    	lastZoomState: null,
-    	up: function(e) {
-        	this.scale = this.lastZoomState !== 'up' ? 1 : this.scale;
-        	this.scale += .01;
-        	this.lastZoomState = 'up';
-        	this.apply();
-    	},
-    	down: function(e) {
-        	this.scale = this.lastZoomState !== 'down' ? 1 : this.scale;
-        	this.scale -= .01;
-        	this.lastZoomState = 'down';
-        	this.apply();
-    	},
-    	apply: function() {
-        	tempContext.scale(this.scale, this.scale);
-        	context.scale(this.scale, this.scale);
-        	drawHelper.redraw();
-    	},
-    	icons: {
-        	up: function(ctx) {
-        	    ctx.font = '22px Verdana';
-            	ctx.strokeText('+', 10, 30);
-        	},
-        	down: function(ctx) {
-            	ctx.font = '22px Verdana';
-            	ctx.strokeText('-', 10, 30);
-        	}
-    	}
-	};
+    var zoomHandler = {
+        scale: 1.0,
+        lastZoomState: null,
+        up: function (e) {
+            this.scale = this.lastZoomState !== 'up' ? 1 : this.scale;
+            this.scale += .01;
+            this.lastZoomState = 'up';
+            this.apply();
+        },
+        down: function (e) {
+            this.scale = this.lastZoomState !== 'down' ? 1 : this.scale;
+            this.scale -= .01;
+            this.lastZoomState = 'down';
+            this.apply();
+        },
+        apply: function () {
+            tempContext.scale(this.scale, this.scale);
+            context.scale(this.scale, this.scale);
+            drawHelper.redraw();
+        },
+        icons: {
+            up: function (ctx) {
+                ctx.font = '22px Verdana';
+                ctx.strokeText('+', 10, 30);
+            },
+            down: function (ctx) {
+                ctx.font = '22px Verdana';
+                ctx.strokeText('-', 10, 30);
+            }
+        }
+    };
 
-    var FileSelector = function() {
+    var FileSelector = function () {
         var selector = this;
 
         selector.selectSingleFile = selectFile;
-        selector.selectMultipleFiles = function(callback) {
+        selector.selectMultipleFiles = function (callback) {
             selectFile(callback, true);
         };
 
@@ -2542,7 +2544,7 @@
 
             file.accept = accept || 'image/*';
 
-            file.onchange = function() {
+            file.onchange = function () {
                 if (multiple) {
                     if (!file.files.length) {
                         console.error('No file selected.');
@@ -2588,7 +2590,7 @@
         ismousedown: false,
         prevX: 0,
         prevY: 0,
-        load: function(width, height) {
+        load: function (width, height) {
             var t = imageHandler;
             points[points.length] = ['image', [imageHandler.lastImageURL, t.prevX, t.prevY, width, height, imageHandler.lastImageIndex], drawHelper.getOptions()];
             document.getElementById('drag-last-path').click();
@@ -2596,7 +2598,7 @@
             // share to webrtc
             syncPoints(true);
         },
-        mousedown: function(e) {
+        mousedown: function (e) {
             var x = e.pageX - canvas.offsetLeft,
                 y = e.pageY - canvas.offsetTop;
 
@@ -2607,7 +2609,7 @@
 
             t.ismousedown = true;
         },
-        mouseup: function(e) {
+        mouseup: function (e) {
             var x = e.pageX - canvas.offsetLeft,
                 y = e.pageY - canvas.offsetTop;
 
@@ -2619,7 +2621,7 @@
             }
 
         },
-        mousemove: function(e) {
+        mousemove: function (e) {
             var x = e.pageX - canvas.offsetLeft,
                 y = e.pageY - canvas.offsetTop;
 
@@ -2648,12 +2650,12 @@
         ismousedown: false,
         prevX: 0,
         prevY: 0,
-        getPage: function(pageNumber, callback) {
+        getPage: function (pageNumber, callback) {
             pageNumber = parseInt(pageNumber) || 1;
 
             if (!pdfHandler.pdf) {
                 pdfjsLib.disableWorker = false;
-                pdfjsLib.getDocument(pdfHandler.lastPdfURL).then(function(pdf) {
+                pdfjsLib.getDocument(pdfHandler.lastPdfURL).then(function (pdf) {
                     pdfHandler.pdf = pdf;
                     pdfHandler.getPage(pageNumber, callback);
                 });
@@ -2661,7 +2663,7 @@
             }
 
             var pdf = pdfHandler.pdf;
-            pdf.getPage(pageNumber).then(function(page) {
+            pdf.getPage(pageNumber).then(function (page) {
                 pdfHandler.pageNumber = pageNumber;
 
                 var scale = 1.5;
@@ -2681,7 +2683,7 @@
                     renderContext.background = 'rgba(0,0,0,0)';
                 }
 
-                page.render(renderContext).then(function() {
+                page.render(renderContext).then(function () {
                     if (pdfHandler.removeWhiteBackground === true) {
                         var imgd = ctx.getImageData(0, 0, cav.width, cav.height);
                         var pix = imgd.data;
@@ -2712,9 +2714,9 @@
                 });
             });
         },
-        load: function(lastPdfURL) {
+        load: function (lastPdfURL) {
             pdfHandler.lastPdfURL = lastPdfURL;
-            pdfHandler.getPage(parseInt(pdfHandler.pdfPagesList.value || 1), function(lastPage, width, height, numPages) {
+            pdfHandler.getPage(parseInt(pdfHandler.pdfPagesList.value || 1), function (lastPage, width, height, numPages) {
                 pdfHandler.prevX = canvas.width - width - parseInt(width / 2);
 
                 var t = pdfHandler;
@@ -2736,21 +2738,21 @@
                     }
                 }
 
-                pdfHandler.pdfPagesList.onchange = function() {
+                pdfHandler.pdfPagesList.onchange = function () {
                     pdfHandler.load(lastPdfURL);
                 };
 
-                pdfHandler.pdfNext.onclick = function() {
+                pdfHandler.pdfNext.onclick = function () {
                     pdfHandler.pdfPagesList.selectedIndex++;
                     pdfHandler.pdfPagesList.onchange();
                 };
 
-                pdfHandler.pdfPrev.onclick = function() {
+                pdfHandler.pdfPrev.onclick = function () {
                     pdfHandler.pdfPagesList.selectedIndex--;
                     pdfHandler.pdfPagesList.onchange();
                 };
 
-                pdfHandler.pdfClose.onclick = function() {
+                pdfHandler.pdfClose.onclick = function () {
                     pdfHandler.pdfPageContainer.style.display = 'none';
                 };
 
@@ -2768,7 +2770,7 @@
                 syncPoints(true);
             });
         },
-        mousedown: function(e) {
+        mousedown: function (e) {
             var x = e.pageX - canvas.offsetLeft,
                 y = e.pageY - canvas.offsetTop;
 
@@ -2779,7 +2781,7 @@
 
             t.ismousedown = true;
         },
-        mouseup: function(e) {
+        mouseup: function (e) {
             var x = e.pageX - canvas.offsetLeft,
                 y = e.pageY - canvas.offsetTop;
 
@@ -2792,7 +2794,7 @@
                 t.ismousedown = false;
             }
         },
-        mousemove: function(e) {
+        mousemove: function (e) {
             var x = e.pageX - canvas.offsetLeft,
                 y = e.pageY - canvas.offsetTop;
 
@@ -2802,13 +2804,13 @@
                 drawHelper.pdf(tempContext, [pdfHandler.lastPage, t.prevX, t.prevY, x - t.prevX, y - t.prevY, pdfHandler.lastIndex]);
             }
         },
-        reset_pos: function(x, y) {
+        reset_pos: function (x, y) {
             pdfHandler.pdfPageContainer.style.top = y + 'px';
             if (!points[pdfHandler.lastPointIndex]) return;
             var point = points[pdfHandler.lastPointIndex][1];
             pdfHandler.pdfPageContainer.style.left = (point[1] + point[3] - parseInt(point[3] / 2) - parseInt(pdfHandler.pdfPageContainer.clientWidth / 2)) + 'px';
         },
-        end: function() {
+        end: function () {
             // pdfHandler.pdfPageContainer.style.display = 'none';
         }
     };
@@ -2875,7 +2877,8 @@
         try {
             var t = JSON.parse(params.tools);
             tools = t;
-        } catch (e) {}
+        } catch (e) {
+        }
     }
 
     if (tools.code === true) {
@@ -2920,11 +2923,11 @@
         setSelection(firstMatch, window.selectedIcon);
     }
 
-    window.addEventListener('load', function() {
+    window.addEventListener('load', function () {
         setDefaultSelectedIcon();
     }, false);
 
-    (function() {
+    (function () {
         var cache = {};
 
         var lineCapSelect = find('lineCap-select');
@@ -2942,7 +2945,7 @@
                 lineCap = lineJoin = 'round';
             }
 
-            addEvent(context.canvas, 'click', function() {
+            addEvent(context.canvas, 'click', function () {
                 // pdfHandler.pdfPageContainer.style.display = 'none';
 
                 if (textHandler.text.length) {
@@ -2974,13 +2977,13 @@
                 if (this.id === 'image-icon') {
                     var selector = new FileSelector();
                     selector.accept = 'image/*';
-                    selector.selectSingleFile(function(file) {
+                    selector.selectSingleFile(function (file) {
                         if (!file) return;
 
                         var reader = new FileReader();
-                        reader.onload = function(event) {
+                        reader.onload = function (event) {
                             var image = new Image();
-                            image.onload = function() {
+                            image.onload = function () {
                                 var index = imageHandler.images.length;
 
                                 imageHandler.lastImageURL = image.src;
@@ -2999,17 +3002,18 @@
 
                 if (this.id === 'pdf-icon') {
                     var selector = new FileSelector();
-                    selector.selectSingleFile(function(file) {
+                    selector.selectSingleFile(function (file) {
                         if (!file) return;
 
                         function onGettingPdf() {
                             var reader = new FileReader();
-                            reader.onload = function(event) {
+                            reader.onload = function (event) {
                                 pdfHandler.pdf = null; // to make sure we call "getDocument" again
                                 pdfHandler.load(event.target.result);
                             };
                             reader.readAsDataURL(file);
                         }
+
                         onGettingPdf();
                     }, null, 'application/pdf');
                 }
@@ -3048,7 +3052,7 @@
             var context = getContext('drag-last-path');
 
             var image = new Image();
-            image.onload = function() {
+            image.onload = function () {
                 context.drawImage(image, 4, 4, 32, 32);
                 bindEvent(context, 'DragLastPath');
             };
@@ -3065,7 +3069,7 @@
             var context = getContext('drag-all-paths');
 
             var image = new Image();
-            image.onload = function() {
+            image.onload = function () {
                 context.drawImage(image, 4, 4, 32, 32);
                 bindEvent(context, 'DragAllPaths');
             };
@@ -3082,7 +3086,7 @@
             var context = getContext('line');
 
             var image = new Image();
-            image.onload = function() {
+            image.onload = function () {
                 context.drawImage(image, 4, 4, 32, 32);
                 bindEvent(context, 'Line');
             };
@@ -3098,10 +3102,10 @@
             var context = getContext('undo');
 
             var image = new Image();
-            image.onload = function() {
+            image.onload = function () {
                 context.drawImage(image, 4, 4, 32, 32);
 
-                document.querySelector('#undo').onclick = function() {
+                document.querySelector('#undo').onclick = function () {
                     if (points.length) {
                         points.length = points.length - 1;
                         drawHelper.redraw();
@@ -3123,7 +3127,7 @@
             var context = getContext('arrow');
 
             var image = new Image();
-            image.onload = function() {
+            image.onload = function () {
                 context.drawImage(image, 4, 4, 32, 32);
                 bindEvent(context, 'Arrow');
             };
@@ -3138,12 +3142,12 @@
         function decoreZoomUp() {
             var context = getContext('zoom-up');
             // zoomHandler.icons.up(context);
-            addEvent(context.canvas, 'click', function() {
+            addEvent(context.canvas, 'click', function () {
                 zoomHandler.up();
             });
 
             var image = new Image();
-            image.onload = function() {
+            image.onload = function () {
                 context.drawImage(image, 4, 4, 32, 32);
             };
             image.src = data_uris.zoom_in;
@@ -3152,12 +3156,12 @@
         function decoreZoomDown() {
             var context = getContext('zoom-down');
             // zoomHandler.icons.down(context);
-            addEvent(context.canvas, 'click', function() {
+            addEvent(context.canvas, 'click', function () {
                 zoomHandler.down();
             });
 
             var image = new Image();
-            image.onload = function() {
+            image.onload = function () {
                 context.drawImage(image, 4, 4, 32, 32);
             };
             image.src = data_uris.zoom_out;
@@ -3188,7 +3192,7 @@
             var context = getContext('pencil-icon');
 
             var image = new Image();
-            image.onload = function() {
+            image.onload = function () {
                 context.drawImage(image, 4, 4, 32, 32);
                 bindEvent(context, 'Pencil');
             };
@@ -3208,16 +3212,15 @@
             // START INIT PENCIL
 
 
-
             pencilStrokeStyle = hexToRGBA(fillStyleText.value, alpha)
 
             pencilSelectedColor.style.backgroundColor =
                 pencilSelectedColor2.style.backgroundColor = '#' + fillStyleText.value;
 
-            colors.forEach(function(colorRow) {
+            colors.forEach(function (colorRow) {
                 var row = '<tr>';
 
-                colorRow.forEach(function(color) {
+                colorRow.forEach(function (color) {
                     row += '<td style="background-color:#' + color + '" data-color="' + color + '"></td>';
                 })
                 row += '</tr>';
@@ -3225,14 +3228,14 @@
                 pencilColorsList.innerHTML += row;
             })
 
-            Array.prototype.slice.call(pencilColorsList.getElementsByTagName('td')).forEach(function(td) {
-                addEvent(td, 'mouseover', function() {
+            Array.prototype.slice.call(pencilColorsList.getElementsByTagName('td')).forEach(function (td) {
+                addEvent(td, 'mouseover', function () {
                     var elColor = td.getAttribute('data-color');
                     pencilSelectedColor2.style.backgroundColor = '#' + elColor;
                     fillStyleText.value = elColor
                 });
 
-                addEvent(td, 'click', function() {
+                addEvent(td, 'click', function () {
                     var elColor = td.getAttribute('data-color');
                     pencilSelectedColor.style.backgroundColor =
                         pencilSelectedColor2.style.backgroundColor = '#' + elColor;
@@ -3246,7 +3249,7 @@
 
             // END INIT PENCIL
 
-            addEvent(canvas, 'click', function() {
+            addEvent(canvas, 'click', function () {
                 hideContainers();
 
                 pencilContainer.style.display = 'block';
@@ -3256,7 +3259,7 @@
                 fillStyleText.focus();
             });
 
-            addEvent(btnPencilDone, 'click', function() {
+            addEvent(btnPencilDone, 'click', function () {
                 pencilContainer.style.display = 'none';
                 pencilColorContainer.style.display = 'none';
 
@@ -3264,7 +3267,7 @@
                 pencilStrokeStyle = hexToRGBA(fillStyleText.value, alpha);
             });
 
-            addEvent(pencilSelectedColor, 'click', function() {
+            addEvent(pencilSelectedColor, 'click', function () {
                 pencilColorContainer.style.display = 'block';
             });
         }
@@ -3279,6 +3282,7 @@
             function hexToRGBA(h, alpha) {
                 return 'rgba(' + hexToRGB(h).join(',') + ',' + alpha + ')';
             }
+
             var colors = [
                 ['FFFFFF', '006600', '000099', 'CC0000', '8C4600'],
                 ['CCCCCC', '00CC00', '6633CC', 'FF0000', 'B28500'],
@@ -3290,7 +3294,7 @@
             var context = getContext('marker-icon');
 
             var image = new Image();
-            image.onload = function() {
+            image.onload = function () {
                 context.drawImage(image, 4, 4, 32, 32);
                 bindEvent(context, 'Marker');
             };
@@ -3310,16 +3314,15 @@
             // START INIT MARKER
 
 
-
             markerStrokeStyle = hexToRGBA(fillStyleText.value, alpha)
 
             markerSelectedColor.style.backgroundColor =
                 markerSelectedColor2.style.backgroundColor = '#' + fillStyleText.value;
 
-            colors.forEach(function(colorRow) {
+            colors.forEach(function (colorRow) {
                 var row = '<tr>';
 
-                colorRow.forEach(function(color) {
+                colorRow.forEach(function (color) {
                     row += '<td style="background-color:#' + color + '" data-color="' + color + '"></td>';
                 })
                 row += '</tr>';
@@ -3327,14 +3330,14 @@
                 markerColorsList.innerHTML += row;
             })
 
-            Array.prototype.slice.call(markerColorsList.getElementsByTagName('td')).forEach(function(td) {
-                addEvent(td, 'mouseover', function() {
+            Array.prototype.slice.call(markerColorsList.getElementsByTagName('td')).forEach(function (td) {
+                addEvent(td, 'mouseover', function () {
                     var elColor = td.getAttribute('data-color');
                     markerSelectedColor2.style.backgroundColor = '#' + elColor;
                     fillStyleText.value = elColor
                 });
 
-                addEvent(td, 'click', function() {
+                addEvent(td, 'click', function () {
                     var elColor = td.getAttribute('data-color');
                     markerSelectedColor.style.backgroundColor =
                         markerSelectedColor2.style.backgroundColor = '#' + elColor;
@@ -3348,7 +3351,7 @@
 
             // END INIT MARKER
 
-            addEvent(canvas, 'click', function() {
+            addEvent(canvas, 'click', function () {
                 hideContainers();
 
                 markerContainer.style.display = 'block';
@@ -3358,7 +3361,7 @@
                 fillStyleText.focus();
             });
 
-            addEvent(btnMarkerDone, 'click', function() {
+            addEvent(btnMarkerDone, 'click', function () {
                 markerContainer.style.display = 'none';
                 markerColorContainer.style.display = 'none';
 
@@ -3366,7 +3369,7 @@
                 markerStrokeStyle = hexToRGBA(fillStyleText.value, alpha);
             });
 
-            addEvent(markerSelectedColor, 'click', function() {
+            addEvent(markerSelectedColor, 'click', function () {
                 markerColorContainer.style.display = 'block';
             });
         }
@@ -3380,7 +3383,7 @@
             var context = getContext('eraser-icon');
 
             var image = new Image();
-            image.onload = function() {
+            image.onload = function () {
                 context.drawImage(image, 4, 4, 32, 32);
                 bindEvent(context, 'Eraser');
             };
@@ -3396,7 +3399,7 @@
             var context = getContext('text-icon');
 
             var image = new Image();
-            image.onload = function() {
+            image.onload = function () {
                 context.drawImage(image, 4, 4, 32, 32);
                 bindEvent(context, 'Text');
             };
@@ -3412,7 +3415,7 @@
             var context = getContext('image-icon');
 
             var image = new Image();
-            image.onload = function() {
+            image.onload = function () {
                 context.drawImage(image, 4, 4, 32, 32);
                 bindEvent(context, 'Image');
             };
@@ -3429,7 +3432,7 @@
             var context = getContext('pdf-icon');
 
             var image = new Image();
-            image.onload = function() {
+            image.onload = function () {
                 context.drawImage(image, 4, 4, 32, 32);
                 bindEvent(context, 'Pdf');
             };
@@ -3445,7 +3448,7 @@
             var context = getContext('arc');
 
             var image = new Image();
-            image.onload = function() {
+            image.onload = function () {
                 context.drawImage(image, 4, 4, 32, 32);
                 bindEvent(context, 'Arc');
             };
@@ -3461,7 +3464,7 @@
             var context = getContext('rectangle');
 
             var image = new Image();
-            image.onload = function() {
+            image.onload = function () {
                 context.drawImage(image, 4, 4, 32, 32);
                 bindEvent(context, 'Rectangle');
             };
@@ -3477,7 +3480,7 @@
             var context = getContext('quadratic-curve');
 
             var image = new Image();
-            image.onload = function() {
+            image.onload = function () {
                 context.drawImage(image, 4, 4, 32, 32);
                 bindEvent(context, 'QuadraticCurve');
             };
@@ -3493,7 +3496,7 @@
             var context = getContext('bezier-curve');
 
             var image = new Image();
-            image.onload = function() {
+            image.onload = function () {
                 context.drawImage(image, 4, 4, 32, 32);
                 bindEvent(context, 'Bezier');
             };
@@ -3517,7 +3520,7 @@
             var context = getContext('line-width');
 
             var image = new Image();
-            image.onload = function() {
+            image.onload = function () {
                 context.drawImage(image, 4, 4, 32, 32);
             };
             image.src = data_uris.lineWidth;
@@ -3528,7 +3531,7 @@
                 h1 = document.getElementsByTagName('h1')[0],
                 canvas = context.canvas;
 
-            addEvent(canvas, 'click', function() {
+            addEvent(canvas, 'click', function () {
                 hideContainers();
 
                 lineWidthContainer.style.display = 'block';
@@ -3538,7 +3541,7 @@
                 lineWidthText.focus();
             });
 
-            addEvent(btnLineWidthDone, 'click', function() {
+            addEvent(btnLineWidthDone, 'click', function () {
                 lineWidthContainer.style.display = 'none';
                 lineWidth = lineWidthText.value;
             });
@@ -3553,7 +3556,7 @@
             var context = getContext('colors');
 
             var image = new Image();
-            image.onload = function() {
+            image.onload = function () {
                 context.drawImage(image, 4, 4, 32, 32);
             };
             image.src = data_uris.colorsPicker;
@@ -3565,7 +3568,7 @@
                 h1 = document.getElementsByTagName('h1')[0],
                 canvas = context.canvas;
 
-            addEvent(canvas, 'click', function() {
+            addEvent(canvas, 'click', function () {
                 hideContainers();
 
                 colorsContainer.style.display = 'block';
@@ -3575,7 +3578,7 @@
                 strokeStyleText.focus();
             });
 
-            addEvent(btnColorsDone, 'click', function() {
+            addEvent(btnColorsDone, 'click', function () {
                 colorsContainer.style.display = 'none';
                 strokeStyle = strokeStyleText.value;
                 fillStyle = fillStyleText.value;
@@ -3591,7 +3594,7 @@
             var context = getContext('additional');
 
             var image = new Image();
-            image.onload = function() {
+            image.onload = function () {
                 context.drawImage(image, 4, 4, 32, 32);
             };
             image.src = data_uris.extraOptions;
@@ -3603,7 +3606,7 @@
                 globalAlphaSelect = find('globalAlpha-select'),
                 globalCompositeOperationSelect = find('globalCompositeOperation-select');
 
-            addEvent(canvas, 'click', function() {
+            addEvent(canvas, 'click', function () {
                 hideContainers();
 
                 additionalContainer.style.display = 'block';
@@ -3611,7 +3614,7 @@
                 additionalContainer.style.left = (canvas.offsetLeft + canvas.clientWidth) + 'px';
             });
 
-            addEvent(btnAdditionalClose, 'click', function() {
+            addEvent(btnAdditionalClose, 'click', function () {
                 additionalContainer.style.display = 'none';
 
                 globalAlpha = globalAlphaSelect.value;
@@ -3631,7 +3634,7 @@
 
         // todo: use this function in share-drawings.js
         // to sync buttons' states
-        window.selectBtn = function(btn, isSkipWebRTCMessage) {
+        window.selectBtn = function (btn, isSkipWebRTCMessage) {
             codePreview.className = designPreview.className = '';
 
             if (btn == designPreview) designPreview.className = 'preview-selected';
@@ -3648,7 +3651,7 @@
             }
         };
 
-        addEvent(designPreview, 'click', function() {
+        addEvent(designPreview, 'click', function () {
             selectBtn(designPreview);
             btnDesignerPreviewClicked();
         });
@@ -3661,7 +3664,7 @@
             endLastPath();
         }
 
-        addEvent(codePreview, 'click', function() {
+        addEvent(codePreview, 'click', function () {
             selectBtn(codePreview);
             btnCodePreviewClicked();
         });
@@ -3708,11 +3711,11 @@
 
         additionalContainer.style.display =
             colorsContainer.style.display =
-            markerColorContainer.style.display =
-            markerContainer.style.display =
-            pencilColorContainer.style.display =
-            pencilContainer.style.display =
-            lineWidthContainer.style.display = 'none';
+                markerColorContainer.style.display =
+                    markerContainer.style.display =
+                        pencilColorContainer.style.display =
+                            pencilContainer.style.display =
+                                lineWidthContainer.style.display = 'none';
     }
 
     function setTemporaryLine() {
@@ -3722,7 +3725,7 @@
         points.push(arr);
         drawHelper.redraw();
 
-        setTimeout(function() {
+        setTimeout(function () {
             setSelection(document.getElementById('line'), 'Line');
         }, 1000);
 
@@ -3732,7 +3735,7 @@
     var canvas = tempContext.canvas,
         isTouch = 'createTouch' in document;
 
-    addEvent(canvas, isTouch ? 'touchstart mousedown' : 'mousedown', function(e) {
+    addEvent(canvas, isTouch ? 'touchstart mousedown' : 'mousedown', function (e) {
         if (isTouch) e = e.pageX ? e : e.touches.length ? e.touches[0] : {
             pageX: 0,
             pageY: 0
@@ -3773,7 +3776,7 @@
         }
     }
 
-    addEvent(canvas, isTouch ? 'touchend touchcancel mouseup' : 'mouseup', function(e) {
+    addEvent(canvas, isTouch ? 'touchend touchcancel mouseup' : 'mouseup', function (e) {
         if (isTouch && (!e || !('pageX' in e))) {
             if (e && e.touches && e.touches.length) {
                 e = e.touches[0];
@@ -3810,7 +3813,7 @@
         preventStopEvent(e);
     });
 
-    addEvent(canvas, isTouch ? 'touchmove mousemove' : 'mousemove', function(e) {
+    addEvent(canvas, isTouch ? 'touchmove mousemove' : 'mousemove', function (e) {
         if (isTouch) e = e.pageX ? e : e.touches.length ? e.touches[0] : {
             pageX: 0,
             pageY: 0
@@ -3984,198 +3987,198 @@
     addEvent(document, 'paste', onTextFromClipboard);
 
     // scripts on this page directly touches DOM-elements
-	// removing or altering anything may cause failures in the UI event handlers
-	// it is used only to bring collaboration for canvas-surface
-	var lastPointIndex = 0;
+    // removing or altering anything may cause failures in the UI event handlers
+    // it is used only to bring collaboration for canvas-surface
+    var lastPointIndex = 0;
 
-	var uid;
+    var uid;
 
-	window.addEventListener('message', function(event) {
-    	if (!event.data) return;
+    window.addEventListener('message', function (event) {
+        if (!event.data) return;
 
-    	if (!uid) {
-        	uid = event.data.uid;
-    	}
+        if (!uid) {
+            uid = event.data.uid;
+        }
 
-    	if (event.data.captureStream) {
-        	webrtcHandler.createOffer(function(sdp) {
-            	sdp.uid = uid;
-            	window.parent.postMessage(sdp, '*');
-        	});
-        	return;
-    	}
-
-    if (event.data.renderStream) {
-        setTemporaryLine();
-        return;
-    }
-
-    if (event.data.sdp) {
-        webrtcHandler.setRemoteDescription(event.data);
-        return;
-    }
-
-    if (event.data.genDataURL) {
-        var dataURL = context.canvas.toDataURL(event.data.format, 1);
-        window.parent.postMessage({
-            dataURL: dataURL,
-            uid: uid
-        }, '*');
-        return;
-    }
-
-    if (event.data.undo && points.length) {
-        var index = event.data.index;
-
-        if (event.data.tool) {
-            var newArray = [];
-            var length = points.length;
-            var reverse = points.reverse();
-            for (var i = 0; i < length; i++) {
-                var point = reverse[i];
-                if (point[0] !== event.data.tool) {
-                    newArray.push(point);
-                }
-            }
-            points = newArray.reverse();
-            drawHelper.redraw();
-            syncPoints(true);
+        if (event.data.captureStream) {
+            webrtcHandler.createOffer(function (sdp) {
+                sdp.uid = uid;
+                window.parent.postMessage(sdp, '*');
+            });
             return;
         }
 
-        if (index === 'all') {
-            points = [];
-            drawHelper.redraw();
-            syncPoints(true);
+        if (event.data.renderStream) {
+            setTemporaryLine();
             return;
         }
 
-        if (index.numberOfLastShapes) {
-            try {
-                points.length -= index.numberOfLastShapes;
-            } catch (e) {
-                points = [];
-            }
-
-            drawHelper.redraw();
-            syncPoints(true);
+        if (event.data.sdp) {
+            webrtcHandler.setRemoteDescription(event.data);
             return;
         }
 
-        if (index === -1) {
-            if (points.length && (points[points.length - 1][0] === 'pencil' || points[points.length - 1][0] === 'marker')) {
+        if (event.data.genDataURL) {
+            var dataURL = context.canvas.toDataURL(event.data.format, 1);
+            window.parent.postMessage({
+                dataURL: dataURL,
+                uid: uid
+            }, '*');
+            return;
+        }
+
+        if (event.data.undo && points.length) {
+            var index = event.data.index;
+
+            if (event.data.tool) {
                 var newArray = [];
                 var length = points.length;
-
-                /* modification start*/
-                var index;
+                var reverse = points.reverse();
                 for (var i = 0; i < length; i++) {
-                    var point = points[i];
-                    if (point[3] === 'start') index = i;
+                    var point = reverse[i];
+                    if (point[0] !== event.data.tool) {
+                        newArray.push(point);
+                    }
                 }
-                var copy = [];
-                for (var i = 0; i < index; i++) {
-                    copy.push(points[i]);
+                points = newArray.reverse();
+                drawHelper.redraw();
+                syncPoints(true);
+                return;
+            }
+
+            if (index === 'all') {
+                points = [];
+                drawHelper.redraw();
+                syncPoints(true);
+                return;
+            }
+
+            if (index.numberOfLastShapes) {
+                try {
+                    points.length -= index.numberOfLastShapes;
+                } catch (e) {
+                    points = [];
                 }
-                points = copy;
-                /*modification ends*/
 
                 drawHelper.redraw();
                 syncPoints(true);
                 return;
             }
 
-            points.length = points.length - 1;
-            drawHelper.redraw();
+            if (index === -1) {
+                if (points.length && (points[points.length - 1][0] === 'pencil' || points[points.length - 1][0] === 'marker')) {
+                    var newArray = [];
+                    var length = points.length;
+
+                    /* modification start*/
+                    var index;
+                    for (var i = 0; i < length; i++) {
+                        var point = points[i];
+                        if (point[3] === 'start') index = i;
+                    }
+                    var copy = [];
+                    for (var i = 0; i < index; i++) {
+                        copy.push(points[i]);
+                    }
+                    points = copy;
+                    /*modification ends*/
+
+                    drawHelper.redraw();
+                    syncPoints(true);
+                    return;
+                }
+
+                points.length = points.length - 1;
+                drawHelper.redraw();
+                syncPoints(true);
+                return;
+            }
+
+            if (points[index]) {
+                var newPoints = [];
+                for (var i = 0; i < points.length; i++) {
+                    if (i !== index) {
+                        newPoints.push(points[i]);
+                    }
+                }
+                points = newPoints;
+                drawHelper.redraw();
+                syncPoints(true);
+            }
+            return;
+        }
+
+        if (event.data.syncPoints) {
             syncPoints(true);
             return;
         }
 
-        if (points[index]) {
-            var newPoints = [];
-            for (var i = 0; i < points.length; i++) {
-                if (i !== index) {
-                   	newPoints.push(points[i]);
-                }
-            }
-            points = newPoints;
+        if (event.data.clearCanvas) {
+            points = [];
             drawHelper.redraw();
-            syncPoints(true);
-        	}
-        	return;
-    	}
+            return;
+        }
 
-    	if (event.data.syncPoints) {
-        	syncPoints(true);
-        	return;
-    	}
+        if (!event.data.canvasDesignerSyncData) return;
 
-    	if (event.data.clearCanvas) {
-        	points = [];
-        	drawHelper.redraw();
-        	return;
-    	}
+        // drawing is shared here (array of points)
+        var d = event.data.canvasDesignerSyncData;
 
-    	if (!event.data.canvasDesignerSyncData) return;
+        if (d.startIndex !== 0) {
+            for (var i = 0; i < d.points.length; i++) {
+                points[i + d.startIndex] = d.points[i];
+            }
+        } else {
+            points = d.points;
+        }
 
-    	// drawing is shared here (array of points)
-    	var d = event.data.canvasDesignerSyncData;
+        lastPointIndex = points.length;
 
-    	if (d.startIndex !== 0) {
-        	for (var i = 0; i < d.points.length; i++) {
-            	points[i + d.startIndex] = d.points[i];
-        	}
-    	} else {
-        	points = d.points;
-    	}
+        // redraw the <canvas> surfaces
+        drawHelper.redraw();
+    }, false);
 
-    	lastPointIndex = points.length;
+    function syncPoints(isSyncAll) {
+        if (isSyncAll) {
+            lastPointIndex = 0;
+        }
 
-    	// redraw the <canvas> surfaces
-    	drawHelper.redraw();
-	}, false);
+        if (lastPointIndex == points.length) return;
 
-	function syncPoints(isSyncAll) {
-    	if (isSyncAll) {
-        	lastPointIndex = 0;
-    	}
+        var pointsToShare = [];
+        for (var i = lastPointIndex; i < points.length; i++) {
+            pointsToShare[i - lastPointIndex] = points[i];
+        }
 
-    	if (lastPointIndex == points.length) return;
+        if (pointsToShare.length) {
+            syncData({
+                points: pointsToShare || [],
+                startIndex: lastPointIndex
+            });
+        }
 
-    	var pointsToShare = [];
-    	for (var i = lastPointIndex; i < points.length; i++) {
-        	pointsToShare[i - lastPointIndex] = points[i];
-    	}
+        if (!pointsToShare.length && points.length) return;
 
-    	if (pointsToShare.length) {
-        	syncData({
-            	points: pointsToShare || [],
-            	startIndex: lastPointIndex
-        	});
-    	}
+        lastPointIndex = points.length;
+    }
 
-    	if (!pointsToShare.length && points.length) return;
-
-    	lastPointIndex = points.length;
-	}
-
-	function syncData(data) {
-    	window.parent.postMessage({
-        	canvasDesignerSyncData: data,
-        	uid: uid
-    	}, '*');
-	}
+    function syncData(data) {
+        window.parent.postMessage({
+            canvasDesignerSyncData: data,
+            uid: uid
+        }, '*');
+    }
 
     var webrtcHandler = {
-        createOffer: function(callback) {
+        createOffer: function (callback) {
             var captureStream = document.getElementById('main-canvas').captureStream();
             var peer = this.getPeer();
 
-            captureStream.getTracks().forEach(function(track) {
+            captureStream.getTracks().forEach(function (track) {
                 peer.addTrack(track, captureStream);
             });
 
-            peer.onicecandidate = function(event) {
+            peer.onicecandidate = function (event) {
                 if (!event || !!event.candidate) {
                     return;
                 }
@@ -4188,20 +4191,20 @@
             peer.createOffer({
                 OfferToReceiveAudio: false,
                 OfferToReceiveVideo: false
-            }).then(function(sdp) {
+            }).then(function (sdp) {
                 peer.setLocalDescription(sdp);
             });
         },
-        setRemoteDescription: function(sdp) {
-            this.peer.setRemoteDescription(new RTCSessionDescription(sdp)).then(function() {
+        setRemoteDescription: function (sdp) {
+            this.peer.setRemoteDescription(new RTCSessionDescription(sdp)).then(function () {
                 if (typeof setTemporaryLine === 'function') {
                     setTemporaryLine();
                 }
             });
         },
-        createAnswer: function(sdp, callback) {
+        createAnswer: function (sdp, callback) {
             var peer = this.getPeer();
-            peer.onicecandidate = function(event) {
+            peer.onicecandidate = function (event) {
                 if (!event || !!event.candidate) {
                     return;
                 }
@@ -4211,22 +4214,22 @@
                     type: peer.localDescription.type
                 });
             };
-            this.peer.setRemoteDescription(new RTCSessionDescription(sdp)).then(function() {
+            this.peer.setRemoteDescription(new RTCSessionDescription(sdp)).then(function () {
                 peer.createAnswer({
                     OfferToReceiveAudio: false,
                     OfferToReceiveVideo: true
-                }).then(function(sdp) {
+                }).then(function (sdp) {
                     peer.setLocalDescription(sdp);
                 });
             });
 
-            peer.ontrack = function(event) {
+            peer.ontrack = function (event) {
                 callback({
                     stream: event.streams[0]
                 });
             };
         },
-        getPeer: function() {
+        getPeer: function () {
             var WebRTC_Native_Peer = window.RTCPeerConnection || window.webkitRTCPeerConnection || window.mozRTCPeerConnection;
             var RTCSessionDescription = window.RTCSessionDescription || window.mozRTCSessionDescription;
             var RTCIceCandidate = window.RTCIceCandidate || window.mozRTCIceCandidate;
