@@ -697,10 +697,6 @@
 					if (!document.getElementById("video-player").paused) {
 						document.getElementById("play_button").style.display = "none";
 					}
-					else if (info == "server_will_stop") {
-						console.log("Server will stop soon");
-						//No need to handle this event because "closed" event will be called soon
-					}
 
 					console.debug(infos["obj"]);
 					if (infos["obj"].audioBitrate + infos["obj"].videoBitrate > infos["obj"].targetBitrate) {
@@ -721,13 +717,18 @@
 					overlay.style.display = "block";
 					setTimeout(function () { getVideo.play(); overlay.style.display = "none"; }, 2000);
 				}
+				else if (infos["info"] == "server_will_stop") {
+					console.log("Server will stop soon");
+					//No need to handle this event because "closed" event will be called soon
+				}
 			});
 
 			player.on('webrtc-error', function(event, errors) {
 				//some of the possible errors, NotFoundError, SecurityError,PermissionDeniedError
 				console.log("error callback: " + JSON.stringify(errors));
 
-				if (errors["error"] == "no_stream_exist") {
+				if (errors["error"] == "no_stream_exist"  || errors["error"] == "WebSocketNotConnected"
+						|| errors["error"] == "not_initialized_yet" || errors["error"] == "data_store_not_available") {
 
 					if (typeof noStreamCallback != "undefined") {
 						noStreamCallback();
