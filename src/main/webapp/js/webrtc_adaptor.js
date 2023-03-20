@@ -1631,10 +1631,6 @@ export class WebRTCAdaptor {
         this.mediaManager.enableAudioLevelForLocalStream(levelCallback, period);
     }
 
-    applyConstraints(constraints) {
-        this.mediaManager.applyConstraints(constraints)
-    };
-
     changeBandwidth(bandwidth, streamId) {
         this.mediaManager.changeBandwidth(bandwidth, streamId);
     }
@@ -1659,9 +1655,8 @@ export class WebRTCAdaptor {
         return this.mediaManager.closeStream();
     };
 
-
-    applyConstraints(newConstaints) {
-        this.mediaManager.applyConstraints(newConstaints);
+    applyConstraints(streamId, newConstaints) {
+        this.mediaManager.applyConstraints(streamId, newConstaints);
     }
 }
 

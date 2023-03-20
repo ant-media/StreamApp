@@ -1296,7 +1296,7 @@ export class MediaManager {
      * To change audio/video constraints on the fly
      *
      */
-    applyConstraints(newConstraints) {
+    applyConstraints(streamId, newConstraints) {
 
         var constraints = {};
         if (newConstraints.audio === undefined && newConstraints.video === undefined) {
