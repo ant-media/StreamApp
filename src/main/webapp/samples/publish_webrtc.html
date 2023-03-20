@@ -9,6 +9,8 @@
 	<link rel="stylesheet" href="../css/common.css" />
 	<link rel="stylesheet" href="../css/samples.css" />
 	<script src="../js/external/adapter-latest.js"></script>
+	<script type="text/javascript" src="https://cdn.bitmovin.com/analytics/web/2/bitmovinanalytics.min.js"></script>
+
 </head>
 
 <body>
@@ -154,6 +156,8 @@
 	import { getUrlParameter } from "../js/fetch.stream.js"
 	import { SoundMeter } from "../js/soundmeter.js"
 	import { generateRandomString, getWebSocketURL  } from "../js/utility.js"
+	import {Analytics} from "../js/analytics.js"
+
 	var debug = getUrlParameter("debug");
 	if (debug == null) {
 		debug = false;
@@ -192,6 +196,12 @@
 	var streamName = getUrlParameter("streamName");
 	var mainTrack = getUrlParameter("mainTrack");
 	var playType = getUrlParameter("play");
+	var customerId = getUrlParameter("customerId");
+	var bitmovinKey = getUrlParameter("bitmovinKey");
+	var applicationName = location.pathname.split('/').filter(Boolean)[0];
+	var analytics =new Analytics(bitmovinKey);
+	
+
 	var playTitle;
 	if (playType == "hls") {
 		playTitle = "HLS";
@@ -350,6 +360,8 @@
 		webRTCAdaptor.bandwidth = maxVideoBitrateKbps;
 		streamId = streamIdBox.value;
 		webRTCAdaptor.publish(streamId, token, subscriberId, subscriberCode, streamName, mainTrack);
+		analytics.analyze(Analytics.publisher,streamId,applicationName,customerId,Analytics.webrtc,"localVideo");
+
 	}
 
 	function stopPublishing() {
@@ -576,6 +588,7 @@
 						+ " video RTT: " + obj.videoRoundTripTime + " audio RTT: " + obj.audioRoundTripTime
 						+ " video jitter: " + obj.videoJitter + " audio jitter: " + obj.audioJitter);
 
+					analytics.setStats(obj);
 
 					$("#average_bit_rate").text(obj.averageOutgoingBitrate);
 					if (obj.averageOutgoingBitrate > 0) {

@@ -6,6 +6,8 @@
 <meta charset="UTF-8">
 <link rel="stylesheet" href="css/external/bootstrap4/bootstrap.min.css" />
 <script src="js/external/adapter-latest.js"></script>
+<script type="text/javascript" src="https://cdn.bitmovin.com/analytics/web/2/bitmovinanalytics.min.js"></script>
+
 <link rel="stylesheet" href="css/samples.css" />
 <link rel="stylesheet" href="css/common.css" />
 <style>
@@ -128,10 +130,12 @@
 <script type="module">
 	import {WebRTCAdaptor} from "./js/webrtc_adaptor.js"
 	import {getUrlParameter} from "./js/fetch.stream.js"
-
-
+	import {Analytics} from "./js/analytics.js"
 	var token = getUrlParameter("token");
-    
+	var bitmovinKey = getUrlParameter("bitmovinKey");
+	var customerId = getUrlParameter("customerId");
+	var applicationName = location.pathname.split('/').filter(Boolean)[0];
+	var analytics =new Analytics(bitmovinKey);
 
 	$(function() {
 	  var id = getUrlParameter("id");
@@ -246,6 +250,8 @@
 	
 	function startPlaying() {
 		streamId = streamNameBox.value;
+		document.getElementById("remoteVideo").srcObject=null;
+		analytics.analyze(Analytics.player,streamId,applicationName,customerId,Analytics.webrtc,"remoteVideo");
 		webRTCAdaptor.play(streamNameBox.value, token, "", [], subscriberId, subscriberCode);
 	}
 
@@ -312,6 +318,7 @@
 			} else if (info == "play_finished") {
 				//leaved the stream
 				console.log("play finished");
+				analytics.stop();
 				start_play_button.disabled = false;
 				stop_play_button.disabled = true;
 				$("#stats_panel").hide();
@@ -480,6 +487,8 @@
 					startAnimation();
 				}
 				$("#video_bit_rate").text(parseInt(obj.audioBitrate) + parseInt(obj.videoBitrate));
+				analytics.setStats(obj);
+
 			}
 			else if(info == "resolutionChangeInfo"){
 				console.log("Resolution is changed to "+obj["streamHeight"]);
@@ -495,14 +504,11 @@
 		},
 		callbackError : function(error) {
 			//some of the possible errors, NotFoundError, SecurityError,PermissionDeniedError
-
+			
 			console.log("error callback: " + JSON.stringify(error));
 			alert(JSON.stringify(error));
 		}
 	});
-
 	window.webRTCAdaptor = webRTCAdaptor;
 </script>
 </html>
-
-
