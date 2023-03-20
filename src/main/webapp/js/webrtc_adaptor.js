@@ -322,6 +322,12 @@ export class WebRTCAdaptor {
      *    -start websocket connection
      */
     initialize() {
+        if (typeof this.mediaManager.mediaConstraints.video != "undefined" && this.mediaManager.mediaConstraints.video === false &&
+            typeof this.mediaManager.mediaConstraints.audio != "undefined" && this.mediaManager.mediaConstraints.audio === false &&
+            !this.onlyDataChannel && !this.isPlayMode) {
+            this.onlyDataChannel = true;
+            console.warn("Only data channel is enabled, due to video and audio is disabled.");
+        }
         if (!this.isPlayMode && !this.onlyDataChannel && this.mediaManager.localStream == null) {
             //we need local stream because it not a play mode
             this.mediaManager.initLocalStream().then(() => {
