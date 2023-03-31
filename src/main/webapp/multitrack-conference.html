@@ -408,6 +408,11 @@ body {
 	}
 
 	function leaveRoom() {
+		if (roomTimerId != -1) {
+			//clear roomTimerId if user immediately joins and left the room
+			clearInterval(roomTimerId);
+			roomTimerId = -1;
+		}
 		webRTCAdaptor.leaveFromRoom(roomNameBox.value);
 	}
 
@@ -565,9 +570,12 @@ body {
 							webRTCAdaptor.play(roomNameBox.value, token, roomNameBox.value); //, tempList);	
 						}
 						
-						roomTimerId = setInterval(() => {			
-							webRTCAdaptor.getRoomInfo(roomNameBox.value, publishStreamId);
-						}, 5000);
+						//just call once - no need to have periodic check
+						roomTimerId = setTimeout(function () {
+							
+								webRTCAdaptor.getRoomInfo(roomNameBox.value, publishStreamId);
+							}, 3000);		
+						
 					}
 					else if (info == "newTrackAvailable") {
 						playVideo(obj);
@@ -595,11 +603,7 @@ body {
 					else if (info == "leavedFromRoom") {
 						var room = obj.ATTR_ROOM_NAME;
 						console.debug("leaved from the room:" + room);
-						if (roomTimerId != null)
-						{
-							clearInterval(roomTimerId);
-						}
-
+					
 						join_publish_button.disabled = false;
 						stop_publish_button.disabled = true;
 						
@@ -645,9 +649,6 @@ body {
 				callbackError : function(error, message) {
 					//some of the possible errors, NotFoundError, SecurityError,PermissionDeniedError
 
-					if(error.indexOf("publishTimeoutError") != -1 && roomTimerId != null){
-						clearInterval(roomTimerId);
-					}
 					var errorMessage = '';
 				    if (error.indexOf("NotAllowedError") != -1
 							|| error.indexOf("PermissionDeniedError") != -1) {
@@ -658,9 +659,17 @@ body {
 						errorMessage = "You are not allowed to access screen share";
 						screen_share_checkbox.checked = false;
 						camera_checkbox.checked = true;
-					} 
+					}
 					
-					errorHandler(error, message);
+					if (error.indexOf("no_active_streams_in_room") != -1){
+						 
+							roomTimerId = setTimeout(function () {
+								webRTCAdaptor.getRoomInfo(roomNameBox.value, publishStreamId);
+							}, 3000);
+					}  
+					else {
+						errorHandler(error, message);
+					}
 					
 				}
 			});

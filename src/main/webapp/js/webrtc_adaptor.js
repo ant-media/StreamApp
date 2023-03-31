@@ -569,7 +569,8 @@ export class WebRTCAdaptor {
 
     /**
      * Called to get the room information for a specific room. AMS responds with roomInformation message
-     * which includes the ids and names of the streams in that room.
+     * which includes the ids and names of the streams in that room. 
+     * If there is no active streams in the room, AMS returns error `no_active_streams_in_room` in error callback 
      * Parameters:
      *     roomName: unique id for the room that you want to get info about
      *     streamId: unique id for the stream that is streamed by this @WebRTCAdaptor
