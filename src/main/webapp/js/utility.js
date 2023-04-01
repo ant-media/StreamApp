@@ -82,6 +82,7 @@ export function errorHandler(error, message) {
     } else {
         errorMessage = JSON.stringify(error);
     }
+
     if (error.indexOf("WebSocketNotConnected") != -1) {
         errorMessage = "WebSocket Connection is disconnected.";
     } else if (error.indexOf("not_initialized_yet") != -1) {
@@ -107,11 +108,14 @@ export function errorHandler(error, message) {
             $(".video-source").first().prop("checked", true);
         } else if (error.indexOf("UnsecureContext") != -1) {
             errorMessage = "Please Install SSL(https). Camera and mic cannot be opened because of unsecure context. ";
+        }
+        else if (error.indexOf('no_stream_exist') != -1) {
+            errorMessage = 'There is no active live stream with this id to play';
         } else {
             errorMessage = error
         }
         alert(errorMessage);
-
+        
     }
     console.error(errorMessage);
     if (message !== undefined) {

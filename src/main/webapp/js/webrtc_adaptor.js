@@ -65,7 +65,8 @@ export class WebRTCAdaptor {
         this.peerconnection_config = {
             'iceServers': [{
                 'urls': 'stun:stun1.l.google.com:19302'
-            }]
+            }],
+            sdpSemantics: 'unified-plan'
         };
 
         /**
@@ -476,6 +477,36 @@ export class WebRTCAdaptor {
         this.webSocketAdaptor.send(JSON.stringify(jsCmd));
     }
 
+	/**
+	 * Called by browser when a new track is added to WebRTC connetion. This is used to infor html pages with newStreamAvailable callback. 
+	 * Parameters:
+	 * 	 event: TODO
+	 * 	 streamId: unique id for the stream 
+	 */
+	onTrack(event, streamId)
+	{
+		console.log("onTrack for stream");
+		if (this.remoteVideo != null) {
+			if (this.remoteVideo.srcObject !== event.streams[0]) {
+				this.remoteVideo.srcObject = event.streams[0];
+				console.log('Received remote stream');
+			}
+		}
+		else {
+			var dataObj = {
+					stream: event.streams[0],
+					track: event.track,
+					streamId: streamId,
+					trackId: this.idMapping[streamId][event.transceiver.mid],
+			}
+			this.notifyEventListeners("newTrackAvailable", dataObj);
+			
+			//deprecated. Listen newTrackAvailable in callback. It's kept for backward compatibility
+			this.notifyEventListeners("newStreamAvailable", dataObj);
+			
+		}
+	}
+	
     /**
      * Called to leave from a conference room. AMS responds with leavedTheRoom message.
      * Parameters:
@@ -538,7 +569,8 @@ export class WebRTCAdaptor {
 
     /**
      * Called to get the room information for a specific room. AMS responds with roomInformation message
-     * which includes the ids and names of the streams in that room.
+     * which includes the ids and names of the streams in that room. 
+     * If there is no active streams in the room, AMS returns error `no_active_streams_in_room` in error callback 
      * Parameters:
      *     roomName: unique id for the room that you want to get info about
      *     streamId: unique id for the stream that is streamed by this @WebRTCAdaptor
@@ -586,32 +618,6 @@ export class WebRTCAdaptor {
             }
 
         this.webSocketAdaptor.send(JSON.stringify(jsCmd));
-    }
-
-    /**
-     * Called by browser when a new track is added to WebRTC connetion. This is used to infor html pages with newStreamAvailable callback.
-     * Parameters:
-     *     event: TODO
-     *     streamId: unique id for the stream
-     */
-    onTrack(event, streamId) {
-        console.log("onTrack");
-        if (this.remoteVideo != null) {
-            //this.remoteVideo.srcObject = event.streams[0];
-            if (this.remoteVideo.srcObject !== event.streams[0]) {
-                this.remoteVideo.srcObject = event.streams[0];
-                console.log('Received remote stream');
-            }
-        } else {
-            var dataObj = {
-                stream: event.streams[0],
-                track: event.track,
-                streamId: streamId,
-                trackId: this.idMapping[streamId][event.transceiver.mid],
-            }
-            this.notifyEventListeners("newStreamAvailable", dataObj);
-        }
-
     }
 
     /**
