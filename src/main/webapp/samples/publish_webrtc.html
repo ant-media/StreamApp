@@ -143,7 +143,7 @@
 			</div>
 		</footer>
 
-	
+
 	</div>
 	<script src="../js/external/jquery-3.4.1.min.js" crossorigin="anonymous"></script>
 	<script src="../js/external/popper.min.js" crossorigin="anonymous"></script>
@@ -159,7 +159,13 @@
 		debug = false;
 	}
 
-
+	var mediaConstraints = {
+		audio: {
+			noiseSuppression: false,
+			echoCancellation: false
+		},
+		video: true
+	};
 
 	function init() {
 		$('[data-toggle="tooltip"]').tooltip()
@@ -226,7 +232,7 @@
 	 */
 	var autoRepublishEnabled = true;
 	/**
-	 * Timer job that checks the WebRTC connection 
+	 * Timer job that checks the WebRTC connection
 	 */
 	var autoRepublishIntervalJob = null;
 
@@ -361,7 +367,7 @@
 	}
 
 	function switchVideoMode(chbx) {
-		//If video device changes manually 
+		//If video device changes manually
 
 		if (chbx.value == "screen") {
 			//webRTCAdaptor.switchDesktopWithMicAudio(streamId);
@@ -506,6 +512,7 @@
 			websocket_url: websocketURL,
 			localVideoId: "localVideo",
 			debug: debug,
+			mediaConstraints: mediaConstraints,
 			bandwidth: maxVideoBitrateKbps,
 			dataChannelEnabled: true,
 			callback: (info, obj) => {
@@ -544,7 +551,7 @@
 					browser_screen_share_doesnt_support.style.display = "none";
 				}
 				else if (info == "screen_share_stopped") {
-					//choose the first video source. It may not be correct for all cases. 
+					//choose the first video source. It may not be correct for all cases.
 					$(".video-source").first().prop("checked", true);
 					console.log("screen share stopped");
 				}
