@@ -22,21 +22,10 @@ export class WebSocketAdaptor {
         * It uses one of the nodes on Cluster mode
         * Example parameters: "origin" or "edge"
         */
-        if (this.websocket_url.indexOf("?") == -1) {
-            //if there is no question mark just add it to give extra parameter
-            this.websocket_url += "?";
-        } else {
-            //if there is a question mark, just append extra parameter
-            this.websocket_url += "&";
-        }
-        //add the target field
-        this.websocket_url += "target=";
-
-        //add the target value
-        if (this.webrtcadaptor.isPlayMode) {
-            this.websocket_url += "edge";
-        } else {
-            this.websocket_url += "origin";
+        const url = new URL(this.websocket_url);
+        if (!['origin', 'edge'].includes(url.searchParams.get('target'))) {
+            url.searchParams.set('target', this.webrtcadaptor.isPlayMode ? 'edge' : 'origin');
+            this.websocket_url = url.toString();
         }
 
         this.wsConn = new WebSocket(this.websocket_url);
