@@ -1269,13 +1269,13 @@ export class MediaManager {
      * @param {*} period : measurement period
      */
     enableAudioLevelForLocalStream(levelCallback, period) {
-        this.startAudio(this.audioContext).then(() =>{
-            this.audioContext.resume();
+        this.startAudio(this.audioContext, levelCallback).then(() =>{
+            this.audioContext.resume().then(r => {});
         });
     }
 
-    async startAudio (context) {
-        await context.audioWorklet.addModule('volume-meter-processor.js');
+    async startAudio (context, levelCallback) {
+        await context.audioWorklet.addModule('volume-meter-processor.js').catch((err) => console.log(err));
         const mediaStream = await navigator.mediaDevices.getUserMedia({audio: true});
         const micNode = context.createMediaStreamSource(mediaStream);
         const volumeMeterNode = new AudioWorkletNode(context, 'volume-meter');
