@@ -1,5 +1,5 @@
 import {SoundMeter} from "./soundmeter.js"
-import {getVolumeMeterProcessorPath} from "./utility.js";
+
 /**
  * Media management class is responsible to manage audio and video
  * sources and tracks management for the local stream.
@@ -1275,7 +1275,7 @@ export class MediaManager {
     }
 
     async startAudio (context, levelCallback) {
-        await context.audioWorklet.addModule(getVolumeMeterProcessorPath()).catch((err) => console.log(err));
+        await context.audioWorklet.addModule('volume-meter-processor.js').catch((err) => console.log(err));
         const mediaStream = await navigator.mediaDevices.getUserMedia({audio: true});
         const micNode = context.createMediaStreamSource(mediaStream);
         const volumeMeterNode = new AudioWorkletNode(context, 'volume-meter');

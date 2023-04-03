@@ -45,11 +45,6 @@ export function getQueryParameter(paramName) {
 
 }
 
-export function getVolumeMeterProcessorPath() {
-    let appName = location.pathname.substring(1, location.pathname.indexOf("/", 1) + 1);
-    return location.protocol + "//" + location.hostname + ":" + location.port + "/" + appName + "js/volume-meter-processor.js";
-}
-
 export function updateBroadcastStatusInfo(streamId, linkUrl) {
     $("#offlineInfo").hide();
     $("#broadcastingInfo").show();
@@ -120,7 +115,7 @@ export function errorHandler(error, message) {
             errorMessage = error
         }
         alert(errorMessage);
-
+        
     }
     console.error(errorMessage);
     if (message !== undefined) {
