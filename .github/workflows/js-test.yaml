@@ -1,0 +1,42 @@
+name: Run JS Test Cases
+on:	
+  push:	
+    branches:	
+      - master	
+jobs:	
+  publish-npmjs:	
+    runs-on: ubuntu-20.04	
+    steps:	
+      - uses: actions/checkout@v3	
+      - uses: actions/setup-node@v3	
+        with:	
+         node-version: '16.x'	
+         registry-url: 'https://registry.npmjs.org'	
+      - uses: actions/setup-java@v3	
+        with:	
+          java-version: '11'	
+          distribution: 'adopt'	
+      - name: Install AMS 
+        run: |
+          git clone https://github.com/ant-media/ant-media-server-parent.git
+          cd ant-media-server-parent/
+          mvn clean install -Dgpg.skip=true
+          cd ..
+          git clone https://github.com/ant-media/Ant-Media-Server.git
+          cd Ant-Media-Server
+          mvn clean install -Dmaven.javadoc.skip=true -Dmaven.test.skip=true -Dgpg.skip=true
+          sudo sh ./repackage_community.sh
+          wget https://raw.githubusercontent.com/ant-media/Scripts/master/install_ant-media-server.sh && chmod 755 install_ant-media-server.sh
+          sudo ./install_ant-media-server.sh -i ./target/ant*.zip
+      - name: Install Chrome 100 
+        run: wget http://dl.google.com/linux/chrome/deb/pool/main/g/google-chrome-stable/google-chrome-stable_100.0.4896.127-1_amd64.deb
+      - run: sudo dpkg -i google-chrome-stable_100.0.4896.127-1_amd64.deb
+      - name: Compile and Redeploy StreamApp
+        run: npm install --include=dev	
+      - run: npm install --save-dev @babel/cli	
+      - run: npm run compile
+      - run: sed -i 's/^AMS_DIR=.*/AMS_DIR=\/usr\/local\/antmedia/' redeploy.sh
+      - run: sudo ./redeploy.sh
+      - name: Run JS Tests
+        run: npm install ./src/test/js/
+      - run: npm run test  --prefix ./src/test/js/
