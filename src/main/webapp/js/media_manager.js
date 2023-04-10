@@ -124,6 +124,11 @@ export class MediaManager {
         this.localStreamSoundMeter = null;
 
         /**
+         * this is the level callback for sound meter object
+         */
+        this.levelCallback = null;
+
+        /**
          * Timer to create black frame to publish when video is muted
          */
         this.blackFrameTimer = null;
@@ -1269,31 +1274,21 @@ export class MediaManager {
      * @param {*} period : measurement period
      */
     enableAudioLevelForLocalStream(levelCallback, period) {
-        this.startAudio(this.audioContext, levelCallback).then(() =>{
+        this.levelCallback = levelCallback;
+        this.localStreamSoundMeter = new SoundMeter(this.audioContext);
+        this.localStreamSoundMeter.connectToSource(this.localStream, levelCallback).then(() =>{
             this.audioContext.resume().then(r => {});
         });
     }
-
-    async startAudio (context, levelCallback) {
-        await context.audioWorklet.addModule(new URL('./volume-meter-processor.js', import.meta.url)).catch((err) => console.log(err));
-        const mediaStream = await navigator.mediaDevices.getUserMedia({audio: true});
-        const micNode = context.createMediaStreamSource(mediaStream);
-        const volumeMeterNode = new AudioWorkletNode(context, 'volume-meter');
-        volumeMeterNode.port.onmessage = ({data}) => {
-            levelCallback(data.toFixed(2));
-        };
-        micNode.connect(volumeMeterNode).connect(context.destination);
-    };
 
     /**
      * Connects the local stream to Sound Meter
      * It should be called when local stream changes
      */
     connectSoundMeterToLocalStream() {
-        this.localStreamSoundMeter.connectToSource(this.localStream, function (e) {
+        this.localStreamSoundMeter.connectToSource(this.localStream, this.levelCallback, function (e) {
             if (e) {
                 alert(e);
-                return;
             }
             // console.log("Added sound meter for stream: " + streamId + " = " + soundMeter.instant.toFixed(2));
         });
