@@ -1346,6 +1346,10 @@ export class MediaManager {
             //just give the audio constraints not to get video stream
             promise = this.setAudioInputSource(streamId, {audio: this.mediaConstraints.audio}, null);
         }
+
+        if (this.localStreamSoundMeter != null) {
+            this.connectSoundMeterToLocalStream();
+        }
         return promise;
     }
 }
