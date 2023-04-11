@@ -642,11 +642,7 @@ export class MediaManager {
             .then((stream) => {
                 this.mutedAudioStream = stream;
                 const soundMeter = new SoundMeter(this.audioContext);
-                soundMeter.connectToSource(this.mutedAudioStream, (value) => {
-                    if (value > 0.1) {
-                        this.callback("speaking_but_muted");
-                    }
-                }, (e) => {
+                soundMeter.connectToSource(this.mutedAudioStream, (e) => {
                     if (e) {
                         alert(e);
                         return;
