@@ -159,18 +159,6 @@
 		debug = false;
 	}
 
-	var mediaConstraints = {
-		audio: {
-			echoCancellation: true,
-			echoCancellationType: "system",
-			noiseSuppression: true,
-			autoGainControl: true,
-			sampleRate: 44100,
-			channelCount: 2
-		},
-		video: true
-	};
-
 	function init() {
 		$('[data-toggle="tooltip"]').tooltip()
 		var id = getUrlParameter("id");
