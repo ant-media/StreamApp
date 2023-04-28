@@ -145,21 +145,21 @@ body {
 
 				<div class="form-check form-check-inline" >
 
-					<input class="form-check-input video-source" disabled name="videoSource" type="radio" value="camera"
+					<input class="form-check-input video-source" disabled name="videoSource" type="radio" value="camera" 
 					id="camera_checkbox" checked>
 					<label class="form-check-label" for="camera_checkbox" style="font-weight:normal">
 							Camera
 					</label>
 			    </div>
 				<div class="form-check form-check-inline" >
-					<input class="form-check-input video-source" disabled name="videoSource"  type="radio" value="screen"
+					<input class="form-check-input video-source" disabled name="videoSource"  type="radio" value="screen" 
 					id="screen_share_checkbox">
 					<label class="form-check-label" for="screen_share_checkbox" style="font-weight:normal">
 							Screen
 					</label>
 				</div>
 				<div class="form-check form-check-inline" >
-					<input class="form-check-input video-source" disabled name="videoSource" type="radio" value="screen+camera"
+					<input class="form-check-input video-source" disabled name="videoSource" type="radio" value="screen+camera" 
 						id="screen_share_with_camera_checkbox">
 					<label class="form-check-label" for="screen_share_with_camera_checkbox" style="font-weight:normal">
 							Screen with Camera
@@ -204,15 +204,15 @@ body {
 </body>
 <script type="module">
 	import {WebRTCAdaptor} from "./js/webrtc_adaptor.js"
-    import {getUrlParameter} from "./js/fetch.stream.js"
-    import {SoundMeter} from "./js/soundmeter.js"
+    import {getUrlParameter} from "./js/fetch.stream.js" 
+    import {SoundMeter} from "./js/soundmeter.js" 
 	import { generateRandomString, getWebSocketURL, errorHandler , updateBroadcastStatusInfo} from "./js/utility.js"
 
     /**
     * This page accepts 3 arguments through url parameter
     * 1. "streamId": the stream id to publish stream. It's optional. ?streamId=stream1
     * 2. "playOnly": If it's true, user does not publish stream. It only play streams in the room.
-    * 3. "token": It's experimental.
+    * 3. "token": It's experimental. 
     */
 
 	var token = getUrlParameter("token");
@@ -265,7 +265,7 @@ body {
 	options.addEventListener("click", toggleOptions, false);
 	var send = document.getElementById("send");
 	send.addEventListener("click", sendData, false);
-
+	
 
 	//Handles radio buttons for screen share feature
 	if (document.querySelector('input[name="videoSource"]')) {
@@ -278,19 +278,11 @@ body {
 	}
 
 	var roomNameBox = document.getElementById("roomName");
-
+	
 	var isDataChannelOpen = false;
 	var isMicMuted = false;
 	var isCameraOff = false;
 	var roomTimerId = -1;
-	/**
-	 * If publishing stops for any reason, it tries to republish again.
-	 */
-	var autoRepublishEnabled = true;
-	/**
-	 * Timer job that checks the WebRTC connection
-	 */
-	var autoRepublishIntervalJob = null;
 
 
 	function toggleOptions() {
@@ -351,7 +343,7 @@ body {
 		try {
 			var iceState = webRTCAdaptor.iceConnectionState(publishStreamId);
             if (iceState != null && iceState != "failed" && iceState != "disconnected") {
-
+            
 				var msg = $("#dataTextbox").val();
 				var notEvent = { streamId: publishStreamId, eventType:"CHAT_MESSAGE", message:msg };
 
@@ -424,18 +416,6 @@ body {
 		webRTCAdaptor.leaveFromRoom(roomNameBox.value);
 	}
 
-	function checkAndRepublishIfRequired() {
-		var iceState = webRTCAdaptor.iceConnectionState(publishStreamId);
-		console.log("Ice state checked = " + iceState);
-
-		if (iceState == null || iceState == "failed" || iceState == "disconnected") {
-			webRTCAdaptor.stop(publishStreamId);
-			webRTCAdaptor.closePeerConnection(publishStreamId);
-			webRTCAdaptor.closeWebSocket();
-			initWebRTCAdaptor(true, autoRepublishEnabled);
-		}
-	}
-
 	function publish(streamId, token) {
 		//update the publishStreamId to make sure it's correct
 		publishStreamId = streamId;
@@ -445,11 +425,11 @@ body {
 	function playVideo(obj) {
 
 		//In multitrack conferencing the stream is same, tracks are being and remove from the stream
-
+		
 		var roomId = roomNameBox.value;
 		console.log("new track available with id: "
 				+ obj.trackId + " and kind: " + obj.track.kind + " on the room:" + roomId);
-
+		
 		//trackId is ARDAMSv+STREAM_ID or  ARDAMSa+STREAM_ID
 		var incomingTrackId = obj.trackId.substring("ARDAMSx".length);
 
@@ -462,7 +442,7 @@ body {
 		if (video == null) {
 			createRemoteVideo(incomingTrackId);
 			video = document.getElementById("remoteVideo"+incomingTrackId);
-			video.srcObject = new MediaStream();
+			video.srcObject = new MediaStream();	
 		}
 
 		video.srcObject.addTrack(obj.track)
@@ -481,7 +461,7 @@ body {
 		webRTCAdaptor.enableAudioLevelForLocalStream((value) => {
 			webRTCAdaptor.updateAudioLevel(publishStreamId,  Math.floor(value*100));
 		}, 200);
-	};
+	}; 
 
 	function createRemoteVideo(streamId) {
 		var player = document.createElement("div");
@@ -546,152 +526,153 @@ body {
 	var websocketURL = getWebSocketURL(location);
 
 	var isPlaying = false;
-	var webRTCAdaptor = null;
+	var webRTCAdaptor = new WebRTCAdaptor(	
+			{
+				websocket_url : websocketURL,
+				mediaConstraints : mediaConstraints,
+				localVideoId : "localVideo",
+				isPlayMode : playOnly,
+				onlyDataChannel : dcOnly,
+				debug : true,
+				callback : (info, obj) => {
+					if (info == "initialized") {
+						console.log("initialized");
+						join_publish_button.disabled = false;
+						stop_publish_button.disabled = true;
+						if(playOnly){
+							isCameraOff = true;
+							handleCameraButtons();
+						}
+					} 
+					else if (info == "joinedTheRoom") {
+						var room = obj.room;
+						console.log("joined the room: " + room);
+						console.log(obj)
 
-	function initWebRTCAdaptor(publishImmediately, autoRepublishEnabled) {
-		webRTCAdaptor = new WebRTCAdaptor(
-				{
-					websocket_url: websocketURL,
-					mediaConstraints: mediaConstraints,
-					localVideoId: "localVideo",
-					isPlayMode: playOnly,
-					onlyDataChannel: dcOnly,
-					debug: true,
-					callback: (info, obj) => {
-						if (info == "initialized") {
-							console.log("initialized");
-							join_publish_button.disabled = false;
-							stop_publish_button.disabled = true;
-							if (playOnly) {
-								isCameraOff = true;
-								handleCameraButtons();
-							}
-						} else if (info == "joinedTheRoom") {
-							var room = obj.room;
-							console.log("joined the room: " + room);
-							console.log(obj)
+						publishStreamId = obj.streamId;
 
-							publishStreamId = obj.streamId;
+						console.log(obj.streams);
 
-							console.log(obj.streams);
-
-							if (playOnly) {
-								join_publish_button.disabled = true;
-								stop_publish_button.disabled = false;
-								isCameraOff = true;
-								handleCameraButtons();
-							} else {
-								publish(obj.streamId, token);
-							}
-
-							if (obj.streams.length > 0) {
-								var tempList = obj.streams;
-								//just disable itself
-								tempList.push("!" + publishStreamId);
-								webRTCAdaptor.play(roomNameBox.value, token, roomNameBox.value); //, tempList);
-							}
-
-							//just call once - no need to have periodic check
-							roomTimerId = setTimeout(function () {
-
-								webRTCAdaptor.getRoomInfo(roomNameBox.value, publishStreamId);
-							}, 3000);
-
-						} else if (info == "newTrackAvailable") {
-							playVideo(obj);
-						} else if (info == "publish_started") {
-							//stream is being published
-							console.debug("publish started to room " + roomNameBox.value);
+						if(playOnly) {
 							join_publish_button.disabled = true;
 							stop_publish_button.disabled = false;
-							if (autoRepublishEnabled && autoRepublishIntervalJob == null) {
-								autoRepublishIntervalJob = setInterval(() => {
-									checkAndRepublishIfRequired();
-								}, 3000);
-							}
-							startAnimation();
-
-							enableAudioLevel();
-						} else if (info == "publish_finished") {
-							//stream is being finished
-							console.debug("publish finished");
-						} else if (info == "browser_screen_share_supported") {
-							screen_share_checkbox.disabled = false;
-							camera_checkbox.disabled = false;
-							screen_share_with_camera_checkbox.disabled = false;
-							console.log("browser screen share supported");
-							browser_screen_share_doesnt_support.style.display = "none";
-						} else if (info == "leavedFromRoom") {
-							var room = obj.ATTR_ROOM_NAME;
-							console.debug("leaved from the room:" + room);
-
-							join_publish_button.disabled = false;
-							stop_publish_button.disabled = true;
-
-							removeAllRemoteVideos();
-							isPlaying = false;
-						} else if (info == "play_started") {
-							isPlaying = true;
-						} else if (info == "play_finished") {
-							//this event is fired when room is finished to play
-							console.log("play_finished for stream:" + obj.streamId);
-							removeAllRemoteVideos();
-							isPlaying = false;
-						} else if (info == "roomInformation") {
-
-							if (!isPlaying && obj.streams.length > 0) {
-								var tempList = obj.streams;
-								//just disable itself
-								tempList.push("!" + publishStreamId);
-								webRTCAdaptor.play(roomNameBox.value, token, roomNameBox.value, tempList);
-								isPlaying = true;
-							}
-						} else if (info == "data_channel_opened") {
-							console.log("Data Channel open for stream id", obj);
-							isDataChannelOpen = true;
-						} else if (info == "data_channel_closed") {
-							console.log("Data Channel closed for stream id", obj);
-							isDataChannelOpen = false;
-						} else if (info == "data_received") {
-							handleNotificationEvent(obj);
-						} else if (info == "session_restored") {
+							isCameraOff = true;
 							handleCameraButtons();
-							startAnimation();
-							console.log(info + "notification received");
-						} else if (info == "refreshConnection") {
-							checkAndRepublishIfRequired();
 						}
-					},
-					callbackError: function (error, message) {
-						//some of the possible errors, NotFoundError, SecurityError,PermissionDeniedError
-
-						var errorMessage = '';
-						if (error.indexOf("NotAllowedError") != -1
-								|| error.indexOf("PermissionDeniedError") != -1) {
-							errorMessage = "You are not allowed to access camera and mic.";
-							screen_share_checkbox.checked = false;
-							camera_checkbox.checked = false;
-						} else if (error.indexOf("ScreenSharePermissionDenied") != -1) {
-							errorMessage = "You are not allowed to access screen share";
-							screen_share_checkbox.checked = false;
-							camera_checkbox.checked = true;
+						else {
+							publish(obj.streamId, token);
 						}
 
-						if (error.indexOf("no_active_streams_in_room") != -1) {
+						if (obj.streams.length > 0) {
+							var tempList = obj.streams;
+							//just disable itself
+							tempList.push("!"+publishStreamId);
+							webRTCAdaptor.play(roomNameBox.value, token, roomNameBox.value); //, tempList);	
+						}
+						
+						//just call once - no need to have periodic check
+						roomTimerId = setTimeout(function () {
+							
+								webRTCAdaptor.getRoomInfo(roomNameBox.value, publishStreamId);
+							}, 3000);		
+						
+					}
+					else if (info == "newTrackAvailable") {
+						playVideo(obj);
+					} 
+					else if (info == "publish_started") {
+						//stream is being published
+						console.debug("publish started to room " + roomNameBox.value);
+						join_publish_button.disabled = true;
+						stop_publish_button.disabled = false;
+						startAnimation();
 
+						enableAudioLevel();
+					} 
+					else if (info == "publish_finished") {
+						//stream is being finished
+						console.debug("publish finished");
+					} 
+					else if (info == "browser_screen_share_supported") {
+						screen_share_checkbox.disabled = false;
+						camera_checkbox.disabled = false;
+						screen_share_with_camera_checkbox.disabled = false;
+						console.log("browser screen share supported");
+						browser_screen_share_doesnt_support.style.display = "none";
+					} 
+					else if (info == "leavedFromRoom") {
+						var room = obj.ATTR_ROOM_NAME;
+						console.debug("leaved from the room:" + room);
+					
+						join_publish_button.disabled = false;
+						stop_publish_button.disabled = true;
+						
+						removeAllRemoteVideos();
+						isPlaying = false;
+					} 
+					else if (info == "play_started") {
+						isPlaying = true;
+					}
+					else if (info == "play_finished") {
+						//this event is fired when room is finished to play
+						console.log("play_finished for stream:" + obj.streamId);
+						removeAllRemoteVideos();
+						isPlaying = false;
+					} 
+					else if (info == "roomInformation") {
+						
+						if(!isPlaying && obj.streams.length > 0) {
+							var tempList = obj.streams;
+							//just disable itself
+							tempList.push("!"+publishStreamId);
+							webRTCAdaptor.play(roomNameBox.value, token, roomNameBox.value, tempList);	
+							isPlaying = true;
+						}
+					}
+					else if (info == "data_channel_opened") {
+						console.log("Data Channel open for stream id", obj );
+						isDataChannelOpen = true;
+					} 
+					else if (info == "data_channel_closed") {
+						console.log("Data Channel closed for stream id", obj );
+						isDataChannelOpen = false;
+					} 
+					else if(info == "data_received") {
+						handleNotificationEvent(obj);
+					}
+					else if(info == "session_restored"){
+						handleCameraButtons();
+						startAnimation();
+						console.log(info + "notification received");
+					}
+				},
+				callbackError : function(error, message) {
+					//some of the possible errors, NotFoundError, SecurityError,PermissionDeniedError
+
+					var errorMessage = '';
+				    if (error.indexOf("NotAllowedError") != -1
+							|| error.indexOf("PermissionDeniedError") != -1) {
+						errorMessage = "You are not allowed to access camera and mic.";
+						screen_share_checkbox.checked = false;
+						camera_checkbox.checked = false;
+					} else if (error.indexOf("ScreenSharePermissionDenied") != -1) {
+						errorMessage = "You are not allowed to access screen share";
+						screen_share_checkbox.checked = false;
+						camera_checkbox.checked = true;
+					}
+					
+					if (error.indexOf("no_active_streams_in_room") != -1){
+						 
 							roomTimerId = setTimeout(function () {
 								webRTCAdaptor.getRoomInfo(roomNameBox.value, publishStreamId);
 							}, 3000);
-						} else {
-							errorHandler(error, message);
-						}
-
+					}  
+					else {
+						errorHandler(error, message);
 					}
-				});
-	}
-
-	//initialize the WebRTCAdaptor
-	initWebRTCAdaptor(false, autoRepublishEnabled);
+					
+				}
+			});
 
 	window.webRTCAdaptor = webRTCAdaptor;
 </script>
