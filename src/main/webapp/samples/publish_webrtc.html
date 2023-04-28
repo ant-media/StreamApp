@@ -167,6 +167,7 @@
 		video: true
 	};
 
+
 	function init() {
 		$('[data-toggle="tooltip"]').tooltip()
 		var id = getUrlParameter("id");
@@ -498,7 +499,14 @@
 				break;
 			}
 		}
-		webRTCAdaptor.applyConstraints(constraint);
+
+		webRTCAdaptor.applyConstraints(constraint).then((value) => {
+			console.log("Applied audio constraints: " + JSON.stringify(constraint));
+		})
+		.catch((error) => {
+			console.error("Audio Constraints could not be applied" + JSON.stringify(constraint));
+			console.error(error);
+		});
 	}
 
 	var websocketURL = getWebSocketURL(location, rtmpForward);
