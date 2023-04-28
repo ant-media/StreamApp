@@ -915,6 +915,7 @@ export class MediaManager {
         }
 
         if (typeof deviceId != "undefined") {
+            //Update the media constraints
             if (this.mediaConstraints.audio !== true)
                 this.mediaConstraints.audio.deviceId = deviceId;
             else
@@ -922,9 +923,11 @@ export class MediaManager {
 
             //to change only audio track set video false otherwise issue #3826 occurs on Android
             let tempMediaConstraints = {"video": false, "audio": {"deviceId": deviceId}};
-            this.setAudioInputSource(streamId, tempMediaConstraints, null, true, deviceId);
+            return this.setAudioInputSource(streamId, tempMediaConstraints, null, deviceId);
         } else {
-            this.setAudioInputSource(streamId, this.mediaConstraints, null, true, deviceId);
+            return new Promise((resolve, reject) => {
+                reject("There is no device id for audio input source");
+            });
         }
     }
 
@@ -1337,7 +1340,10 @@ export class MediaManager {
 
         if (constraints.audio !== undefined) {
             //just give the audio constraints not to get video stream
-            promise = this.setAudioInputSource(streamId, {audio: this.mediaConstraints.audio}, null);
+            //we dont call applyContrains for audio because it does not work. I think this is due to gainStream things. This is why we call getUserMedia again
+            
+            //use the publishStreamId because we don't have streamId in the parameter anymore 
+            promise = this.setAudioInputSource(this.publishStreamId, {audio: this.mediaConstraints.audio}, null);
         }
         return promise;
     }
