@@ -206,9 +206,12 @@ export class MediaManager {
                 return this.gotStream(stream);
             }, true)
         } else {
-            //init with default values because user just asked to initLocalStream
-            this.mediaConstraints = {video: true, audio: true};
-            return this.openStream(this.mediaConstraints, this.mode);
+            //neither video nor audio is requested
+            //just return null stream
+            console.log("no media requested, just return an empty stream");
+            return new Promise((resolve, reject) => {
+                resolve(null);
+            });
         }
 
     }

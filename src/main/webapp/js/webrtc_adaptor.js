@@ -362,8 +362,12 @@ export class WebRTCAdaptor {
         //If it started with playOnly mode and wants to publish now
         else if (this.mediaManager.localStream == null) {
             this.mediaManager.initLocalStream().then(() => {
-                var videoEnabled = this.mediaManager.localStream.getVideoTracks().length > 0 ? true : false;
-                var audioEnabled = this.mediaManager.localStream.getAudioTracks().length > 0 ? true : false;
+                var videoEnabled = false;
+                var audioEnabled = false;
+                if (this.mediaManager.localStream != null) {
+                 videoEnabled = this.mediaManager.localStream.getVideoTracks().length > 0 ? true : false;
+                 audioEnabled = this.mediaManager.localStream.getAudioTracks().length > 0 ? true : false;
+                }
                 this.sendPublishCommand(streamId, token, subscriberId, subscriberCode, streamName, mainTrack, metaData, videoEnabled, audioEnabled)
 
             }).catch(error => {
