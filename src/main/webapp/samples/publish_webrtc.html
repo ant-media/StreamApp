@@ -48,14 +48,14 @@
 				<legend class="col-form-label audio-quality-legend">Audio Quality</legend>
 				<div class="form-check-inline form-inline">
 					<div class="custom-control custom-switch">
-						<input type="checkbox" class="custom-control-input" name="noiseSuppression"
+						<input type="checkbox" class="custom-control-input" name="noiseSuppression" checked
 							id="noiseSuppression">
 						<label class="custom-control-label" for="noiseSuppression">Noise Supression</label>
 					</div>
 				</div>
 				<div class="form-check-inline form-inline">
 					<div class="custom-control custom-switch">
-						<input type="checkbox" class="custom-control-input" name="echoCancellation"
+						<input type="checkbox" class="custom-control-input" name="echoCancellation" checked
 							id="echoCancellation">
 						<label class="custom-control-label" for="echoCancellation">Echo Cancellation</label>
 					</div>
@@ -143,7 +143,7 @@
 			</div>
 		</footer>
 
-	
+
 	</div>
 	<script src="../js/external/jquery-3.4.1.min.js" crossorigin="anonymous"></script>
 	<script src="../js/external/popper.min.js" crossorigin="anonymous"></script>
@@ -158,8 +158,6 @@
 	if (debug == null) {
 		debug = false;
 	}
-
-
 
 	function init() {
 		$('[data-toggle="tooltip"]').tooltip()
@@ -226,7 +224,7 @@
 	 */
 	var autoRepublishEnabled = true;
 	/**
-	 * Timer job that checks the WebRTC connection 
+	 * Timer job that checks the WebRTC connection
 	 */
 	var autoRepublishIntervalJob = null;
 
@@ -361,7 +359,7 @@
 	}
 
 	function switchVideoMode(chbx) {
-		//If video device changes manually 
+		//If video device changes manually
 
 		if (chbx.value == "screen") {
 			//webRTCAdaptor.switchDesktopWithMicAudio(streamId);
@@ -492,6 +490,7 @@
 				break;
 			}
 		}
+
 		webRTCAdaptor.applyConstraints(constraint).then((value) => {
 			console.log("Applied audio constraints: " + JSON.stringify(constraint));
 		})
@@ -550,7 +549,7 @@
 					browser_screen_share_doesnt_support.style.display = "none";
 				}
 				else if (info == "screen_share_stopped") {
-					//choose the first video source. It may not be correct for all cases. 
+					//choose the first video source. It may not be correct for all cases.
 					$(".video-source").first().prop("checked", true);
 					console.log("screen share stopped");
 				}
