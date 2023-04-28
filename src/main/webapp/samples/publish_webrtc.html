@@ -518,7 +518,7 @@
 	function initWebRTCAdaptor(publishImmediately, autoRepublishEnabled) {
 		webRTCAdaptor = new WebRTCAdaptor({
 			websocket_url: websocketURL,
-			localVideoId: "localVideo",
+			localVideoElement: document.getElementById("localVideo"),
 			debug: debug,
 			mediaConstraints: mediaConstraints,
 			bandwidth: maxVideoBitrateKbps,

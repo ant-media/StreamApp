@@ -323,12 +323,6 @@ export class WebRTCAdaptor {
      *    -start websocket connection
      */
     initialize() {
-        if (typeof this.mediaManager.mediaConstraints.video != "undefined" && this.mediaManager.mediaConstraints.video === false &&
-            typeof this.mediaManager.mediaConstraints.audio != "undefined" && this.mediaManager.mediaConstraints.audio === false &&
-            !this.onlyDataChannel && !this.isPlayMode) {
-            this.onlyDataChannel = true;
-            console.warn("Only data channel is enabled, due to video and audio is disabled.");
-        }
         if (!this.isPlayMode && !this.onlyDataChannel && this.mediaManager.localStream == null) {
             //we need local stream because it not a play mode
             this.mediaManager.initLocalStream().then(() => {
@@ -368,8 +362,12 @@ export class WebRTCAdaptor {
         //If it started with playOnly mode and wants to publish now
         else if (this.mediaManager.localStream == null) {
             this.mediaManager.initLocalStream().then(() => {
-                var videoEnabled = this.mediaManager.localStream.getVideoTracks().length > 0 ? true : false;
-                var audioEnabled = this.mediaManager.localStream.getAudioTracks().length > 0 ? true : false;
+                var videoEnabled = false;
+                var audioEnabled = false;
+                if (this.mediaManager.localStream != null) {
+                 videoEnabled = this.mediaManager.localStream.getVideoTracks().length > 0 ? true : false;
+                 audioEnabled = this.mediaManager.localStream.getAudioTracks().length > 0 ? true : false;
+                }
                 this.sendPublishCommand(streamId, token, subscriberId, subscriberCode, streamName, mainTrack, metaData, videoEnabled, audioEnabled)
 
             }).catch(error => {
