@@ -502,11 +502,14 @@
 				break;
 			}
 		}
-		constraint.audio.echoCancellationType = "system";
-		constraint.audio.autoGainControl = true;
-		constraint.audio.sampleRate = 44100;
-		constraint.audio.channelCount = 2;
-		webRTCAdaptor.applyConstraints(constraint);
+
+		webRTCAdaptor.applyConstraints(constraint).then((value) => {
+			console.log("Applied audio constraints: " + JSON.stringify(constraint));
+		})
+		.catch((error) => {
+			console.error("Audio Constraints could not be applied" + JSON.stringify(constraint));
+			console.error(error);
+		});
 	}
 
 	var websocketURL = getWebSocketURL(location, rtmpForward);
