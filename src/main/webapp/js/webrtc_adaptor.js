@@ -1626,7 +1626,7 @@ export class WebRTCAdaptor {
     }
 
     switchAudioInputSource(streamId, deviceId) {
-        this.mediaManager.switchAudioInputSource(streamId, deviceId);
+        return this.mediaManager.switchAudioInputSource(streamId, deviceId);
     }
 
     setVolumeLevel(volumeLevel) {
@@ -1638,7 +1638,7 @@ export class WebRTCAdaptor {
     }
 
     applyConstraints(constraints) {
-        this.mediaManager.applyConstraints(constraints)
+        return this.mediaManager.applyConstraints(constraints)
     };
 
     changeBandwidth(bandwidth, streamId) {
@@ -1664,11 +1664,6 @@ export class WebRTCAdaptor {
     closeStream() {
         return this.mediaManager.closeStream();
     };
-
-
-    applyConstraints(newConstaints) {
-        this.mediaManager.applyConstraints(newConstaints);
-    }
 }
 
 
