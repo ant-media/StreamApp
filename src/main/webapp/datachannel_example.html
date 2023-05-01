@@ -294,15 +294,6 @@
       console.log("setting mode to peer");
     }
 
-    /**
-     * If publishing stops for any reason, it tries to republish again.
-     */
-    var autoRepublishEnabled = true;
-    /**
-     * Timer job that checks the WebRTC connection
-     */
-    var autoRepublishIntervalJob = null;
-
     var file_input = document.getElementById("file-input");
     var start_button = document.getElementById("start_button");
     var stop_button = document.getElementById("stop_button");
@@ -436,10 +427,6 @@
     }
 
     function stopPublishing() {
-      if (autoRepublishIntervalJob != null) {
-        clearInterval(autoRepublishIntervalJob);
-        autoRepublishIntervalJob = null;
-      }
       webRTCAdaptor.stop(streamId);
     }
 
@@ -450,21 +437,6 @@
 
     function stopPlaying() {
       webRTCAdaptor.stop(streamId);
-    }
-
-    function checkAndRepublishIfRequired() {
-      var iceState = webRTCAdaptor.signallingState(streamId);
-      if (
-        iceState == null ||
-        iceState == "failed" ||
-        iceState == "disconnected"
-      ) {
-        console.log("Publish has stopped and will try to re-publish");
-        webRTCAdaptor.stop(streamId);
-        webRTCAdaptor.closePeerConnection(streamId);
-        webRTCAdaptor.closeWebSocket();
-        initWebRTCAdaptor(true, autoRepublishEnabled);
-      }
     }
 
     function turnOffLocalCamera() {
@@ -544,11 +516,6 @@
               console.log("publish started");
               start_button.disabled = true;
               stop_button.disabled = false;
-              if (autoRepublishEnabled && autoRepublishIntervalJob == null) {
-                autoRepublishIntervalJob = setInterval(() => {
-                  checkAndRepublishIfRequired();
-                }, 3000);
-              }
             } else if (info == "publish_finished") {
               //stream is being finished
               console.log("publish finished");

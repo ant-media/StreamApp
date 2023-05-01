@@ -124,6 +124,11 @@ export class MediaManager {
         this.localStreamSoundMeter = null;
 
         /**
+         * this is the level callback for sound meter object
+         */
+        this.levelCallback = null;
+
+        /**
          * Timer to create black frame to publish when video is muted
          */
         this.blackFrameTimer = null;
@@ -201,9 +206,12 @@ export class MediaManager {
                 return this.gotStream(stream);
             }, true)
         } else {
-            //init with default values because user just asked to initLocalStream
-            this.mediaConstraints = {video: true, audio: true};
-            return this.openStream(this.mediaConstraints, this.mode);
+            //neither video nor audio is requested
+            //just return null stream
+            console.log("no media requested, just return an empty stream");
+            return new Promise((resolve, reject) => {
+                resolve(null);
+            });
         }
 
     }
@@ -637,7 +645,11 @@ export class MediaManager {
             .then((stream) => {
                 this.mutedAudioStream = stream;
                 const soundMeter = new SoundMeter(this.audioContext);
-                soundMeter.connectToSource(this.mutedAudioStream, (e) => {
+                soundMeter.connectToSource(this.mutedAudioStream, (value) => {
+                    if (value > 0.1) {
+                        this.callback("speaking_but_muted");
+                    }
+                }, (e) => {
                     if (e) {
                         alert(e);
                         return;
@@ -915,6 +927,7 @@ export class MediaManager {
         }
 
         if (typeof deviceId != "undefined") {
+            //Update the media constraints
             if (this.mediaConstraints.audio !== true)
                 this.mediaConstraints.audio.deviceId = deviceId;
             else
@@ -922,9 +935,11 @@ export class MediaManager {
 
             //to change only audio track set video false otherwise issue #3826 occurs on Android
             let tempMediaConstraints = {"video": false, "audio": {"deviceId": deviceId}};
-            this.setAudioInputSource(streamId, tempMediaConstraints, null, true, deviceId);
+            return this.setAudioInputSource(streamId, tempMediaConstraints, null, deviceId);
         } else {
-            this.setAudioInputSource(streamId, this.mediaConstraints, null, true, deviceId);
+            return new Promise((resolve, reject) => {
+                reject("There is no device id for audio input source");
+            });
         }
     }
 
@@ -1269,12 +1284,11 @@ export class MediaManager {
      * @param {*} period : measurement period
      */
     enableAudioLevelForLocalStream(levelCallback, period) {
+        this.levelCallback = levelCallback;
         this.localStreamSoundMeter = new SoundMeter(this.audioContext);
-        this.connectSoundMeterToLocalStream();
-
-        this.soundLevelProviderId = setInterval(() => {
-            levelCallback(this.localStreamSoundMeter.instant.toFixed(2));
-        }, period);
+        this.localStreamSoundMeter.connectToSource(this.localStream, levelCallback).then(() =>{
+            this.audioContext.resume().then(r => {});
+        });
     }
 
     /**
@@ -1282,10 +1296,9 @@ export class MediaManager {
      * It should be called when local stream changes
      */
     connectSoundMeterToLocalStream() {
-        this.localStreamSoundMeter.connectToSource(this.localStream, function (e) {
+        this.localStreamSoundMeter.connectToSource(this.localStream, this.levelCallback, function (e) {
             if (e) {
                 alert(e);
-                return;
             }
             // console.log("Added sound meter for stream: " + streamId + " = " + soundMeter.instant.toFixed(2));
         });
@@ -1337,7 +1350,14 @@ export class MediaManager {
 
         if (constraints.audio !== undefined) {
             //just give the audio constraints not to get video stream
-            promise = this.setAudioInputSource(streamId, {audio: this.mediaConstraints.audio}, null);
+            //we dont call applyContrains for audio because it does not work. I think this is due to gainStream things. This is why we call getUserMedia again
+            
+            //use the publishStreamId because we don't have streamId in the parameter anymore 
+            promise = this.setAudioInputSource(this.publishStreamId, {audio: this.mediaConstraints.audio}, null);
+        }
+
+        if (this.localStreamSoundMeter != null) {
+            this.connectSoundMeterToLocalStream();
         }
         return promise;
     }
