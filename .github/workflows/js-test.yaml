@@ -31,7 +31,7 @@ jobs:
           mvn clean install -Dmaven.javadoc.skip=true -Dmaven.test.skip=true -Dgpg.skip=true
           
           # Build Enterprise 
-          git clone https://Ant-Media-Enterprise:${{ secrets.CI_PAT }}@gitlab.com/Ant-Media/Ant-Media-Enterprise.git
+          git clone https://Ant-Media-Enterprise:${{ secrets.CI_AccessToken }}@gitlab.com/Ant-Media/Ant-Media-Enterprise.git
           cd Ant-Media-Enterprise
           mvn clean install -Dmaven.javadoc.skip=true -Dmaven.test.skip=true -Dgpg.skip=true
           cd ..
