@@ -206,6 +206,11 @@ export class WebRTCAdaptor {
         this.callbackError = null;
 
         /**
+         * Flag to indicate if the stream is published or not after the connection fails
+         */
+        this.reconnectIfRequiredFlag = true;
+
+        /**
          * PAY ATTENTION: The values of the above fields are provided as this constructor parameter.
          * TODO: Also some other hidden parameters may be passed here
          */
@@ -239,6 +244,67 @@ export class WebRTCAdaptor {
          * This is the error event listeners that WebRTC Adaptor calls when there is an error happened
          */
         this.errorEventListeners = new Array();
+
+        /**
+         * This is token that is being used to publish the stream. It's added here to use in reconnect scenario
+         */
+        this.publishToken = null;
+
+        /**
+         * subscriber id that is being used to publish the stream. It's added here to use in reconnect scenario
+         */
+        this.publishSubscriberId = null;
+
+        /**
+         * subscriber code that is being used to publish the stream. It's added here to use in reconnect scenario
+         */
+        this.publishSubscriberCode = null;
+
+        /**
+         * This is the stream name that is being published. It's added here to use in reconnect scenario
+         */
+        this.publishStreamName = null;
+
+        /**
+         * This is the stream id of the main track that the current publishStreamId is going to be subtrack of it. It's added here to use in reconnect scenario
+         */
+        this.publishMainTrack = null;
+
+        /**
+         * This is the metadata that is being used to publish the stream. It's added here to use in reconnect scenario
+         */
+        this.publishMetaData = null;
+
+        /**
+         * This is the token to play the stream. It's added here to use in reconnect scenario
+         */
+        this.playToken = null;
+
+        /**
+         * This is the room id to play the stream. It's added here to use in reconnect scenario
+         * This approach is old conferencing. It's better to use multi track conferencing
+         */
+        this.playRoomId = null;
+
+        /**
+         * These are enabled tracks to play the stream. It's added here to use in reconnect scenario
+         */
+        this.playEnableTracks = null;
+
+        /**
+         * This is the subscriber Id to play the stream. It's added here to use in reconnect scenario
+         */
+        this.playSubscriberId =  null;
+
+        /**
+         * This is the subscriber code to play the stream. It's added here to use in reconnect scenario
+         */
+        this.playSubscriberCode =  null;
+
+        /**
+         * This is the meta data to play the stream. It's added here to use in reconnect scenario
+         */
+        this.playMetaData = null;
 
         /**
          * All media management works for teh local stream are made by @MediaManager class.
@@ -356,6 +422,12 @@ export class WebRTCAdaptor {
         //TODO: should refactor the repeated code
         this.publishStreamId = streamId;
         this.mediaManager.publishStreamId = streamId;
+        this.publishToken = token;
+        this.publishSubscriberId = subscriberId;
+        this.publishSubscriberCode = subscriberCode;
+        this.publishStreamName = streamName;
+        this.publishMainTrack = mainTrack;
+        this.publishMetaData = metaData;
         if (this.onlyDataChannel) {
             this.sendPublishCommand(streamId, token, subscriberId, subscriberCode, streamName, mainTrack, metaData, false, false);
         }
@@ -381,6 +453,15 @@ export class WebRTCAdaptor {
 
         }
 
+        setTimeout(() => {
+            //check if it is connected or not
+            //this resolves if the server responds with some error message
+            if (this.iceConnectionState(this.publishStreamId) != "connected" && this.iceConnectionState(this.publishStreamId) != "completed") {
+                //if it is not connected, try to reconnect
+                this.reconnectIfRequired();
+            }
+        }, 5000);
+
     }
 
     sendPublishCommand(streamId, token, subscriberId, subscriberCode, streamName, mainTrack, metaData, videoEnabled, audioEnabled) {
@@ -388,13 +469,13 @@ export class WebRTCAdaptor {
             command: "publish",
             streamId: streamId,
             token: token,
-            subscriberId: typeof subscriberId !== undefined ? subscriberId : "",
-            subscriberCode: typeof subscriberCode !== undefined ? subscriberCode : "",
-            streamName: typeof streamName !== undefined ? streamName : "",
-            mainTrack: typeof mainTrack !== undefined ? mainTrack : "",
+            subscriberId: (typeof subscriberId !== undefined && subscriberId != null)  ? subscriberId : "",
+            subscriberCode: (typeof subscriberCode !== undefined && subscriberCode != null) ? subscriberCode : "",
+            streamName: (typeof streamName !== undefined && streamName != null) ? streamName : "",
+            mainTrack: (typeof mainTrack !== undefined && mainTrack != null) ? mainTrack : "",
             video: videoEnabled,
             audio: audioEnabled,
-            metaData: metaData,
+            metaData: (typeof metaData !== undefined  && metaData != null) ? metaData : "",
         };
         this.webSocketAdaptor.send(JSON.stringify(jsCmd));
     }
@@ -434,6 +515,13 @@ export class WebRTCAdaptor {
      */
     play(streamId, token, roomId, enableTracks, subscriberId, subscriberCode, metaData) {
         this.playStreamId.push(streamId);
+        this.playToken = token;
+        this.playRoomId = roomId;
+        this.playEnableTracks = enableTracks;
+        this.playSubscriberId = subscriberId;
+        this.playSubscriberCode = subscriberCode;
+        this.playMetaData = metaData;
+
         var jsCmd =
             {
                 command: "play",
@@ -441,12 +529,53 @@ export class WebRTCAdaptor {
                 token: token,
                 room: roomId,
                 trackList: enableTracks,
-                subscriberId: typeof subscriberId !== undefined ? subscriberId : "",
-                subscriberCode: typeof subscriberCode !== undefined ? subscriberCode : "",
+                subscriberId: (typeof subscriberId !== undefined && subscriberId != null) ? subscriberId : "",
+                subscriberCode: (typeof subscriberCode !== undefined && subscriberId != null) ? subscriberCode : "",
                 viewerInfo: metaData,
             }
 
         this.webSocketAdaptor.send(JSON.stringify(jsCmd));
+
+        setTimeout(() => {
+            //check if it is connected or not
+            //this resolves if the server responds with some error message
+            if (this.iceConnectionState(streamId) != "connected" && this.iceConnectionState(streamId) != "completed") {
+                //if it is not connected, try to reconnect
+                this.reconnectIfRequired();
+            }
+        }, 5000);
+    }
+
+    /**
+     * Reconnects to the stream if it is not stopped on purpose
+     * @param {*} streamId 
+     * @returns 
+     */
+    reconnectIfRequired() {
+        if (this.reconnectIfRequiredFlag) 
+        {
+            //if remotePeerConnection has a peer connection for the stream id, it means that it is not stopped on purpose
+
+            //reconnect publish
+            if (this.remotePeerConnection[this.publishStreamId] != null) {
+                this.closePeerConnection(streamId);
+                console.log("It will try to publish again because it is not stopped on purpose")
+                setTimeout(() => {
+                    this.publish(this.publishStreamId, this.publishToken, this.publishSubscriberId, this.publishSubscriberCode, this.publishStreamName, this.publishMainTrack, this.publishMetaData);
+                }, 3000);
+            }
+           
+            //reconnect play
+            for (var streamId in this.playStreamId) {
+                if (this.remotePeerConnection[streamId] != null) {
+                    console.log("It will try to play again because it is not stopped on purpose")
+                    this.closePeerConnection(streamId);
+                    setTimeout(() => {
+                        this.play(streamId, this.playToken, this.playRoomId, this.playEnableTracks, this.playSubscriberId, this.playSubscriberCode, this.playMetaData);
+                    }, 3000);
+                }
+            }
+        }
     }
 
     /**
@@ -455,6 +584,7 @@ export class WebRTCAdaptor {
      *     streamId: unique id for the stream that you want to stop publishing or playing
      */
     stop(streamId) {
+        //stop is called on purpose and it deletes the peer connection from remotePeerConnections
         this.closePeerConnection(streamId);
 
         var jsCmd = {
@@ -517,6 +647,9 @@ export class WebRTCAdaptor {
      *     roomName: unique id for the conference room
      */
     leaveFromRoom(roomName) {
+        for (var key in this.remotePeerConnection) {
+            this.closePeerConnection(key);
+        }
         this.roomName = roomName;
         var jsCmd = {
             command: "leaveFromRoom",
@@ -817,6 +950,9 @@ export class WebRTCAdaptor {
 
             this.remotePeerConnection[streamId].oniceconnectionstatechange = event => {
                 var obj = {state: this.remotePeerConnection[streamId].iceConnectionState, streamId: streamId};
+                if (obj.state == "failed" || obj.state == "disconnected" || obj.state == "closed") {
+                    this.reconnectIfRequired(obj.streamId);
+                }
                 this.notifyEventListeners("ice_connection_state_changed", obj);
 
                 //
@@ -839,21 +975,24 @@ export class WebRTCAdaptor {
      *     streamId: unique id for the stream
      */
     closePeerConnection(streamId) {
-        if (this.remotePeerConnection[streamId] != null) {
-            if (this.remotePeerConnection[streamId].dataChannel != null) {
-                this.remotePeerConnection[streamId].dataChannel.close();
+        var peerConnection = this.remotePeerConnection[streamId];
+        if (peerConnection != null) {
+            this.remotePeerConnection[streamId] = null;
+            delete this.remotePeerConnection[streamId];
+            if (peerConnection.dataChannel != null) {
+                peerConnection.dataChannel.close();
             }
-            if (this.remotePeerConnection[streamId].signalingState != "closed") {
-                this.remotePeerConnection[streamId].close();
-                this.remotePeerConnection[streamId] = null;
-                delete this.remotePeerConnection[streamId];
+            if (peerConnection.signalingState != "closed") {
+                peerConnection.close();
+                
                 var playStreamIndex = this.playStreamId.indexOf(streamId);
                 if (playStreamIndex != -1) {
                     this.playStreamId.splice(playStreamIndex, 1);
                 }
             }
         }
-
+        
+        //this is for the stats
         if (this.remotePeerConnectionStats[streamId] != null) {
             clearInterval(this.remotePeerConnectionStats[streamId].timerId);
             delete this.remotePeerConnectionStats[streamId];
@@ -1324,6 +1463,9 @@ export class WebRTCAdaptor {
                 websocket_url: this.websocket_url,
                 webrtcadaptor: this,
                 callback: (info, obj) => {
+                    if (info == "closed") {
+                        this.reconnectIfRequired();
+                    }
                     this.notifyEventListeners(info, obj);
                 },
                 callbackError: (error, message) => {
@@ -1341,7 +1483,7 @@ export class WebRTCAdaptor {
      */
     closeWebSocket() {
         for (var key in this.remotePeerConnection) {
-            this.remotePeerConnection[key].close();
+            this.closePeerConnection(key);
         }
         //free the remote peer connection by initializing again
         this.remotePeerConnection = new Array();

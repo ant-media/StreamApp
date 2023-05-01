@@ -397,12 +397,6 @@
 
 	var test_websocket_url = document.getElementById("test_websocket_url");
 
-	var autoRepublishEnabled = true;
-	/**
-	 * Timer job that checks the WebRTC connection 
-	 */
-	 var autoRepublishIntervalJob = null;
-
 	 var streamId = "testStream"+Math.floor(Math.random() * 100000);
 
 	 var token = getUrlParameter("token");
@@ -577,7 +571,7 @@
 		var selectedRadio = null;
 		var selectedAudio = null;
 
-		function initPublishWebRTCAdaptor(publishImmediately, autoRepublishEnabled) 
+		function initPublishWebRTCAdaptor(publishImmediately) 
 		{
 			publishWebRTCAdaptor = new WebRTCAdaptor({
 				websocket_url : websocketURL,
@@ -874,7 +868,7 @@
 }
 
 	//initialize the WebRTCAdaptor
-	initPublishWebRTCAdaptor(false, autoRepublishEnabled);
+	initPublishWebRTCAdaptor(false);
 
 	var playSdpConstraints = {
 		OfferToReceiveAudio : true,

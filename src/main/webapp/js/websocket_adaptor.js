@@ -78,14 +78,13 @@ export class WebSocketAdaptor {
                 if (this.debug) {
                     console.debug("Stop command received");
                 }
+                //server sends stop command when the peers are connected to each other in peer-to-peer.
+                //It is not being sent in publish,play modes  
                 this.webrtcadaptor.closePeerConnection(obj.streamId);
             } else if (obj.command == "error") {
                 this.callbackError(obj.definition, obj);
             } else if (obj.command == "notification") {
                 this.callback(obj.definition, obj);
-                if (obj.definition == "play_finished" || obj.definition == "publish_finished") {
-                    this.webrtcadaptor.closePeerConnection(obj.streamId);
-                }
             } else if (obj.command == "streamInformation") {
                 this.callback(obj.command, obj);
             } else if (obj.command == "roomInformation") {

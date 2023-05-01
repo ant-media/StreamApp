@@ -292,15 +292,6 @@
 
 	var isDataChannelEnabled = false;
 
-	/**
-	 * If publishing stops for any reason, it tries to republish again.
-	 */
-	 var autoRepublishEnabled = true;
-	/**
-	 * Timer job that checks the WebRTC connection 
-	 */
-	 var autoRepublishIntervalJob = null;
-
 	 var streamId;
 
 	 var token = getUrlParameter("token");
@@ -314,10 +305,6 @@
 	}
 
 	function stopPublishing() {
-		if (autoRepublishIntervalJob != null) {
-			clearInterval(autoRepublishIntervalJob);
-			autoRepublishIntervalJob = null;
-		}
 		webRTCAdaptor.stop(streamId);
 	}
 
@@ -405,18 +392,6 @@
 	function clearDraw() {
 		designer.clearCanvas();
 		sendData("clear");
-	}
-
-	function checkAndRepublishIfRequired() {
-		var iceState = webRTCAdaptor.iceConnectionState(streamId);
-		console.log("Ice state checked = " + iceState);
-
-		if (iceState == null || iceState == "failed" || iceState == "disconnected") {
-			webRTCAdaptor.stop(streamId);
-			webRTCAdaptor.closePeerConnection(streamId);
-			webRTCAdaptor.closeWebSocket();
-			initWebRTCAdaptor(true, autoRepublishEnabled);
-		}
 	}
 
 	function startAnimation() {
@@ -522,7 +497,7 @@
 
 	designer.appendTo(document.getElementById('canvas-designer'));
 
-	function initWebRTCAdaptor(publishImmediately, autoRepublishEnabled) {
+	function initWebRTCAdaptor(publishImmediately) {
 		webRTCAdaptor = new WebRTCAdaptor({
 			websocket_url: websocketURL,
 			mediaConstraints: mediaConstraints,
@@ -546,11 +521,6 @@
 					start_publish_button.disabled = true;
 					stop_publish_button.disabled = false;
 					startAnimation();
-					if (autoRepublishEnabled && autoRepublishIntervalJob == null) {
-						autoRepublishIntervalJob = setInterval(() => {
-							checkAndRepublishIfRequired();
-						}, 3000);
-					}
 					webRTCAdaptor.enableStats(obj.streamId);
 
 				} else if (info == "publish_finished") {
@@ -578,11 +548,6 @@
 					if (typeof obj != "undefined") {
 						console.log("Connecton closed: " + JSON.stringify(obj));
 					}
-				}
-				else if (info == "pong") {
-				}
-				else if (info == "refreshConnection") {
-					checkAndRepublishIfRequired();
 				}
 				else if (info == "ice_connection_state_changed") {
 					console.log("iceConnectionState Changed: ", JSON.stringify(obj));
@@ -794,7 +759,7 @@
 }
 
 	//initialize the WebRTCAdaptor
-	initWebRTCAdaptor(false, autoRepublishEnabled);
+	initWebRTCAdaptor(false);
 
 	designer.addSyncListener(function (data) {
 		sendData(JSON.stringify(data));
