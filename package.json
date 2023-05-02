@@ -2,13 +2,15 @@
   "name": "@antmedia/webrtc_adaptor",
   "version": "2.5.3",
   "description": "WebRTC Adaptor for implementing a front end using Ant Media Server.",
-  "main": "dist/webrtc_adaptor.js",
-  "type": "commonjs",
+  "main": "dist/webrtc_adaptor.cjs.js",
+  "module": "dist/webrtc_adaptor.es.js",
+  "browser": "dist/webrtc_adaptor.js",
+  "type":"commonjs",
   "directories": {
     "doc": "doc"
   },
   "scripts": {
-    "compile": "babel --plugins @babel/plugin-transform-modules-commonjs src/main/webapp/js/ -d dist",
+    "compile": "rollup -c rollup.config.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "publishConfig": {
@@ -24,10 +26,11 @@
     "url": "https://github.com/ant-media/StreamApp/issues"
   },
   "homepage": "https://github.com/ant-media/StreamApp#readme",
-  "dependencies": {
-    "@babel/cli": "^7.19.6"
-  },
   "devDependencies": {
-    "@babel/plugin-transform-modules-commonjs": "^7.19.6"
-  }
+    "@babel/core": "^7.21.5",
+    "@babel/preset-env": "^7.21.5",
+    "@rollup/plugin-babel": "^6.0.3",
+    "rollup": "^3.21.2"
+  },
+  "dependencies": {}
 }
