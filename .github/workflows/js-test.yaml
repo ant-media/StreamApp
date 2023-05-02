@@ -4,7 +4,7 @@ on:
     branches:	
       - master	
   pull_request:
-    branches:  Master 
+    branches:  master 
 jobs:	
   publish-npmjs:	
     runs-on: ubuntu-20.04	
