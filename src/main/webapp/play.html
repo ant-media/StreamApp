@@ -742,6 +742,13 @@
 				}
 			});
 
+		
+			player.on("webrtc-data-received", function(event, obj) {
+				console.log("webrtc-data-received: " + JSON.stringify(obj));
+				//You can send data through following method 
+				//player.sendDataViaWebRTC(JSON.stringify(obj));
+			});
+
 			if (mute) {
 				player.muted(true);
 			}
