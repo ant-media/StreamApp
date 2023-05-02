@@ -26,11 +26,18 @@ jobs:
           cd ant-media-server-parent/
           mvn clean install -Dgpg.skip=true
           cd ..
-          
           # Build Ant Media Server 
           git clone https://github.com/ant-media/Ant-Media-Server.git
           cd Ant-Media-Server
           mvn clean install -Dmaven.javadoc.skip=true -Dmaven.test.skip=true -Dgpg.skip=true
+          
+          # Install SRT Dependencies 
+          wget https://storage.sbg.cloud.ovh.net/v1/AUTH_8cb28f9bc6ee43f0a3a1825efbb4311e/test-storage/srt-all.zip
+          rm -rf ~/.m2/repository/org/bytedeco/srt
+          rm -rf ~/.m2/repository/org/bytedeco/srt-platform
+          unzip srt-all.zip
+          mv srt ~/.m2/repository/org/bytedeco
+          mv srt-platform ~/.m2/repository/org/bytedeco
           
           # Build Enterprise 
           git clone https://Ant-Media-Enterprise:${{ secrets.CI_AccessToken }}@gitlab.com/Ant-Media/Ant-Media-Enterprise.git
@@ -43,26 +50,18 @@ jobs:
           cd Plugins/FilterPlugin
           mvn install -Dmaven.test.skip=true -Dgpg.skip=true
           cd ../../
-          
-          # Install SRT Dependencies 
-          wget https://storage.sbg.cloud.ovh.net/v1/AUTH_8cb28f9bc6ee43f0a3a1825efbb4311e/test-storage/srt-all.zip
-          rm -rf ~/.m2/repository/org/bytedeco/srt
-          rm -rf ~/.m2/repository/org/bytedeco/srt-platform
-          unzip srt-all.zip
-          mv srt ~/.m2/repository/org/bytedeco
-          mv srt-platform ~/.m2/repository/org/bytedeco
-          
+  
           # Install Enterprise
           ./repackage_enterprise.sh 
           wget https://raw.githubusercontent.com/ant-media/Scripts/master/install_ant-media-server.sh && chmod 755 install_ant-media-server.sh
           sudo ./install_ant-media-server.sh -i ./target/ant-media-server-enterprise*.zip
           
           # Build Web Pannel
-          #git clone --depth=1 https://github.com/ant-media/ManagementConsole_AngularApp.git;
-          #cd ManagementConsole_AngularApp
-          #npm install
-          #ng build --prod
-          #sudo cp -a ./dist/. /usr/local/antmedia
+          git clone --depth=1 https://github.com/ant-media/ManagementConsole_AngularApp.git;
+          cd ManagementConsole_AngularApp
+          npm install
+          ng build --prod
+          sudo cp -a ./dist/. /usr/local/antmedia/webapps/root/
           
       - name: Install Chrome 100 
         run: wget http://dl.google.com/linux/chrome/deb/pool/main/g/google-chrome-stable/google-chrome-stable_100.0.4896.127-1_amd64.deb
