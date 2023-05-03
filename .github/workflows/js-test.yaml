@@ -76,5 +76,7 @@ jobs:
       - run: sudo ./redeploy.sh
       
       - name: Run JS Tests
-        run: npm install ./src/test/js/
-      - run: npm run test  --prefix ./src/test/js/
+        run: | 
+          cd ./src/test/js
+          npm install
+          npm run test
