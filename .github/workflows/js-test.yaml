@@ -12,7 +12,7 @@ jobs:
       - uses: actions/checkout@v3	
       - uses: actions/setup-node@v3	
         with:	
-         node-version: '16.x'	
+         node-version: '14.8.x'	
          registry-url: 'https://registry.npmjs.org'	
       - uses: actions/setup-java@v3	
         with:	
@@ -60,8 +60,9 @@ jobs:
           git clone --depth=1 https://github.com/ant-media/ManagementConsole_AngularApp.git;
           cd ManagementConsole_AngularApp
           npm install
+          sudo npm install -g @angular/cli@10.0.5 
           ng build --prod
-          sudo cp -a ./dist/. /usr/local/antmedia/webapps/root/
+          sudo cp -a ./dist/. /usr/local/antmedia/webapps/root
           
       - name: Install Chrome 100 
         run: wget http://dl.google.com/linux/chrome/deb/pool/main/g/google-chrome-stable/google-chrome-stable_100.0.4896.127-1_amd64.deb
