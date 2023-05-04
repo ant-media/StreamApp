@@ -2,15 +2,15 @@
   "name": "@antmedia/webrtc_adaptor",
   "version": "2.5.3",
   "description": "WebRTC Adaptor for implementing a front end using Ant Media Server.",
-  "main": "dist/webrtc_adaptor.cjs.js",
-  "module": "dist/webrtc_adaptor.es.js",
-  "browser": "dist/webrtc_adaptor.js",
-  "type":"commonjs",
+  "main": "dist/webrtc_adaptor.js",
+  "module": "dist/es/webrtc_adaptor.js",
+  "browser": "dist/browser/webrtc_adaptor.js",
+  "type": "commonjs",
   "directories": {
     "doc": "doc"
   },
   "scripts": {
-    "compile": "rollup -c rollup.config.js",
+    "compile": "rollup -c rollup.config.module.js && rollup -c rollup.config.browser.js ",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "publishConfig": {
