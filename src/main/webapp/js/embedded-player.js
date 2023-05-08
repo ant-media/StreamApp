@@ -566,7 +566,7 @@ export class EmbeddedPlayer {
         this.destroyDashPlayer();
         this.destroyVideoJSPlayer();
         var index = this.playOrder.indexOf(this.currentPlayType);
-        if (index == -1 || index == (playOrder.length - 1)) {
+        if (index == -1 || index == (this.playOrder.length - 1)) {
             index = 0;
         }
         else {
