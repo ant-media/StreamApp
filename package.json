@@ -10,7 +10,7 @@
     "doc": "doc"
   },
   "scripts": {
-    "compile": "rollup -c rollup.config.module.js && rollup -c rollup.config.browser.js ",
+    "compile": "rollup -c rollup.config.module.cjs && rollup -c rollup.config.browser.cjs ",
     "test": "karma start karma.conf.cjs",
     "codecov": "codecov"
   },

@@ -11,13 +11,6 @@ jobs:
         with:   
          node-version: '16.x'   
          registry-url: 'https://registry.npmjs.org' 
-      - uses: actions/setup-java@v3 
-        with:   
-          java-version: '11'    
-          distribution: 'adopt' 
-      - name: Update The Snapshot   
-        id: get_version 
-        run: echo "VERSION=$(echo ${GITHUB_REF##*/} | cut -d v -f 2)" >> $GITHUB_OUTPUT
       - run: npm install --include=dev  
       - run: npm test
       - run: npm run compile
