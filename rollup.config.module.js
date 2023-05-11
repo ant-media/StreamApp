@@ -2,7 +2,10 @@
 const babel = require('@rollup/plugin-babel').default;
 
 const builds = {
-	input: [ 'src/main/webapp/js/webrtc_adaptor.js', 'src/main/webapp/js/fetch.stream.js','src/main/webapp/js/video-effect.js'],
+	input: [ 'src/main/webapp/js/webrtc_adaptor.js', 
+			 'src/main/webapp/js/fetch.stream.js',
+			 'src/main/webapp/js/video-effect.js',
+			 'src/main/webapp/js/embedded-player.js'],
 	output: [{
 		dir: 'dist',
 		format: 'cjs'

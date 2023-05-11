@@ -22,10 +22,6 @@
     NEW_TRACK_AVAILABLE: 'newTrackAvailable'
   };
 
-  var ANT_ERROR_CALLBACKS = {
-    HIGH_RESOURCE_USAGE: 'highResourceUsage'
-  };
-
   var commonjsGlobal = typeof globalThis !== 'undefined' ? globalThis : typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
 
   function createCommonjsModule(fn, basedir, module) {
@@ -2569,8 +2565,10 @@
               var videoEnabled = this.mediaManager.localStream.getVideoTracks().length > 0 ? true : false;
               var audioEnabled = this.mediaManager.localStream.getAudioTracks().length > 0 ? true : false;
               this.sendPublishCommand(streamId, token, subscriberId, subscriberCode, streamName, mainTrack, metaData, videoEnabled, audioEnabled);
-            }
+            } //init peer connection for reconnectIfRequired
 
+
+          this.initPeerConnection(streamId, "publish");
           setTimeout(function () {
             //check if it is connected or not
             //this resolves if the server responds with some error message
@@ -2651,7 +2649,9 @@
             subscriberCode: typeof subscriberCode !== undefined && subscriberId != null ? subscriberCode : "",
             viewerInfo: typeof metaData !== undefined && metaData != null ? metaData : ""
           };
-          this.webSocketAdaptor.send(JSON.stringify(jsCmd));
+          this.webSocketAdaptor.send(JSON.stringify(jsCmd)); //init peer connection for reconnectIfRequired
+
+          this.initPeerConnection(streamId, "play");
           setTimeout(function () {
             //check if it is connected or not
             //this resolves if the server responds with some error message
@@ -2672,26 +2672,29 @@
           var _this27 = this;
 
           if (this.reconnectIfRequiredFlag) {
-            //if remotePeerConnection has a peer connection for the stream id, it means that it is not stopped on purpose
-            //reconnect publish
-            if (this.remotePeerConnection[this.publishStreamId] != null) {
-              this.closePeerConnection(streamId);
-              console.log("It will try to publish again because it is not stopped on purpose");
-              setTimeout(function () {
+            //It's important to run the following methods after 3000 ms because the stream may be stopped by the user in the meantime
+            setTimeout(function () {
+              //reconnect publish
+              //if remotePeerConnection has a peer connection for the stream id, it means that it is not stopped on purpose
+              if (_this27.remotePeerConnection[_this27.publishStreamId] != null) {
+                _this27.closePeerConnection(streamId);
+
+                console.log("It will try to publish again because it is not stopped on purpose");
+
                 _this27.publish(_this27.publishStreamId, _this27.publishToken, _this27.publishSubscriberId, _this27.publishSubscriberCode, _this27.publishStreamName, _this27.publishMainTrack, _this27.publishMetaData);
-              }, 3000);
-            } //reconnect play
+              } //reconnect play
 
 
-            for (var streamId in this.playStreamId) {
-              if (this.remotePeerConnection[streamId] != null) {
-                console.log("It will try to play again because it is not stopped on purpose");
-                this.closePeerConnection(streamId);
-                setTimeout(function () {
-                  _this27.play(streamId, _this27.playToken, _this27.playRoomId, _this27.playEnableTracks, _this27.playSubscriberId, _this27.playSubscriberCode, _this27.playMetaData);
-                }, 3000);
+              for (var index in _this27.playStreamId) {
+                if (_this27.remotePeerConnection[_this27.playStreamId[index]] != null) {
+                  console.log("It will try to play again because it is not stopped on purpose");
+
+                  _this27.closePeerConnection(_this27.playStreamId[index]);
+
+                  _this27.play(_this27.playStreamId[index], _this27.playToken, _this27.playRoomId, _this27.playEnableTracks, _this27.playSubscriberId, _this27.playSubscriberCode, _this27.playMetaData);
+                }
               }
-            }
+            }, 3000);
           }
         }
         /**
@@ -2704,11 +2707,14 @@
         _proto4.stop = function stop(streamId) {
           //stop is called on purpose and it deletes the peer connection from remotePeerConnections
           this.closePeerConnection(streamId);
-          var jsCmd = {
-            command: "stop",
-            streamId: streamId
-          };
-          this.webSocketAdaptor.send(JSON.stringify(jsCmd));
+
+          if (this.webSocketAdaptor != null && this.webSocketAdaptor.isConnected()) {
+            var jsCmd = {
+              command: "stop",
+              streamId: streamId
+            };
+            this.webSocketAdaptor.send(JSON.stringify(jsCmd));
+          }
         }
         /**
          * Called to join a peer-to-peer mode session as peer. AMS responds with joined message.
@@ -3125,11 +3131,12 @@
 
             if (peerConnection.signalingState != "closed") {
               peerConnection.close();
-              var playStreamIndex = this.playStreamId.indexOf(streamId);
+            }
 
-              if (playStreamIndex != -1) {
-                this.playStreamId.splice(playStreamIndex, 1);
-              }
+            var playStreamIndex = this.playStreamId.indexOf(streamId);
+
+            if (playStreamIndex != -1) {
+              this.playStreamId.splice(playStreamIndex, 1);
             }
           } //this is for the stats
 
@@ -3989,9 +3996,24 @@
       video: false,
       audio: false
     }
-  };
+  }; //const Component = videojs.getComponent('Component');
+
   /**
-   * An advanced Video.js plugin for playing WebRTC stream from Ant-mediaserver
+   * An advanced Video.js plugin for playing WebRTC stream from Ant Media Server
+   * 
+   * Test Scenario #1
+   * 1. Publish a stream from a WebRTC endpoint to Ant Media Server
+   * 2. Play the stream with WebRTC
+   * 3. Restart publishing the stream
+   * 4. It should play automatically
+   * 
+   * Test Scenario #2
+   * 1. Publish a stream from a WebRTC endpoint to Ant Media Server
+   * 2. Let the server return error(highresourceusage, etc.) 
+   * 3. WebSocket should be disconnected and play should try again
+   *
+   * Test Scenario #3
+   * 1. Show error message if packet lost and jitter and RTT is high
    */
 
   var WebRTCHandler = /*#__PURE__*/function () {
@@ -4012,11 +4034,17 @@
       var _this = this;
 
       this.player = videojs__default['default'](options.playerId);
-      Object.defineProperty(this.player, "sendDataViaWebRTC", {
-        value: function value(data) {
-          _this.webRTCAdaptor.sendData(_this.source.streamName, data);
-        }
-      });
+
+      if (!this.player.hasOwnProperty('sendDataViaWebRTC')) {
+        Object.defineProperty(this.player, 'sendDataViaWebRTC', {
+          value: function value(data) {
+            _this.webRTCAdaptor.sendData(_this.source.streamName, data);
+          }
+        });
+      }
+
+      this.isPlaying = false;
+      this.disposed = false;
       this.initiateWebRTCAdaptor(source, options);
       this.player.ready(function () {
         _this.player.addClass('videojs-webrtc-plugin');
@@ -4043,7 +4071,6 @@
     _proto.initiateWebRTCAdaptor = function initiateWebRTCAdaptor(source, options) {
       var _this2 = this;
 
-      var iceConnected = false;
       this.options = videojs__default['default'].mergeOptions(defaults, options);
       this.source = source;
       this.source.pcConfig = {
@@ -4057,12 +4084,19 @@
       this.source.subscriberId = this.getUrlParameter('subscriberId');
       this.source.subscriberCode = this.getUrlParameter('subscriberCode');
       this.webRTCAdaptor = new webrtc_adaptor.WebRTCAdaptor({
+        /* eslint-disable camelcase */
         websocket_url: this.source.mediaServerUrl,
+
+        /* eslint-enable camelcase */
         mediaConstraints: this.source.mediaConstraints,
         pcConfig: this.source.pcConfig,
         isPlayMode: true,
         sdpConstraints: this.source.sdpConstraints,
         callback: function callback(info, obj) {
+          if (_this2.disposed) {
+            return;
+          }
+
           _this2.player.trigger('webrtc-info', {
             obj: obj,
             info: info
@@ -4071,17 +4105,13 @@
           switch (info) {
             case ANT_CALLBACKS.INITIALIZED:
               {
-                _this2.initializedHandler();
+                _this2.play();
 
                 break;
               }
 
             case ANT_CALLBACKS.ICE_CONNECTION_STATE_CHANGED:
               {
-                if (obj.state === 'connected' || obj.state === 'completed') {
-                  iceConnected = true;
-                }
-
                 break;
               }
 
@@ -4089,23 +4119,20 @@
               {
                 _this2.joinStreamHandler(obj);
 
+                _this2.isPlaying = true;
+
+                _this2.player.trigger('play');
+
                 break;
               }
 
             case ANT_CALLBACKS.PLAY_FINISHED:
               {
-                _this2.leaveStreamHandler(obj); //  if play_finished event is received, it has two meanings
-                //  1.stream is really finished
-                //  2.ice connection cannot be established and server reports play_finished event
-                //  check that publish may start again
+                _this2.leaveStreamHandler(obj);
 
+                _this2.isPlaying = false;
 
-                if (iceConnected) {
-                  //  webrtc connection was successful and try to play again with webrtc
-                  setTimeout(function () {
-                    this.streamInformationHandler(obj);
-                  }, 3000);
-                }
+                _this2.player.trigger('ended');
 
                 break;
               }
@@ -4135,7 +4162,6 @@
 
             case ANT_CALLBACKS.DATACHANNEL_NOT_OPEN:
               {
-                console.debug('you are sending message before the data channel is opened');
                 break;
               }
 
@@ -4152,11 +4178,8 @@
           }
         },
         callbackError: function callbackError(error) {
-          if (error.name === ANT_ERROR_CALLBACKS.HIGH_RESOURCE_USAGE) {
-            // disconnect when server reports high resource usage
-            // it will fire the "closed" callback and and it'll reconnect again.
-            // this is important when it's auto-scaling in the backend
-            _this2.webRTCAdaptor.closeWebSocket();
+          if (_this2.disposed) {
+            return;
           } // some of the possible errors, NotFoundError, SecurityError,PermissionDeniedError
 
 
@@ -4192,7 +4215,7 @@
      */
     ;
 
-    _proto.initializedHandler = function initializedHandler() {
+    _proto.play = function play() {
       this.webRTCAdaptor.play(this.source.streamName, this.source.token, this.source.subscriberId, this.source.subscriberCode);
     }
     /**
@@ -4301,6 +4324,8 @@
     };
 
     _proto.dispose = function dispose() {
+      this.disposed = true;
+
       if (this.webRTCAdaptor) {
         this.webRTCAdaptor.stop(this.source.streamName);
         this.webRTCAdaptor.closeWebSocket();
@@ -4328,13 +4353,7 @@
         options = {};
       }
 
-      var localOptions = videojs__default['default'].mergeOptions(videojs__default['default'].options, options);
-
-      if (tech.webrtc) {
-        tech.webrtc.dispose();
-        tech.webrtc = null;
-      } // Register the plugin to source handler tech
-
+      var localOptions = videojs__default['default'].mergeOptions(videojs__default['default'].options, options); //setting the src already dispose the component, no need to dispose it again
 
       tech.webrtc = new WebRTCHandler(source, tech, localOptions);
       return tech.webrtc;
@@ -4345,8 +4364,10 @@
       }
 
       var mediaUrl = options.source;
+      var regex = /\.webrtc.+$/;
+      var isMatch = regex.test(mediaUrl);
 
-      if (mediaUrl.endsWith('.webrtc')) {
+      if (isMatch) {
         return 'maybe';
       }
 
