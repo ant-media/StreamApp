@@ -52,7 +52,11 @@
 
 		var embeddedPlayer = new EmbeddedPlayer(window, document.getElementById("video_container"), document.getElementById("video_info"));
 		
-		embeddedPlayer.play();
+		window.addEventListener("load", () => {
+			embeddedPlayer.play();
+        });
+
+		
 
 		embeddedPlayer.addWebRTCDataListener((data) => {
 			console.log("Data received: " + data);

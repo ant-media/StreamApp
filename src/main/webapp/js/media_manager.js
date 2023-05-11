@@ -65,6 +65,20 @@ export class MediaManager {
          * It may be camera, screen, screen+camera
          */
         this.publishMode = "camera"; //screen, screen+camera
+        
+        /**
+         * Default callback. It's overriden below if it exists
+         */
+        this.callback = (info, obj) => {
+			console.debug("Callback info: " + info + " object: " + typeof obj !== undefined ? JSON.stringify(obj) : "");
+		};
+		
+		/**
+		 * Default callback error implementation. It's overriden below if it exists
+		 */
+		this.callbackError = (err) => {
+			console.error(err)
+		}
 
         /**
          * The values of the above fields are provided as user parameters by the constructor.
@@ -196,7 +210,6 @@ export class MediaManager {
      */
     initLocalStream() {
         this.checkWebRTCPermissions();
-
         if (typeof this.mediaConstraints.video != "undefined" && this.mediaConstraints.video != false) {
             return this.openStream(this.mediaConstraints, this.mode);
         } else if (typeof this.mediaConstraints.audio != "undefined" && this.mediaConstraints.audio != false) {
