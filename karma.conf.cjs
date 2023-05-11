@@ -33,7 +33,7 @@ module.exports = function(config) {
     
     autoWatch: true,
     
-    singleRun: false, // Karma captures browsers, runs the tests and exits
+    singleRun: true, // Karma captures browsers, runs the tests and exits
     
     concurrency: Infinity,
   })
