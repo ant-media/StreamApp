@@ -18,7 +18,7 @@ export class EmbeddedPlayer {
     */
     static STREAMS_FOLDER = "streams";
 
-    static VIDEO_HTML = "<video id='video-player' class='video-js vjs-default-skin vjs-big-play-centered'></video>";
+    static VIDEO_HTML = "<video id='video-player' class='video-js vjs-default-skin vjs-big-play-centered' controls></video>";
 
     static VIDEO_PLAYER_ID = "video-player";
 
@@ -237,7 +237,7 @@ export class EmbeddedPlayer {
         }
         this.loadScripts();
 
-        this.setPlayerVisibile(false);
+        this.setPlayerVisible(false);
 
 
     }
@@ -321,7 +321,7 @@ export class EmbeddedPlayer {
      * set player visibility
      * @param {boolean} visible 
      */
-    setPlayerVisibile(visible) {
+    setPlayerVisible(visible) {
         this.containerElement.style.display = visible ? "block" : "none";
         this.placeHolderElement.style.display = visible ? "none" : "block";
 
@@ -384,7 +384,7 @@ export class EmbeddedPlayer {
         //same videojs is being use for hls, vod and webrtc streams
         this.videojsPlayer = videojs(EmbeddedPlayer.VIDEO_PLAYER_ID, {
             poster: "previews/" + preview + ".png",
-            liveui: extension == "hls" ? true : false,
+            liveui: extension == "m3u8" ? true : false,
             liveTracker: {
                 trackingThreshold: 0
             },
@@ -459,11 +459,20 @@ export class EmbeddedPlayer {
         }
 
 		//hls specific calls
-		if (extension == "hls") {
+		if (extension == "m3u8") {
 	        videojs.Vhs.xhr.beforeRequest = (options) => {
-	            options.uri = options.uri + "?";
-	
-	            options.uri += this.getSecurityQueryParams();
+                
+                var securityParams = this.getSecurityQueryParams();	
+                if (!options.uri.includes(securityParams)) 
+                {
+                    if (!options.uri.endsWith("?")) 
+                    {
+                        options.uri = options.uri + "?";
+                    }
+                    options.uri += securityParams;
+                }
+	            
+                console.debug("hls request: " + options.uri);
 	            return options;
 	        };
 	
@@ -494,18 +503,35 @@ export class EmbeddedPlayer {
         this.videojsPlayer.on('ended', () => {
             //reinit to play after it ends
             console.log("stream is ended")
-            this.setPlayerVisibile(false);
+            this.setPlayerVisible(false);
             //for webrtc, this event can be called by two reasons 
             //1. ice connection is not established, it means that there is a networking issug
             //2. stream is ended
             if (this.currentPlayType != "vod") {
                 //if it's vod, it means that stream is ended and no need to replay
 
-                if (this.iceConnected || this.currentPlayType == "hls") {
-                    //if iceConnected is true, it means that stream is ended for webrtc
-                    //if it's hls, it means that stream is ended
+                if (this.iceConnected) {
+                    //if iceConnected is true, it means that stream is really ended for webrtc
+                    
                     //initialize to play again if the publishing starts again
                     this.playIfExists(this.playOrder[0]);
+                }
+                else if (this.currentPlayType == "hls") {
+                    //if it's hls, it means that stream is ended
+
+                    this.setPlayerVisible(false);
+                    if (this.playOrder[0] = "hls") 
+                    {
+                        //do not play again if it's hls because it play last seconds again, let the server clear it
+                        setTimeout(() => {
+                            this.playIfExists(this.playOrder[0]);   
+                        }, 10000);
+                    }
+                    else 
+                    {
+                        this.playIfExists(this.playOrder[0]);   
+                    }
+                    //TODO: what if the stream is hls vod then it always re-play
                 }
                 else {
                     //if iceConnected is false, it means that there is a networking issue for webrtc
@@ -519,7 +545,7 @@ export class EmbeddedPlayer {
         });
 
         this.videojsPlayer.on("play", () => {
-            this.setPlayerVisibile(true);
+            this.setPlayerVisible(true);
             if (this.playerListener != null) {
                 this.playerListener("play");
             }
@@ -532,6 +558,8 @@ export class EmbeddedPlayer {
             type: type,
             withCredentials: true,
             iceServers: this.iceServers,
+            reconnect: false, //webrtc adaptor has auto reconnect scenario, just disable it, we manage it here
+
         });
 
         if (this.autoPlay) {
@@ -584,6 +612,7 @@ export class EmbeddedPlayer {
     tryNextTech() {
         this.destroyDashPlayer();
         this.destroyVideoJSPlayer();
+        this.setPlayerVisible(false);
         var index = this.playOrder.indexOf(this.currentPlayType);
         if (index == -1 || index == (this.playOrder.length - 1)) {
             index = 0;
@@ -611,13 +640,20 @@ export class EmbeddedPlayer {
                 },
                 modifyRequestURL: (url) => {
                     var modifiedUrl = ""
-                    if (!url.includes("token")) {
-                        modifiedUrl = url + "?" + this.getSecurityQueryParams();
-                    } else {
-                        modifiedUrl = url
+
+                    var securityParams = this.getSecurityQueryParams();	
+                    if (!url.includes(securityParams)) 
+                    {
+                        if (!url.endsWith("?")) 
+                        {
+                            url += "?";
+                        }
+                        modifiedUrl = url + securityParams;
+						console.log(modifiedUrl);
+						return modifiedUrl
                     }
-                    console.log(modifiedUrl)
-                    return modifiedUrl
+					
+                    return url;
                 },
                 modifyRequest(request) {
 
@@ -633,7 +669,7 @@ export class EmbeddedPlayer {
                 liveCatchup: {
                     maxDrift: 0.05,
                     playbackRate: 0.5,
-                    latencyThreshold: 30
+                    latencyThreshold: 60
                 }
             }
         });
@@ -648,7 +684,7 @@ export class EmbeddedPlayer {
 
         this.dashPlayer.on(dashjs.MediaPlayer.events.PLAYBACK_PLAYING, (event) => {
             console.log("playback started");
-            this.setPlayerVisibile(true);
+            this.setPlayerVisible(true);
             if (this.playerListener != null) {
                 this.playerListener("play");
             }
@@ -656,18 +692,26 @@ export class EmbeddedPlayer {
         this.dashPlayer.on(dashjs.MediaPlayer.events.PLAYBACK_ENDED, () => {
             console.log("playback ended");
             this.destroyDashPlayer();
+            this.setPlayerVisible(false);
             //streaming can be started again so try to play again with preferred tech
-            this.playIfExists(this.playOrder[0]);
+            if (this.playOrder[0] = "dash") 
+            {
+                //do not play again if it's dash because it play last seconds again, let the server clear it
+                setTimeout(() => {
+                    this.playIfExists(this.playOrder[0]);   
+                }, 10000);
+            }
+            else {
+                this.playIfExists(this.playOrder[0]);
+            }
             if (this.playerListener != null) {
                 this.playerListener("ended");
             }
         });
         this.dashPlayer.on(dashjs.MediaPlayer.events.PLAYBACK_ERROR, (event) => {
-            this.destroyDashPlayer();
             this.tryNextTech();
         });
         this.dashPlayer.on(dashjs.MediaPlayer.events.ERROR, (event) => {
-            this.destroyDashPlayer();
             this.tryNextTech();
         });
     }
@@ -701,6 +745,7 @@ export class EmbeddedPlayer {
         this.currentPlayType = tech;
         this.destroyVideoJSPlayer();
         this.destroyDashPlayer();
+        this.setPlayerVisible(false);
 
         this.containerElement.innerHTML = EmbeddedPlayer.VIDEO_HTML;
         

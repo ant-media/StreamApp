@@ -202,7 +202,7 @@ describe("EmbeddedPlayer", function() {
 		
 	});
 	
-	it("Try next tech", async function() {
+	it("tryNextTech", async function() {
 		var videoContainer = document.createElement("video_container");
 		  
 		var placeHolder = document.createElement("place_holder");
@@ -216,6 +216,8 @@ describe("EmbeddedPlayer", function() {
 	    var destroyDashPlayer = sinon.replace(player, "destroyDashPlayer", sinon.fake());
 	    var destroyVideoJSPlayer = sinon.replace(player, "destroyVideoJSPlayer", sinon.fake());
 	    var playIfExists = sinon.replace(player, "playIfExists", sinon.fake());
+	    var setPlayerVisible = sinon.replace(player, "setPlayerVisible", sinon.fake());
+
 	    player.playOrder = ["webrtc","hls"];
 	    player.currentPlayType = "webrtc";
 	    
@@ -225,6 +227,8 @@ describe("EmbeddedPlayer", function() {
 	    
 	    expect(destroyDashPlayer.calledOnce).to.be.true;
 	    expect(destroyVideoJSPlayer.calledOnce).to.be.true;
+	    expect(setPlayerVisible.calledOnce).to.be.true;
+	     expect(setPlayerVisible.calledWithMatch(false)).to.be.true;
 	    
 	    clock.tick(2500);
 	    
@@ -311,13 +315,15 @@ describe("EmbeddedPlayer", function() {
 	    
 		sinon.replace(player, "checkStreamExistsViaHttp", sinon.fake.returns(Promise.resolve("streams/stream123.m3u8")));
 		var playWithVideoJS = sinon.replace(player, "playWithVideoJS", sinon.fake());
+		var setPlayerVisible = sinon.replace(player, "setPlayerVisible", sinon.fake());
 		
 		
 		await player.playIfExists("hls");	  
 		
 		expect(playWithVideoJS.called).to.be.true;
 		expect(playWithVideoJS.calledWithMatch("streams/stream123.m3u8")).to.be.true;
-		
+		expect(setPlayerVisible.called).to.be.true;
+		expect(setPlayerVisible.calledWithMatch(false)).to.be.true;
 		
 		await player.playIfExists("webrtc");	
 		expect(playWithVideoJS.callCount).to.be.equal(2);

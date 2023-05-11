@@ -704,9 +704,25 @@
           this.publishMode = "camera"; //screen, screen+camera
 
           /**
+           * Default callback. It's overriden below if it exists
+           */
+
+          this.callback = function (info, obj) {
+            console.debug("Callback info: " + info + " object: " + typeof obj !== undefined ? JSON.stringify(obj) : "");
+          };
+          /**
+           * Default callback error implementation. It's overriden below if it exists
+           */
+
+
+          this.callbackError = function (err) {
+            console.error(err);
+          };
+          /**
            * The values of the above fields are provided as user parameters by the constructor.
            * TODO: Also some other hidden parameters may be passed here
            */
+
 
           for (var key in initialValues.userParameters) {
             if (initialValues.userParameters.hasOwnProperty(key)) {
@@ -2307,6 +2323,17 @@
 
           this.reconnectIfRequiredFlag = true;
           /**
+           * websocket url to connect
+           * @deprecated use websocketURL
+           */
+
+          this.websocket_url = null;
+          /**
+           * Websocket URL 
+           */
+
+          this.websocketURL = null;
+          /**
            * PAY ATTENTION: The values of the above fields are provided as this constructor parameter.
            * TODO: Also some other hidden parameters may be passed here
            */
@@ -2315,6 +2342,14 @@
             if (initialValues.hasOwnProperty(key)) {
               this[key] = initialValues[key];
             }
+          }
+
+          if (this.websocketURL == null) {
+            this.websocketURL = this.websocket_url;
+          }
+
+          if (this.websocketURL == null) {
+            throw new Error("WebSocket URL is not defined. It's mandatory");
           }
           /**
            * The html video tag for receiver is got here
@@ -2574,7 +2609,7 @@
             //this resolves if the server responds with some error message
             if (_this25.iceConnectionState(_this25.publishStreamId) != "connected" && _this25.iceConnectionState(_this25.publishStreamId) != "completed") {
               //if it is not connected, try to reconnect
-              _this25.reconnectIfRequired();
+              _this25.reconnectIfRequired(0);
             }
           }, 5000);
         };
@@ -2657,7 +2692,7 @@
             //this resolves if the server responds with some error message
             if (_this26.iceConnectionState(streamId) != "connected" && _this26.iceConnectionState(streamId) != "completed") {
               //if it is not connected, try to reconnect
-              _this26.reconnectIfRequired();
+              _this26.reconnectIfRequired(0);
             }
           }, 5000);
         }
@@ -2671,30 +2706,38 @@
         _proto4.reconnectIfRequired = function reconnectIfRequired() {
           var _this27 = this;
 
+          var delayMs = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 3000;
+
           if (this.reconnectIfRequiredFlag) {
             //It's important to run the following methods after 3000 ms because the stream may be stopped by the user in the meantime
-            setTimeout(function () {
-              //reconnect publish
-              //if remotePeerConnection has a peer connection for the stream id, it means that it is not stopped on purpose
-              if (_this27.remotePeerConnection[_this27.publishStreamId] != null) {
-                _this27.closePeerConnection(streamId);
+            if (delayMs > 0) {
+              setTimeout(function () {
+                _this27.tryAgain();
+              }, delayMs);
+            } else {
+              this.tryAgain();
+            }
+          }
+        };
 
-                console.log("It will try to publish again because it is not stopped on purpose");
+        _proto4.tryAgain = function tryAgain() {
+          //reconnect publish
+          //if remotePeerConnection has a peer connection for the stream id, it means that it is not stopped on purpose
+          if (this.remotePeerConnection[this.publishStreamId] != null && //check connection status to not stop streaming an active stream
+          this.iceConnectionState(this.publishStreamId) != "connected" && this.iceConnectionState(this.publishStreamId) != "completed") {
+            this.closePeerConnection(this.publishStreamId);
+            console.log("It will try to publish again because it is not stopped on purpose");
+            this.publish(this.publishStreamId, this.publishToken, this.publishSubscriberId, this.publishSubscriberCode, this.publishStreamName, this.publishMainTrack, this.publishMetaData);
+          } //reconnect play
 
-                _this27.publish(_this27.publishStreamId, _this27.publishToken, _this27.publishSubscriberId, _this27.publishSubscriberCode, _this27.publishStreamName, _this27.publishMainTrack, _this27.publishMetaData);
-              } //reconnect play
 
-
-              for (var index in _this27.playStreamId) {
-                if (_this27.remotePeerConnection[_this27.playStreamId[index]] != null) {
-                  console.log("It will try to play again because it is not stopped on purpose");
-
-                  _this27.closePeerConnection(_this27.playStreamId[index]);
-
-                  _this27.play(_this27.playStreamId[index], _this27.playToken, _this27.playRoomId, _this27.playEnableTracks, _this27.playSubscriberId, _this27.playSubscriberCode, _this27.playMetaData);
-                }
-              }
-            }, 3000);
+          for (var index in this.playStreamId) {
+            if (this.remotePeerConnection[this.playStreamId[index]] != null && //check connection status to not stop streaming an active stream
+            this.iceConnectionState(this.playStreamId[index]) != "connected" && this.iceConnectionState(this.playStreamId[index]) != "connected") {
+              console.log("It will try to play again because it is not stopped on purpose");
+              this.closePeerConnection(this.playStreamId[index]);
+              this.play(this.playStreamId[index], this.playToken, this.playRoomId, this.playEnableTracks, this.playSubscriberId, this.playSubscriberCode, this.playMetaData);
+            }
           }
         }
         /**
@@ -3021,6 +3064,8 @@
         _proto4.initPeerConnection = function initPeerConnection(streamId, dataChannelMode) {
           var _this29 = this;
 
+          //null == undefined -> it's true
+          //null === undefined -> it's false
           if (this.remotePeerConnection[streamId] == null) {
             var closedStreamId = streamId;
             console.log("stream id in init peer connection: " + streamId + " close stream id: " + closedStreamId);
@@ -3610,7 +3655,7 @@
 
           if (this.webSocketAdaptor == null || this.webSocketAdaptor.isConnected() == false && this.webSocketAdaptor.isConnecting() == false) {
             this.webSocketAdaptor = new WebSocketAdaptor({
-              websocket_url: this.websocket_url,
+              websocket_url: this.websocketURL,
               webrtcadaptor: this,
               callback: function callback(info, obj) {
                 if (info == "closed") {
@@ -3996,20 +4041,20 @@
       video: false,
       audio: false
     }
-  }; //const Component = videojs.getComponent('Component');
+  }; // const Component = videojs.getComponent('Component');
 
   /**
    * An advanced Video.js plugin for playing WebRTC stream from Ant Media Server
-   * 
+   *
    * Test Scenario #1
    * 1. Publish a stream from a WebRTC endpoint to Ant Media Server
    * 2. Play the stream with WebRTC
    * 3. Restart publishing the stream
    * 4. It should play automatically
-   * 
+   *
    * Test Scenario #2
    * 1. Publish a stream from a WebRTC endpoint to Ant Media Server
-   * 2. Let the server return error(highresourceusage, etc.) 
+   * 2. Let the server return error(highresourceusage, etc.)
    * 3. WebSocket should be disconnected and play should try again
    *
    * Test Scenario #3
@@ -4083,15 +4128,14 @@
       this.source.token = this.getUrlParameter('token');
       this.source.subscriberId = this.getUrlParameter('subscriberId');
       this.source.subscriberCode = this.getUrlParameter('subscriberCode');
+      this.source.reconnect = this.source.reconnect === undefined ? true : this.source.reconnect;
       this.webRTCAdaptor = new webrtc_adaptor.WebRTCAdaptor({
-        /* eslint-disable camelcase */
-        websocket_url: this.source.mediaServerUrl,
-
-        /* eslint-enable camelcase */
+        websocketURL: this.source.mediaServerUrl,
         mediaConstraints: this.source.mediaConstraints,
         pcConfig: this.source.pcConfig,
         isPlayMode: true,
         sdpConstraints: this.source.sdpConstraints,
+        reconnectIfRequiredFlag: this.source.reconnect,
         callback: function callback(info, obj) {
           if (_this2.disposed) {
             return;
@@ -4216,7 +4260,7 @@
     ;
 
     _proto.play = function play() {
-      this.webRTCAdaptor.play(this.source.streamName, this.source.token, this.source.subscriberId, this.source.subscriberCode);
+      this.webRTCAdaptor.play(this.source.streamName, this.source.token, null, null, this.source.subscriberId, this.source.subscriberCode, null);
     }
     /**
      * after joined stream handler
@@ -4353,7 +4397,7 @@
         options = {};
       }
 
-      var localOptions = videojs__default['default'].mergeOptions(videojs__default['default'].options, options); //setting the src already dispose the component, no need to dispose it again
+      var localOptions = videojs__default['default'].mergeOptions(videojs__default['default'].options, options); // setting the src already dispose the component, no need to dispose it again
 
       tech.webrtc = new WebRTCHandler(source, tech, localOptions);
       return tech.webrtc;
