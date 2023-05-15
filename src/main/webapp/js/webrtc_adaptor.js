@@ -449,10 +449,10 @@ export class WebRTCAdaptor {
         } else {
             var videoEnabled = this.mediaManager.localStream.getVideoTracks().length > 0 ? true : false;
             var audioEnabled = this.mediaManager.localStream.getAudioTracks().length > 0 ? true : false;
-            this.sendPublishCommand(streamId, token, subscriberId, subscriberCode, streamName, mainTrack, metaData, videoEnabled, audioEnabled)
-
+            this.sendPublishCommand(streamId, token, subscriberId, subscriberCode, streamName, mainTrack, metaData, videoEnabled, audioEnabled);
         }
-
+        //init peer connection for reconnectIfRequired
+        this.initPeerConnection(streamId, "publish");
         setTimeout(() => {
             //check if it is connected or not
             //this resolves if the server responds with some error message
@@ -536,6 +536,9 @@ export class WebRTCAdaptor {
 
         this.webSocketAdaptor.send(JSON.stringify(jsCmd));
 
+        //init peer connection for reconnectIfRequired
+        this.initPeerConnection(streamId, "play");
+
         setTimeout(() => {
             //check if it is connected or not
             //this resolves if the server responds with some error message
@@ -554,27 +557,31 @@ export class WebRTCAdaptor {
     reconnectIfRequired() {
         if (this.reconnectIfRequiredFlag) 
         {
-            //if remotePeerConnection has a peer connection for the stream id, it means that it is not stopped on purpose
 
-            //reconnect publish
-            if (this.remotePeerConnection[this.publishStreamId] != null) {
-                this.closePeerConnection(streamId);
-                console.log("It will try to publish again because it is not stopped on purpose")
-                setTimeout(() => {
-                    this.publish(this.publishStreamId, this.publishToken, this.publishSubscriberId, this.publishSubscriberCode, this.publishStreamName, this.publishMainTrack, this.publishMetaData);
-                }, 3000);
-            }
-           
-            //reconnect play
-            for (var streamId in this.playStreamId) {
-                if (this.remotePeerConnection[streamId] != null) {
-                    console.log("It will try to play again because it is not stopped on purpose")
+            //It's important to run the following methods after 3000 ms because the stream may be stopped by the user in the meantime
+            setTimeout(() => {
+                //reconnect publish
+
+                //if remotePeerConnection has a peer connection for the stream id, it means that it is not stopped on purpose
+                if (this.remotePeerConnection[this.publishStreamId] != null) {
                     this.closePeerConnection(streamId);
-                    setTimeout(() => {
-                        this.play(streamId, this.playToken, this.playRoomId, this.playEnableTracks, this.playSubscriberId, this.playSubscriberCode, this.playMetaData);
-                    }, 3000);
+                    console.log("It will try to publish again because it is not stopped on purpose")
+                        this.publish(this.publishStreamId, this.publishToken, this.publishSubscriberId, this.publishSubscriberCode, this.publishStreamName, this.publishMainTrack, this.publishMetaData);
                 }
-            }
+
+                //reconnect play
+                for (var index in this.playStreamId) {
+                    if (this.remotePeerConnection[this.playStreamId[index]] != null) {
+                        console.log("It will try to play again because it is not stopped on purpose")
+                        this.closePeerConnection(this.playStreamId[index]);
+                        this.play(this.playStreamId[index], this.playToken, this.playRoomId, this.playEnableTracks, this.playSubscriberId, this.playSubscriberCode, this.playMetaData);
+                    }
+                }
+
+            }, 3000);
+    
+           
+            
         }
     }
 
@@ -587,12 +594,14 @@ export class WebRTCAdaptor {
         //stop is called on purpose and it deletes the peer connection from remotePeerConnections
         this.closePeerConnection(streamId);
 
-        var jsCmd = {
-            command: "stop",
-            streamId: streamId,
-        };
+        if (this.webSocketAdaptor != null && this.webSocketAdaptor.isConnected()) {
+            var jsCmd = {
+                command: "stop",
+                streamId: streamId,
+            };
 
-        this.webSocketAdaptor.send(JSON.stringify(jsCmd));
+            this.webSocketAdaptor.send(JSON.stringify(jsCmd));
+        }
     }
 
     /**
@@ -984,14 +993,12 @@ export class WebRTCAdaptor {
             }
             if (peerConnection.signalingState != "closed") {
                 peerConnection.close();
-                
-                var playStreamIndex = this.playStreamId.indexOf(streamId);
-                if (playStreamIndex != -1) {
-                    this.playStreamId.splice(playStreamIndex, 1);
-                }
+            }
+            var playStreamIndex = this.playStreamId.indexOf(streamId);
+            if (playStreamIndex != -1) {
+                this.playStreamId.splice(playStreamIndex, 1);
             }
         }
-        
         //this is for the stats
         if (this.remotePeerConnectionStats[streamId] != null) {
             clearInterval(this.remotePeerConnectionStats[streamId].timerId);
