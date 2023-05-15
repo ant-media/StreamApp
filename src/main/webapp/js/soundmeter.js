@@ -1,14 +1,14 @@
 'use strict';
 
 export class SoundMeter {
-	
+
 	constructor(context) {
 		this.context = context;
     	this.instant = 0.0;
 	}
-	
+
 	async connectToSource(stream, levelCallback, errorCallback) {
-		await this.context.audioWorklet.addModule(new URL('./volume-meter-processor.js', import.meta.url))
+		await this.context.audioWorklet.addModule('./volume-meter-processor.js')
         .catch((err) => {
             if (errorCallback !== undefined) {
                 errorCallback(err);
@@ -30,9 +30,9 @@ export class SoundMeter {
 	        console.error(e);
 	    }
 	}
-	
+
 	stop() {
 		this.mic.disconnect();
 	}
-	
+
 }
