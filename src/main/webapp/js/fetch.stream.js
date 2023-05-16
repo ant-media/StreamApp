@@ -155,8 +155,12 @@ export function isMobile() {
     }
 }
 
-export function getUrlParameter(sParam) {
-    var sPageURL = decodeURIComponent(window.location.search.substring(1)),
+export function getUrlParameter(sParam, search) {
+	if (typeof search === undefined || search == null) {
+		search = window.location.search;
+	}
+	
+    var sPageURL = decodeURIComponent(search.substring(1)),
         sURLVariables = sPageURL.split('&'),
         sParameterName,
         i;

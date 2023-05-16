@@ -5,13 +5,14 @@
   "main": "dist/webrtc_adaptor.js",
   "module": "dist/es/webrtc_adaptor.js",
   "browser": "dist/browser/webrtc_adaptor.js",
-  "type": "commonjs",
+  "type": "module",
   "directories": {
     "doc": "doc"
   },
   "scripts": {
-    "compile": "rollup -c rollup.config.module.js && rollup -c rollup.config.browser.js ",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "compile": "rollup -c rollup.config.module.cjs && rollup -c rollup.config.browser.cjs ",
+    "test": "karma start karma.conf.cjs",
+    "codecov": "codecov"
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.org/"
@@ -30,7 +31,17 @@
     "@babel/core": "^7.21.5",
     "@babel/preset-env": "^7.21.5",
     "@rollup/plugin-babel": "^6.0.3",
-    "rollup": "^3.21.2"
+    "chai": "^4.3.7",
+    "codecov": "^3.8.3",
+    "karma": "^6.4.2",
+    "karma-chai": "^0.1.0",
+    "karma-chrome-launcher": "^3.2.0",
+    "karma-coverage": "^2.2.0",
+    "karma-mocha": "^2.0.1",
+    "karma-sinon": "^1.0.5",
+    "mocha": "^10.2.0",
+    "rollup": "^3.21.2",
+    "sinon": "^15.0.4"
   },
   "dependencies": {}
 }

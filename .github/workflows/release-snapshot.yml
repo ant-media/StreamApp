@@ -20,7 +20,7 @@ jobs:
         id: get_version	
         run: echo "VERSION=$(echo ${GITHUB_REF##*/} | cut -d v -f 2)" >> $GITHUB_OUTPUT
       - run: npm install --include=dev	
-      - run: npm install --save-dev @babel/cli	
+      - run: npm test
       - run: npm run compile	
       - run: echo "LATEST_SNAPSHOT_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" >> $GITHUB_ENV	
         env:	

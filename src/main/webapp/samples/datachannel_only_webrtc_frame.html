@@ -227,6 +227,7 @@
 	
 					if (error.indexOf("no_stream_exist") != -1) {
 						/* if no stream exist, create the channel*/
+						webRTCAdaptor.stop(streamId);
 						createChannel();
 					}
 					else {
