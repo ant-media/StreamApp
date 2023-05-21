@@ -210,6 +210,17 @@ export class WebRTCAdaptor {
          */
         this.reconnectIfRequiredFlag = true;
 
+		/**
+		 * websocket url to connect
+		 * @deprecated use websocketURL
+		 */
+		this.websocket_url = null;
+		
+		/**
+		 * Websocket URL 
+		 */
+		this.websocketURL = null;
+		
         /**
          * PAY ATTENTION: The values of the above fields are provided as this constructor parameter.
          * TODO: Also some other hidden parameters may be passed here
@@ -219,7 +230,14 @@ export class WebRTCAdaptor {
                 this[key] = initialValues[key];
             }
         }
+        
+        if (this.websocketURL == null) {
+			this.websocketURL = this.websocket_url;
+		}
 
+		if (this.websocketURL == null) {
+			throw new Error("WebSocket URL is not defined. It's mandatory");
+		}
         /**
          * The html video tag for receiver is got here
          */
@@ -389,7 +407,8 @@ export class WebRTCAdaptor {
      *    -start websocket connection
      */
     initialize() {
-        if (!this.isPlayMode && !this.onlyDataChannel && this.mediaManager.localStream == null) {
+        if (!this.isPlayMode && !this.onlyDataChannel && this.mediaManager.localStream == null) 
+        {
             //we need local stream because it not a play mode
             this.mediaManager.initLocalStream().then(() => {
                 this.initPlugins();
@@ -458,7 +477,7 @@ export class WebRTCAdaptor {
             //this resolves if the server responds with some error message
             if (this.iceConnectionState(this.publishStreamId) != "connected" && this.iceConnectionState(this.publishStreamId) != "completed") {
                 //if it is not connected, try to reconnect
-                this.reconnectIfRequired();
+                this.reconnectIfRequired(0);
             }
         }, 5000);
 
@@ -542,9 +561,10 @@ export class WebRTCAdaptor {
         setTimeout(() => {
             //check if it is connected or not
             //this resolves if the server responds with some error message
-            if (this.iceConnectionState(streamId) != "connected" && this.iceConnectionState(streamId) != "completed") {
+            if (this.iceConnectionState(streamId) != "connected" && this.iceConnectionState(streamId) != "completed") 
+            {
                 //if it is not connected, try to reconnect
-                this.reconnectIfRequired();
+                this.reconnectIfRequired(0);
             }
         }, 5000);
     }
@@ -554,36 +574,52 @@ export class WebRTCAdaptor {
      * @param {*} streamId 
      * @returns 
      */
-    reconnectIfRequired() {
+    reconnectIfRequired(delayMs=3000) 
+    {
         if (this.reconnectIfRequiredFlag) 
         {
-
             //It's important to run the following methods after 3000 ms because the stream may be stopped by the user in the meantime
-            setTimeout(() => {
-                //reconnect publish
-
-                //if remotePeerConnection has a peer connection for the stream id, it means that it is not stopped on purpose
-                if (this.remotePeerConnection[this.publishStreamId] != null) {
-                    this.closePeerConnection(streamId);
-                    console.log("It will try to publish again because it is not stopped on purpose")
-                        this.publish(this.publishStreamId, this.publishToken, this.publishSubscriberId, this.publishSubscriberCode, this.publishStreamName, this.publishMainTrack, this.publishMetaData);
-                }
-
-                //reconnect play
-                for (var index in this.playStreamId) {
-                    if (this.remotePeerConnection[this.playStreamId[index]] != null) {
-                        console.log("It will try to play again because it is not stopped on purpose")
-                        this.closePeerConnection(this.playStreamId[index]);
-                        this.play(this.playStreamId[index], this.playToken, this.playRoomId, this.playEnableTracks, this.playSubscriberId, this.playSubscriberCode, this.playMetaData);
-                    }
-                }
-
-            }, 3000);
-    
-           
-            
+            if (delayMs > 0) 
+            {
+				setTimeout(() => {
+                	this.tryAgain();
+            	}, delayMs);
+			}
+			else {
+				this.tryAgain()
+			}            
         }
     }
+    
+    tryAgain() {
+	 	//reconnect publish
+	 	
+		//if remotePeerConnection has a peer connection for the stream id, it means that it is not stopped on purpose
+		
+	    if (this.remotePeerConnection[this.publishStreamId] != null && 
+	    		//check connection status to not stop streaming an active stream
+	    		this.iceConnectionState(this.publishStreamId) != "connected" && 
+	    		this.iceConnectionState(this.publishStreamId) != "completed") 
+	    {
+	        this.closePeerConnection(this.publishStreamId);
+	        console.log("It will try to publish again because it is not stopped on purpose")
+	        this.publish(this.publishStreamId, this.publishToken, this.publishSubscriberId, this.publishSubscriberCode, this.publishStreamName, this.publishMainTrack, this.publishMetaData);
+	    }
+	
+	    //reconnect play
+	    for (var index in this.playStreamId) {
+	        if (this.remotePeerConnection[this.playStreamId[index]] != null &&
+	        	//check connection status to not stop streaming an active stream
+	        	this.iceConnectionState(this.playStreamId[index]) != "connected" && 
+	        	this.iceConnectionState(this.playStreamId[index]) != "connected") 
+	       {
+	            console.log("It will try to play again because it is not stopped on purpose")
+	            this.closePeerConnection(this.playStreamId[index]);
+	            this.play(this.playStreamId[index], this.playToken, this.playRoomId, this.playEnableTracks, this.playSubscriberId, this.playSubscriberCode, this.playMetaData);
+	        }
+	    }
+	
+	}
 
     /**
      * Called to stop a publishing/playing session for a stream. AMS responds with publishFinished or playFinished message.
@@ -896,6 +932,9 @@ export class WebRTCAdaptor {
      *   dataChannelMode: can be "publish" , "play" or "peer" based on this it is decided which way data channel is created
      */
     initPeerConnection(streamId, dataChannelMode) {
+		//null == undefined -> it's true
+		//null === undefined -> it's false
+		
         if (this.remotePeerConnection[streamId] == null) {
             var closedStreamId = streamId;
             console.log("stream id in init peer connection: " + streamId + " close stream id: " + closedStreamId);
@@ -1465,9 +1504,10 @@ export class WebRTCAdaptor {
      * Called to check and start Web Socket connection if it is not started
      */
     checkWebSocketConnection() {
-        if (this.webSocketAdaptor == null || (this.webSocketAdaptor.isConnected() == false && this.webSocketAdaptor.isConnecting() == false)) {
+        if (this.webSocketAdaptor == null || (this.webSocketAdaptor.isConnected() == false && this.webSocketAdaptor.isConnecting() == false)) 
+        {
             this.webSocketAdaptor = new WebSocketAdaptor({
-                websocket_url: this.websocket_url,
+                websocket_url: this.websocketURL,
                 webrtcadaptor: this,
                 callback: (info, obj) => {
                     if (info == "closed") {

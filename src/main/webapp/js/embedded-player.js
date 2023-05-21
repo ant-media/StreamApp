@@ -18,7 +18,7 @@ export class EmbeddedPlayer {
     */
     static STREAMS_FOLDER = "streams";
 
-    static VIDEO_HTML = "<video id='video-player' class='video-js vjs-default-skin vjs-big-play-centered'></video>";
+    static VIDEO_HTML = "<video id='video-player' class='video-js vjs-default-skin vjs-big-play-centered' controls></video>";
 
     static VIDEO_PLAYER_ID = "video-player";
 
@@ -148,17 +148,21 @@ export class EmbeddedPlayer {
     constructor(window, containerElement, placeHolderElement) {
         this.dom = window.document;
         this.window = window;
-        var localStreamId = getUrlParameter("id");
+        var localStreamId = getUrlParameter("id", this.window.location.search);
         this.containerElement = containerElement;
         this.placeHolderElement = placeHolderElement;
         this.errorCalled = false;
+        this.iceConnected = false;
 
         this.iceServers = '[ { "urls": "stun:stun1.l.google.com:19302" } ]';
 
         if (localStreamId == null) {
             //check name variable for compatibility with older versions
-            console.warn("Please use id parameter instead of name parameter.");
-            localStreamId = getUrlParameter("name");
+           
+            localStreamId = getUrlParameter("name", this.window.location.search);
+            if (localStreamId == null) {
+	 			console.warn("Please use id parameter instead of name parameter.");
+			}
         }
 
         if (localStreamId == null) {
@@ -170,12 +174,12 @@ export class EmbeddedPlayer {
         }
         this.streamId = localStreamId;
 
-        var localIs360 = getUrlParameter("is360");
+        var localIs360 = getUrlParameter("is360", this.window.location.search);
         if (localIs360 != null) {
             this.is360 = localIs360.toLocaleLowerCase() == "true";
         }
 
-        var localPlayType = getUrlParameter("playType");
+        var localPlayType = getUrlParameter("playType", this.window.location.search);
         if (localPlayType != null) {
             this.playType = localPlayType.split(',');
         }
@@ -183,24 +187,27 @@ export class EmbeddedPlayer {
             this.playType = EmbeddedPlayer.DEFAULT_PLAY_TYPE;
         }
 
-        this.token = getUrlParameter("token");
+        this.token = getUrlParameter("token", this.window.location.search);
+        if (this.token === undefined) {
+			this.token = null;	
+		}
 
         if (isMobile()) {
             this.autoPlay = false;
         }
         else {
-            var localAutoPlay = getUrlParameter("autoplay");
+            var localAutoPlay = getUrlParameter("autoplay", this.window.location.search);
             if (localAutoPlay != null) {
                 this.autoPlay = localAutoPlay.toLocaleLowerCase() == "true";
             }
         }
 
-        var localMute = getUrlParameter("mute");
+        var localMute = getUrlParameter("mute",this.window.location.search);
         if (localMute != null) {
             this.mute = localMute.toLocaleLowerCase() == "true";
         }
 
-        var localTargetLatency = getUrlParameter("targetLatency");
+        var localTargetLatency = getUrlParameter("targetLatency", this.window.location.search);
         if (localTargetLatency != null) {
             var latencyInNumber = Number(localTargetLatency);
             if (!isNaN(latencyInNumber)) {
@@ -211,10 +218,17 @@ export class EmbeddedPlayer {
             }
         }
 
-        this.subscriberId = getUrlParameter("subscriberId");
-        this.subscriberCode = getUrlParameter("subscriberCode");
+        this.subscriberId = getUrlParameter("subscriberId", this.window.location.search);
+        if (this.subscriberId === undefined) {
+			this.subscriberId = null;
+		}
+		
+        this.subscriberCode = getUrlParameter("subscriberCode",this.window.location.search);
+        if (this.subscriberCode == null) {
+			 this.subscriberCode = null;
+		}
 
-        var playOrderParameter = getUrlParameter("playOrder");
+        var playOrderParameter = getUrlParameter("playOrder",this.window.location.search);
         if (playOrderParameter != null) {
             this.playOrder = playOrderParameter.split(',');
         }
@@ -223,7 +237,7 @@ export class EmbeddedPlayer {
         }
         this.loadScripts();
 
-        this.setPlayerVisibile(false);
+        this.setPlayerVisible(false);
 
 
     }
@@ -307,7 +321,7 @@ export class EmbeddedPlayer {
      * set player visibility
      * @param {boolean} visible 
      */
-    setPlayerVisibile(visible) {
+    setPlayerVisible(visible) {
         this.containerElement.style.display = visible ? "block" : "none";
         this.placeHolderElement.style.display = visible ? "none" : "block";
 
@@ -324,15 +338,6 @@ export class EmbeddedPlayer {
                 this.aScene = null;
             }
         }
-    }
-
-    /**
-     * start playing
-     */
-    play() {
-        this.window.addEventListener("load", () => {
-            this.start();
-        });
     }
 
     /**
@@ -379,7 +384,7 @@ export class EmbeddedPlayer {
         //same videojs is being use for hls, vod and webrtc streams
         this.videojsPlayer = videojs(EmbeddedPlayer.VIDEO_PLAYER_ID, {
             poster: "previews/" + preview + ".png",
-            liveui: true,
+            liveui: extension == "m3u8" ? true : false,
             liveTracker: {
                 trackingThreshold: 0
             },
@@ -403,35 +408,130 @@ export class EmbeddedPlayer {
                 this.errorCalled = true;
                 setTimeout(() => {
                     this.tryNextTech();
+                    this.errorCalled = false;
                 }, 2500)
             }
         });
 
-        this.videojsPlayer.on('webrtc-info', (event, infos) => {
-            //console.log("info callback: " + JSON.stringify(infos));
-            if (infos["info"] == "ice_connection_state_changed") {
-                console.debug("ice connection state changed to " + infos["obj"].state);
-                if (infos["obj"].state == "completed" || infos["obj"].state == "connected") {
-                    this.iceConnected = true;
-                }
-            }
-        });
+		//webrtc specific events
+		if (extension == "webrtc") {
+			
+	        this.videojsPlayer.on('webrtc-info', (event, infos) => {
+	            //console.log("info callback: " + JSON.stringify(infos));
+	            if (infos["info"] == "ice_connection_state_changed") {
+	                console.debug("ice connection state changed to " + infos["obj"].state);
+	                if (infos["obj"].state == "completed" || infos["obj"].state == "connected") {
+	                    this.iceConnected = true;
+	                }
+	            }
+	        });
+	        
+	        
+	        this.videojsPlayer.on('webrtc-error', (event, errors) => {
+	            //some of the possible errors, NotFoundError, SecurityError,PermissionDeniedError
+	            console.log("error callback: " + JSON.stringify(errors));
+	
+	            if (errors["error"] == "no_stream_exist" || errors["error"] == "WebSocketNotConnected"
+	                || errors["error"] == "not_initialized_yet" || errors["error"] == "data_store_not_available"
+	                || errors["error"] == "highResourceUsage" || errors["error"] == "unauthorized_access") {
+	
+	                //handle high resource usage and not authroized errors && websocket disconnected
+	                //Even if webrtc adaptor has auto reconnect scenario, we dispose the videojs immediately in tryNextTech
+	                // so that reconnect scenario is managed here
+	                
+	                this.tryNextTech();
+	            }
+	            else if (errors["error"] == "notSetRemoteDescription") {
+	                /*
+	                * If getting codec incompatible or remote description error, it will redirect HLS player.
+	                */
+	                console.warn("notSetRemoteDescription error. Redirecting to HLS player.");
+	                this.playIfExists("hls");
+	            }
+	        });
+	        
+	        this.videojsPlayer.on("webrtc-data-received", (event, obj) => {
+	            console.log("webrtc-data-received: " + JSON.stringify(obj));
+	            if (this.webRTCDataListener != null) {
+	                this.webRTCDataListener(obj);
+	            }
+	        });
+        }
 
+		//hls specific calls
+		if (extension == "m3u8") {
+	        videojs.Vhs.xhr.beforeRequest = (options) => {
+                
+                var securityParams = this.getSecurityQueryParams();	
+                if (!options.uri.includes(securityParams)) 
+                {
+                    if (!options.uri.endsWith("?")) 
+                    {
+                        options.uri = options.uri + "?";
+                    }
+                    options.uri += securityParams;
+                }
+	            
+                console.debug("hls request: " + options.uri);
+	            return options;
+	        };
+	
+	        
+	        this.videojsPlayer.ready(() => {
+	            // If it's already added to player, no need to add again
+	            if (typeof this.videojsPlayer.hlsQualitySelector === "function") {
+	                this.videojsPlayer.hlsQualitySelector({
+	                    displayCurrentQuality: true,
+	                });
+	            }
+	
+	            // If there is no adaptive option in m3u8 no need to show quality selector
+	            let qualityLevels = this.videojsPlayer.qualityLevels();
+	            qualityLevels.on('addqualitylevel', function (event) {
+	                let qualityLevel = event.qualityLevel;
+	                if (qualityLevel.height) {
+	                    qualityLevel.enabled = true;
+	                } else {
+	                    qualityLevels.removeQualityLevel(qualityLevel);
+	                    qualityLevel.enabled = false;
+	                }
+	            });
+	        });
+        }
+        
+        
         this.videojsPlayer.on('ended', () => {
             //reinit to play after it ends
             console.log("stream is ended")
-            this.setPlayerVisibile(false);
+            this.setPlayerVisible(false);
             //for webrtc, this event can be called by two reasons 
             //1. ice connection is not established, it means that there is a networking issug
             //2. stream is ended
             if (this.currentPlayType != "vod") {
                 //if it's vod, it means that stream is ended and no need to replay
 
-                if (this.iceConnected || this.currentPlayType == "hls") {
-                    //if iceConnected is true, it means that stream is ended for webrtc
-                    //if it's hls, it means that stream is ended
+                if (this.iceConnected) {
+                    //if iceConnected is true, it means that stream is really ended for webrtc
+                    
                     //initialize to play again if the publishing starts again
                     this.playIfExists(this.playOrder[0]);
+                }
+                else if (this.currentPlayType == "hls") {
+                    //if it's hls, it means that stream is ended
+
+                    this.setPlayerVisible(false);
+                    if (this.playOrder[0] = "hls") 
+                    {
+                        //do not play again if it's hls because it play last seconds again, let the server clear it
+                        setTimeout(() => {
+                            this.playIfExists(this.playOrder[0]);   
+                        }, 10000);
+                    }
+                    else 
+                    {
+                        this.playIfExists(this.playOrder[0]);   
+                    }
+                    //TODO: what if the stream is hls vod then it always re-play
                 }
                 else {
                     //if iceConnected is false, it means that there is a networking issue for webrtc
@@ -444,63 +544,8 @@ export class EmbeddedPlayer {
 
         });
 
-        this.videojsPlayer.on('webrtc-error', (event, errors) => {
-            //some of the possible errors, NotFoundError, SecurityError,PermissionDeniedError
-            console.log("error callback: " + JSON.stringify(errors));
-
-            if (errors["error"] == "no_stream_exist" || errors["error"] == "WebSocketNotConnected"
-                || errors["error"] == "not_initialized_yet" || errors["error"] == "data_store_not_available"
-                || errors["error"] == "highResourceUsage" || errors["error"] == "unauthorized_access") {
-
-                //handle high resource usage and not authroized errors && websocket disconnected
-                this.tryNextTech();
-            }
-            else if (errors["error"] == "notSetRemoteDescription") {
-                /*
-                * If getting codec incompatible or remote description error, it will redirect HLS player.
-                */
-                console.warn("notSetRemoteDescription error. Redirecting to HLS player.");
-                this.playIfExists("hls");
-            }
-        });
-
-        videojs.Vhs.xhr.beforeRequest = (options) => {
-            options.uri = options.uri + "?";
-
-            options.uri = options.uri + this.getSecurityQueryParams();
-            return options;
-        };
-
-        this.videojsPlayer.ready(() => {
-            // If it's already added to player, no need to add again
-            if (typeof this.videojsPlayer.hlsQualitySelector === "function") {
-                this.videojsPlayer.hlsQualitySelector({
-                    displayCurrentQuality: true,
-                });
-            }
-
-            // If there is no adaptive option in m3u8 no need to show quality selector
-            let qualityLevels = this.videojsPlayer.qualityLevels();
-            qualityLevels.on('addqualitylevel', function (event) {
-                let qualityLevel = event.qualityLevel;
-                if (qualityLevel.height) {
-                    qualityLevel.enabled = true;
-                } else {
-                    qualityLevels.removeQualityLevel(qualityLevel);
-                    qualityLevel.enabled = false;
-                }
-            });
-        });
-
-        this.videojsPlayer.on("webrtc-data-received", (event, obj) => {
-            console.log("webrtc-data-received: " + JSON.stringify(obj));
-            if (this.webRTCDataListener != null) {
-                this.webRTCDataListener(obj);
-            }
-        });
-
         this.videojsPlayer.on("play", () => {
-            this.setPlayerVisibile(true);
+            this.setPlayerVisible(true);
             if (this.playerListener != null) {
                 this.playerListener("play");
             }
@@ -513,6 +558,8 @@ export class EmbeddedPlayer {
             type: type,
             withCredentials: true,
             iceServers: this.iceServers,
+            reconnect: false, //webrtc adaptor has auto reconnect scenario, just disable it, we manage it here
+
         });
 
         if (this.autoPlay) {
@@ -551,7 +598,7 @@ export class EmbeddedPlayer {
                             else {
                                 console.log("No stream found");
                                 return new Promise(function (resolve, reject) {
-                                    reject("No stream found");
+                                    reject("resource_is_not_available");
                                 });
                             }
                         });
@@ -565,6 +612,7 @@ export class EmbeddedPlayer {
     tryNextTech() {
         this.destroyDashPlayer();
         this.destroyVideoJSPlayer();
+        this.setPlayerVisible(false);
         var index = this.playOrder.indexOf(this.currentPlayType);
         if (index == -1 || index == (this.playOrder.length - 1)) {
             index = 0;
@@ -592,13 +640,20 @@ export class EmbeddedPlayer {
                 },
                 modifyRequestURL: (url) => {
                     var modifiedUrl = ""
-                    if (!url.includes("token")) {
-                        modifiedUrl = url + "?" + this.getSecurityQueryParams();
-                    } else {
-                        modifiedUrl = url
+
+                    var securityParams = this.getSecurityQueryParams();	
+                    if (!url.includes(securityParams)) 
+                    {
+                        if (!url.endsWith("?")) 
+                        {
+                            url += "?";
+                        }
+                        modifiedUrl = url + securityParams;
+						console.log(modifiedUrl);
+						return modifiedUrl
                     }
-                    console.log(modifiedUrl)
-                    return modifiedUrl
+					
+                    return url;
                 },
                 modifyRequest(request) {
 
@@ -614,7 +669,7 @@ export class EmbeddedPlayer {
                 liveCatchup: {
                     maxDrift: 0.05,
                     playbackRate: 0.5,
-                    latencyThreshold: 30
+                    latencyThreshold: 60
                 }
             }
         });
@@ -629,7 +684,7 @@ export class EmbeddedPlayer {
 
         this.dashPlayer.on(dashjs.MediaPlayer.events.PLAYBACK_PLAYING, (event) => {
             console.log("playback started");
-            this.setPlayerVisibile(true);
+            this.setPlayerVisible(true);
             if (this.playerListener != null) {
                 this.playerListener("play");
             }
@@ -637,18 +692,26 @@ export class EmbeddedPlayer {
         this.dashPlayer.on(dashjs.MediaPlayer.events.PLAYBACK_ENDED, () => {
             console.log("playback ended");
             this.destroyDashPlayer();
+            this.setPlayerVisible(false);
             //streaming can be started again so try to play again with preferred tech
-            this.playIfExists(this.playOrder[0]);
+            if (this.playOrder[0] = "dash") 
+            {
+                //do not play again if it's dash because it play last seconds again, let the server clear it
+                setTimeout(() => {
+                    this.playIfExists(this.playOrder[0]);   
+                }, 10000);
+            }
+            else {
+                this.playIfExists(this.playOrder[0]);
+            }
             if (this.playerListener != null) {
                 this.playerListener("ended");
             }
         });
         this.dashPlayer.on(dashjs.MediaPlayer.events.PLAYBACK_ERROR, (event) => {
-            this.destroyDashPlayer();
             this.tryNextTech();
         });
         this.dashPlayer.on(dashjs.MediaPlayer.events.ERROR, (event) => {
-            this.destroyDashPlayer();
             this.tryNextTech();
         });
     }
@@ -682,6 +745,7 @@ export class EmbeddedPlayer {
         this.currentPlayType = tech;
         this.destroyVideoJSPlayer();
         this.destroyDashPlayer();
+        this.setPlayerVisible(false);
 
         this.containerElement.innerHTML = EmbeddedPlayer.VIDEO_HTML;
         
@@ -692,23 +756,24 @@ export class EmbeddedPlayer {
                 //1. Play stream with adaptive m3u8 for live and VoD
                 //2. Play stream with m3u8 for live and VoD
                 //3. if files are not available check nextTech is being called
-                this.checkStreamExistsViaHttp(EmbeddedPlayer.STREAMS_FOLDER, this.streamId, EmbeddedPlayer.HLS_EXTENSION).then((streamPath) => {
+                return this.checkStreamExistsViaHttp(EmbeddedPlayer.STREAMS_FOLDER, this.streamId, EmbeddedPlayer.HLS_EXTENSION).then((streamPath) => {
+					
                     this.playWithVideoJS(streamPath, EmbeddedPlayer.HLS_EXTENSION);
+                    console.log("incoming stream path: " + streamPath);
+                    
                 }).catch((error) => {
 
                     console.log("HLS stream resource not available for stream:" + this.streamId + " error is " + error + ". Try next play tech");
                     this.tryNextTech();
                 });
-                break;
             case "dash":
-                this.checkStreamExistsViaHttp(EmbeddedPlayer.STREAMS_FOLDER, this.streamId + "/" + this.streamId, EmbeddedPlayer.DASH_EXTENSION).then((streamPath) => {
+                return this.checkStreamExistsViaHttp(EmbeddedPlayer.STREAMS_FOLDER, this.streamId + "/" + this.streamId, EmbeddedPlayer.DASH_EXTENSION).then((streamPath) => {
                     this.playViaDash(streamPath);
                 }).catch((error) => {
                     console.log("DASH stream resource not available for stream:" + this.streamId + " error is " + error + ". Try next play tech");
                     this.tryNextTech();
                 });
 
-                break;
             case "webrtc":
                 var appName = this.window.location.pathname.substring(0, this.window.location.pathname.lastIndexOf("/") + 1);
                 var path = this.window.location.hostname + ":" + this.window.location.port + appName + this.streamId + ".webrtc";
@@ -719,15 +784,14 @@ export class EmbeddedPlayer {
                 }
 
                 websocketURL += "?" + this.getSecurityQueryParams();
-
-                this.playWithVideoJS(websocketURL, EmbeddedPlayer.WEBRTC_EXTENSION);
-                break;
+                return this.playWithVideoJS(websocketURL, EmbeddedPlayer.WEBRTC_EXTENSION);
             case "vod":
                 //TODO: Test case for vod
                 //1. Play stream with mp4 for VoD
                 //2. Play stream with webm for VoD
                 //3. Play stream with playOrder type
-                this.checkStreamExistsViaHttp(EmbeddedPlayer.STREAMS_FOLDER, this.streamId, this.playType[0]).then((streamPath) => {
+                
+                return this.checkStreamExistsViaHttp(EmbeddedPlayer.STREAMS_FOLDER, this.streamId, this.playType[0]).then((streamPath) => {
                     this.playWithVideoJS(streamPath, this.playType[0]);
                 }).catch((error) => {
                     console.log("VOD stream resource not available for stream:" + this.streamId + " and play type " + this.playType[0] + ". Error is " + error);
@@ -767,13 +831,20 @@ export class EmbeddedPlayer {
     /**
      * play the stream with videojs player or dash player
      */
-    start() {
+    play() {
         if (this.streamId.startsWith(EmbeddedPlayer.STREAMS_FOLDER)) {
 
             //start videojs player because it directly try to play stream from streams folder
             var lastIndexOfDot = this.streamId.lastIndexOf(".");
             var extension = this.streamId.substring(lastIndexOfDot + 1);
-            this.playWithVideoJS(this.streamId + "?" + this.getSecurityQueryParams(), extension);
+            
+            if (extension == EmbeddedPlayer.DASH_EXTENSION) 
+            {
+				this.playViaDash(this.streamId + "?" + this.getSecurityQueryParams(), extension);
+			}
+			else  {
+				this.playWithVideoJS(this.streamId + "?" + this.getSecurityQueryParams(), extension);
+			}
         }
         else {
             this.playIfExists(this.playOrder[0]);

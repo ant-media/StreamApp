@@ -14,11 +14,11 @@
 	</div>
 
 	<div id="video_info">
-		Stream will start playing automatically<br />when it is available
+		Your live stream will play automatically as soon as it's available. <br />Get ready to be part of the action!
 	</div>
 
 	<div id="video_container">
-		<video id='video-player' class='video-js vjs-default-skin vjs-big-play-centered'></video>
+		<video id='video-player' class='video-js vjs-default-skin vjs-big-play-centered' controls></video>
 	</div>
 
 	<div id="networkWarning">Your connection isn't fast enough to play this stream!</div>
@@ -52,7 +52,11 @@
 
 		var embeddedPlayer = new EmbeddedPlayer(window, document.getElementById("video_container"), document.getElementById("video_info"));
 		
-		embeddedPlayer.play();
+		window.addEventListener("load", () => {
+			embeddedPlayer.play();
+        });
+
+		
 
 		embeddedPlayer.addWebRTCDataListener((data) => {
 			console.log("Data received: " + data);
