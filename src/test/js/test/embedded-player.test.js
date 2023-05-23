@@ -298,7 +298,6 @@ describe("EmbeddedPlayer", function() {
 
 	});
 	
-	
 	it("playIfExists", async function() {
 		var videoContainer = document.createElement("video_container");
 		  
@@ -367,7 +366,47 @@ describe("EmbeddedPlayer", function() {
 		
 	});
 	
-	
+	it("playVoD", async function() {
+		//Confirming the fix for this issue
+		//https://github.com/ant-media/Ant-Media-Server/issues/5137
+		
+		
+		
+		var videoContainer = document.createElement("video_container");
+		  
+		var placeHolder = document.createElement("place_holder");
+		  			
+		var locationComponent =  { href : 'http://example.com?id=stream123.mp4', search: "?id=stream123.mp4" };
+		var windowComponent = {  location : locationComponent,
+		  						  document:  document,
+		  						  addEventListener: window.addEventListener};
+		  						  		 	      
+	    var player = new EmbeddedPlayer(windowComponent, videoContainer, placeHolder);
+	    var checkStreamExistsViaHttp = sinon.replace(player, "checkStreamExistsViaHttp", sinon.fake.returns(Promise.resolve("streams/stream123.mp4")));
+	    var playWithVideoJS = sinon.replace(player, "playWithVideoJS", sinon.fake());
+	    
+	    await player.playIfExists("vod");
+	    
+	    expect(checkStreamExistsViaHttp.calledWithMatch(EmbeddedPlayer.STREAMS_FOLDER, "stream123.mp4", "")).to.be.true;
+	    expect(playWithVideoJS.calledWithMatch("streams/stream123.mp4", "mp4")).to.be.true;
+	    
+	    
+	    sinon.restore();
+	    
+	    locationComponent =  { href : 'http://example.com?id=stream123', search: "?id=stream123" };
+	    windowComponent = {  location : locationComponent,
+		  						  document:  document,
+		  						  addEventListener: window.addEventListener};
+		  						  
+	    var player2 = new EmbeddedPlayer(windowComponent, videoContainer, placeHolder);
+	    checkStreamExistsViaHttp = sinon.replace(player2, "checkStreamExistsViaHttp", sinon.fake.returns(Promise.resolve("")));
+	    expect(player2.playType[0]).to.be.equal("mp4");
+	    
+	    player2.playIfExists("vod");
+	    
+	    expect(checkStreamExistsViaHttp.calledWithMatch(EmbeddedPlayer.STREAMS_FOLDER, "stream123", "mp4")).to.be.true;
+		
+	});
     
     
 });

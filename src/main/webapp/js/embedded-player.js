@@ -1,26 +1,27 @@
 
 import { getUrlParameter, isMobile } from "./fetch.stream.js";
 
+    
 export class EmbeddedPlayer {
 
-    static DEFAULT_PLAY_ORDER = ["webrtc", "hls"];
-
-    static DEFAULT_PLAY_TYPE = ["mp4", "webm"];
-
-    static HLS_EXTENSION = "m3u8";
-
-    static WEBRTC_EXTENSION = "webrtc";
-
-    static DASH_EXTENSION = "mpd";
-
-    /**
-    * streamsFolder: streams folder. Optional. Default value is "streams"
-    */
-    static STREAMS_FOLDER = "streams";
-
-    static VIDEO_HTML = "<video id='video-player' class='video-js vjs-default-skin vjs-big-play-centered' controls></video>";
-
-    static VIDEO_PLAYER_ID = "video-player";
+	static DEFAULT_PLAY_ORDER;
+	
+	static DEFAULT_PLAY_TYPE;
+	
+	static HLS_EXTENSION;
+	
+	static WEBRTC_EXTENSION;
+	
+	static DASH_EXTENSION;
+	
+	/**
+	* streamsFolder: streams folder. Optional. Default value is "streams"
+	*/
+	static STREAMS_FOLDER;
+	
+	static VIDEO_HTML;
+	
+	static VIDEO_PLAYER_ID;
 
     /**
     *  "playOrder": the order which technologies is used in playing. Optional. Default value is "webrtc,hls".
@@ -146,6 +147,26 @@ export class EmbeddedPlayer {
     webRTCDataListener;
 
     constructor(window, containerElement, placeHolderElement) {
+		
+		EmbeddedPlayer.DEFAULT_PLAY_ORDER = ["webrtc", "hls"];;
+		
+		EmbeddedPlayer.DEFAULT_PLAY_TYPE =  ["mp4", "webm"];
+
+		EmbeddedPlayer.HLS_EXTENSION = "m3u8";
+		
+		EmbeddedPlayer.WEBRTC_EXTENSION = "webrtc";
+		
+		EmbeddedPlayer.DASH_EXTENSION = "mpd";
+		
+		/**
+		* streamsFolder: streams folder. Optional. Default value is "streams"
+		*/
+		EmbeddedPlayer.STREAMS_FOLDER = "streams";
+		
+		EmbeddedPlayer.VIDEO_HTML = "<video id='video-player' class='video-js vjs-default-skin vjs-big-play-centered' controls></video>";
+		
+		EmbeddedPlayer.VIDEO_PLAYER_ID = "video-player";
+		
         this.dom = window.document;
         this.window = window;
         var localStreamId = getUrlParameter("id", this.window.location.search);
@@ -184,6 +205,7 @@ export class EmbeddedPlayer {
             this.playType = localPlayType.split(',');
         }
         else {
+
             this.playType = EmbeddedPlayer.DEFAULT_PLAY_TYPE;
         }
 
@@ -575,9 +597,16 @@ export class EmbeddedPlayer {
      * @returns 
      */
     checkStreamExistsViaHttp(streamsfolder, streamId, extension) {
-        //HEAD request are not secure
-        var streamPath = streamsfolder + "/" + streamId + "_adaptive" + "." + extension + "?" + this.getSecurityQueryParams();
 
+        var streamPath;
+        if (extension != null && extension != "") {
+            //if there is extension, add it
+            streamPath = streamsfolder + "/" + streamId + "_adaptive" + "." + extension + "?" + this.getSecurityQueryParams();
+        }
+        else {
+            //if no extension, just put it as it is
+            streamPath = streamsfolder + "/" + streamId + "?" + this.getSecurityQueryParams();
+        }
         return fetch(streamPath, { method: 'HEAD' })
             .then((response) => {
                 if (response.status == 200) {
@@ -790,9 +819,25 @@ export class EmbeddedPlayer {
                 //1. Play stream with mp4 for VoD
                 //2. Play stream with webm for VoD
                 //3. Play stream with playOrder type
+
+                var lastIndexOfDot = this.streamId.lastIndexOf(".");
+                var extension;
+                if (lastIndexOfDot != -1) 
+                {
+                    //if there is a dot in the streamId, it means that this is extension, use it. make the extension empty
+                    this.playType[0] = "";
+                    extension = this.streamId.substring(lastIndexOfDot + 1); 
+                }
+                else {
+					//we need to give extension to playWithVideoJS
+					extension = this.playType[0];
+				}
                 
-                return this.checkStreamExistsViaHttp(EmbeddedPlayer.STREAMS_FOLDER, this.streamId, this.playType[0]).then((streamPath) => {
-                    this.playWithVideoJS(streamPath, this.playType[0]);
+                return this.checkStreamExistsViaHttp(EmbeddedPlayer.STREAMS_FOLDER, this.streamId,  this.playType[0]).then((streamPath) => {
+                    
+                    //we need to give extension to playWithVideoJS   
+                    this.playWithVideoJS(streamPath, extension);
+                    
                 }).catch((error) => {
                     console.log("VOD stream resource not available for stream:" + this.streamId + " and play type " + this.playType[0] + ". Error is " + error);
                     if (this.playType.length > 1) {
