@@ -324,6 +324,12 @@ export class WebRTCAdaptor {
          */
         this.playMetaData = null;
 
+
+        /**
+         * This is the time info for the last reconnection attempt
+         */
+        this.lastReconnectiontionTrialTime = 0;
+
         /**
          * All media management works for teh local stream are made by @MediaManager class.
          * for details please check @MediaManager
@@ -475,7 +481,7 @@ export class WebRTCAdaptor {
         setTimeout(() => {
             //check if it is connected or not
             //this resolves if the server responds with some error message
-            if (this.iceConnectionState(this.publishStreamId) != "connected" && this.iceConnectionState(this.publishStreamId) != "completed") {
+            if (this.iceConnectionState(this.publishStreamId) != "checking" && this.iceConnectionState(this.publishStreamId) != "connected" && this.iceConnectionState(this.publishStreamId) != "completed") {
                 //if it is not connected, try to reconnect
                 this.reconnectIfRequired(0);
             }
@@ -561,7 +567,9 @@ export class WebRTCAdaptor {
         setTimeout(() => {
             //check if it is connected or not
             //this resolves if the server responds with some error message
-            if (this.iceConnectionState(streamId) != "connected" && this.iceConnectionState(streamId) != "completed") 
+            if (this.iceConnectionState(streamId) != "checking" &&
+                this.iceConnectionState(streamId) != "connected" && 
+                this.iceConnectionState(streamId) != "completed") 
             {
                 //if it is not connected, try to reconnect
                 this.reconnectIfRequired(0);
@@ -592,12 +600,21 @@ export class WebRTCAdaptor {
     }
     
     tryAgain() {
+
+        const now = Date.now();
+        //to prevent too many trial from different paths
+        if(now - this.lastReconnectiontionTrialTime < 3000) {
+            return;
+        }
+        this.lastReconnectiontionTrialTime = now;
+
 	 	//reconnect publish
 	 	
 		//if remotePeerConnection has a peer connection for the stream id, it means that it is not stopped on purpose
 		
 	    if (this.remotePeerConnection[this.publishStreamId] != null && 
 	    		//check connection status to not stop streaming an active stream
+                this.iceConnectionState(this.publishStreamId) != "checking" &&
 	    		this.iceConnectionState(this.publishStreamId) != "connected" && 
 	    		this.iceConnectionState(this.publishStreamId) != "completed") 
 	    {
@@ -608,17 +625,18 @@ export class WebRTCAdaptor {
 	
 	    //reconnect play
 	    for (var index in this.playStreamId) {
-	        if (this.remotePeerConnection[this.playStreamId[index]] != null &&
+            var streamId = this.playStreamId[index];
+	        if (this.remotePeerConnection[streamId] != "null" &&
 	        	//check connection status to not stop streaming an active stream
-	        	this.iceConnectionState(this.playStreamId[index]) != "connected" && 
-	        	this.iceConnectionState(this.playStreamId[index]) != "connected") 
+                this.iceConnectionState(streamId) != "checking" &&
+	        	this.iceConnectionState(streamId) != "connected" && 
+	        	this.iceConnectionState(streamId) != "completed")
 	       {
 	            console.log("It will try to play again because it is not stopped on purpose")
-	            this.closePeerConnection(this.playStreamId[index]);
-	            this.play(this.playStreamId[index], this.playToken, this.playRoomId, this.playEnableTracks, this.playSubscriberId, this.playSubscriberCode, this.playMetaData);
+	            this.closePeerConnection(streamId);
+	            this.play(streamId, this.playToken, this.playRoomId, this.playEnableTracks, this.playSubscriberId, this.playSubscriberCode, this.playMetaData);
 	        }
-	    }
-	
+	    }	
 	}
 
     /**
@@ -999,7 +1017,7 @@ export class WebRTCAdaptor {
             this.remotePeerConnection[streamId].oniceconnectionstatechange = event => {
                 var obj = {state: this.remotePeerConnection[streamId].iceConnectionState, streamId: streamId};
                 if (obj.state == "failed" || obj.state == "disconnected" || obj.state == "closed") {
-                    this.reconnectIfRequired(obj.streamId);
+                    this.reconnectIfRequired(3000);
                 }
                 this.notifyEventListeners("ice_connection_state_changed", obj);
 
