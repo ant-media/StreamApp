@@ -598,15 +598,19 @@ export class EmbeddedPlayer {
      */
     checkStreamExistsViaHttp(streamsfolder, streamId, extension) {
 
-        var streamPath;
+        var streamPath = "";
+        if (!streamId.startsWith(streamsfolder)) {
+            streamPath += streamsfolder + "/";
+        }
+        streamPath += streamId;
+
         if (extension != null && extension != "") {
-            //if there is extension, add it
-            streamPath = streamsfolder + "/" + streamId + "_adaptive" + "." + extension + "?" + this.getSecurityQueryParams();
+            //if there is extension, add it and try if _adaptive exists
+            streamPath += "_adaptive" + "." + extension;
         }
-        else {
-            //if no extension, just put it as it is
-            streamPath = streamsfolder + "/" + streamId + "?" + this.getSecurityQueryParams();
-        }
+
+        streamPath = this.addSecurityParams(streamPath);
+
         return fetch(streamPath, { method: 'HEAD' })
             .then((response) => {
                 if (response.status == 200) {
@@ -616,7 +620,9 @@ export class EmbeddedPlayer {
                     });
                 } else {
                     //adaptive not exists, try mpd or m3u8 exists.
-                    streamPath = streamsfolder + "/" + streamId + "." + extension + "?" + this.getSecurityQueryParams();
+                    streamPath = streamsfolder + "/" + streamId + "." + extension;
+                    streamPath = this.addSecurityParams(streamPath);
+
                     return fetch(streamPath, { method: 'HEAD' })
                         .then((response) => {
                             if (response.status == 200) {
@@ -633,6 +639,14 @@ export class EmbeddedPlayer {
                         });
                 }
             });
+    }
+
+    addSecurityParams(streamPath) {
+        var securityParams = this.getSecurityQueryParams();
+        if (securityParams != null && securityParams != "") {
+            streamPath += "?" + securityParams;
+        }
+        return streamPath;
     }
 
     /**
@@ -770,7 +784,7 @@ export class EmbeddedPlayer {
      * play the stream with the given tech
      * @param {string} tech 
      */
-    playIfExists(tech) {
+    async playIfExists(tech) {
         this.currentPlayType = tech;
         this.destroyVideoJSPlayer();
         this.destroyDashPlayer();
@@ -812,8 +826,7 @@ export class EmbeddedPlayer {
                     websocketURL = "wss://" + path;
                 }
 
-                websocketURL += "?" + this.getSecurityQueryParams();
-                return this.playWithVideoJS(websocketURL, EmbeddedPlayer.WEBRTC_EXTENSION);
+                return this.playWithVideoJS(this.addSecurityParams(websocketURL), EmbeddedPlayer.WEBRTC_EXTENSION);
             case "vod":
                 //TODO: Test case for vod
                 //1. Play stream with mp4 for VoD
@@ -850,8 +863,6 @@ export class EmbeddedPlayer {
                     }
 
                 });
-
-                break;
         }
     }
 
@@ -883,12 +894,15 @@ export class EmbeddedPlayer {
             var lastIndexOfDot = this.streamId.lastIndexOf(".");
             var extension = this.streamId.substring(lastIndexOfDot + 1);
             
+            this.playOrder= ["vod"];
+
+            
             if (extension == EmbeddedPlayer.DASH_EXTENSION) 
             {
-				this.playViaDash(this.streamId + "?" + this.getSecurityQueryParams(), extension);
+				this.playViaDash(this.addSecurityParams(this.streamId), extension);
 			}
 			else  {
-				this.playWithVideoJS(this.streamId + "?" + this.getSecurityQueryParams(), extension);
+				this.playWithVideoJS(this.addSecurityParams(this.streamId), extension);
 			}
         }
         else {

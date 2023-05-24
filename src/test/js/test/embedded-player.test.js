@@ -150,11 +150,31 @@ describe("EmbeddedPlayer", function() {
 	    var streamId = "stream123";
 	    var extension = "m3u8";
 	    await  player.checkStreamExistsViaHttp(testFolder, streamId, extension).then((streamPath) => {
-			expect(streamPath).to.be.equal( testFolder + "/" + streamId + "_adaptive" + "." + extension + "?");
+			expect(streamPath).to.be.equal( testFolder + "/" + streamId + "_adaptive" + "." + extension);
 		}).catch((err) => {
 			expect.fail("it should not throw exception");
 		});
 		
+		testFolder = "testFolder";
+		streamId = "stream123";
+		await  player.checkStreamExistsViaHttp(testFolder, testFolder + "/" + streamId, extension).then((streamPath) => {
+			console.log("stream path: " + streamPath);
+			expect(streamPath).to.be.equal( testFolder + "/" + streamId + "_adaptive" + "." + extension);
+		}).catch((err) => {
+			expect.fail("it should not throw exception");
+		});
+		
+		
+		testFolder = "testFolder";
+		streamId = "stream123";
+		var token = "token2323kjfalskfhakf";
+		player.token = token;
+		await  player.checkStreamExistsViaHttp(testFolder, streamId, extension).then((streamPath) => {
+			console.log("stream path: " + streamPath);
+			expect(streamPath).to.be.equal( testFolder + "/" + streamId + "_adaptive" + "." + extension + "?&token=" + token);
+		}).catch((err) => {
+			expect.fail("it should not throw exception");
+		});
 		
 	});
 	
@@ -278,7 +298,7 @@ describe("EmbeddedPlayer", function() {
 		
 		player.play();
 		
-		expect(playWithVideoJS.calledWithMatch("streams/stream123.mp4?", "mp4")).to.be.true;
+		expect(playWithVideoJS.calledWithMatch("streams/stream123.mp4", "mp4")).to.be.true;
 		sinon.restore();
 		
 		
@@ -293,9 +313,29 @@ describe("EmbeddedPlayer", function() {
 		
 		player.play();
 		
-		expect(playViaDash.calledWithMatch("streams/stream123/stream123.mpd?", "mpd")).to.be.true;	  						  
+		expect(playViaDash.calledWithMatch("streams/stream123/stream123.mpd", "mpd")).to.be.true;	  						  
 	    
 
+	});
+	
+	it("playIfExistsWebRTC", async function() {
+		var videoContainer = document.createElement("video_container");
+		  
+		var placeHolder = document.createElement("place_holder");
+		  			
+		var locationComponent =  { href : 'http://example.com?id=stream123', search: "?id=stream123",  pathname: "/", hostname:"example.com", port:5080 };
+		var windowComponent = {  location : locationComponent,
+		  						  document:  document,
+		  						  };
+		  						  
+		  						  
+		var player = new EmbeddedPlayer(windowComponent, videoContainer, placeHolder);
+		var playWithVideoJS = sinon.replace(player, "playWithVideoJS", sinon.fake());
+		
+		await player.playIfExists("webrtc");	
+		expect(playWithVideoJS.callCount).to.be.equal(1);
+		expect(playWithVideoJS.calledWithExactly("ws://example.com:5080/stream123.webrtc", "webrtc")).to.be.true;
+		
 	});
 	
 	it("playIfExists", async function() {
@@ -326,7 +366,7 @@ describe("EmbeddedPlayer", function() {
 		
 		await player.playIfExists("webrtc");	
 		expect(playWithVideoJS.callCount).to.be.equal(2);
-		expect(playWithVideoJS.calledWithMatch("ws://example.com:5080/stream123.webrtc?", "webrtc")).to.be.true;
+		expect(playWithVideoJS.calledWithMatch("ws://example.com:5080/stream123.webrtc", "webrtc")).to.be.true;
 		
 		sinon.restore();
 		
