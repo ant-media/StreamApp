@@ -4,24 +4,25 @@ import { getUrlParameter, isMobile } from "./fetch.stream.js";
     
 export class EmbeddedPlayer {
 
-	static DEFAULT_PLAY_ORDER;
+	static DEFAULT_PLAY_ORDER = ["webrtc", "hls"];;
 	
-	static DEFAULT_PLAY_TYPE;
+	static DEFAULT_PLAY_TYPE  =  ["mp4", "webm"];
 	
-	static HLS_EXTENSION;
+	static HLS_EXTENSION  = "m3u8";
 	
-	static WEBRTC_EXTENSION;
+	static WEBRTC_EXTENSION = "webrtc";
 	
-	static DASH_EXTENSION;
+	static DASH_EXTENSION = "mpd";
 	
 	/**
 	* streamsFolder: streams folder. Optional. Default value is "streams"
 	*/
-	static STREAMS_FOLDER;
+	static STREAMS_FOLDER = "streams";
 	
-	static VIDEO_HTML;
+	static VIDEO_HTML = "<video id='video-player' class='video-js vjs-default-skin vjs-big-play-centered' controls></video>";
 	
-	static VIDEO_PLAYER_ID;
+	static VIDEO_PLAYER_ID = "video-player";
+	
 
     /**
     *  "playOrder": the order which technologies is used in playing. Optional. Default value is "webrtc,hls".
@@ -500,6 +501,7 @@ export class EmbeddedPlayer {
 	
 	        
 	        this.videojsPlayer.ready(() => {
+                
 	            // If it's already added to player, no need to add again
 	            if (typeof this.videojsPlayer.hlsQualitySelector === "function") {
 	                this.videojsPlayer.hlsQualitySelector({
@@ -521,6 +523,14 @@ export class EmbeddedPlayer {
 	        });
         }
         
+        //videojs is being used to play mp4, webm, m3u8 and webrtc 
+        //make the videoJS visible when ready is called except for webrtc
+        //webrtc fires ready event all cases so we use "play" event to make the player visible
+        
+        //this setting is critical to play in mobile
+        if (extension == "mp4" || extension == "webm" || extension == "m3u8") {
+            this.makeVideoJSVisibleWhenReady();
+        }
         
         this.videojsPlayer.on('ended', () => {
             //reinit to play after it ends
@@ -566,13 +576,14 @@ export class EmbeddedPlayer {
 
         });
 
+        //webrtc plugin sends play event. On the other hand, webrtc plugin sends ready event for every scenario. 
+        //so no need to trust ready event for webrt play 
         this.videojsPlayer.on("play", () => {
             this.setPlayerVisible(true);
             if (this.playerListener != null) {
                 this.playerListener("play");
             }
         });
-
         this.iceConnected = false;
 
         this.videojsPlayer.src({
@@ -588,6 +599,13 @@ export class EmbeddedPlayer {
             this.videojsPlayer.play();
         }
     }
+    
+    
+    makeVideoJSVisibleWhenReady() {
+		this.videojsPlayer.ready(() => {
+			 this.setPlayerVisible(true);
+		});
+	}
 
     /**
      * check if stream exists via http
@@ -725,6 +743,9 @@ export class EmbeddedPlayer {
             console.log("live latency: " + this.dashPlayer.getCurrentLiveLatency());
         }, 2000);
 
+       
+       	this.makeDashPlayerVisibleWhenInitialized();
+       
         this.dashPlayer.on(dashjs.MediaPlayer.events.PLAYBACK_PLAYING, (event) => {
             console.log("playback started");
             this.setPlayerVisible(true);
@@ -758,6 +779,14 @@ export class EmbeddedPlayer {
             this.tryNextTech();
         });
     }
+    
+    makeDashPlayerVisibleWhenInitialized() {
+		 this.dashPlayer.on(dashjs.MediaPlayer.events.STREAM_INITIALIZED, (event) => {
+            console.log("Stream initialized");
+            //make the player visible in mobile devices
+            this.setPlayerVisible(true);
+        });
+	}
 
     /**
      * destroy the dash player

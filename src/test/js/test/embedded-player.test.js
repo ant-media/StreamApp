@@ -278,6 +278,12 @@ describe("EmbeddedPlayer", function() {
 		var windowComponent = {  location : locationComponent,
 		  						  document:  document,
 		  						  addEventListener: window.addEventListener};
+		  						  
+		const fixture = document.createElement('div');
+		fixture.innerHTML = EmbeddedPlayer.VIDEO_HTML;
+		
+		// Append the fixture element to the document body
+		document.body.appendChild(fixture);
 		  						  		 	      
 	    var player = new EmbeddedPlayer(windowComponent, videoContainer, placeHolder);
 	    var playIfExists = sinon.replace(player, "playIfExists", sinon.fake());
@@ -299,8 +305,17 @@ describe("EmbeddedPlayer", function() {
 		player.play();
 		
 		expect(playWithVideoJS.calledWithMatch("streams/stream123.mp4", "mp4")).to.be.true;
+		
 		sinon.restore();
 		
+		var makeVideoJSVisibleWhenReady = sinon.replace(player, "makeVideoJSVisibleWhenReady", sinon.fake());
+		
+		player.play();
+		
+		expect(makeVideoJSVisibleWhenReady.calledOnce).to.be.true;
+		
+		
+		sinon.restore();
 		
 		var locationComponent =  { href : 'http://example.com?id=streams/stream123/stream123.mpd', search: "?id=streams/stream123/stream123.mpd" };
 		var windowComponent = {  location : locationComponent,
@@ -308,15 +323,72 @@ describe("EmbeddedPlayer", function() {
 		  						  addEventListener: window.addEventListener};
 		  						  
 		player = new EmbeddedPlayer(windowComponent, videoContainer, placeHolder);	
-		
 		var playViaDash = sinon.replace(player, "playViaDash", sinon.fake());
+		player.play();
+		expect(playViaDash.calledWithMatch("streams/stream123/stream123.mpd", "mpd")).to.be.true;	
+	
+	});
+	
+	
+	it("makeVideoJSVisibleWhenInitialized", async function() 
+	{
+		var locationComponent =  { href : 'http://example.com?id=stream123', search: "?id=stream123" };
+		var windowComponent = {  location : locationComponent,
+		  						  document:  document,
+		  						  addEventListener: window.addEventListener};
+		  						  
+		console.log("makeVideoJSVisibleWhenInitialized--------------------");
+		  						  
+		var videoContainer = document.createElement("video_container");
+		  
+		var placeHolder = document.createElement("place_holder");		  						  
+		  						  
+		videoContainer.innerHTML = EmbeddedPlayer.VIDEO_HTML;
+		
+		// Append the fixture element to the document body
+		document.body.appendChild(videoContainer);		  						  
+	  
+		
+		var player = new EmbeddedPlayer(windowComponent, videoContainer, placeHolder);	
+		sinon.replace(player, "checkStreamExistsViaHttp", sinon.fake.returns(Promise.resolve("streams/stream123.m3u8")));
+
+		var makeVisibleWhenInitialzed =  sinon.replace(player, "makeVideoJSVisibleWhenReady", sinon.fake());
+		
+		await player.playIfExists("hls");
+		
+		expect(makeVisibleWhenInitialzed.calledOnce).to.be.true;
+		
+		
+		console.log("makeVideoJSVisibleWhenInitialized-----------end---------");
+	  	
+	});
+	
+	
+	it("makeDashPlayerVisibleWhenInitialized", async function() 
+	{
+		var locationComponent =  { href : 'http://example.com?id=streams/stream123/stream123.mpd', search: "?id=streams/stream123/stream123.mpd" };
+		var windowComponent = {  location : locationComponent,
+		  						  document:  document,
+		  						  addEventListener: window.addEventListener};
+		  						  
+		var videoContainer = document.createElement("video_container");
+		  
+		var placeHolder = document.createElement("place_holder");		  						  
+		  						  
+		videoContainer.innerHTML = EmbeddedPlayer.VIDEO_HTML;
+		
+		// Append the fixture element to the document body
+		document.body.appendChild(videoContainer);		  						  
+	  
+		
+		var player = new EmbeddedPlayer(windowComponent, videoContainer, placeHolder);	
+		var makeVisibleWhenInitialzed =  sinon.replace(player, "makeDashPlayerVisibleWhenInitialized", sinon.fake());
 		
 		player.play();
 		
-		expect(playViaDash.calledWithMatch("streams/stream123/stream123.mpd", "mpd")).to.be.true;	  						  
-	    
-
+		expect(makeVisibleWhenInitialzed.calledOnce).to.be.true;	  	
 	});
+	
 	
 	it("playIfExistsWebRTC", async function() {
 		var videoContainer = document.createElement("video_container");
@@ -445,7 +517,7 @@ describe("EmbeddedPlayer", function() {
 	    player2.playIfExists("vod");
 	    
 	    expect(checkStreamExistsViaHttp.calledWithMatch(EmbeddedPlayer.STREAMS_FOLDER, "stream123", "mp4")).to.be.true;
-		
+	    		
 	});
     
     

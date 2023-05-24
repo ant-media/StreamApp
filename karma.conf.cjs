@@ -1,9 +1,13 @@
 module.exports = function(config) {
   config.set({
-    frameworks: ['mocha', 'chai','sinon'],
+    frameworks: ['mocha', 'chai', 'sinon'],
     files: [
 			{ pattern: "src/test/**/*.js", type: "module" },
-			{ pattern: "src/main/webapp/**/*.js", type: "module", included: false },
+		
+			{ pattern: "src/main/webapp/js/external/video.js", included: true },
+			{ pattern: "src/main/webapp/js/external/dash.all.min.js", included: true },
+			{ pattern: "src/main/webapp/**/*.js", included: false },
+			
 	],
     
     
@@ -30,10 +34,12 @@ module.exports = function(config) {
     logLevel: config.LOG_INFO,
     
     browsers: ['ChromeHeadless'],
+    //browsers: ['Chrome'],
     
     autoWatch: true,
     
     singleRun: true, // Karma captures browsers, runs the tests and exits
+    //singleRun: false,
     
     concurrency: Infinity,
   })
