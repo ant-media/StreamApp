@@ -1,26 +1,28 @@
 
 import { getUrlParameter, isMobile } from "./fetch.stream.js";
 
+    
 export class EmbeddedPlayer {
 
-    static DEFAULT_PLAY_ORDER = ["webrtc", "hls"];
-
-    static DEFAULT_PLAY_TYPE = ["mp4", "webm"];
-
-    static HLS_EXTENSION = "m3u8";
-
-    static WEBRTC_EXTENSION = "webrtc";
-
-    static DASH_EXTENSION = "mpd";
-
-    /**
-    * streamsFolder: streams folder. Optional. Default value is "streams"
-    */
-    static STREAMS_FOLDER = "streams";
-
-    static VIDEO_HTML = "<video id='video-player' class='video-js vjs-default-skin vjs-big-play-centered' controls></video>";
-
-    static VIDEO_PLAYER_ID = "video-player";
+	static DEFAULT_PLAY_ORDER = ["webrtc", "hls"];;
+	
+	static DEFAULT_PLAY_TYPE  =  ["mp4", "webm"];
+	
+	static HLS_EXTENSION  = "m3u8";
+	
+	static WEBRTC_EXTENSION = "webrtc";
+	
+	static DASH_EXTENSION = "mpd";
+	
+	/**
+	* streamsFolder: streams folder. Optional. Default value is "streams"
+	*/
+	static STREAMS_FOLDER = "streams";
+	
+	static VIDEO_HTML = "<video id='video-player' class='video-js vjs-default-skin vjs-big-play-centered' controls></video>";
+	
+	static VIDEO_PLAYER_ID = "video-player";
+	
 
     /**
     *  "playOrder": the order which technologies is used in playing. Optional. Default value is "webrtc,hls".
@@ -146,6 +148,26 @@ export class EmbeddedPlayer {
     webRTCDataListener;
 
     constructor(window, containerElement, placeHolderElement) {
+		
+		EmbeddedPlayer.DEFAULT_PLAY_ORDER = ["webrtc", "hls"];;
+		
+		EmbeddedPlayer.DEFAULT_PLAY_TYPE =  ["mp4", "webm"];
+
+		EmbeddedPlayer.HLS_EXTENSION = "m3u8";
+		
+		EmbeddedPlayer.WEBRTC_EXTENSION = "webrtc";
+		
+		EmbeddedPlayer.DASH_EXTENSION = "mpd";
+		
+		/**
+		* streamsFolder: streams folder. Optional. Default value is "streams"
+		*/
+		EmbeddedPlayer.STREAMS_FOLDER = "streams";
+		
+		EmbeddedPlayer.VIDEO_HTML = "<video id='video-player' class='video-js vjs-default-skin vjs-big-play-centered' controls></video>";
+		
+		EmbeddedPlayer.VIDEO_PLAYER_ID = "video-player";
+		
         this.dom = window.document;
         this.window = window;
         var localStreamId = getUrlParameter("id", this.window.location.search);
@@ -184,6 +206,7 @@ export class EmbeddedPlayer {
             this.playType = localPlayType.split(',');
         }
         else {
+
             this.playType = EmbeddedPlayer.DEFAULT_PLAY_TYPE;
         }
 
@@ -478,6 +501,7 @@ export class EmbeddedPlayer {
 	
 	        
 	        this.videojsPlayer.ready(() => {
+                
 	            // If it's already added to player, no need to add again
 	            if (typeof this.videojsPlayer.hlsQualitySelector === "function") {
 	                this.videojsPlayer.hlsQualitySelector({
@@ -499,6 +523,14 @@ export class EmbeddedPlayer {
 	        });
         }
         
+        //videojs is being used to play mp4, webm, m3u8 and webrtc 
+        //make the videoJS visible when ready is called except for webrtc
+        //webrtc fires ready event all cases so we use "play" event to make the player visible
+        
+        //this setting is critical to play in mobile
+        if (extension == "mp4" || extension == "webm" || extension == "m3u8") {
+            this.makeVideoJSVisibleWhenReady();
+        }
         
         this.videojsPlayer.on('ended', () => {
             //reinit to play after it ends
@@ -544,13 +576,14 @@ export class EmbeddedPlayer {
 
         });
 
+        //webrtc plugin sends play event. On the other hand, webrtc plugin sends ready event for every scenario. 
+        //so no need to trust ready event for webrt play 
         this.videojsPlayer.on("play", () => {
             this.setPlayerVisible(true);
             if (this.playerListener != null) {
                 this.playerListener("play");
             }
         });
-
         this.iceConnected = false;
 
         this.videojsPlayer.src({
@@ -566,6 +599,13 @@ export class EmbeddedPlayer {
             this.videojsPlayer.play();
         }
     }
+    
+    
+    makeVideoJSVisibleWhenReady() {
+		this.videojsPlayer.ready(() => {
+			 this.setPlayerVisible(true);
+		});
+	}
 
     /**
      * check if stream exists via http
@@ -575,8 +615,19 @@ export class EmbeddedPlayer {
      * @returns 
      */
     checkStreamExistsViaHttp(streamsfolder, streamId, extension) {
-        //HEAD request are not secure
-        var streamPath = streamsfolder + "/" + streamId + "_adaptive" + "." + extension + "?" + this.getSecurityQueryParams();
+
+        var streamPath = "";
+        if (!streamId.startsWith(streamsfolder)) {
+            streamPath += streamsfolder + "/";
+        }
+        streamPath += streamId;
+
+        if (extension != null && extension != "") {
+            //if there is extension, add it and try if _adaptive exists
+            streamPath += "_adaptive" + "." + extension;
+        }
+
+        streamPath = this.addSecurityParams(streamPath);
 
         return fetch(streamPath, { method: 'HEAD' })
             .then((response) => {
@@ -587,7 +638,9 @@ export class EmbeddedPlayer {
                     });
                 } else {
                     //adaptive not exists, try mpd or m3u8 exists.
-                    streamPath = streamsfolder + "/" + streamId + "." + extension + "?" + this.getSecurityQueryParams();
+                    streamPath = streamsfolder + "/" + streamId + "." + extension;
+                    streamPath = this.addSecurityParams(streamPath);
+
                     return fetch(streamPath, { method: 'HEAD' })
                         .then((response) => {
                             if (response.status == 200) {
@@ -604,6 +657,14 @@ export class EmbeddedPlayer {
                         });
                 }
             });
+    }
+
+    addSecurityParams(streamPath) {
+        var securityParams = this.getSecurityQueryParams();
+        if (securityParams != null && securityParams != "") {
+            streamPath += "?" + securityParams;
+        }
+        return streamPath;
     }
 
     /**
@@ -682,6 +743,9 @@ export class EmbeddedPlayer {
             console.log("live latency: " + this.dashPlayer.getCurrentLiveLatency());
         }, 2000);
 
+       
+       	this.makeDashPlayerVisibleWhenInitialized();
+       
         this.dashPlayer.on(dashjs.MediaPlayer.events.PLAYBACK_PLAYING, (event) => {
             console.log("playback started");
             this.setPlayerVisible(true);
@@ -715,6 +779,14 @@ export class EmbeddedPlayer {
             this.tryNextTech();
         });
     }
+    
+    makeDashPlayerVisibleWhenInitialized() {
+		 this.dashPlayer.on(dashjs.MediaPlayer.events.STREAM_INITIALIZED, (event) => {
+            console.log("Stream initialized");
+            //make the player visible in mobile devices
+            this.setPlayerVisible(true);
+        });
+	}
 
     /**
      * destroy the dash player
@@ -741,7 +813,7 @@ export class EmbeddedPlayer {
      * play the stream with the given tech
      * @param {string} tech 
      */
-    playIfExists(tech) {
+    async playIfExists(tech) {
         this.currentPlayType = tech;
         this.destroyVideoJSPlayer();
         this.destroyDashPlayer();
@@ -783,16 +855,31 @@ export class EmbeddedPlayer {
                     websocketURL = "wss://" + path;
                 }
 
-                websocketURL += "?" + this.getSecurityQueryParams();
-                return this.playWithVideoJS(websocketURL, EmbeddedPlayer.WEBRTC_EXTENSION);
+                return this.playWithVideoJS(this.addSecurityParams(websocketURL), EmbeddedPlayer.WEBRTC_EXTENSION);
             case "vod":
                 //TODO: Test case for vod
                 //1. Play stream with mp4 for VoD
                 //2. Play stream with webm for VoD
                 //3. Play stream with playOrder type
+
+                var lastIndexOfDot = this.streamId.lastIndexOf(".");
+                var extension;
+                if (lastIndexOfDot != -1) 
+                {
+                    //if there is a dot in the streamId, it means that this is extension, use it. make the extension empty
+                    this.playType[0] = "";
+                    extension = this.streamId.substring(lastIndexOfDot + 1); 
+                }
+                else {
+					//we need to give extension to playWithVideoJS
+					extension = this.playType[0];
+				}
                 
-                return this.checkStreamExistsViaHttp(EmbeddedPlayer.STREAMS_FOLDER, this.streamId, this.playType[0]).then((streamPath) => {
-                    this.playWithVideoJS(streamPath, this.playType[0]);
+                return this.checkStreamExistsViaHttp(EmbeddedPlayer.STREAMS_FOLDER, this.streamId,  this.playType[0]).then((streamPath) => {
+                    
+                    //we need to give extension to playWithVideoJS   
+                    this.playWithVideoJS(streamPath, extension);
+                    
                 }).catch((error) => {
                     console.log("VOD stream resource not available for stream:" + this.streamId + " and play type " + this.playType[0] + ". Error is " + error);
                     if (this.playType.length > 1) {
@@ -805,8 +892,6 @@ export class EmbeddedPlayer {
                     }
 
                 });
-
-                break;
         }
     }
 
@@ -838,12 +923,15 @@ export class EmbeddedPlayer {
             var lastIndexOfDot = this.streamId.lastIndexOf(".");
             var extension = this.streamId.substring(lastIndexOfDot + 1);
             
+            this.playOrder= ["vod"];
+
+            
             if (extension == EmbeddedPlayer.DASH_EXTENSION) 
             {
-				this.playViaDash(this.streamId + "?" + this.getSecurityQueryParams(), extension);
+				this.playViaDash(this.addSecurityParams(this.streamId), extension);
 			}
 			else  {
-				this.playWithVideoJS(this.streamId + "?" + this.getSecurityQueryParams(), extension);
+				this.playWithVideoJS(this.addSecurityParams(this.streamId), extension);
 			}
         }
         else {

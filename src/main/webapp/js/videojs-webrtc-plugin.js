@@ -4408,7 +4408,7 @@
       }
 
       var mediaUrl = options.source;
-      var regex = /\.webrtc.+$/;
+      var regex = /\.webrtc.*$/;
       var isMatch = regex.test(mediaUrl);
 
       if (isMatch) {

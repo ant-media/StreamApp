@@ -150,11 +150,31 @@ describe("EmbeddedPlayer", function() {
 	    var streamId = "stream123";
 	    var extension = "m3u8";
 	    await  player.checkStreamExistsViaHttp(testFolder, streamId, extension).then((streamPath) => {
-			expect(streamPath).to.be.equal( testFolder + "/" + streamId + "_adaptive" + "." + extension + "?");
+			expect(streamPath).to.be.equal( testFolder + "/" + streamId + "_adaptive" + "." + extension);
 		}).catch((err) => {
 			expect.fail("it should not throw exception");
 		});
 		
+		testFolder = "testFolder";
+		streamId = "stream123";
+		await  player.checkStreamExistsViaHttp(testFolder, testFolder + "/" + streamId, extension).then((streamPath) => {
+			console.log("stream path: " + streamPath);
+			expect(streamPath).to.be.equal( testFolder + "/" + streamId + "_adaptive" + "." + extension);
+		}).catch((err) => {
+			expect.fail("it should not throw exception");
+		});
+		
+		
+		testFolder = "testFolder";
+		streamId = "stream123";
+		var token = "token2323kjfalskfhakf";
+		player.token = token;
+		await  player.checkStreamExistsViaHttp(testFolder, streamId, extension).then((streamPath) => {
+			console.log("stream path: " + streamPath);
+			expect(streamPath).to.be.equal( testFolder + "/" + streamId + "_adaptive" + "." + extension + "?&token=" + token);
+		}).catch((err) => {
+			expect.fail("it should not throw exception");
+		});
 		
 	});
 	
@@ -258,6 +278,12 @@ describe("EmbeddedPlayer", function() {
 		var windowComponent = {  location : locationComponent,
 		  						  document:  document,
 		  						  addEventListener: window.addEventListener};
+		  						  
+		const fixture = document.createElement('div');
+		fixture.innerHTML = EmbeddedPlayer.VIDEO_HTML;
+		
+		// Append the fixture element to the document body
+		document.body.appendChild(fixture);
 		  						  		 	      
 	    var player = new EmbeddedPlayer(windowComponent, videoContainer, placeHolder);
 	    var playIfExists = sinon.replace(player, "playIfExists", sinon.fake());
@@ -278,9 +304,18 @@ describe("EmbeddedPlayer", function() {
 		
 		player.play();
 		
-		expect(playWithVideoJS.calledWithMatch("streams/stream123.mp4?", "mp4")).to.be.true;
+		expect(playWithVideoJS.calledWithMatch("streams/stream123.mp4", "mp4")).to.be.true;
+		
 		sinon.restore();
 		
+		var makeVideoJSVisibleWhenReady = sinon.replace(player, "makeVideoJSVisibleWhenReady", sinon.fake());
+		
+		player.play();
+		
+		expect(makeVideoJSVisibleWhenReady.calledOnce).to.be.true;
+		
+		
+		sinon.restore();
 		
 		var locationComponent =  { href : 'http://example.com?id=streams/stream123/stream123.mpd', search: "?id=streams/stream123/stream123.mpd" };
 		var windowComponent = {  location : locationComponent,
@@ -288,16 +323,92 @@ describe("EmbeddedPlayer", function() {
 		  						  addEventListener: window.addEventListener};
 		  						  
 		player = new EmbeddedPlayer(windowComponent, videoContainer, placeHolder);	
-		
 		var playViaDash = sinon.replace(player, "playViaDash", sinon.fake());
+		player.play();
+		expect(playViaDash.calledWithMatch("streams/stream123/stream123.mpd", "mpd")).to.be.true;	
+	
+	});
+	
+	
+	it("makeVideoJSVisibleWhenInitialized", async function() 
+	{
+		var locationComponent =  { href : 'http://example.com?id=stream123', search: "?id=stream123" };
+		var windowComponent = {  location : locationComponent,
+		  						  document:  document,
+		  						  addEventListener: window.addEventListener};
+		  						  
+		console.log("makeVideoJSVisibleWhenInitialized--------------------");
+		  						  
+		var videoContainer = document.createElement("video_container");
+		  
+		var placeHolder = document.createElement("place_holder");		  						  
+		  						  
+		videoContainer.innerHTML = EmbeddedPlayer.VIDEO_HTML;
+		
+		// Append the fixture element to the document body
+		document.body.appendChild(videoContainer);		  						  
+	  
+		
+		var player = new EmbeddedPlayer(windowComponent, videoContainer, placeHolder);	
+		sinon.replace(player, "checkStreamExistsViaHttp", sinon.fake.returns(Promise.resolve("streams/stream123.m3u8")));
+
+		var makeVisibleWhenInitialzed =  sinon.replace(player, "makeVideoJSVisibleWhenReady", sinon.fake());
+		
+		await player.playIfExists("hls");
+		
+		expect(makeVisibleWhenInitialzed.calledOnce).to.be.true;
+		
+		
+		console.log("makeVideoJSVisibleWhenInitialized-----------end---------");
+	  	
+	});
+	
+	
+	it("makeDashPlayerVisibleWhenInitialized", async function() 
+	{
+		var locationComponent =  { href : 'http://example.com?id=streams/stream123/stream123.mpd', search: "?id=streams/stream123/stream123.mpd" };
+		var windowComponent = {  location : locationComponent,
+		  						  document:  document,
+		  						  addEventListener: window.addEventListener};
+		  						  
+		var videoContainer = document.createElement("video_container");
+		  
+		var placeHolder = document.createElement("place_holder");		  						  
+		  						  
+		videoContainer.innerHTML = EmbeddedPlayer.VIDEO_HTML;
+		
+		// Append the fixture element to the document body
+		document.body.appendChild(videoContainer);		  						  
+	  
+		
+		var player = new EmbeddedPlayer(windowComponent, videoContainer, placeHolder);	
+		var makeVisibleWhenInitialzed =  sinon.replace(player, "makeDashPlayerVisibleWhenInitialized", sinon.fake());
 		
 		player.play();
 		
-		expect(playViaDash.calledWithMatch("streams/stream123/stream123.mpd?", "mpd")).to.be.true;	  						  
-	    
-
+		expect(makeVisibleWhenInitialzed.calledOnce).to.be.true;	  	
 	});
 	
+	
+	it("playIfExistsWebRTC", async function() {
+		var videoContainer = document.createElement("video_container");
+		  
+		var placeHolder = document.createElement("place_holder");
+		  			
+		var locationComponent =  { href : 'http://example.com?id=stream123', search: "?id=stream123",  pathname: "/", hostname:"example.com", port:5080 };
+		var windowComponent = {  location : locationComponent,
+		  						  document:  document,
+		  						  };
+		  						  
+		  						  
+		var player = new EmbeddedPlayer(windowComponent, videoContainer, placeHolder);
+		var playWithVideoJS = sinon.replace(player, "playWithVideoJS", sinon.fake());
+		
+		await player.playIfExists("webrtc");	
+		expect(playWithVideoJS.callCount).to.be.equal(1);
+		expect(playWithVideoJS.calledWithExactly("ws://example.com:5080/stream123.webrtc", "webrtc")).to.be.true;
+		
+	});
 	
 	it("playIfExists", async function() {
 		var videoContainer = document.createElement("video_container");
@@ -327,7 +438,7 @@ describe("EmbeddedPlayer", function() {
 		
 		await player.playIfExists("webrtc");	
 		expect(playWithVideoJS.callCount).to.be.equal(2);
-		expect(playWithVideoJS.calledWithMatch("ws://example.com:5080/stream123.webrtc?", "webrtc")).to.be.true;
+		expect(playWithVideoJS.calledWithMatch("ws://example.com:5080/stream123.webrtc", "webrtc")).to.be.true;
 		
 		sinon.restore();
 		
@@ -367,7 +478,47 @@ describe("EmbeddedPlayer", function() {
 		
 	});
 	
-	
+	it("playVoD", async function() {
+		//Confirming the fix for this issue
+		//https://github.com/ant-media/Ant-Media-Server/issues/5137
+		
+		
+		
+		var videoContainer = document.createElement("video_container");
+		  
+		var placeHolder = document.createElement("place_holder");
+		  			
+		var locationComponent =  { href : 'http://example.com?id=stream123.mp4', search: "?id=stream123.mp4" };
+		var windowComponent = {  location : locationComponent,
+		  						  document:  document,
+		  						  addEventListener: window.addEventListener};
+		  						  		 	      
+	    var player = new EmbeddedPlayer(windowComponent, videoContainer, placeHolder);
+	    var checkStreamExistsViaHttp = sinon.replace(player, "checkStreamExistsViaHttp", sinon.fake.returns(Promise.resolve("streams/stream123.mp4")));
+	    var playWithVideoJS = sinon.replace(player, "playWithVideoJS", sinon.fake());
+	    
+	    await player.playIfExists("vod");
+	    
+	    expect(checkStreamExistsViaHttp.calledWithMatch(EmbeddedPlayer.STREAMS_FOLDER, "stream123.mp4", "")).to.be.true;
+	    expect(playWithVideoJS.calledWithMatch("streams/stream123.mp4", "mp4")).to.be.true;
+	    
+	    
+	    sinon.restore();
+	    
+	    locationComponent =  { href : 'http://example.com?id=stream123', search: "?id=stream123" };
+	    windowComponent = {  location : locationComponent,
+		  						  document:  document,
+		  						  addEventListener: window.addEventListener};
+		  						  
+	    var player2 = new EmbeddedPlayer(windowComponent, videoContainer, placeHolder);
+	    checkStreamExistsViaHttp = sinon.replace(player2, "checkStreamExistsViaHttp", sinon.fake.returns(Promise.resolve("")));
+	    expect(player2.playType[0]).to.be.equal("mp4");
+	    
+	    player2.playIfExists("vod");
+	    
+	    expect(checkStreamExistsViaHttp.calledWithMatch(EmbeddedPlayer.STREAMS_FOLDER, "stream123", "mp4")).to.be.true;
+	    		
+	});
     
     
 });
