@@ -149,4 +149,94 @@ describe("WebRTCAdaptor", function() {
 		
 		
 	});
+
+	it("Frequent try again call", async function() 
+	{
+		var adaptor = new WebRTCAdaptor({
+			websocketURL: "ws://example.com",
+			isPlayMode: true
+		});
+		var webSocketAdaptor = sinon.mock(adaptor.webSocketAdaptor);
+		var closeExpectation = webSocketAdaptor.expects("close");
+		
+		var closePeerConnection = sinon.replace(adaptor, "closePeerConnection", sinon.fake());
+
+		const now = Date.now();
+		adaptor.tryAgain();
+
+		expect(adaptor.lastReconnectiontionTrialTime-now).to.be.at.most(100);
+
+		const lrt = adaptor.lastReconnectiontionTrialTime;
+
+		for (let i = 0; i < 100; i++) {
+			adaptor.tryAgain();
+			expect(adaptor.lastReconnectiontionTrialTime).to.be.equal(lrt);
+
+		}
+
+		clock.tick(3000);
+		adaptor.tryAgain();
+		expect(adaptor.lastReconnectiontionTrialTime).not.to.be.equal(lrt);		
+	});
+
+	it("Reconnection for play", async function() 
+	{
+		var adaptor = new WebRTCAdaptor({
+			websocketURL: "ws://example.com",
+			isPlayMode: true
+		});
+		var fakeSend = sinon.replace(adaptor.webSocketAdaptor, "send", sinon.fake());
+
+		const streamId = "test"+Math.floor(Math.random() * 100);
+		adaptor.playStreamId.push(streamId);
+		var mockPC = sinon.mock(RTCPeerConnection);
+		adaptor.remotePeerConnection[streamId] = mockPC
+		mockPC.iceConnectionState = "disconnected";
+		mockPC.close = sinon.fake();
+
+		
+		clock.tick(3000);
+		console.log("---------");
+		adaptor.tryAgain();
+
+		assert(fakeSend.calledOnce);
+		clock.tick(6000);
+		assert(fakeSend.calledTwice);
+		
+		 	
+	});
+
+	it("Reconnection for publish", async function() 
+	{
+		var adaptor = new WebRTCAdaptor({
+			websocketURL: "ws://example.com",
+			isPlayMode: true
+		});
+		var fakeSendPublish = sinon.replace(adaptor, "sendPublishCommand", sinon.fake());
+
+		const streamId = "test"+Math.floor(Math.random() * 100);
+		adaptor.publishStreamId = streamId;
+		var mockPC = sinon.mock(RTCPeerConnection);
+		adaptor.remotePeerConnection[streamId] = mockPC
+		mockPC.iceConnectionState = "disconnected";
+		mockPC.close = sinon.fake();
+	
+
+		adaptor.mediaManager.localStream = sinon.mock();
+		var callback = sinon.stub();
+    	callback.returns([sinon.mock()]);
+		adaptor.mediaManager.localStream.getVideoTracks = callback;
+		adaptor.mediaManager.localStream.getAudioTracks = callback;
+		adaptor.mediaManager.localStream.getTracks = sinon.stub().returns([]);
+
+		clock.tick(3000);
+		console.log("---------");
+		adaptor.tryAgain();
+
+		assert(fakeSendPublish.calledOnce);
+		clock.tick(6000);
+		assert(fakeSendPublish.calledTwice);
+		
+		 	
+	});
 });
