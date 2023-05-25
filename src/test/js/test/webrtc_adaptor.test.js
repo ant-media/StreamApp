@@ -239,4 +239,26 @@ describe("WebRTCAdaptor", function() {
 		
 		 	
 	});
+
+	it("Websocket send try catch", async function() 
+	{
+		var adaptor = new WebRTCAdaptor({
+			websocketURL: "ws://example.com",
+			isPlayMode: true
+		});
+		
+		adaptor.webSocketAdaptor.send("test");
+		adaptor.webSocketAdaptor.close();
+		adaptor.webSocketAdaptor.send("test");
+		adaptor.webSocketAdaptor.connected = true;
+		var spySend = sinon.spy(adaptor.webSocketAdaptor.send);
+		try {
+			spySend();
+		} catch (e) {
+			// pass
+		}
+		adaptor.webSocketAdaptor.send("test");
+		assert(spySend.threw());
+	 	
+	});
 });
