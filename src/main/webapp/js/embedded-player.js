@@ -146,6 +146,11 @@ export class EmbeddedPlayer {
      * webRTCDataListener
      */
     webRTCDataListener;
+    
+    /**
+     * Field to keep if tryNextMethod is already called
+     */
+    tryNextTechTimer;
 
     constructor(window, containerElement, placeHolderElement) {
 		
@@ -175,6 +180,7 @@ export class EmbeddedPlayer {
         this.placeHolderElement = placeHolderElement;
         this.errorCalled = false;
         this.iceConnected = false;
+        this.tryNextTechTimer = -1;
 
         this.iceServers = '[ { "urls": "stun:stun1.l.google.com:19302" } ]';
 
@@ -441,19 +447,35 @@ export class EmbeddedPlayer {
 			
 	        this.videojsPlayer.on('webrtc-info', (event, infos) => {
 	            //console.log("info callback: " + JSON.stringify(infos));
+	            
+	            	
+				//ice_connection_state_changed
+				//  var obj = {state: this.remotePeerConnection[streamId].iceConnectionState, streamId: streamId};
+	
 	            if (infos["info"] == "ice_connection_state_changed") {
 	                console.debug("ice connection state changed to " + infos["obj"].state);
 	                if (infos["obj"].state == "completed" || infos["obj"].state == "connected") {
 	                    this.iceConnected = true;
 	                }
+	                else if (infos["obj"].state == "failed" || infos["obj"].state == "disconnected" || infos["obj"].state == "closed") {
+						//
+						console.debug("Ice connection is not connected. tryNextTech to replay");
+						this.tryNextTech();
+					}
+	                
 	            }
+	            else if (infos["info"] == "closed") {
+					//this means websocket is closed and it stops the playback - tryNextTech
+					console.debug("Websocket is closed. tryNextTech to replay");
+					this.tryNextTech();
+				}
 	        });
 	        
 	        
 	        this.videojsPlayer.on('webrtc-error', (event, errors) => {
 	            //some of the possible errors, NotFoundError, SecurityError,PermissionDeniedError
 	            console.log("error callback: " + JSON.stringify(errors));
-	
+
 	            if (errors["error"] == "no_stream_exist" || errors["error"] == "WebSocketNotConnected"
 	                || errors["error"] == "not_initialized_yet" || errors["error"] == "data_store_not_available"
 	                || errors["error"] == "highResourceUsage" || errors["error"] == "unauthorized_access") {
@@ -671,20 +693,28 @@ export class EmbeddedPlayer {
      * try next tech if current tech is not working
      */
     tryNextTech() {
-        this.destroyDashPlayer();
-        this.destroyVideoJSPlayer();
-        this.setPlayerVisible(false);
-        var index = this.playOrder.indexOf(this.currentPlayType);
-        if (index == -1 || index == (this.playOrder.length - 1)) {
-            index = 0;
+		if (this.tryNextTechTimer == -1) 
+		{
+	        this.destroyDashPlayer();
+	        this.destroyVideoJSPlayer();
+	        this.setPlayerVisible(false);
+	        var index = this.playOrder.indexOf(this.currentPlayType);
+	        if (index == -1 || index == (this.playOrder.length - 1)) {
+	            index = 0;
+	        }
+	        else {
+	            index++;
+	        }
+	
+	        this.tryNextTechTimer = setTimeout(() => {
+				 this.tryNextTechTimer = -1;
+	            this.playIfExists(this.playOrder[index]);
+	        }, 3000);
         }
-        else {
-            index++;
-        }
-
-        setTimeout(() => {
-            this.playIfExists(this.playOrder[index]);
-        }, 3000);
+        else 
+        {
+			console.debug("tryNextTech is already scheduled no need to schedule again");
+		}
     }
 
     /**
