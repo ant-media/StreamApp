@@ -144,7 +144,6 @@ export class WebSocketAdaptor {
     }
 
     send(text) {
-
         if (this.connecting == false && this.connected == false) {
             //try to reconnect
             this.initWebSocketConnection(() => {
@@ -152,9 +151,14 @@ export class WebSocketAdaptor {
             });
             return;
         }
-        this.wsConn.send(text);
-        if (this.debug) {
-            console.debug("sent message:" + text);
+        try {  
+            this.wsConn.send(text);
+            if (this.debug) {
+                console.debug("sent message:" + text);
+            }
+        } 
+        catch (error) {
+            console.warn("Cannot send message:" + text);
         }
     }
 
