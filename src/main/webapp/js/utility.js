@@ -114,9 +114,18 @@ export function errorHandler(error, message) {
         } else {
             errorMessage = error
         }
-        alert(errorMessage);
-        
     }
+     if (document.getElementById("alertMessage") != null) {
+        	document.getElementById("alertMessage").innerHTML = "Warning: " + errorMessage;
+			document.getElementById("alertMessage").style.display = "block";
+
+			setTimeout(()=> {
+				document.getElementById("alertMessage").style.display = "none";
+			}, 3000);
+		}
+		else {
+        	alert(errorMessage);
+        }
     console.error(errorMessage);
     if (message !== undefined) {
         console.error(message);
