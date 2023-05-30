@@ -521,6 +521,8 @@
 					start_publish_button.disabled = false;
 					stop_publish_button.disabled = true;
 					$("#stats_panel").hide();
+					webRTCAdaptor.disableAudioLevelForLocalStream();
+
 				}
 				else if (info == "browser_screen_share_supported") {
 					$(".video-source").prop("disabled", false);

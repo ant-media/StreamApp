@@ -657,7 +657,7 @@ export class MediaManager {
         navigator.mediaDevices.getUserMedia({video: false, audio: true})
             .then((stream) => {
                 this.mutedAudioStream = stream;
-                const soundMeter = new SoundMeter(this.audioContext);
+                this.mutedSoundMeter = new SoundMeter(this.audioContext);
                 soundMeter.connectToSource(this.mutedAudioStream, (value) => {
                     if (value > 0.1) {
                         this.callback("speaking_but_muted");
@@ -682,7 +682,13 @@ export class MediaManager {
 
     disableAudioLevelWhenMuted() {
         if (this.meterRefresh != null) {
-            clearInterval(this.meterRefresh)
+            clearInterval(this.meterRefresh);
+            this.meterRefresh = null;
+        }
+
+        if (this.mutedSoundMeter != null) {
+            this.mutedSoundMeter.stop();
+            this.mutedSoundMeter = null;
         }
 
         if (this.mutedAudioStream != null) {
@@ -707,7 +713,6 @@ export class MediaManager {
             composedStream.addTrack(videoTrack);
         });
 
-        this.audioContext = new AudioContext();
         var audioDestionation = this.audioContext.createMediaStreamDestination();
 
         if (stream.getAudioTracks().length > 0) {
@@ -1298,11 +1303,24 @@ export class MediaManager {
      */
     enableAudioLevelForLocalStream(levelCallback, period) {
         this.levelCallback = levelCallback;
+        this.disableAudioLevelForLocalStream()
         this.localStreamSoundMeter = new SoundMeter(this.audioContext);
-        this.localStreamSoundMeter.connectToSource(this.localStream, levelCallback).then(() =>{
-            this.audioContext.resume().then(r => {});
-        });
+        if (this.audioContext.state !== 'running') {
+            return this.audioContext.resume().then(() => {
+                return this.localStreamSoundMeter.connectToSource(this.localStream, levelCallback);
+            })
+        }
+        else {
+            return this.localStreamSoundMeter.connectToSource(this.localStream, levelCallback);
+        }
     }
+
+    disableAudioLevelForLocalStream() {
+        if (this.localStreamSoundMeter != null) {
+            this.localStreamSoundMeter.stop();
+            this.localStreamSoundMeter = null;
+        }
+    }      
 
     /**
      * Connects the local stream to Sound Meter

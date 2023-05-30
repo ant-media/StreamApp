@@ -120,11 +120,6 @@ export class WebRTCAdaptor {
         this.playStreamId = new Array();
 
         /**
-         * Audio context to use
-         */
-        this.audioContext = new AudioContext();
-
-        /**
          * This is the flag indicates if multiple peers will join a peer in the peer to peer mode.
          * This is used only with Embedded SDk
          */
@@ -1638,7 +1633,7 @@ export class WebRTCAdaptor {
      * @param {*} streamId
      */
     enableAudioLevel(stream, streamId) {
-        const soundMeter = new SoundMeter(this.audioContext);
+        const soundMeter = new SoundMeter(this.mediaManager.audioContext);
 
         // Put variables in global scope to make them available to the
         // browser console.
@@ -1846,6 +1841,10 @@ export class WebRTCAdaptor {
 
     enableAudioLevelForLocalStream(levelCallback, period) {
         this.mediaManager.enableAudioLevelForLocalStream(levelCallback, period);
+    }
+
+    disableAudioLevelForLocalStream() {
+        this.mediaManager.disableAudioLevelForLocalStream();
     }
 
     applyConstraints(constraints) {
