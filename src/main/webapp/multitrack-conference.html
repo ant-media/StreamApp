@@ -6,6 +6,7 @@
 	<link rel="stylesheet" href="css/external//bootstrap4/bootstrap.min.css">
 	<script src="js/external/adapter-latest.js"></script>
 	<script src="js/external/jquery-3.4.1.min.js"></script>
+	<script src="js/external/notify.min.js" crossorigin="anonymous"></script>
 	<link rel="stylesheet" href="css/common.css" />
 	<style>
 video {
@@ -112,7 +113,6 @@ body {
 				WebRTC Conference is an enterprise edition feature. <br/>
 				<a href="https://antmedia.io">Try Enterprise Edition for free at antmedia.io</a>
 		</div>
-		<div class="alert alert-warning" role="alert" id="alertMessage" style="display:none"></div>
 		<div id="players" class="row">
 			<div class="col-sm-3">
 				<video id="localVideo" autoplay muted controls playsinline></video>
@@ -668,7 +668,12 @@ body {
 							}, 3000);
 					}  
 					else {
-						errorHandler(error, message);
+						//errorHandler(error, message);
+						$('video').notify("Warning: " + errorHandler(error, message), {
+							autoHideDelay:5000,
+							className:'warn',
+							position:'top right'
+						});
 					}
 					
 				}
