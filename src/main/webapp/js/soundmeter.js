@@ -13,8 +13,8 @@ export class SoundMeter {
 	  return this.context.audioWorklet.addModule(new URL('./volume-meter-processor.js', import.meta.url)).then(()=> {
 			this.mic = this.context.createMediaStreamSource(stream);
 	        this.volumeMeterNode = new AudioWorkletNode(this.context, 'volume-meter');
+	        
 	        this.volumeMeterNode.port.onmessage = (event) => {
-				console.log(event);
 				if (event.data.type == 'debug') {
 					console.debug(event.data.message);
 				}
@@ -30,7 +30,8 @@ export class SoundMeter {
             if (errorCallback !== undefined) {
                 errorCallback(err);
             }
-            console.error(err);
+            console.error("Error in soundmeter: " + err);
+            throw err;
         });
 	}
 

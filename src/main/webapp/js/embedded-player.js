@@ -368,6 +368,27 @@ export class EmbeddedPlayer {
             }
         }
     }
+    
+    
+    handleWebRTCInfoMessages(infos) {
+	    if (infos["info"] == "ice_connection_state_changed") {
+            console.debug("ice connection state changed to " + infos["obj"].state);
+            if (infos["obj"].state == "completed" || infos["obj"].state == "connected") {
+                this.iceConnected = true;
+            }
+            else if (infos["obj"].state == "failed" || infos["obj"].state == "disconnected" || infos["obj"].state == "closed") {
+				//
+				console.debug("Ice connection is not connected. tryNextTech to replay");
+				this.tryNextTech();
+			}
+            
+        }
+        else if (infos["info"] == "closed") {
+			//this means websocket is closed and it stops the playback - tryNextTech
+			console.debug("Websocket is closed. tryNextTech to replay");
+			this.tryNextTech();
+		}
+	}
 
     /**
      * Play the stream via videojs
@@ -446,29 +467,9 @@ export class EmbeddedPlayer {
 		if (extension == "webrtc") {
 			
 	        this.videojsPlayer.on('webrtc-info', (event, infos) => {
-	            //console.log("info callback: " + JSON.stringify(infos));
-	            
-	            	
-				//ice_connection_state_changed
-				//  var obj = {state: this.remotePeerConnection[streamId].iceConnectionState, streamId: streamId};
-	
-	            if (infos["info"] == "ice_connection_state_changed") {
-	                console.debug("ice connection state changed to " + infos["obj"].state);
-	                if (infos["obj"].state == "completed" || infos["obj"].state == "connected") {
-	                    this.iceConnected = true;
-	                }
-	                else if (infos["obj"].state == "failed" || infos["obj"].state == "disconnected" || infos["obj"].state == "closed") {
-						//
-						console.debug("Ice connection is not connected. tryNextTech to replay");
-						this.tryNextTech();
-					}
-	                
-	            }
-	            else if (infos["info"] == "closed") {
-					//this means websocket is closed and it stops the playback - tryNextTech
-					console.debug("Websocket is closed. tryNextTech to replay");
-					this.tryNextTech();
-				}
+			
+	            //console.log("info callback: " + JSON.stringify(infos));	
+				this.handleWebRTCInfoMessages(infos);
 	        });
 	        
 	        
