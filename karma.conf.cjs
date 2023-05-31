@@ -33,9 +33,26 @@ module.exports = function(config) {
     
     logLevel: config.LOG_INFO,
     
-    browsers: ['ChromeHeadless'],
+    browsers: ['CustomChrome'],
     //browsers: ['Chrome'],
     
+
+	customLaunchers: {
+	  CustomChrome: {
+	    base: 'Chrome',
+	    flags: ['--headless',
+	    		'--disable-gpu', 
+	     		"--disable-gpu", 
+				"--headless=new",
+				"--no-sandbox",
+				"--disable-dev-shm-usage",
+				"--log-level=1",
+				"--remote-allow-origins=*",
+				"--use-fake-ui-for-media-stream",
+				"--use-fake-device-for-media-stream"]
+	  }
+	},
+	    
     autoWatch: true,
     
     singleRun: true, // Karma captures browsers, runs the tests and exits

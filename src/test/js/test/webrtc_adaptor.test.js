@@ -7,6 +7,8 @@ describe("WebRTCAdaptor", function() {
 	var clock;
 	
 	var sandbox;
+	
+	var initialized = false;
 
 	beforeEach(function () {
 	  clock = sinon.useFakeTimers();
@@ -27,14 +29,14 @@ describe("WebRTCAdaptor", function() {
 		try {
 			var adaptor = new WebRTCAdaptor({	
 			});
-			expect.fail("WIt should throw exception because websocket url is mandatory");
+			expect.fail("It should throw exception because websocket url is mandatory");
 		}
 		catch (err) {
 
 		}
 		
 		try {
-			var websocketURL = "this_ weboscket url";
+			var websocketURL = "ws://localhost";
 			var adaptor = new WebRTCAdaptor({
 				websocketURL: websocketURL	
 			});
@@ -260,5 +262,43 @@ describe("WebRTCAdaptor", function() {
 		adaptor.webSocketAdaptor.send("test");
 		assert(spySend.threw());
 	 	
+	});
+	
+	
+	//there was a bug and this method is not initialized
+	it("enableAudioLevelForLocalStream", async function() {
+		var adaptor = new WebRTCAdaptor({
+			websocketURL: "ws://localhost",
+			initializeComponents: false
+		});
+		
+		initialized = false;
+		await adaptor.initialize().then(()=> {
+			initialized = true;
+		})
+		
+		expect(initialized).to.be.true;
+		
+		expect(adaptor.mediaManager.localStream).to.be.not.null;
+		
+		initialized = false;
+		await adaptor.enableAudioLevelForLocalStream((event) => {
+			console.log("audio level: " + event.data);
+		}).then(()=> {
+			initialized = true;
+		}).catch((err) => {
+			console.error("audiolevel error " + err);
+		});
+		
+		expect(initialized).to.be.true;
+		
+		adaptor.disableAudioLevelForLocalStream();
+		
+		expect(adaptor.mediaManager.localStreamSoundMeter).to.be.null;
+		
+		
+		
+		
+		
 	});
 });

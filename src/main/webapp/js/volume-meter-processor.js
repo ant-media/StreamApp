@@ -20,6 +20,14 @@ class VolumeMeter extends AudioWorkletProcessor {
     super();
     this._lastUpdate = currentTime;
     this._volume = 0;
+    this.stop = false;
+    this.port.onmessage = (event) => {
+      if (event.data === 'stop') {
+        this.port.postMessage({ type: 'debug', message: "Stop command is received" });
+        this.stop = true;
+      }
+    }   
+
   }
 
   calculateRMS(inputChannelData) {
@@ -44,7 +52,11 @@ class VolumeMeter extends AudioWorkletProcessor {
       this._lastUpdate = currentTime;
     }
 
-    return true;
+    return !this.stop;
+  }
+
+  debug(message) {
+    this.port.postMessage({ type: 'debug', message: message });
   }
 }
 

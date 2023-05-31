@@ -5,34 +5,48 @@ export class SoundMeter {
 	constructor(context) {
 		this.context = context;
     	this.instant = 0.0;
+		this.mic = null;
+		this.volumeMeterNode = null;
 	}
 
-	async connectToSource(stream, levelCallback, errorCallback) {
-		await this.context.audioWorklet.addModule('./volume-meter-processor.js')
+	connectToSource(stream, levelCallback, errorCallback) {
+	  return this.context.audioWorklet.addModule(new URL('./volume-meter-processor.js', import.meta.url)).then(()=> {
+			this.mic = this.context.createMediaStreamSource(stream);
+	        this.volumeMeterNode = new AudioWorkletNode(this.context, 'volume-meter');
+	        
+	        this.volumeMeterNode.port.onmessage = (event) => {
+				if (event.data.type == 'debug') {
+					console.debug(event.data.message);
+				}
+				else {
+	            	this.instant = event.data;
+	            	levelCallback(this.instant.toFixed(2));
+					console.debug("Audio level: " + this.instant.toFixed(2));
+				}
+	        };
+	        this.mic.connect(this.volumeMeterNode);
+		})
         .catch((err) => {
             if (errorCallback !== undefined) {
                 errorCallback(err);
             }
-            console.error(err);
+            console.error("Error in soundmeter: " + err);
+            throw err;
         });
-	    try {
-	        this.mic = this.context.createMediaStreamSource(stream);
-	        this.volumeMeterNode = new AudioWorkletNode(this.context, 'volume-meter');
-	        this.volumeMeterNode.port.onmessage = ({data}) => {
-	            this.instant = data;
-	            levelCallback(data.toFixed(2));
-	        };
-	        this.mic.connect(this.volumeMeterNode).connect(this.context.destination);
-	    } catch (e) {
-	        if (errorCallback !== undefined) {
-	            errorCallback(null);
-	        }
-	        console.error(e);
-	    }
 	}
 
 	stop() {
-		this.mic.disconnect();
+
+		if (this.volumeMeterNode != null) {
+			this.volumeMeterNode.port.postMessage('stop');
+			this.volumeMeterNode.disconnect();
+			this.volumeMeterNode.port.close();
+			this.volumeMeterNode = null;
+		}
+		if (this.mic != null) {
+			this.mic.disconnect();
+			this.mic = null;
+		}
 	}
 
 }

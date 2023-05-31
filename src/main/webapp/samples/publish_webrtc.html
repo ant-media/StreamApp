@@ -148,12 +148,13 @@
 	<script src="../js/external/jquery-3.4.1.min.js" crossorigin="anonymous"></script>
 	<script src="../js/external/popper.min.js" crossorigin="anonymous"></script>
 	<script src="../js/external/bootstrap.min.js" crossorigin="anonymous"></script>
+	<script src="../js/external/notify.min.js" crossorigin="anonymous"></script>
 </body>
 <script type="module" lang="javascript">
 	import { WebRTCAdaptor } from "../js/webrtc_adaptor.js"
 	import { getUrlParameter } from "../js/fetch.stream.js"
 	import { SoundMeter } from "../js/soundmeter.js"
-	import { generateRandomString, getWebSocketURL  } from "../js/utility.js"
+	import { generateRandomString, getWebSocketURL, errorHandler } from "../js/utility.js"
 	var debug = getUrlParameter("debug");
 	if (debug == null) {
 		debug = false;
@@ -520,6 +521,8 @@
 					start_publish_button.disabled = false;
 					stop_publish_button.disabled = true;
 					$("#stats_panel").hide();
+					webRTCAdaptor.disableAudioLevelForLocalStream();
+
 				}
 				else if (info == "browser_screen_share_supported") {
 					$(".video-source").prop("disabled", false);
@@ -720,60 +723,11 @@
 				//some of the possible errors, NotFoundError, SecurityError,PermissionDeniedError
 
 				console.log("error callback: " + JSON.stringify(error));
-				var errorMessage = JSON.stringify(error);
-				if (typeof message != "undefined") {
-					errorMessage = message;
-				}
-				var errorMessage = JSON.stringify(error);
-
-				if (error.indexOf("WebSocketNotConnected") != -1) {
-					errorMessage = "WebSocket Connection is disconnected.";
-				}
-				else if (error.indexOf("not_initialized_yet") != -1) {
-					errorMessage = "Server is getting initialized.";
-				}
-				else if (error.indexOf("data_store_not_available") != -1) {
-					errorMessage = "Data store is not available. It's likely that server is initialized or getting closed";
-				}
-				else {
-					if (error.indexOf("NotFoundError") != -1) {
-						errorMessage = "Camera or Mic are not found or not allowed in your device";
-					}
-					else if (error.indexOf("NotReadableError") != -1 || error.indexOf("TrackStartError") != -1) {
-						errorMessage = "Camera or Mic are already in use and they cannot be opened. Choose another video/audio source if you have on the page below ";
-
-						$(".options").show();
-
-					}
-					else if (error.indexOf("OverconstrainedError") != -1 || error.indexOf("ConstraintNotSatisfiedError") != -1) {
-						errorMessage = "There is no device found that fits your video and audio constraints. You may change video and audio constraints"
-					}
-					else if (error.indexOf("NotAllowedError") != -1 || error.indexOf("PermissionDeniedError") != -1) {
-						errorMessage = "You are not allowed to access camera and mic.";
-					}
-					else if (error.indexOf("TypeError") != -1) {
-						errorMessage = "Video/Audio is required";
-					}
-					else if (error.indexOf("getUserMediaIsNotAllowed") != -1) {
-						errorMessage = "You are not allowed to reach devices from an insecure origin, please enable ssl";
-					}
-					else if (error.indexOf("ScreenSharePermissionDenied") != -1) {
-						errorMessage = "You are not allowed to access screen share";
-						$(".video-source").first().prop("checked", true);
-					}
-					else if (error.indexOf("UnsecureContext") != -1) {
-						errorMessage = "Please Install SSL(https). Camera and mic cannot be opened because of unsecure context. ";
-					}
-					else {
-						errorMessage = error
-					}
-					alert(errorMessage);
-
-				}
-				console.error(errorMessage);
-				if (message !== undefined) {
-					console.error(message);
-				}
+				$('video').notify("Warning: " + errorHandler(error, message), {
+					autoHideDelay:5000,
+					className:'warn',
+					position:'top center'
+				});
 			}
 		});
 	}

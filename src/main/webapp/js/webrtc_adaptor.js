@@ -120,11 +120,6 @@ export class WebRTCAdaptor {
         this.playStreamId = new Array();
 
         /**
-         * Audio context to use
-         */
-        this.audioContext = new AudioContext();
-
-        /**
          * This is the flag indicates if multiple peers will join a peer in the peer to peer mode.
          * This is used only with Embedded SDk
          */
@@ -220,6 +215,11 @@ export class WebRTCAdaptor {
 		 * Websocket URL 
 		 */
 		this.websocketURL = null;
+		
+		/**
+		 * flag to initialize components in constructor
+		 */
+		this.initializeComponents = true;
 		
         /**
          * PAY ATTENTION: The values of the above fields are provided as this constructor parameter.
@@ -350,7 +350,9 @@ export class WebRTCAdaptor {
         });
 
         //Initialize the local stream (if needed) and web socket connection
-        this.initialize();
+        if (this.initializeComponents) {
+        	this.initialize();
+        }
     }
 
     /**
@@ -416,18 +418,24 @@ export class WebRTCAdaptor {
         if (!this.isPlayMode && !this.onlyDataChannel && this.mediaManager.localStream == null) 
         {
             //we need local stream because it not a play mode
-            this.mediaManager.initLocalStream().then(() => {
+            return this.mediaManager.initLocalStream().then(() => {
                 this.initPlugins();
                 this.checkWebSocketConnection();
+                return new Promise((resolve, reject) => {
+		            resolve("Wait 'initialized' callback from websocket");
+		        });
             }).catch(error => {
                 console.warn(error);
                 throw error;
             });
-            //return here because initialized message should be delivered after local stream is initialized
-            return;
         }
-        this.initPlugins();
-        this.checkWebSocketConnection();
+       
+        return new Promise((resolve, reject) => {
+			this.initPlugins();
+        	this.checkWebSocketConnection();
+            resolve("Wait 'initialized' callback from websocket");
+        });
+       
     }
 
     /**
@@ -1524,6 +1532,7 @@ export class WebRTCAdaptor {
     checkWebSocketConnection() {
         if (this.webSocketAdaptor == null || (this.webSocketAdaptor.isConnected() == false && this.webSocketAdaptor.isConnecting() == false)) 
         {
+	console.log("weboscket url : " + this.websocketURL);
             this.webSocketAdaptor = new WebSocketAdaptor({
                 websocket_url: this.websocketURL,
                 webrtcadaptor: this,
@@ -1638,7 +1647,7 @@ export class WebRTCAdaptor {
      * @param {*} streamId
      */
     enableAudioLevel(stream, streamId) {
-        const soundMeter = new SoundMeter(this.audioContext);
+        const soundMeter = new SoundMeter(this.mediaManager.audioContext);
 
         // Put variables in global scope to make them available to the
         // browser console.
@@ -1845,7 +1854,11 @@ export class WebRTCAdaptor {
     }
 
     enableAudioLevelForLocalStream(levelCallback, period) {
-        this.mediaManager.enableAudioLevelForLocalStream(levelCallback, period);
+       return this.mediaManager.enableAudioLevelForLocalStream(levelCallback, period);
+    }
+
+    disableAudioLevelForLocalStream() {
+        this.mediaManager.disableAudioLevelForLocalStream();
     }
 
     applyConstraints(constraints) {
