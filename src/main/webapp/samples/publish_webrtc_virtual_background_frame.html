@@ -82,6 +82,7 @@
     <script src="../js/external/jquery-3.4.1.min.js" crossorigin="anonymous"></script>
     <script src="../js/external/popper.min.js" crossorigin="anonymous"></script>
     <script src="../js/external/bootstrap.min.js" crossorigin="anonymous"></script>
+    <script src="../js/external/notify.min.js" crossorigin="anonymous"></script>
 </body>
 <script type="module" lang="text/javascript">
     import { WebRTCAdaptor } from "../js/webrtc_adaptor.js"
@@ -273,7 +274,11 @@
             callbackError: function (error, message) {
                 //some possible errors, NotFoundError, SecurityError,PermissionDeniedError
 
-                errorHandler(error, message);
+				$('video').notify("Warning: " + errorHandler(error, message), {
+							autoHideDelay:5000,
+							className:'warn',
+							position:'top right'
+						});
             }
         });
 

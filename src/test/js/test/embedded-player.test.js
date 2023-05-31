@@ -519,6 +519,80 @@ describe("EmbeddedPlayer", function() {
 	    expect(checkStreamExistsViaHttp.calledWithMatch(EmbeddedPlayer.STREAMS_FOLDER, "stream123", "mp4")).to.be.true;
 	    		
 	});
+	
+	it("handleWebRTCInfoMessages", async function() {
+		var videoContainer = document.createElement("video_container");
+		  
+		var placeHolder = document.createElement("place_holder");
+		  			
+		var locationComponent =  { href : 'http://example.com?id=stream123.mp4', search: "?id=stream123.mp4" };
+		var windowComponent = {  location : locationComponent,
+		  						  document:  document,
+		  						  addEventListener: window.addEventListener};
+		  						  		 	      
+	    var player = new EmbeddedPlayer(windowComponent, videoContainer, placeHolder);
+	    var tryNextTech = sinon.replace(player, "tryNextTech", sinon.fake.returns(Promise.resolve("")));
+	    var infos = {
+			info: "ice_connection_state_changed",
+			obj: { 
+				state: "completed"
+				}
+		}
+		expect(player.iceConnected).to.be.false;
+	    player.handleWebRTCInfoMessages(infos);
+	    expect(player.iceConnected).to.be.true;
+	    
+	    infos = {
+			info: "ice_connection_state_changed",
+			obj: { 
+				state: "failed"
+				}
+		}
+		 player.handleWebRTCInfoMessages(infos);
+		 
+		 expect(tryNextTech.calledOnce).to.be.true;
+		 
+		  infos = {
+			info: "closed",
+			
+		}
+		 player.handleWebRTCInfoMessages(infos);
+		 
+		 expect(tryNextTech.calledTwice).to.be.true;
+
+	});
+	
+	
+	it("webrtc-info-event", async function() {
+		
+		var videoContainer = document.createElement("video_container");
+		  
+		var placeHolder = document.createElement("place_holder");
+		  			
+		var locationComponent =  { href : 'http://example.com?id=stream123', search: "?id=stream123", pathname: "/" };
+		var windowComponent = {  location : locationComponent,
+		  						  document:  document,
+		  						  addEventListener: window.addEventListener};
+		  						  		 	      
+	    var player = new EmbeddedPlayer(windowComponent, videoContainer, placeHolder);
+	    
+	    var handleWebRTCInfoMessages = sinon.replace(player, "handleWebRTCInfoMessages", sinon.fake());
+	    await player.playIfExists("webrtc");
+	    
+	    var infos = {
+			info: "closed",
+		}
+		
+		var event = {
+			data: "any"
+		}
+	    
+	    player.videojsPlayer.trigger("webrtc-info", { infos, event});
+	    
+	    expect(handleWebRTCInfoMessages.calledOnce).to.be.true;
+	    expect(handleWebRTCInfoMessages.calledWithMatch({ infos , event})).to.be.true;
+	    
+	})
     
     
 });

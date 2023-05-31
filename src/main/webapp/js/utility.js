@@ -1,5 +1,6 @@
 import {getUrlParameter} from "./fetch.stream.js";
 
+
 export function generateRandomString(n) {
     let randomString = '';
     let characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -114,12 +115,11 @@ export function errorHandler(error, message) {
         } else {
             errorMessage = error
         }
-        alert(errorMessage);
-        
     }
     console.error(errorMessage);
     if (message !== undefined) {
         console.error(message);
     }
+    return errorMessage;
 }
 

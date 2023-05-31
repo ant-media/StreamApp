@@ -123,12 +123,13 @@
 	<script src="js/external/jquery-3.4.1.min.js"  crossorigin="anonymous"></script>
 	<script src="js/external/popper.min.js" crossorigin="anonymous"></script>
 	<script src="js/external/bootstrap.min.js"  crossorigin="anonymous"></script>
+	<script src="js/external/notify.min.js" crossorigin="anonymous"></script>
 
 </body>
 <script type="module">
 	import {WebRTCAdaptor} from "./js/webrtc_adaptor.js"
 	import {getUrlParameter} from "./js/fetch.stream.js"
-
+	import {errorHandler} from "./js/utility.js"
 
 	var token = getUrlParameter("token");
     
@@ -493,11 +494,14 @@
 				console.log( info + " notification received");
 			}
 		},
-		callbackError : function(error) {
+		callbackError : function(error, message) {
 			//some of the possible errors, NotFoundError, SecurityError,PermissionDeniedError
 
-			console.log("error callback: " + JSON.stringify(error));
-			alert(JSON.stringify(error));
+			$('video').notify("Warning: " + errorHandler(error, message), {
+							autoHideDelay:5000,
+							className:'warn',
+							position:'top right'
+						});
 		}
 	});
 
