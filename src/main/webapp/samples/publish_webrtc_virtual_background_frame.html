@@ -40,7 +40,7 @@
                     <img src="../images/cloud-background.png" class="backgroundImages "/>
                 </div>
                 <div class="col-sm-2 custom-file" style="height:64px">
-                   
+
                     <img src="../images/image-upload.png" class="custom-file-label" />
                    <input type="file" class="custom-file-input" id="customFile" style="height:100%;" accept=".jpg, .png, .jpeg">
                 </div>
@@ -159,10 +159,14 @@
             console.log("Effect: "+ effectName+" is enabled");
         }).catch(err => {
             console.error("Effect: "+ effectName+" is not enabled. Error is " + err);
-            alert(err.name);
+            $.notify(err.name, {
+                autoHideDelay:5000,
+                className:'warn',
+                position:'top center'
+            });
         });
         $(this).addClass("selected");
-        
+
     }
 
     var pc_config = {
@@ -170,11 +174,11 @@
             'urls': 'stun:stun1.l.google.com:19302'
         }]
     };
-    /* 
+    /*
     //sample turn configuration
     {
      var pc_config = {  iceServers: [
-                            { 
+                            {
                                   urls: "",
                                   username: "",
                                   credential: "",
@@ -218,7 +222,7 @@
                     if (publishImmediately) {
                         webRTCAdaptor.publish(streamId, token, subscriberId, subscriberCode, streamName)
                     }
-                    
+
 
                 } else if (info == "publish_started") {
                     //stream is being published
@@ -226,7 +230,7 @@
                     start_publish_button.disabled = true;
                     stop_publish_button.disabled = false;
                     updateBroadcastStatusInfo(streamId);
-           
+
                 } else if (info == "publish_finished") {
                     //stream is being finished
                     console.log("publish finished");
@@ -237,7 +241,7 @@
                     console.log("browser screen share supported");
                 }
                 else if (info == "screen_share_stopped") {
-                    //choose the first video source. It may not be correct for all cases. 
+                    //choose the first video source. It may not be correct for all cases.
                     console.log("screen share stopped");
                 }
                 else if (info == "closed") {
@@ -286,12 +290,12 @@
     }
 
 
-    
+
     let virtualBackgroundImage = document.getElementById("virtualBackgroundImage");
     VideoEffect.LOCATE_FILE_URL = "https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation";
     VideoEffect.DEBUG = true;
-    
-    initWebRTCAdaptor(false);   
+
+    initWebRTCAdaptor(false);
 </script>
 
 </html>

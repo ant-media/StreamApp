@@ -22,12 +22,12 @@
 				</nav>
 			</div>
 		</div>
-		
+
 		<div class="alert alert-primary text-center enterprise-feature" role="alert">
 				WebRTC Peer to Peer is an enterprise edition feature. <br/>
 			<a href="https://antmedia.io">Try Enterprise Edition for free at antmedia.io</a> <br/><br/>
 		</div>
-			
+
 		<video id="localVideo" autoplay muted controls playsinline width="480"></video>
 		<video id="remoteVideo" autoplay controls playsinline width="480"></video>
 		<br /> <br />
@@ -42,17 +42,18 @@
 		<div style="padding:10px">
 			<button class="btn btn-outline-primary" id="turn_off_camera"  >Turn off Camera</button>
 			<button class="btn btn-outline-primary" id="turn_on_camera"  >Turn on Camera</button>
-			
+
 			<button class="btn btn-outline-primary" id="mute_mic"  >Mute Local Mic</button>
-			<button class="btn btn-outline-primary" id="unmute_mic"  >Unmute Local Mic</button>	
+			<button class="btn btn-outline-primary" id="unmute_mic"  >Unmute Local Mic</button>
 		</div>
-		
+
 	</div>
-    
+
     <script>
-    
+
     </script>
 </body>
+<script src="js/external/notify.min.js" crossorigin="anonymous"></script>
 <script type="module">
 	import {WebRTCAdaptor} from "./js/webrtc_adaptor.js"
 
@@ -80,51 +81,51 @@
 	function leave() {
 		webRTCAdaptor.leave(streamNameBox.value);
 	}
-	
+
 	function turnOffLocalCamera() {
 		webRTCAdaptor.turnOffLocalCamera(streamNameBox.value);
 	}
-	
+
 	function turnOnLocalCamera() {
 		webRTCAdaptor.turnOnLocalCamera(streamNameBox.value);
 	}
-	
+
 	function muteLocalMic(){
 		webRTCAdaptor.muteLocalMic();
 	}
-	
+
 	function unmuteLocalMic() {
 		webRTCAdaptor.unmuteLocalMic();
 	}
-	
-	
-	  
+
+
+
 	var pc_config =
 	{
 		'iceServers' : [ {
 			'urls' : 'stun:stun1.l.google.com:19302'
 		} ]
 	};
-	
 
-	var sdpConstraints = 
+
+	var sdpConstraints =
 	{
 		OfferToReceiveAudio : true,
 		OfferToReceiveVideo : true
-			
+
 	};
 	var mediaConstraints = {
 	          video: true,
 	          audio: true
 	        };
-	
+
 	var appName = location.pathname.substring(0, location.pathname.lastIndexOf("/")+1);
 	var websocketURL = "ws://" + location.hostname + ":5080" + appName + "websocket";
-	
+
 	if (location.protocol.startsWith("https")) {
 		websocketURL = "wss://" + location.hostname + ":5443" + appName + "websocket";
 	}
-	
+
 	var webRTCAdaptor = new WebRTCAdaptor({
 		  websocket_url: websocketURL,
 		  mediaConstraints: mediaConstraints,
@@ -153,12 +154,16 @@
 		  },
 		  callbackError: function(error) {
 			  //some of the possible errors, NotFoundError, SecurityError,PermissionDeniedError
-			  
+
 			  console.log("error callback: " + error);
-			  alert(error);
+			  $.notify(error, {
+				  autoHideDelay:5000,
+				  className:'warn',
+				  position:'top center'
+			  });
 		  }
 	  });
-	
+
 
 </script>
 </html>
