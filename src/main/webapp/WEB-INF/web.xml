@@ -154,7 +154,7 @@
 	</servlet>
 	<servlet-mapping>
 		<servlet-name>hls-upload-servlet</servlet-name>
-		<url-pattern>/hls-chunked/*</url-pattern>
+		<url-pattern>/hls-upload/*</url-pattern>
 	</servlet-mapping>
 
 	<servlet-mapping>
