@@ -85,11 +85,11 @@ video {
 				WebRTC Merge is an enterprise edition feature. <br/>
 				<a href="https://antmedia.io">Try Enterprise Edition for free at antmedia.io</a> <br/><br/>
 			</div>
-			
+
 			<div class="col-sm-12 form-group">
 				<video id="localVideo" autoplay controls playsinline ></video>
 			</div>
-	
+
 				<div class="col-sm-12 form-group">
 					<div class="form-group text-left">
 						<label class="text-muted ">Conference Room Id</label>
@@ -105,14 +105,14 @@ video {
 					<label>Aspect Ratio   </label>
 					<div class="form-check form-check-inline">
 						<input type="radio" checked name = "options" id="narrow" class="form-check-input"/>
-						<label class="form-check-label font-weight-light" for="narrow"> 
+						<label class="form-check-label font-weight-light" for="narrow">
 							4:3
 						</label>
 					</div>
-		
+
 					<div class="form-check form-check-inline">
 						<input type="radio"  name = "options" id="wide" class="form-check-input"/>
-						<label class="form-check-label font-weight-light" for="wide"> 
+						<label class="form-check-label font-weight-light" for="wide">
 							16:9
 						</label>
 					</div>
@@ -126,7 +126,7 @@ video {
 							<option value="720">720p</option>
 						</select>
 					</div>
-				
+
 					<div class="form-group">
 						<button class="btn btn-primary"
 							id="join_publish_button">Start</button>
@@ -139,7 +139,7 @@ video {
 				<span class="label label-success" id="broadcastingInfo"
 				style="font-size: 14px; display: none" style="display: none">Publishing</span>
 
-		</div>	
+		</div>
 		<footer class="footer text-center">
 			<p>
 				<a href="http://antmedia.io">Ant Media Server</a>
@@ -151,17 +151,18 @@ video {
 	<script src="js/external/jquery-3.4.1.min.js"  crossorigin="anonymous"></script>
 	<script src="js/external/popper.min.js" crossorigin="anonymous"></script>
 	<script src="js/external/bootstrap.min.js"  crossorigin="anonymous"></script>
+	<script src="js/external/notify.min.js" crossorigin="anonymous"></script>
 </body>
 <script type="module">
 	import {WebRTCAdaptor} from "./js/webrtc_adaptor.js"
-    import {getUrlParameter} from "./js/fetch.stream.js" 
+    import {getUrlParameter} from "./js/fetch.stream.js"
     import {StreamMerger} from "./js/stream_merger.js"
 
     /**
     * This page accepts 3 arguments through url parameter
     * 1. "streamId": the stream id to publish stream. It's optional. ?streamId=stream1
     * 2. "playOnly": If it's true, user does not publish stream. It only play streams in the room.
-    * 3. "token": It's experimental. 
+    * 3. "token": It's experimental.
     */
 
 	var token = getUrlParameter("token");
@@ -222,7 +223,7 @@ video {
 		else{
 			merger.changeAspectRatio("16:9");
 		}
-		
+
 	}
 
 	function sendNotificationEvent(eventType) {
@@ -267,7 +268,11 @@ video {
 				noStream = false;
 			}
 			else{
-				alert("There is no stream available in the room");
+				$.notify("There is no stream available in the room", {
+					autoHideDelay:5000,
+					className:'warn',
+					position:'top center'
+				});
 				noStream = true;
 			}
 		}, delayInMilliseconds);
@@ -359,7 +364,7 @@ video {
 				'urls' : 'stun:stun1.l.google.com:19302'
 			} ]
 		};
-    
+
 
 	var sdpConstraints = {
 		OfferToReceiveAudio : false,
@@ -383,7 +388,7 @@ video {
 	var xindex = 0;
 	var yindex = 0;
 
-	var webRTCAdaptor = new WebRTCAdaptor(	
+	var webRTCAdaptor = new WebRTCAdaptor(
 			{
 				websocket_url : websocketURL,
 				mediaConstraints : mediaConstraints,
@@ -397,7 +402,7 @@ video {
 						console.log("initialized");
 						join_publish_button.disabled = false;
 						stop_publish_button.disabled = true;
-					} 
+					}
 					else if (info == "joinedTheRoom") {
 						mergeStreams();
 						var room = obj.ATTR_ROOM_NAME;
@@ -408,7 +413,7 @@ video {
 						publishStreamId = obj.streamId
 						join_publish_button.disabled = true;
 						stop_publish_button.disabled = false;
-												
+
 						if (obj.streams != null) {
 							obj.streams.forEach(function(item) {
 								console.log("Stream joined with ID: "+item);
@@ -417,7 +422,7 @@ video {
 							});
 							streamsList = obj.streams;
 						}
-						roomTimerId = setInterval(() => {			
+						roomTimerId = setInterval(() => {
 							webRTCAdaptor.getRoomInfo(roomNameBox.value, publishStreamId);
 						}, 5000);
 					}
@@ -436,20 +441,20 @@ video {
 							console.debug("adding stream id = " + obj.streamId);
                         }
 						oldId = obj.streamId;
-						   
-					} 
+
+					}
 					else if (info == "publish_started") {
 						//stream is being published
 						console.debug("publish started to room: "
                                 + roomOfStream[obj.streamId]);
 						startAnimation();
-					} 
+					}
 					else if (info == "publish_finished") {
 						//stream is being finished
                         console.debug("publish finished");
                         join_publish_button.disabled = false;
 						stop_publish_button.disabled = true;
-						
+
 						if (streamsList != null) {
 							streamsList.forEach(function(item) {
 								removeRemoteVideo(item);
@@ -457,7 +462,7 @@ video {
 						}
 						// we need to reset streams list
 						streamsList = new Array();
-					} 
+					}
 					else if (info == "screen_share_stopped") {
 						console.log("screen share stopped");
 					}
@@ -468,14 +473,14 @@ video {
 						{
 							clearInterval(roomTimerId);
 						}
-					} 
+					}
 					else if (info == "closed") {
 						//console.log("Connection closed");
 						if (typeof obj != "undefined") {
 							console.log("Connecton closed: "
 									+ JSON.stringify(obj));
 						}
-					} 
+					}
 					else if (info == "play_finished") {
 						console.log("play_finished");
 						var video = document.getElementById("remoteVideo"
@@ -484,10 +489,10 @@ video {
 							video.srcObject = null;
 						}
 						merger.removeStream(obj.streamId);
-					} 
+					}
 					else if (info == "streamInformation") {
 						streamInformation(obj);
-					} 
+					}
 					else if (info == "roomInformation") {
 						var tempRoomStreamList = Array();
 						// Check stream is in room
@@ -499,7 +504,7 @@ video {
 								var oldRoomItemIndex = streamsList.indexOf(oldStreamListItem);
 								var newRoomItemIndex = obj.streams.indexOf(oldStreamListItem);
 
-								// If streams item is in obj.streams, it's 
+								// If streams item is in obj.streams, it's
 								if(obj.streams.includes(oldStreamListItem)){
 									if (newRoomItemIndex > -1) {
   										obj.streams.splice(newRoomItemIndex, 1);
@@ -549,11 +554,15 @@ video {
 					} else if (error.indexOf("no_stream_exist") != -1) {
 						//TODO: removeRemoteVideo(error.streamId);
 					}
-					alert(errorMessage);
+					$.notify(errorMessage, {
+						autoHideDelay:5000,
+						className:'warn',
+						position:'top center'
+					});
 				}
 			});
 
-	
+
 </script>
 </html>
 

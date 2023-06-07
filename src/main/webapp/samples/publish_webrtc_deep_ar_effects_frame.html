@@ -295,7 +295,11 @@
             console.log("Effect: "+ effectName+" is enabled");
         }).catch(err => {
             console.error("Effect: "+ effectName+" is not enabled. Error is " + err);
-            alert(err.name);
+            $.notify(err.name, {
+                autoHideDelay:5000,
+                className:'warn',
+                position:'top center'
+            });
         });
     }
 </script>
