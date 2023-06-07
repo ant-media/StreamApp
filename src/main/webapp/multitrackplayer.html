@@ -95,7 +95,7 @@ body {
 
 
 		<div class="jumbotron">
-			<div id="players">	
+			<div id="players">
 			</div>
 			<p>
 				<input type="text" class="form-control"
@@ -126,6 +126,7 @@ body {
 	</div>
 
 </body>
+<script src="js/external/notify.min.js"></script>
 <script type="module">
 
    import {WebRTCAdaptor} from "./js/webrtc_adaptor.js"
@@ -138,31 +139,31 @@ body {
 	var streamNameBox = document.getElementById("streamName");
 
 	var streamId;
-	
+
 	var tracks = [];
-	
-	
+
+
 	var name = getUrlParameter("name");
 	if(name !== "undefined")
 	{
 		streamNameBox.value = name;
 	}
-	
+
 	function startPlaying() {
 		var enabledTracks = [];
 		tracks.forEach(function(trackId) {
 			var checkBox = document.getElementById("cbx"+trackId);
 			enabledTracks.push((checkBox.checked?"":"!")+trackId);
 		});
-		
+
 		streamId = streamNameBox.value;
 		webRTCAdaptor.play(streamNameBox.value, token, "", enabledTracks);
 	}
-	
+
 	function stopPlaying() {
 		webRTCAdaptor.stop(streamId);
 	}
-	
+
 	function getTracks() {
 		streamId = streamNameBox.value;
 		webRTCAdaptor.getTracks(streamNameBox.value, token);
@@ -184,11 +185,11 @@ body {
 		video : false,
 		audio : false
 	};
-	
+
 	var appName = location.pathname.substring(0, location.pathname.lastIndexOf("/")+1);
 	var path =  location.hostname + ":" + location.port + appName + "websocket";
 	var websocketURL =  "ws://" + path;
-	
+
 	if (location.protocol.startsWith("https")) {
 		websocketURL = "wss://" + path;
 	}
@@ -231,11 +232,11 @@ body {
 				//currentIncomingBitrate - kbits/sec
 				//packetsLost - total number of packet lost
 				//fractionLost - fraction of packet lost
-				console.log("Average incoming kbits/sec: " + obj.averageIncomingBitrate 
+				console.log("Average incoming kbits/sec: " + obj.averageIncomingBitrate
 						+ " Current incoming kbits/sec: " + obj.currentIncomingBitrate
-						+ " packetLost: " + obj.packetsLost 
+						+ " packetLost: " + obj.packetsLost
 						+ " fractionLost: " + obj.fractionLost);
-				 
+
 			}
 			else if (info == "trackList") {
 				addTrackList(obj.streamId, obj.trackList);
@@ -245,17 +246,21 @@ body {
 			//some of the possible errors, NotFoundError, SecurityError,PermissionDeniedError
 
 			console.log("error callback: " + JSON.stringify(error));
-			alert(JSON.stringify(error));
+			$.notify(JSON.stringify(error), {
+				autoHideDelay:5000,
+				className:'warn',
+				position:'top center'
+			});
 		}
 	});
-	
+
 	function addTrackList(streamId, trackList) {
 		addVideoTrack(streamId);
 		trackList.forEach(function(trackId) {
 			addVideoTrack(trackId);
 		});
 	}
-	
+
 	function addVideoTrack(trackId) {
 		tracks.push(trackId);
 
@@ -265,8 +270,8 @@ body {
 		var label= document.createElement("label");
 		var description = document.createTextNode(trackId);
 		checkbox.type = "checkbox";
-		checkbox.name = trackId;  
-		checkbox.id = "cbx"+trackId;  
+		checkbox.name = trackId;
+		checkbox.id = "cbx"+trackId;
 		checkbox.checked = false;
 		checkbox.onclick = function(){enableTrack(trackId);};
 		label.appendChild(checkbox);
@@ -274,18 +279,18 @@ body {
 		li.appendChild(label);
 		trackUl.appendChild(li);
 	}
-	
+
 	function enableTrack(trackId) {
 		var checkBox = document.getElementById("cbx"+trackId);
 		webRTCAdaptor.enableTrack(streamNameBox.value, trackId, checkBox.checked);
 	}
-	
+
 	function playVideo(obj) {
 		var room = streamNameBox.value;
 		console.log("new stream available with id: "
 				+ obj.streamId + "on the room:" + room);
-		
-		var index;			
+
+		var index;
 		if(obj.track.kind == "video") {
 			index = obj.track.id.replace("ARDAMSv", "");
 		}
@@ -302,7 +307,7 @@ body {
 		if (video == null) {
 			createRemoteVideo(index);
 			video = document.getElementById("remoteVideo"+index);
-			video.srcObject = new MediaStream();	
+			video.srcObject = new MediaStream();
 		}
 
 		video.srcObject.addTrack(obj.track)
@@ -314,7 +319,7 @@ body {
 			}
 		};
 	}
-	
+
 	function createRemoteVideo(streamId) {
 		var player = document.createElement("div");
 		player.className = "col-sm-12";
