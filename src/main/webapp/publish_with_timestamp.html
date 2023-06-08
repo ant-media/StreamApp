@@ -12,33 +12,33 @@
         width: 100%;
         max-width: 640px;
     }
-    
+
     /* Everything but the jumbotron gets side spacing for mobile first views */
     .header, .marketing, .footer {
         padding: 15px;
     }
-    
+
     /* Custom page header */
     .header {
         padding-bottom: 20px;
     }
-    
+
     /* Customize container */
     @media ( min-width : 768px) {
         .container {
             max-width: 730px;
         }
     }
-    
+
     .container-narrow>hr {
         margin: 30px 0;
     }
-    
+
     /* Main marketing message and sign up button */
     .jumbotron {
         text-align: center;
     }
-    
+
     /* Responsive: Portrait tablets and up */
     @media screen and (min-width: 768px) {
         /* Remove the padding we set earlier */
@@ -50,7 +50,7 @@
     .options {
             display:none;
         }
-    
+
     </style>
 </head>
 <body>
@@ -70,15 +70,15 @@
             <div class="col-sm-12 form-group">
                 <canvas id="canvas" ></canvas>
                 <video id="localCameraView" autoplay controls muted playsinline style="display: none;"></video>
-		
-		
+
+
             </div>
 
             <div class="form-group col-sm-12 text-left">
 				<input type="text" class="form-control"
 						id="streamName" name="streamIdTextBox" placeholder="Type stream name">
             </div>
-            
+
             <div class="alert alert-warning" role="alert">
 				Sychronize your device with a Network Time Server.
 			</div>
@@ -86,12 +86,12 @@
 			<a style="display:block;margin:10px" href="https://github.com/ant-media/Ant-Media-Server/wiki/How-to-Measure-E2E-Latency" >Guide: How to Measure E2E Latency</a>
 
 
-            <div class="form-group">	
+            <div class="form-group">
                 <button class="btn btn-primary" disabled
                 id="start_publish_button">Start Publishing</button>
                 <button class="btn btn-primary" disabled
                 id="stop_publish_button">Stop Publishing</button>
-            </div>	
+            </div>
 
             <span class="badge badge-success" id="broadcastingInfo" style="font-size:14px;display:none"
 							style="display: none">Publishing</span>
@@ -102,13 +102,14 @@
 
 	</div>
 </body>
+<script src="./js/external/notify.min.js" crossorigin="anonymous"></script>
 <script type="module" lang="javascript">
     import {WebRTCAdaptor} from "./js/webrtc_adaptor.js"
-    import {getUrlParameter} from "./js/fetch.stream.js" 
-	
+    import {getUrlParameter} from "./js/fetch.stream.js"
+
      var canvas = document.getElementById('canvas');
      var localCameraView = null;
-     function draw() 
+     function draw()
      {
       if (canvas.getContext && localCameraView != null) {
         var ctx = canvas.getContext('2d');
@@ -123,14 +124,14 @@
         var text = "Publish: " + Date.now();
         var textMetrics = ctx.measureText(text);
         ctx.fillRect(5, 20, textMetrics.width+ 10, 30);
-        
+
         ctx.fillStyle = 'rgba(0, 0, 255, 1.0)';
-        
+
         ctx.fillText(text, 10, 40);
       }
     }
 
- 
+
     //capture stream from canvas
     var localCanvasStream = canvas.captureStream(25);
 
@@ -142,22 +143,22 @@
   	var screen_share_with_camera_checkbox = document.getElementById("screen_share_with_camera_checkbox");
 
 	var start_publish_button = document.getElementById("start_publish_button");
-	
+
 	var stop_publish_button = document.getElementById("stop_publish_button");
-	
+
 	var install_extension_link = document.getElementById("install_chrome_extension_link");
 
 	var streamNameBox = document.getElementById("streamName");
-	
+
 	var streamId;
-	
-	
+
+
 	var name = getUrlParameter("name");
 	if(name !== "undefined")
 	{
 		streamNameBox.value = name;
 	}
-	
+
 	// It should be true
 	var rtmpForward = getUrlParameter("rtmpForward");
 
@@ -173,7 +174,7 @@
 	}
 
     stop_publish_button.addEventListener("click", stopPublishing, false);
-	
+
 
 
     function startAnimation() {
@@ -198,7 +199,7 @@
 		OfferToReceiveVideo : false
 
 	};
-	
+
 	var mediaConstraints = {
 		video : true,
 		audio : true
@@ -207,11 +208,11 @@
 	var appName = location.pathname.substring(0, location.pathname.lastIndexOf("/")+1);
 	var path =  location.hostname + ":" + location.port + appName + "websocket?rtmpForward=" + rtmpForward;
 	var websocketURL =  "ws://" + path;
-	
+
 	if (location.protocol.startsWith("https")) {
 		websocketURL = "wss://" + path;
 	}
-	
+
 	var webRTCAdaptor;
 	function initWebRTCAdaptor(stream) {
 		webRTCAdaptor = new WebRTCAdaptor({
@@ -301,13 +302,18 @@
 				else if (error.indexOf("WebSocketNotConnected") != -1) {
 					errorMessage = "WebSocket Connection is disconnected.";
 				}
-				alert(errorMessage);
+
+				$.notify(errorMessage, {
+					autoHideDelay:5000,
+					className:'warn',
+					position:'top center'
+				});
 			}
 		});
 	}
 
 
-    $(function() 
+    $(function()
     {
 		var id = getUrlParameter("id");
         if(typeof id != "undefined") {
@@ -317,21 +323,21 @@
             id = getUrlParameter("name");
             if (typeof id != "undefined") {
                 $("#streamName").val(id);
-            } 
+            }
             else {
                 $("#streamName").val("stream1");
             }
         }
-        
-       
+
+
 
          //get audio with getUserMedia
         navigator.mediaDevices.getUserMedia({video: true, audio:true}).then(function (stream) {
             //add audio track to the localstream which is captured from canvas
-            
+
             window.stream = stream;
             localCanvasStream.addTrack(stream.getAudioTracks()[0]);
-           
+
             localCameraView = document.getElementById("localCameraView");
             localCameraView.srcObject = stream;
             localCameraView.play();
@@ -339,7 +345,7 @@
             //update canvas for every 40ms
             setInterval(function() { draw(); }, 40);
 
-            initWebRTCAdaptor(localCanvasStream);    	    
+            initWebRTCAdaptor(localCanvasStream);
         });
 
 
