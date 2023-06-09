@@ -210,17 +210,17 @@ export class WebRTCAdaptor {
 		 * @deprecated use websocketURL
 		 */
 		this.websocket_url = null;
-		
+
 		/**
-		 * Websocket URL 
+		 * Websocket URL
 		 */
 		this.websocketURL = null;
-		
+
 		/**
 		 * flag to initialize components in constructor
 		 */
 		this.initializeComponents = true;
-		
+
         /**
          * PAY ATTENTION: The values of the above fields are provided as this constructor parameter.
          * TODO: Also some other hidden parameters may be passed here
@@ -230,7 +230,7 @@ export class WebRTCAdaptor {
                 this[key] = initialValues[key];
             }
         }
-        
+
         if (this.websocketURL == null) {
 			this.websocketURL = this.websocket_url;
 		}
@@ -415,7 +415,7 @@ export class WebRTCAdaptor {
      *    -start websocket connection
      */
     initialize() {
-        if (!this.isPlayMode && !this.onlyDataChannel && this.mediaManager.localStream == null) 
+        if (!this.isPlayMode && !this.onlyDataChannel && this.mediaManager.localStream == null)
         {
             //we need local stream because it not a play mode
             return this.mediaManager.initLocalStream().then(() => {
@@ -429,13 +429,13 @@ export class WebRTCAdaptor {
                 throw error;
             });
         }
-       
+
         return new Promise((resolve, reject) => {
 			this.initPlugins();
         	this.checkWebSocketConnection();
             resolve("Wait 'initialized' callback from websocket");
         });
-       
+
     }
 
     /**
@@ -576,8 +576,8 @@ export class WebRTCAdaptor {
             //check if it is connected or not
             //this resolves if the server responds with some error message
             if (this.iceConnectionState(streamId) != "checking" &&
-                this.iceConnectionState(streamId) != "connected" && 
-                this.iceConnectionState(streamId) != "completed") 
+                this.iceConnectionState(streamId) != "connected" &&
+                this.iceConnectionState(streamId) != "completed")
             {
                 //if it is not connected, try to reconnect
                 this.reconnectIfRequired(0);
@@ -587,15 +587,15 @@ export class WebRTCAdaptor {
 
     /**
      * Reconnects to the stream if it is not stopped on purpose
-     * @param {*} streamId 
-     * @returns 
+     * @param {*} streamId
+     * @returns
      */
-    reconnectIfRequired(delayMs=3000) 
+    reconnectIfRequired(delayMs=3000)
     {
-        if (this.reconnectIfRequiredFlag) 
+        if (this.reconnectIfRequiredFlag)
         {
             //It's important to run the following methods after 3000 ms because the stream may be stopped by the user in the meantime
-            if (delayMs > 0) 
+            if (delayMs > 0)
             {
 				setTimeout(() => {
                 	this.tryAgain();
@@ -603,10 +603,10 @@ export class WebRTCAdaptor {
 			}
 			else {
 				this.tryAgain()
-			}            
+			}
         }
     }
-    
+
     tryAgain() {
 
         const now = Date.now();
@@ -617,34 +617,34 @@ export class WebRTCAdaptor {
         this.lastReconnectiontionTrialTime = now;
 
 	 	//reconnect publish
-	 	
+
 		//if remotePeerConnection has a peer connection for the stream id, it means that it is not stopped on purpose
-		
-	    if (this.remotePeerConnection[this.publishStreamId] != null && 
+
+	    if (this.remotePeerConnection[this.publishStreamId] != null &&
 	    		//check connection status to not stop streaming an active stream
                 this.iceConnectionState(this.publishStreamId) != "checking" &&
-	    		this.iceConnectionState(this.publishStreamId) != "connected" && 
-	    		this.iceConnectionState(this.publishStreamId) != "completed") 
+	    		this.iceConnectionState(this.publishStreamId) != "connected" &&
+	    		this.iceConnectionState(this.publishStreamId) != "completed")
 	    {
 	        this.closePeerConnection(this.publishStreamId);
 	        console.log("It will try to publish again because it is not stopped on purpose")
 	        this.publish(this.publishStreamId, this.publishToken, this.publishSubscriberId, this.publishSubscriberCode, this.publishStreamName, this.publishMainTrack, this.publishMetaData);
 	    }
-	
+
 	    //reconnect play
 	    for (var index in this.playStreamId) {
             var streamId = this.playStreamId[index];
 	        if (this.remotePeerConnection[streamId] != "null" &&
 	        	//check connection status to not stop streaming an active stream
                 this.iceConnectionState(streamId) != "checking" &&
-	        	this.iceConnectionState(streamId) != "connected" && 
+	        	this.iceConnectionState(streamId) != "connected" &&
 	        	this.iceConnectionState(streamId) != "completed")
 	       {
 	            console.log("It will try to play again because it is not stopped on purpose")
 	            this.closePeerConnection(streamId);
 	            this.play(streamId, this.playToken, this.playRoomId, this.playEnableTracks, this.playSubscriberId, this.playSubscriberCode, this.playMetaData);
 	        }
-	    }	
+	    }
 	}
 
     /**
@@ -960,7 +960,7 @@ export class WebRTCAdaptor {
     initPeerConnection(streamId, dataChannelMode) {
 		//null == undefined -> it's true
 		//null === undefined -> it's false
-		
+
         if (this.remotePeerConnection[streamId] == null) {
             var closedStreamId = streamId;
             console.log("stream id in init peer connection: " + streamId + " close stream id: " + closedStreamId);
@@ -1530,7 +1530,7 @@ export class WebRTCAdaptor {
      * Called to check and start Web Socket connection if it is not started
      */
     checkWebSocketConnection() {
-        if (this.webSocketAdaptor == null || (this.webSocketAdaptor.isConnected() == false && this.webSocketAdaptor.isConnecting() == false)) 
+        if (this.webSocketAdaptor == null || (this.webSocketAdaptor.isConnected() == false && this.webSocketAdaptor.isConnecting() == false))
         {
 	console.log("weboscket url : " + this.websocketURL);
             this.webSocketAdaptor = new WebSocketAdaptor({
@@ -1651,7 +1651,9 @@ export class WebRTCAdaptor {
 
         // Put variables in global scope to make them available to the
         // browser console.
-        soundMeter.connectToSource(stream, null, function (e) {
+        // this function fetches getSoundLevelList and this list get instant levels from soundmeter directly
+        // so we don't need to fill inside of levelCallback here, just pass an empty function
+        soundMeter.connectToSource(stream, () => {}, function (e) {
             if (e) {
                 alert(e);
                 return;
