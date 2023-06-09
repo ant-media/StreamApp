@@ -1,7 +1,24 @@
 export class WebSocketAdaptor {
+    /**
+     * 
+     * @param {object} initialValues 
+     */
     constructor(initialValues) {
-
+        /**
+         * @type {boolean}
+         */
         this.debug = false;
+        this.webrtcadaptor = null;
+        /**
+         * @type {Function}
+         */
+        this.callback=null;
+        /**
+         * @type {Function}
+         */
+        this.callbackError=null;
+
+        this.join= null;
         for (var key in initialValues) {
             if (initialValues.hasOwnProperty(key)) {
                 this[key] = initialValues[key];
@@ -11,7 +28,10 @@ export class WebSocketAdaptor {
         this.initWebSocketConnection();
 
     }
-
+    /**
+     * 
+     * @param {Function} [callbackConnected] 
+     */
     initWebSocketConnection(callbackConnected) {
         this.connecting = true;
         this.connected = false;
@@ -27,7 +47,9 @@ export class WebSocketAdaptor {
             url.searchParams.set('target', this.webrtcadaptor.isPlayMode ? 'edge' : 'origin');
             this.websocket_url = url.toString();
         }
-
+        /**
+         * @type {WebSocket}
+         */
         this.wsConn = new WebSocket(this.websocket_url);
         this.wsConn.onopen = () => {
             if (this.debug) {
@@ -48,6 +70,7 @@ export class WebSocketAdaptor {
         }
 
         this.wsConn.onmessage = (event) => {
+
             var obj = JSON.parse(event.data);
 
             if (obj.command == "start") {
@@ -109,7 +132,7 @@ export class WebSocketAdaptor {
             this.clearPingTimer();
             this.callbackError("WebSocketNotConnected", error)
         }
-
+        
         this.wsConn.onclose = (event) => {
             this.connecting = false;
             this.connected = false;
@@ -142,7 +165,11 @@ export class WebSocketAdaptor {
     close() {
         this.wsConn.close();
     }
-
+    /**
+     * 
+     * @param {string} text 
+     * @returns 
+     */
     send(text) {
         if (this.connecting == false && this.connected == false) {
             //try to reconnect
