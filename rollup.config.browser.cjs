@@ -2,7 +2,7 @@
 const babel = require('@rollup/plugin-babel').default;
 
 const builds = {
-	input: [ 'src/main/webapp/js/webrtc_adaptor.js'],
+	input: [ 'src/main/webapp/js/index.js'],
 	output: [{
 		name: 'webrtc_adaptor',
 		file: 'dist/browser/webrtc_adaptor.js',
