@@ -1,3 +1,7 @@
+import "./external/loglevel.min.js";
+
+const Logger = window.log;
+
 export class StreamMerger {
     constructor(width, height, autoMode, aspectRatio) {
         this.streams = [];
@@ -38,13 +42,13 @@ export class StreamMerger {
 
     changeAspectRatio(ratio) {
         this.aspectRatio = ratio;
-        console.log("Changing aspect ratio to: " + ratio);
+        Logger.warn("Changing aspect ratio to: " + ratio);
         this.resizeAndSortV2();
     }
 
     changeStreamSize(height) {
         this.stream_height = height;
-        console.log("Changing merged streams size to = " + height + "p");
+        Logger.warn("Changing merged streams size to = " + height + "p");
         this.resizeAndSortV2();
     }
 
@@ -80,7 +84,7 @@ export class StreamMerger {
         options.x == undefined ? stream.x = (stream.width * stream.Xindex) : stream.x = options.x;
         options.x == undefined ? stream.y = (stream.height * stream.Yindex) : stream.y = options.y;
 
-        console.debug(stream.width, stream.Xindex, stream.x)
+        Logger.debug(stream.width, stream.Xindex, stream.x)
         stream.mute = options.mute || false;
 
         let videoElement = null
@@ -108,17 +112,17 @@ export class StreamMerger {
             * If the incoming stream is coming from mobile portrait mode default getUserMedia ratio is 3:4
             */
             videoElement.onloadedmetadata = () => {
-                console.debug("streamId = " + stream.streamId);
+                Logger.debug("streamId = " + stream.streamId);
                 var pheight = mediaStream.getVideoTracks()[0].getSettings().height;
                 var pwidth = mediaStream.getVideoTracks()[0].getSettings().width;
                 if (pheight > pwidth) {
-                    console.debug("portrait mode");
+                    Logger.debug("portrait mode");
                     let xoffset = (stream.width - this.pwidth) / 2;
                     stream.portrait = true;
                     stream.x += xoffset;
                     stream.width = this.pwidth;
                     stream.height = this.pheight;
-                    console.log("Location offset from metadata x = " + stream.x + " y = " + stream.y);
+                    Logger.warn("Location offset from metadata x = " + stream.x + " y = " + stream.y);
                 }
             }
         }
@@ -149,7 +153,7 @@ export class StreamMerger {
     resizeAndSortV2() {
         //Clears all of the canvas when sorted.
         this.ctx.clearRect(0, 0, this.width, this.height);
-        console.log("Sorting the streams");
+        Logger.warn("Sorting the streams");
 
         let xindex = 0;
         let yindex = 0;
@@ -218,15 +222,15 @@ export class StreamMerger {
         this.canvas.setAttribute('width', this.width);
         this.canvas.setAttribute('height', this.height);
 
-        console.log("Row number = " + yNumber)
-        console.log("canvas width = " + this.width + "canvas height = " + this.height);
+        Logger.warn("Row number = " + yNumber)
+        Logger.warn("canvas width = " + this.width + "canvas height = " + this.height);
 
         var extraStreams = this.streams.length - (yNumber * yNumber);
         let tmp = 0;
         for (let i = 1; i <= this.streams.length; i++) {
 
-            console.log("extraStreams = " + extraStreams + " stream length = " + this.streams.length)
-            console.log("Xindex = " + xindex + "Yindex = " + yindex);
+            Logger.warn("extraStreams = " + extraStreams + " stream length = " + this.streams.length)
+            Logger.warn("Xindex = " + xindex + "Yindex = " + yindex);
 
             const stream = this.streams[i - 1];
             if (extraStreams <= 0 || this.streams.length <= 3) {
@@ -252,16 +256,16 @@ export class StreamMerger {
                     stream.y = (this.vheight * yindex) - heightOffset;
                 }
                 tmp += (this.width) / (divider)
-                console.log("Video width = " + stream.width + "Video height = " + stream.height);
+                Logger.warn("Video width = " + stream.width + "Video height = " + stream.height);
 
                 if (xindex == 0) {
                     cropHeight = cropHeight + stream.height;
-                    console.debug("CropHeight = " + cropHeight);
+                    Logger.debug("CropHeight = " + cropHeight);
                 }
 
                 xindex++;
                 if (yindex >= (yNumber) - 1 && this.streams.length != 1) {
-                    console.log("TopWidth = " + topWidth + " remainingStreams = " + remainingStreams);
+                    Logger.warn("TopWidth = " + topWidth + " remainingStreams = " + remainingStreams);
                     widthOffset = (topWidth - (this.vwidth * remainingStreams)) / 2;
                     stream.x += widthOffset;
                 }
@@ -296,11 +300,11 @@ export class StreamMerger {
                 }
                 cropWidth = cropWidth + ((this.width) / (divider + 1))
 
-                console.log("Video Width = " + stream.width + "VideoHeight = " + stream.height);
+                Logger.warn("Video Width = " + stream.width + "VideoHeight = " + stream.height);
 
                 if (xindex == 0) {
                     cropHeight = cropHeight + stream.height;
-                    console.debug("CropHeight = " + cropHeight);
+                    Logger.debug("CropHeight = " + cropHeight);
                 }
 
                 xindex++;
@@ -310,7 +314,7 @@ export class StreamMerger {
                     yindex++;
                     widthOffset = this.width - cropWidth;
                     this.canvas.setAttribute('width', cropWidth);
-                    console.log("New canvas width= " + cropWidth);
+                    Logger.warn("New canvas width= " + cropWidth);
                     topWidth = cropWidth;
                     cropWidth = 0;
                     extraStreams--;
@@ -389,7 +393,7 @@ export class StreamMerger {
                 i--
             }
         }
-        console.log("removed streamId = " + streamId);
+        Logger.warn("removed streamId = " + streamId);
 
         if (this.autoMode == true) {
             this.resizeAndSortV2();

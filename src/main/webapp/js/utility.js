@@ -1,5 +1,7 @@
 import {getUrlParameter} from "./fetch.stream.js";
+import "./external/loglevel.min.js";
 
+const Logger = window.log;
 
 export function generateRandomString(n) {
     let randomString = '';
@@ -76,7 +78,7 @@ export function updateBroadcastStatusInfo(streamId, linkUrl) {
 }
 
 export function errorHandler(error, message) {
-    console.log("error callback: " + JSON.stringify(error));
+    Logger.warn("error callback: " + JSON.stringify(error));
     var errorMessage = JSON.stringify(error);
     if (typeof message != "undefined") {
         errorMessage = message;
@@ -116,9 +118,9 @@ export function errorHandler(error, message) {
             errorMessage = error
         }
     }
-    console.error(errorMessage);
+    Logger.error(errorMessage);
     if (message !== undefined) {
-        console.error(message);
+        Logger.error(message);
     }
     return errorMessage;
 }
