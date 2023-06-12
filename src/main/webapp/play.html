@@ -56,12 +56,12 @@
 		import { EmbeddedPlayer } from "./js/embedded-player.js";
 
 		var embeddedPlayer = new EmbeddedPlayer(window, document.getElementById("video_container"), document.getElementById("video_info"));
-		
+
 		window.addEventListener("load", () => {
 			embeddedPlayer.play();
         });
 
-		
+
 
 		embeddedPlayer.addWebRTCDataListener((data) => {
 			console.log("Data received: " + data);
@@ -73,10 +73,10 @@
 		// Mute/Unmute Video Button for 360 playback
 		document.getElementById("unmuteButton").addEventListener("click", function() {
 			if (embeddedPlayer.isMuted()) {
-				embeddedPlayer.unmute();
+				embeddedPlayer.mutePlayer(false);
 				document.getElementById("unmuteButton").innerHTML = "Mute";
 			} else {
-				embeddedPlayer.mute();
+				embeddedPlayer.mutePlayer(true);
 				document.getElementById("unmuteButton").innerHTML = "Unmute";
 			}
 		});
@@ -92,7 +92,7 @@
 			}
 		});
 
-		
+
 	</script>
 
 </body>

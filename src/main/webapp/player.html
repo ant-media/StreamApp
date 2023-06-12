@@ -78,17 +78,17 @@
 						<input id="file-input" type="file" name="name" accept="image/x-png,image/gif,image/jpeg" style="display: none" />
 					</div>
 				</div>
-				
+
 			</div>
 
-			
+
 				<div class="form-group">
 					<button class="btn btn-primary"
 						id="start_play_button">Start Playing</button>
 					<button class="btn btn-primary"
 						id="stop_play_button">Stop Playing</button>
 				</div>
-				
+
 				<div class="col-sm-10 offset-sm-1" id="stats_panel" style="display: none;">
 					<div class="row text-muted text-left">
 						<div class="col-sm-6">
@@ -98,7 +98,7 @@
 							<div id="packet_lost_container">PacketsLost: <span id="packet_lost_text"></span></div>
 							<div id="jitter_container">Jitter Average Delay(Secs): <span id="jitter_text"></span></div>
 							<div id="audio_level_container">Audio Level: <span id="audio_level"></span></div>
-							
+
 						</small>
 						</div>
 						<div class="col-sm-6">
@@ -132,7 +132,7 @@
 	import {errorHandler} from "./js/utility.js"
 
 	var token = getUrlParameter("token");
-    
+
 
 	$(function() {
 	  var id = getUrlParameter("id");
@@ -143,7 +143,7 @@
 		id = getUrlParameter("name");
 		if (typeof id != "undefined") {
 			$("#streamName").val(id);
-		} 
+		}
 		else {
 			$("#streamName").val("stream1");
 		}
@@ -153,7 +153,7 @@
 
 	var subscriberId = getUrlParameter("subscriberId");
 	var subscriberCode = getUrlParameter("subscriberCode");
-		
+
 	var start_play_button = document.getElementById("start_play_button");
 	start_play_button.addEventListener("click", startPlaying, false)
 	var stop_play_button = document.getElementById("stop_play_button");
@@ -167,7 +167,7 @@
 	streamNameBox.defaultValue = "stream1";
 
 	var streamId;
-	
+
 	function toggleOptions() {
 		$(".options").toggle();
 	}
@@ -176,18 +176,26 @@
 		try {
 			var iceState = webRTCAdaptor.iceConnectionState(streamId);
             if (iceState != null && iceState != "failed" && iceState != "disconnected") {
-            
+
 				webRTCAdaptor.sendData($("#streamName").val(), $("#dataTextbox").val());
 				$("#all-messages").append("Sent: " + $("#dataTextbox").val() + "<br>");
 				$("#dataTextbox").val("");
 			}
 			else {
-				alert("WebRTC playing is not active. Please click Start Playing first")
+				$.notify("WebRTC playing is not active. Please click Start Playing first", {
+					autoHideDelay:5000,
+					className:'error',
+					position:'top center'
+				});
 			}
 		}
 		catch (exception) {
 			console.error(exception);
-			alert("Message cannot be sent. Make sure you've enabled data channel and choose the correct player distribution on server web panel");
+			$.notify("Warning: Message cannot be sent. Make sure you've enabled data channel and choose the correct player distribution on server web panel", {
+				autoHideDelay:5000,
+				className:'error',
+				position:'top center'
+			});
 		}
 	}
 
@@ -226,13 +234,19 @@
         ) {
           webRTCAdaptor.sendData(streamNameBox.value, data);
         } else {
-          alert("WebRTC connection is not active. Please click start first");
+			$.notify("WebRTC connection is not active. Please click start first", {
+				autoHideDelay:5000,
+				className:'error',
+				position:'top center'
+			});
         }
       } catch (exception) {
         console.error(exception);
-        alert(
-          "Message cannot be sent. Make sure you've enabled data channel on server web panel"
-        );
+		  $.notify("Message cannot be sent. Make sure you've enabled data channel on server web panel", {
+			  autoHideDelay:5000,
+			  className:'error',
+			  position:'top center'
+		  });
       }
     }
 
@@ -244,7 +258,7 @@
 
 		$('<img src =' + imageUrl +' style="width:100px;"><br>').appendTo($("#all-messages"));
     }
-	
+
 	function startPlaying() {
 		streamId = streamNameBox.value;
 		webRTCAdaptor.play(streamNameBox.value, token, "", [], subscriberId, subscriberCode);
@@ -269,11 +283,11 @@
 		video : false,
 		audio : false
 	};
-	
+
 	var appName = location.pathname.substring(0, location.pathname.lastIndexOf("/")+1);
 	var path =  location.hostname + ":" + location.port + appName + "websocket";
 	var websocketURL =  "ws://" + path;
-	
+
 	if (location.protocol.startsWith("https")) {
 		websocketURL = "wss://" + path;
 	}
@@ -307,7 +321,7 @@
 				console.log("play started");
 				start_play_button.disabled = true;
 				stop_play_button.disabled = false;
-				webRTCAdaptor.getStreamInfo(streamId); 
+				webRTCAdaptor.getStreamInfo(streamId);
 				webRTCAdaptor.enableStats(obj.streamId);
 
 			} else if (info == "play_finished") {
@@ -317,7 +331,7 @@
 				stop_play_button.disabled = true;
 				$("#stats_panel").hide();
 				// Reset stream resolutions in dropdown
-				document.getElementById("dropdownMenu").innerHTML = '<a class="dropdown-item active" href="#">Automatic</a>'; 
+				document.getElementById("dropdownMenu").innerHTML = '<a class="dropdown-item active" href="#">Automatic</a>';
 			} else if (info == "closed") {
 				//console.log("Connection closed");
 				if (typeof obj != "undefined") {
@@ -331,8 +345,8 @@
 				obj["streamInfo"].forEach(function(entry) {
 					//It's needs to both of VP8 and H264. So it can be dublicate
 					if(!streamResolutions.includes(entry["streamHeight"])){
-						streamResolutions.push(entry["streamHeight"]);	
-					}	
+						streamResolutions.push(entry["streamHeight"]);
+					}
 				});
 				// Sort stream resolutions for good UI :)
 				streamResolutions = streamResolutions.sort(function(a, b){return a-b});
@@ -346,7 +360,7 @@
 
 				$('.dropdown-menu a').click(function(){
 					var dropdownSelectedItem = $(this).text();
- 					
+
  					if(dropdownSelectedItem == "Automatic"){
  						//It should 0p because of replacing "p" character in below
  						dropdownSelectedItem = "0p";
@@ -359,11 +373,11 @@
     				webRTCAdaptor.forceStreamQuality(streamId, Number(dropdownSelectedItem));
 
 					// Remove current active item
-					$('a.dropdown-item.active').removeClass("active"); 
+					$('a.dropdown-item.active').removeClass("active");
 					// Add active in new item
-					$(this).addClass("active"); 
+					$(this).addClass("active");
 				});
-			}		
+			}
 			else if (info == "ice_connection_state_changed") {
 				console.log("iceConnectionState Changed: ",JSON.stringify(obj));
 			}
@@ -381,7 +395,7 @@
 				else {
 					$("#average_bit_rate_container").hide();
 				}
-				$("#latest_bit_rate").text(obj.currentIncomingBitrate);	
+				$("#latest_bit_rate").text(obj.currentIncomingBitrate);
 				if (obj.currentIncomingBitrate > 0) {
 					$("#latest_bit_rate_container").show();
 				}
@@ -389,7 +403,7 @@
 					$("#latest_bit_rate_container").hide();
 				}
 
-				var packetLost = parseInt(obj.videoPacketsLost) + parseInt(obj.audioPacketsLost);	
+				var packetLost = parseInt(obj.videoPacketsLost) + parseInt(obj.audioPacketsLost);
 				$("#packet_lost_text").text(packetLost);
 				if (packetLost > -1) {
 					$("#packet_lost_container").show();
@@ -415,7 +429,7 @@
 					$("#audio_level_container").hide();
 				}
 
-				
+
 				$("#frame_width").text(obj.frameWidth);
 				$("#frame_height").text(obj.frameHeight);
 				if (obj.frameWidth > 0 && obj.frameHeight > 0) {
@@ -424,9 +438,9 @@
 				else {
 					$("#incoming_resolution_container").hide();
 				}
-				$("#frame_received").text(obj.framesReceived);	
+				$("#frame_received").text(obj.framesReceived);
 				if (obj.framesReceived > -1) {
-					$("#frame_received_container").show();	
+					$("#frame_received_container").show();
 				}
 				else {
 					$("#frame_received_container").hide();
@@ -434,27 +448,27 @@
 
 				$("#frame_decoded").text(obj.framesDecoded);
 				if (obj.framesDecoded > -1) {
-					$("#frame_decoded_container").show();	
+					$("#frame_decoded_container").show();
 				}
 				else {
 					$("#frame_decoded_container").hide();
 				}
 				$("#frame_dropped").text(obj.framesDropped);
 				if (obj.framesDropped > -1) {
-					$("#frame_dropped_container").show();	
+					$("#frame_dropped_container").show();
 				}
 				else {
 					$("#frame_dropped_container").hide();
 				}
 
 				$("#stats_panel").show();
-				
-				
 
-				console.debug("Average incoming kbits/sec: " + obj.averageIncomingBitrate 
+
+
+				console.debug("Average incoming kbits/sec: " + obj.averageIncomingBitrate
 						+ " Current incoming kbits/sec: " + obj.currentIncomingBitrate
-						+ " video packetLost: " + obj.videoPacketsLost 
-						+ " audio packetLost: " + obj.audioPacketsLost 
+						+ " video packetLost: " + obj.videoPacketsLost
+						+ " audio packetLost: " + obj.audioPacketsLost
 						+ " frame width: " + obj.frameWidth
 						+ " frame height: " + obj.frameHeight
 						+ " frame received: " + obj.framesReceived
@@ -463,7 +477,7 @@
 						+ " video jitter average delay: " + obj.videoJitterAverageDelay
 						+ " audio jitter average delay: " + obj.audioJitterAverageDelay
 						+ " audio level: " + obj.audioLevel);
-				 
+
 			}
 			else if (info == "data_received") {
 				var data = obj.data;
@@ -476,7 +490,7 @@
 			}
 			else if (info == "bitrateMeasurement") {
 
-				console.debug(obj);	
+				console.debug(obj);
 				if(obj.audioBitrate+obj.videoBitrate > obj.targetBitrate) {
 					startAnimation();
 				}
@@ -499,8 +513,8 @@
 
 			$('video').notify("Warning: " + errorHandler(error, message), {
 							autoHideDelay:5000,
-							className:'warn',
-							position:'top right'
+							className:'error',
+							position:'bottom center'
 						});
 		}
 	});

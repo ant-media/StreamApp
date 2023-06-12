@@ -252,9 +252,9 @@
             callbackError: function (error, message) {
                 //some possible errors, NotFoundError, SecurityError,PermissionDeniedError
 
-				$.notify("Warning: " + errorHandler(error, message), {
+				$(".badge").notify("Warning: " + errorHandler(error, message), {
 							autoHideDelay:5000,
-							className:'warn',
+							className:'error',
 							position:'top right'
 						});
             }
@@ -295,7 +295,11 @@
             console.log("Effect: "+ effectName+" is enabled");
         }).catch(err => {
             console.error("Effect: "+ effectName+" is not enabled. Error is " + err);
-            alert(err.name);
+            $.notify(err.name, {
+                autoHideDelay:5000,
+                className:'error',
+                position:'top center'
+            });
         });
     }
 </script>

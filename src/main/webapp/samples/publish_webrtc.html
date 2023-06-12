@@ -325,13 +325,20 @@
 			) {
 				webRTCAdaptor.sendData(streamIdBox.value, data);
 			} else {
-				alert("WebRTC connection is not active. Please click start first");
+				$(".badge").notify("WebRTC connection is not active. Please click start first", {
+					autoHideDelay:5000,
+					className:'error',
+					position:'top center'
+				});
+
 			}
 		} catch (exception) {
 			console.error(exception);
-			alert(
-				"Message cannot be sent. Make sure you've enabled data channel on server web panel"
-			);
+			$(".badge").notify("Message cannot be sent. Make sure you've enabled data channel on server web panel", {
+				autoHideDelay:5000,
+				className:'error',
+				position:'top center'
+			});
 		}
 	}
 
@@ -421,12 +428,20 @@
 				$("#dataTextbox").val("");
 			}
 			else {
-				alert("WebRTC publishing is not active. Please click Start Publishing first")
+				$(".badge").notify("WebRTC publishing is not active. Please click Start Publishing first", {
+					autoHideDelay:5000,
+					className:'error',
+					position:'top center'
+				});
 			}
 		}
 		catch (exception) {
 			console.error(exception);
-			alert("Message cannot be sent. Make sure you've enabled data channel on server web panel");
+			$(".badge").notify("Message cannot be sent. Make sure you've enabled data channel on server web panel", {
+				autoHideDelay:5000,
+				className:'error',
+				position:'top center'
+			});
 		}
 	}
 
@@ -723,9 +738,9 @@
 				//some of the possible errors, NotFoundError, SecurityError,PermissionDeniedError
 
 				console.log("error callback: " + JSON.stringify(error));
-				$('video').notify("Warning: " + errorHandler(error, message), {
+				$(".badge").notify("Warning: " + errorHandler(error, message), {
 					autoHideDelay:5000,
-					className:'warn',
+					className:'error',
 					position:'top center'
 				});
 			}

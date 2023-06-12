@@ -235,6 +235,7 @@
       src="js/external/bootstrap.min.js"
       crossorigin="anonymous"
     ></script>
+  <script src="./js/external/notify.min.js"></script>
   </body>
 
   <script type="module" lang="javascript">
@@ -411,7 +412,7 @@
         stopPlaying();
       } else {
         leave();
-      }     
+      }
     }
     function join() {
       webRTCAdaptor.join(streamNameBox.value);
@@ -475,13 +476,19 @@
         ) {
           webRTCAdaptor.sendData(streamNameBox.value, data);
         } else {
-          alert("WebRTC connection is not active. Please click start first");
+          $.notify("WebRTC connection is not active. Please click start first", {
+            autoHideDelay:5000,
+            className:'error',
+            position:'top center'
+          });
         }
       } catch (exception) {
         console.error(exception);
-        alert(
-          "Message cannot be sent. Make sure you've enabled data channel on server web panel"
-        );
+        $.notify("Message cannot be sent. Make sure you've enabled data channel on server web panel", {
+          autoHideDelay:5000,
+          className:'error',
+          position:'top center'
+        });
       }
     }
 
@@ -598,7 +605,11 @@
             } else if (error.indexOf("WebSocketNotConnected") != -1) {
               errorMessage = "WebSocket Connection is disconnected.";
             }
-            alert(errorMessage);
+            $.notify(errorMessage, {
+              autoHideDelay:5000,
+              className:'error',
+              position:'top center'
+            });
           },
         });
       } else if (mode == "play") {
@@ -654,7 +665,11 @@
             //some of the possible errors, NotFoundError, SecurityError,PermissionDeniedError
 
             console.log("error callback: " + JSON.stringify(error));
-            alert(JSON.stringify(error));
+            $.notify(JSON.stringify(error), {
+              autoHideDelay:5000,
+              className:'error',
+              position:'top center'
+            });
           },
         });
       } else {
@@ -700,7 +715,11 @@
               console.log("received data channel error");
             } else {
               console.log("error callback: " + error);
-              alert(error);
+              $.notify(error, {
+                autoHideDelay:5000,
+                className:'error',
+                position:'top center'
+              });
             }
           },
         });

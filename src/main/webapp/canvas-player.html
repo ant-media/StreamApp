@@ -15,9 +15,9 @@
 			right: 0;
 			top: 0;
 			/* If you want to fit canvas-designer and video to fit perfectly
-			You need to do two things. 
-			First -> Make width 100% below 
-			Second -> Follow the instructions on #canvas-designer  
+			You need to do two things.
+			First -> Make width 100% below
+			Second -> Follow the instructions on #canvas-designer
 			*/
 			width: 100%;
 			max-width: 640px;
@@ -30,12 +30,12 @@
 			width: 100% !important;
 			border-color: black !important;
 			border: 0 solid black !important;
-			height: 100% !important; 
+			height: 100% !important;
 			position: absolute;
 			/*
 			If you want to fit canvas-designer and video to fit perfectly
-			comment out height 500px and z-index: 10000 below and enable below two lines 
-			height: 100% !important; 
+			comment out height 500px and z-index: 10000 below and enable below two lines
+			height: 100% !important;
 			position: absolute;
 			*/
 			top: 0;
@@ -66,7 +66,7 @@
 		.jumbotron {
 			text-align: center;
 		}
-		
+
 		/* Responsive: Portrait tablets and up */
 		@media screen and (min-width: 768px) {
 			/* Remove the padding we set earlier */
@@ -79,7 +79,7 @@
 			display:none;
 		}
 
-		
+
 		.jumbotron {
 			padding: 0;
 			overflow: hidden;
@@ -199,6 +199,7 @@
 	<script src="js/external/jquery-3.4.1.min.js"  crossorigin="anonymous"></script>
 	<script src="js/external/popper.min.js" crossorigin="anonymous"></script>
 	<script src="js/external/bootstrap.min.js"  crossorigin="anonymous"></script>
+	<script src="js/external/notify.min.js" crossorigin="anonymous"></script>
 
 </body>
 <script type="module">
@@ -219,7 +220,7 @@
 			id = getUrlParameter("name");
 			if (typeof id != "undefined") {
 				$("#streamName").val(id);
-			} 
+			}
 			else {
 				$("#streamName").val("stream1");
 			}
@@ -252,7 +253,7 @@
 		try {
 			var iceState = webRTCAdaptor.iceConnectionState(streamId);
 			if (iceState != null && iceState != "failed" && iceState != "disconnected") {
-				
+
 				if(data == "request"){
 					webRTCAdaptor.sendData($("#streamName").val(), "request");
 				}
@@ -265,13 +266,21 @@
 			}
 			else {
 				designer.undo('all');
-				alert("WebRTC Playing is not active. Please click Start Playing first or check your Data Channel option.")
+				$.notify("WebRTC Playing is not active. Please click Start Playing first or check your Data Channel option.", {
+					autoHideDelay:5000,
+					className:'error',
+					position:'top center'
+				});
 			}
 		}
 		catch (exception) {
 			designer.undo('all');
 			console.error(exception);
-			alert("Message cannot be sent. Make sure you've enabled data channel on server web panel");
+			$.notify("Message cannot be sent. Make sure you've enabled data channel on server web panel", {
+				autoHideDelay:5000,
+				className:'error',
+				position:'top center'
+			});
 		}
 	}
 
@@ -396,7 +405,7 @@ var webRTCAdaptor = new WebRTCAdaptor({
 				console.log("play started");
 				start_play_button.disabled = true;
 				stop_play_button.disabled = false;
-				webRTCAdaptor.getStreamInfo(streamId); 
+				webRTCAdaptor.getStreamInfo(streamId);
 				webRTCAdaptor.enableStats(obj.streamId);
 
 			} else if (info == "play_finished") {
@@ -410,7 +419,7 @@ var webRTCAdaptor = new WebRTCAdaptor({
 				stop_play_button.disabled = true;
 				$("#stats_panel").hide();
 				// Reset stream resolutions in dropdown
-				document.getElementById("dropdownMenu").innerHTML = '<a class="dropdown-item active" href="#">Automatic</a>'; 
+				document.getElementById("dropdownMenu").innerHTML = '<a class="dropdown-item active" href="#">Automatic</a>';
 			} else if (info == "closed") {
 				//console.log("Connection closed");
 				if (typeof obj != "undefined") {
@@ -424,8 +433,8 @@ var webRTCAdaptor = new WebRTCAdaptor({
 				obj["streamInfo"].forEach(function(entry) {
 					//It's needs to both of VP8 and H264. So it can be dublicate
 					if(!streamResolutions.includes(entry["streamHeight"])){
-						streamResolutions.push(entry["streamHeight"]);	
-					}	
+						streamResolutions.push(entry["streamHeight"]);
+					}
 				});
 				// Sort stream resolutions for good UI :)
 				streamResolutions = streamResolutions.sort(function(a, b){return a-b});
@@ -450,11 +459,11 @@ var webRTCAdaptor = new WebRTCAdaptor({
  					// Call set stream resolution
  					webRTCAdaptor.forceStreamQuality(streamId, Number(dropdownSelectedItem));
 					// Remove current active item
-					$('a.dropdown-item.active').removeClass("active"); 
+					$('a.dropdown-item.active').removeClass("active");
 					// Add active in new item
-					$(this).addClass("active"); 
+					$(this).addClass("active");
 				});
-			}		
+			}
 			else if (info == "ice_connection_state_changed") {
 				console.log("iceConnectionState Changed: ",JSON.stringify(obj));
 
@@ -471,7 +480,7 @@ var webRTCAdaptor = new WebRTCAdaptor({
 					designer.sync();
 				}
 				else if (obj.data == "clear") {
-					designer.clearCanvas();						
+					designer.clearCanvas();
 					designer.sync();
 				}
 				else {
@@ -492,7 +501,7 @@ var webRTCAdaptor = new WebRTCAdaptor({
 				else {
 					$("#average_bit_rate_container").hide();
 				}
-				$("#latest_bit_rate").text(obj.currentIncomingBitrate);	
+				$("#latest_bit_rate").text(obj.currentIncomingBitrate);
 				if (obj.currentIncomingBitrate > 0) {
 					$("#latest_bit_rate_container").show();
 				}
@@ -500,7 +509,7 @@ var webRTCAdaptor = new WebRTCAdaptor({
 					$("#latest_bit_rate_container").hide();
 				}
 
-				var packetLost = parseInt(obj.videoPacketsLost) + parseInt(obj.audioPacketsLost);	
+				var packetLost = parseInt(obj.videoPacketsLost) + parseInt(obj.audioPacketsLost);
 				$("#packet_lost_text").text(packetLost);
 				if (packetLost > -1) {
 					$("#packet_lost_container").show();
@@ -526,7 +535,7 @@ var webRTCAdaptor = new WebRTCAdaptor({
 					$("#audio_level_container").hide();
 				}
 
-				
+
 				$("#frame_width").text(obj.frameWidth);
 				$("#frame_height").text(obj.frameHeight);
 				if (obj.frameWidth > 0 && obj.frameHeight > 0) {
@@ -535,9 +544,9 @@ var webRTCAdaptor = new WebRTCAdaptor({
 				else {
 					$("#incoming_resolution_container").hide();
 				}
-				$("#frame_received").text(obj.framesReceived);	
+				$("#frame_received").text(obj.framesReceived);
 				if (obj.framesReceived > -1) {
-					$("#frame_received_container").show();	
+					$("#frame_received_container").show();
 				}
 				else {
 					$("#frame_received_container").hide();
@@ -545,27 +554,27 @@ var webRTCAdaptor = new WebRTCAdaptor({
 
 				$("#frame_decoded").text(obj.framesDecoded);
 				if (obj.framesDecoded > -1) {
-					$("#frame_decoded_container").show();	
+					$("#frame_decoded_container").show();
 				}
 				else {
 					$("#frame_decoded_container").hide();
 				}
 				$("#frame_dropped").text(obj.framesDropped);
 				if (obj.framesDropped > -1) {
-					$("#frame_dropped_container").show();	
+					$("#frame_dropped_container").show();
 				}
 				else {
 					$("#frame_dropped_container").hide();
 				}
 
 				$("#stats_panel").show();
-				
-				
 
-				console.debug("Average incoming kbits/sec: " + obj.averageIncomingBitrate 
+
+
+				console.debug("Average incoming kbits/sec: " + obj.averageIncomingBitrate
 					+ " Current incoming kbits/sec: " + obj.currentIncomingBitrate
-					+ " video packetLost: " + obj.videoPacketsLost 
-					+ " audio packetLost: " + obj.audioPacketsLost 
+					+ " video packetLost: " + obj.videoPacketsLost
+					+ " audio packetLost: " + obj.audioPacketsLost
 					+ " frame width: " + obj.frameWidth
 					+ " frame height: " + obj.frameHeight
 					+ " frame received: " + obj.framesReceived
@@ -587,7 +596,7 @@ var webRTCAdaptor = new WebRTCAdaptor({
 				}
 				else if (info == "bitrateMeasurement") {
 
-					console.debug(obj);	
+					console.debug(obj);
 					if(obj.audioBitrate+obj.videoBitrate > obj.targetBitrate) {
 						startAnimation();
 					}
@@ -601,7 +610,12 @@ var webRTCAdaptor = new WebRTCAdaptor({
 			//some of the possible errors, NotFoundError, SecurityError,PermissionDeniedError
 
 			console.log("error callback: " + JSON.stringify(error));
-			alert(JSON.stringify(error));
+
+			$.notify(JSON.stringify(error), {
+				autoHideDelay:5000,
+				className:'error',
+				position:'top center'
+			});
 		}
 	});
 

@@ -21,9 +21,9 @@
 			right: 0;
 			top: 0;
 			/* If you want to fit canvas-designer and video to fit perfectly
-			You need to do two things. 
-			First -> Make width 100% below 
-			Second -> Follow the instructions on #canvas-designer  
+			You need to do two things.
+			First -> Make width 100% below
+			Second -> Follow the instructions on #canvas-designer
 			*/
 			width: 100%;
 			height: auto;
@@ -33,12 +33,12 @@
 		#canvas-designer {
 			margin: 0px auto;
 			width: 100% !important;
-			height: 100% !important; 
+			height: 100% !important;
 			position: absolute !important;
 			/*
 			If you want to fit canvas-designer and video to fit perfectly
-			comment out height 500px and z-index: 10000 below and enable below two lines 
-			height: 100% !important; 
+			comment out height 500px and z-index: 10000 below and enable below two lines
+			height: 100% !important;
 			position: absolute;
 			*/
 			border-color: black !important;
@@ -91,7 +91,7 @@
 			display: none;
 		}
 
-		
+
 		.jumbotron {
 			padding: 0;
 			overflow: hidden;
@@ -129,12 +129,12 @@
 			<div class="col-md-12">
 
 				<div class="jumbotron">
-					
+
 
 					<video id="localVideo" autoplay muted controls playsinline></video>
 					<div id="canvas-designer"></div>
 					<br>
-					
+
 					<div class="forms">
 
 						<div class="form-group col-sm-12 text-left">
@@ -161,7 +161,7 @@
 							<a id="browser_screen_share_doesnt_support"
 							href="https://caniuse.com/#search=getDisplayMedia">Your browser doesn't support screen
 						share. You can see supported browsers in this link </a>
-						
+
 						<div class="dropdown-divider"></div>
 						<legend class="col-form-label audio-source-legend">Audio Source</legend>
 					</div>
@@ -221,7 +221,8 @@
 
 				</body>
 
-
+				<script src="js/external/jquery-3.4.1.min.js"  crossorigin="anonymous"></script>
+				<script src="js/external/notify.min.js" crossorigin="anonymous"></script>
 
 				<script type="module" lang="javascript">
 					import { WebRTCAdaptor } from "./js/webrtc_adaptor.js"
@@ -366,7 +367,7 @@
 		try {
 			var iceState = webRTCAdaptor.iceConnectionState(streamId);
 			if (iceState != null && iceState != "failed" && iceState != "disconnected") {
-				
+
 				if(data == "request"){
 					webRTCAdaptor.sendData($("#streamName").val(), "request");
 				}
@@ -379,13 +380,21 @@
 			}
 			else {
 				designer.undo('all');
-				alert("WebRTC Publishing is not active. Please click Start Publishing first or check your Data Channel option.")
+				$.notify("WebRTC Publishing is not active. Please click Start Publishing first or check your Data Channel option.", {
+					autoHideDelay:5000,
+					className:'error',
+					position:'top center'
+				});
 			}
 		}
 		catch (exception) {
 			designer.undo('all');
 			console.error(exception);
-			alert("Message cannot be sent. Make sure you've enabled data channel on server web panel");
+			$.notify("Message cannot be sent. Make sure you've enabled data channel on server web panel", {
+				autoHideDelay:5000,
+				className:'error',
+				position:'top center'
+			});
 		}
 	}
 
@@ -414,7 +423,7 @@
 			'urls': 'stun:stun1.l.google.com:19302'
 		}]
 	};
-	/* 
+	/*
 	//sample turn configuration
 	{
 	   iceServers: [
@@ -539,7 +548,7 @@
 					browser_screen_share_doesnt_support.style.display = "none";
 				}
 				else if (info == "screen_share_stopped") {
-					//choose the first video source. It may not be correct for all cases. 
+					//choose the first video source. It may not be correct for all cases.
 					$(".video-source").first().prop("checked", true);
 					console.log("screen share stopped");
 				}
@@ -753,7 +762,11 @@
 				else if (error.indexOf("WebSocketNotConnected") != -1) {
 					errorMessage = "WebSocket Connection is disconnected.";
 				}
-				alert(errorMessage);
+				$.notify(errorMessage, {
+					autoHideDelay:5000,
+					className:'error',
+					position:'top center'
+				});
 			}
 		});
 }
