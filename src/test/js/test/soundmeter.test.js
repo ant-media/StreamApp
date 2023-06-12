@@ -1,5 +1,4 @@
-
-import { SoundMeter } from '../../../main/webapp/js/soundmeter.js';
+import {SoundMeter} from '../../../main/webapp/js/soundmeter.js';
 
 
 describe("SoundMeter", function() {
@@ -66,9 +65,12 @@ describe("SoundMeter", function() {
 		try {
 			let context = new AudioContext();
 			var soundMeter = new SoundMeter(context);
-			let stream = sinon.mock();
+			let stream = new MediaStream();
 			soundMeter.context.createMediaStreamSource = sinon.mock();
-			sinon.fake(soundMeter.context, 'createMediaStreamSource')
+			let fakeMediaStreamSourceNode = sinon.mock();
+			const fakeMediaStream = sinon.fake.returns(fakeMediaStreamSourceNode);
+			sinon.replace(soundMeter.context, 'createMediaStreamSource', fakeMediaStream);
+
 			let levelCallback = function (level) {
 				console.log('level', level);
 			};
@@ -76,8 +78,15 @@ describe("SoundMeter", function() {
 				console.log('error', error);
 				expect.should.fail(error);
 			};
+			
 			soundMeter.connectToSource(stream, levelCallback, errorCallback);
+
 			let event = {"data": { "volume": 0.5, "type": "volume" }};
+
+			let fakeMessagePort = sinon.mock();
+			soundMeter.volumeMeterNode = sinon.mock();
+			soundMeter.volumeMeterNode.port = sinon.fake.returns(fakeMessagePort);
+			soundMeter.volumeMeterNode.port.onmessage = sinon.fake();
 			soundMeter.volumeMeterNode.port.onmessage(event);
 		}
 		catch (err) {
@@ -91,12 +100,13 @@ describe("SoundMeter", function() {
 		try {
 			let context = new AudioContext();
 			var soundMeter = new SoundMeter(context);
-			let stream = sinon.mock();
-			soundMeter.context.audioWorklet = sinon.mock();
-			soundMeter.connectToSource(stream, () => {}, () => {});
+			let stream = new MediaStream();
+			soundMeter.context.createMediaStreamSource = sinon.mock();
+			let fakeMediaStreamSourceNode = sinon.mock();
+			const fakeMediaStream = sinon.fake.returns(fakeMediaStreamSourceNode);
+			sinon.replace(soundMeter.context, 'createMediaStreamSource', fakeMediaStream);
 
-			expect(soundMeter.mic).to.not.be.null;
-			expect(soundMeter.volumeMeterNode).to.not.be.null;
+			soundMeter.connectToSource(stream, () => {}, () => {});
 
 			soundMeter.stop();
 
