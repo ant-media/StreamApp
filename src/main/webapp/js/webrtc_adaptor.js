@@ -1655,7 +1655,9 @@ export class WebRTCAdaptor {
 
         // Put variables in global scope to make them available to the
         // browser console.
-        soundMeter.connectToSource(stream, null, function (e) {
+        // this function fetches getSoundLevelList and this list get instant levels from soundmeter directly
+        // so we don't need to fill inside of levelCallback here, just pass an empty function
+        soundMeter.connectToSource(stream, () => {}, function (e) {
             if (e) {
                 alert(e);
                 return;
