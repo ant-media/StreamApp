@@ -208,21 +208,21 @@ export class WebRTCAdaptor {
          */
         this.reconnectIfRequiredFlag = true;
 
-        /**
-         * websocket url to connect
-         * @deprecated use websocketURL
-         */
-        this.websocket_url = null;
+		/**
+		 * websocket url to connect
+		 * @deprecated use websocketURL
+		 */
+		this.websocket_url = null;
 
-        /**
-         * Websocket URL
-         */
-        this.websocketURL = null;
+		/**
+		 * Websocket URL
+		 */
+		this.websocketURL = null;
 
-        /**
-         * flag to initialize components in constructor
-         */
-        this.initializeComponents = true;
+		/**
+		 * flag to initialize components in constructor
+		 */
+		this.initializeComponents = true;
 
         /**
          * PAY ATTENTION: The values of the above fields are provided as this constructor parameter.
@@ -600,13 +600,13 @@ export class WebRTCAdaptor {
             //It's important to run the following methods after 3000 ms because the stream may be stopped by the user in the meantime
             if (delayMs > 0)
             {
-                setTimeout(() => {
-                    this.tryAgain();
-                }, delayMs);
-            }
-            else {
-                this.tryAgain()
-            }
+				setTimeout(() => {
+                	this.tryAgain();
+            	}, delayMs);
+			}
+			else {
+				this.tryAgain()
+			}
         }
     }
 
@@ -619,36 +619,36 @@ export class WebRTCAdaptor {
         }
         this.lastReconnectiontionTrialTime = now;
 
-        //reconnect publish
+	 	//reconnect publish
+		//if remotePeerConnection has a peer connection for the stream id, it means that it is not stopped on purpose
 
-        //if remotePeerConnection has a peer connection for the stream id, it means that it is not stopped on purpose
+	    if (this.remotePeerConnection[this.publishStreamId] != null &&
+	    		//check connection status to not stop streaming an active stream
+                this.iceConnectionState(this.publishStreamId) != "checking" &&
+	    		this.iceConnectionState(this.publishStreamId) != "connected" &&
+	    		this.iceConnectionState(this.publishStreamId) != "completed")
+	    {
+	        this.closePeerConnection(this.publishStreamId);
+	        console.log("It will try to publish again because it is not stopped on purpose")
+	        this.publish(this.publishStreamId, this.publishToken, this.publishSubscriberId, this.publishSubscriberCode, this.publishStreamName, this.publishMainTrack, this.publishMetaData);
+	    }
 
-        if (this.remotePeerConnection[this.publishStreamId] != null &&
-            //check connection status to not stop streaming an active stream
-            this.iceConnectionState(this.publishStreamId) != "checking" &&
-            this.iceConnectionState(this.publishStreamId) != "connected" &&
-            this.iceConnectionState(this.publishStreamId) != "completed")
-        {
-            this.closePeerConnection(this.publishStreamId);
-            Logger.debug("It will try to publish again because it is not stopped on purpose")
-            this.publish(this.publishStreamId, this.publishToken, this.publishSubscriberId, this.publishSubscriberCode, this.publishStreamName, this.publishMainTrack, this.publishMetaData);
-        }
-
-        //reconnect play
-        for (var index in this.playStreamId) {
+	    //reconnect play
+	    for (var index in this.playStreamId) 
+	    {
             var streamId = this.playStreamId[index];
             if (this.remotePeerConnection[streamId] != "null" &&
                 //check connection status to not stop streaming an active stream
                 this.iceConnectionState(streamId) != "checking" &&
-                this.iceConnectionState(streamId) != "connected" &&
-                this.iceConnectionState(streamId) != "completed")
-            {
-                Logger.debug("It will try to play again because it is not stopped on purpose")
-                this.closePeerConnection(streamId);
-                this.play(streamId, this.playToken, this.playRoomId, this.playEnableTracks, this.playSubscriberId, this.playSubscriberCode, this.playMetaData);
-            }
-        }
-    }
+	        	this.iceConnectionState(streamId) != "connected" &&
+	        	this.iceConnectionState(streamId) != "completed")
+	       {
+	            console.log("It will try to play again because it is not stopped on purpose")
+	            this.closePeerConnection(streamId);
+	            this.play(streamId, this.playToken, this.playRoomId, this.playEnableTracks, this.playSubscriberId, this.playSubscriberCode, this.playMetaData);
+	        }
+	    }
+	}
 
     /**
      * Called to stop a publishing/playing session for a stream. AMS responds with publishFinished or playFinished message.
@@ -961,8 +961,9 @@ export class WebRTCAdaptor {
      *   dataChannelMode: can be "publish" , "play" or "peer" based on this it is decided which way data channel is created
      */
     initPeerConnection(streamId, dataChannelMode) {
-        //null == undefined -> it's true
-        //null === undefined -> it's false
+
+		//null == undefined -> it's true
+		//null === undefined -> it's false
 
         if (this.remotePeerConnection[streamId] == null) {
             var closedStreamId = streamId;
@@ -1605,6 +1606,10 @@ export class WebRTCAdaptor {
         var CHUNK_SIZE = 16000;
         if (this.remotePeerConnection[streamId] !== undefined) {
             var dataChannel = this.remotePeerConnection[streamId].dataChannel;
+            if (dataChannel.readyState !== 'open') {
+                console.warn('dataChannel.readyState is not open: ' + dataChannel.readyState);
+                return;
+            }
             var length = data.length || data.size || data.byteLength;
             var sent = 0;
 
@@ -1654,7 +1659,9 @@ export class WebRTCAdaptor {
 
         // Put variables in global scope to make them available to the
         // browser console.
-        soundMeter.connectToSource(stream, null, function (e) {
+        // this function fetches getSoundLevelList and this list get instant levels from soundmeter directly
+        // so we don't need to fill inside of levelCallback here, just pass an empty function
+        soundMeter.connectToSource(stream, () => {}, function (e) {
             if (e) {
                 alert(e);
                 return;

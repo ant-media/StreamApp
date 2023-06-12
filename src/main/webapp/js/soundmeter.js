@@ -26,6 +26,7 @@ export class SoundMeter {
 	            	this.instant = event.data;
 	            	levelCallback(this.instant.toFixed(2));
 					Logger.debug("Audio level: " + this.instant.toFixed(2));
+
 				}
 	        };
 	        this.mic.connect(this.volumeMeterNode);

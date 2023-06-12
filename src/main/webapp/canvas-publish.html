@@ -382,7 +382,7 @@
 				designer.undo('all');
 				$.notify("WebRTC Publishing is not active. Please click Start Publishing first or check your Data Channel option.", {
 					autoHideDelay:5000,
-					className:'warn',
+					className:'error',
 					position:'top center'
 				});
 			}
@@ -392,7 +392,7 @@
 			console.error(exception);
 			$.notify("Message cannot be sent. Make sure you've enabled data channel on server web panel", {
 				autoHideDelay:5000,
-				className:'warn',
+				className:'error',
 				position:'top center'
 			});
 		}
@@ -764,7 +764,7 @@
 				}
 				$.notify(errorMessage, {
 					autoHideDelay:5000,
-					className:'warn',
+					className:'error',
 					position:'top center'
 				});
 			}

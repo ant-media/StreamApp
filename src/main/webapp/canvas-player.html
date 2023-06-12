@@ -268,7 +268,7 @@
 				designer.undo('all');
 				$.notify("WebRTC Playing is not active. Please click Start Playing first or check your Data Channel option.", {
 					autoHideDelay:5000,
-					className:'warn',
+					className:'error',
 					position:'top center'
 				});
 			}
@@ -278,7 +278,7 @@
 			console.error(exception);
 			$.notify("Message cannot be sent. Make sure you've enabled data channel on server web panel", {
 				autoHideDelay:5000,
-				className:'warn',
+				className:'error',
 				position:'top center'
 			});
 		}
@@ -613,7 +613,7 @@ var webRTCAdaptor = new WebRTCAdaptor({
 
 			$.notify(JSON.stringify(error), {
 				autoHideDelay:5000,
-				className:'warn',
+				className:'error',
 				position:'top center'
 			});
 		}
