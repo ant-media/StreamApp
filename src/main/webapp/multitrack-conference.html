@@ -355,7 +355,7 @@ body {
 			else {
 				$.notify("WebRTC playing is not active. Please click Start Playing first", {
 					autoHideDelay:5000,
-					className:'warn',
+					className:'error',
 					position:'top center'
 				});
 			}
@@ -364,7 +364,7 @@ body {
 			console.error(exception);
 			$.notify("Message cannot be sent. Make sure you've enabled data channel and choose the correct player distribution on server web panel", {
 				autoHideDelay:5000,
-				className:'warn',
+				className:'error',
 				position:'top center'
 			});
 		}
@@ -680,7 +680,7 @@ body {
 						//errorHandler(error, message);
 						$('video').notify("Warning: " + errorHandler(error, message), {
 							autoHideDelay:5000,
-							className:'warn',
+							className:'error',
 							position:'top right'
 						});
 					}

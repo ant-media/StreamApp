@@ -270,7 +270,7 @@ video {
 			else{
 				$.notify("There is no stream available in the room", {
 					autoHideDelay:5000,
-					className:'warn',
+					className:'error',
 					position:'top center'
 				});
 				noStream = true;
@@ -556,7 +556,7 @@ video {
 					}
 					$.notify(errorMessage, {
 						autoHideDelay:5000,
-						className:'warn',
+						className:'error',
 						position:'top center'
 					});
 				}
