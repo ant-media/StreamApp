@@ -1,11 +1,11 @@
 {
   "name": "@antmedia/webrtc_adaptor",
-  "version": "2.5.3",
+  "version": "2.6.1",
   "description": "WebRTC Adaptor for implementing a front end using Ant Media Server.",
-  "main": "dist/webrtc_adaptor.js",
-  "module": "dist/es/webrtc_adaptor.js",
+  "main": "dist/index.js",
+  "module": "dist/es/index.js",
   "browser": "dist/browser/webrtc_adaptor.js",
-  "type": "module",
+  "type": "commonjs",
   "directories": {
     "doc": "doc"
   },
@@ -43,5 +43,8 @@
     "rollup": "^3.21.2",
     "sinon": "^15.0.4"
   },
-  "dependencies": {}
+  "dependencies": {
+    "url": "^0.11.1"
+  },
+  "_comment": "url polyfill is added as compatibility with webpack > 5 because webpack > 5 does not include url polyfill by default. webrtc_adaptor uses url as import.meta.url"
 }
