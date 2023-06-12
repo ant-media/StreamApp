@@ -478,7 +478,7 @@
         } else {
           $.notify("WebRTC connection is not active. Please click start first", {
             autoHideDelay:5000,
-            className:'warn',
+            className:'error',
             position:'top center'
           });
         }
@@ -486,7 +486,7 @@
         console.error(exception);
         $.notify("Message cannot be sent. Make sure you've enabled data channel on server web panel", {
           autoHideDelay:5000,
-          className:'warn',
+          className:'error',
           position:'top center'
         });
       }
@@ -607,7 +607,7 @@
             }
             $.notify(errorMessage, {
               autoHideDelay:5000,
-              className:'warn',
+              className:'error',
               position:'top center'
             });
           },
@@ -667,7 +667,7 @@
             console.log("error callback: " + JSON.stringify(error));
             $.notify(JSON.stringify(error), {
               autoHideDelay:5000,
-              className:'warn',
+              className:'error',
               position:'top center'
             });
           },
@@ -717,7 +717,7 @@
               console.log("error callback: " + error);
               $.notify(error, {
                 autoHideDelay:5000,
-                className:'warn',
+                className:'error',
                 position:'top center'
               });
             }
