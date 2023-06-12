@@ -161,18 +161,18 @@
 				$("#dataTextbox").val("");
 			}
 			else {
-				$.notify("It is not connected. Please Join Channel", {
+				$(".badge").notify("It is not connected. Please Join Channel", {
 					autoHideDelay:5000,
-					className:'warn',
+					className:'error',
 					position:'top center'
 				});
 			}
 		}
 		catch (exception) {
 			console.error(exception);
-			$.notify("Message cannot be sent. Make sure you've enabled data channel on server web panel", {
+			$(".badge").notify("Message cannot be sent. Make sure you've enabled data channel on server web panel", {
 				autoHideDelay:5000,
-				className:'warn',
+				className:'error',
 				position:'top center'
 			});
 		}
@@ -241,9 +241,9 @@
 					}
 					else {
 						errorHandler(error, message);
-						$.notify("Warning: " + errorHandler(error, message), {
+						$(".badge").notify("Warning: " + errorHandler(error, message), {
 							autoHideDelay:5000,
-							className:'warn',
+							className:'error',
 							position:'top center'
 						});
 					}

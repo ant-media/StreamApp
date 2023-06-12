@@ -184,7 +184,7 @@
 			else {
 				$.notify("WebRTC playing is not active. Please click Start Playing first", {
 					autoHideDelay:5000,
-					className:'warn',
+					className:'error',
 					position:'top center'
 				});
 			}
@@ -193,7 +193,7 @@
 			console.error(exception);
 			$.notify("Warning: Message cannot be sent. Make sure you've enabled data channel and choose the correct player distribution on server web panel", {
 				autoHideDelay:5000,
-				className:'warn',
+				className:'error',
 				position:'top center'
 			});
 		}
@@ -236,7 +236,7 @@
         } else {
 			$.notify("WebRTC connection is not active. Please click start first", {
 				autoHideDelay:5000,
-				className:'warn',
+				className:'error',
 				position:'top center'
 			});
         }
@@ -244,7 +244,7 @@
         console.error(exception);
 		  $.notify("Message cannot be sent. Make sure you've enabled data channel on server web panel", {
 			  autoHideDelay:5000,
-			  className:'warn',
+			  className:'error',
 			  position:'top center'
 		  });
       }
@@ -513,8 +513,8 @@
 
 			$('video').notify("Warning: " + errorHandler(error, message), {
 							autoHideDelay:5000,
-							className:'warn',
-							position:'top right'
+							className:'error',
+							position:'bottom center'
 						});
 		}
 	});
