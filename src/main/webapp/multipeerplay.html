@@ -21,7 +21,7 @@
 				</nav>
 			</div>
 		</div>
-		
+
 		<video id="remoteVideo" autoplay controls width="480"></video>
 		<br /> <br />
 		<div class="input-group col-sm-offset-2 col-sm-8">
@@ -33,14 +33,15 @@
 			</span>
 		</div>
 	</div>
-    
+
     <script>
-    
+
     </script>
 </body>
+<script src="./js/external/notify.min.js" crossorigin="anonymous"></script>
 <script type="module">
 	import {WebRTCAdaptor} from "./js/webrtc_adaptor.js"
-	
+
 	var join_button = document.getElementById("join_button");
 	join_button.addEventListener("click", join, false);
 
@@ -58,7 +59,7 @@
 	function leave() {
 		webRTCAdaptor.leave(streamNameBox.value);
 	}
-	
+
 	var pc_config = null;
 	/*{
 		'iceServers' : [ {
@@ -67,24 +68,24 @@
 	};
 	*/
 
-	var sdpConstraints = 
+	var sdpConstraints =
 	{
 		OfferToReceiveAudio : true,
 		OfferToReceiveVideo : true
-			
+
 	};
 	var mediaConstraints = {
 	          video: true,
 	          audio: true
 	        };
-	
+
 	var appName = location.pathname.substring(0, location.pathname.lastIndexOf("/")+1);
 	var websocketURL = "ws://" + location.hostname + ":5080" + appName + "websocket";
-	
+
 	if (location.protocol.startsWith("https")) {
 		websocketURL = "wss://" + location.hostname + ":5443" + appName + "websocket";
 	}
-	
+
 	var webRTCAdaptor = new WebRTCAdaptor({
 		  websocket_url: websocketURL,
 		  mediaConstraints: mediaConstraints,
@@ -115,12 +116,16 @@
 		  },
 		  callbackError: function(error) {
 			  //some of the possible errors, NotFoundError, SecurityError,PermissionDeniedError
-			  
+
 			  console.log("error callback: " + error);
-			  alert(error);
+			  $.notify(error, {
+				  autoHideDelay:5000,
+				  className:'error',
+				  position:'top center'
+			  });
 		  }
 	  });
-	
+
 
 </script>
 </html>

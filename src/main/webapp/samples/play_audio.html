@@ -42,12 +42,13 @@
 	<script src="../js/external/jquery-3.4.1.min.js" crossorigin="anonymous"></script>
 	<script src="../js/external/popper.min.js" crossorigin="anonymous"></script>
 	<script src="../js/external/bootstrap.min.js" crossorigin="anonymous"></script>
+	<script src="../js/external/notify.min.js"></script>
 </body>
 <script type="module">
 	import {WebRTCAdaptor} from "../js/webrtc_adaptor.js"
-	import {getUrlParameter} from "../js/fetch.stream.js" 
+	import {getUrlParameter} from "../js/fetch.stream.js"
     import { generateRandomString, getWebSocketURL } from "../js/utility.js"
-    
+
 	  var id = getUrlParameter("id");
 	  if(typeof id != "undefined") {
 		$("#streamName").val(id);
@@ -56,12 +57,12 @@
 		id = getUrlParameter("name");
 		if (typeof id != "undefined") {
 			$("#streamName").val(id);
-		} 
+		}
 		else {
 			$("#streamName").val("stream1");
 		}
 	  }
-    
+
 
 	var start_publish_button = document.getElementById("start_play_button");
 	start_publish_button.addEventListener("click", startPlaying, false);
@@ -69,7 +70,7 @@
 	stop_publish_button.addEventListener("click", stopPlaying, false);
 
 	var streamNameBox = document.getElementById("streamName");
-	
+
 	var streamId;
 	function startPlaying() {
 		streamId = streamNameBox.value;
@@ -95,9 +96,9 @@
 		video : false,
 		audio : false
 	};
-	
+
 	var websocketURL = getWebSocketURL(location)
-	
+
 	var webRTCAdaptor = new WebRTCAdaptor({
 		websocket_url : websocketURL,
 		mediaConstraints : mediaConstraints,
@@ -116,7 +117,7 @@
 				console.log("play started");
 				start_play_button.disabled = true;
 				stop_play_button.disabled = false;
-			
+
 			} else if (info == "play_finished") {
 				//leaved the stream
 				console.log("play finished");
@@ -134,7 +135,11 @@
 			//some of the possible errors, NotFoundError, SecurityError,PermissionDeniedError
 
 			console.log("error callback: " + JSON.stringify(error));
-			alert(JSON.stringify(error));
+			$.notify(JSON.stringify(error), {
+				autoHideDelay:5000,
+				className:'error',
+				position:'top center'
+			});
 		}
 	});
 

@@ -41,7 +41,7 @@
               <input type="text" class="form-control" id="streamNameInput" value="Guest">
             </div>
             <a id="enterButton" href="javascript:;" class="btn btn-primary">Login</a>
-          </form>   
+          </form>
         </div>
       </div>
 
@@ -62,7 +62,7 @@
       <div class="container-fluid">
         <div class="row">
           <div class="col-sm-12 col-md-3">
-            <div class="room-name">            
+            <div class="room-name">
             <span></span><img class="logo-compact" src="images/ant-media-emblem.svg"></span>
             <span id="date"></span> | <span id="roomName"></span></div>
           </div>
@@ -144,23 +144,24 @@
         <script src="js/external/jquery-3.3.1.slim.min.js"></script>
         <script src="js/external/popper.min.js"></script>
         <script src="js/external/bootstrap.min.js"></script>
+        <script src="js/external/notify.min.js"></script>
 
       </body>
 
       <script type="module">
        import {WebRTCAdaptor} from "./js/webrtc_adaptor.js"
-       import {getUrlParameter} from "./js/fetch.stream.js" 
+       import {getUrlParameter} from "./js/fetch.stream.js"
 
     /**
     * This page accepts 7 arguments through url parameter
     * 1. "streamId": the stream id to publish stream. It's optional. ?streamId=stream1
     * 2. "playOnly": If it's true, user does not publish stream. It only play streams in the room.
-    * 3. "token": It's experimental. 
+    * 3. "token": It's experimental.
     * 4. "roomName": The id of the conference room which requested streams belongs to
     * 5. "streamName": Stream name of stream
-    * 6. "subscriberId": It's experimental. 
-    * 7. "subscriberCode": It's experimental. 
-    */  
+    * 6. "subscriberId": It's experimental.
+    * 7. "subscriberCode": It's experimental.
+    */
 
     var token = getUrlParameter("token");
     var publishStreamId = getUrlParameter("streamId");
@@ -191,15 +192,15 @@
 
     var dateSpan = document.getElementById("date");
     dateSpan.innerHTML = formatAMPM(new Date);
-    setInterval(() => {      
+    setInterval(() => {
      dateSpan.innerHTML = formatAMPM(new Date);
    }, 60000);
-   
-   
-    var statusTimerId = setInterval(() => {      
+
+
+    var statusTimerId = setInterval(() => {
         updateStatus();
     }, 5000);
-    
+
     var roomNameSpan = document.getElementById("roomName");
     roomNameSpan.innerHTML = roomName;
 
@@ -274,7 +275,7 @@
 
     var close_call_button = document.getElementById("close_call_button");
     close_call_button.addEventListener("click", exit, false);
-    
+
 
     var roomOfStream = new Array();
     var streamIdList = new Array();
@@ -286,7 +287,7 @@
     var isScreenSharing = false;
     var isChatActive = false;
     var roomTimerId = -1;
-    
+
     var isPinned = false;
 
     function enter() {
@@ -344,12 +345,20 @@
         }
       }
       else {
-        alert("WebRTC publishing is not active. Please click Start Publishing first")
+        $.notify("WebRTC publishing is not active. Please click Start Publishing first", {
+          autoHideDelay:5000,
+          className:'error',
+          position:'top center'
+        });
       }
     }
     catch (exception) {
       console.error(exception);
-      alert("Message cannot be sent. Make sure you've enabled data channel on server web panel");
+      $.notify("Message cannot be sent. Make sure you've enabled data channel on server web panel", {
+        autoHideDelay:5000,
+        className:'error',
+        position:'top center'
+      });
     }
   }
 
@@ -468,13 +477,13 @@ function handleNotificationEvent(obj) {
       console.log("Microphone muted for : ", eventStreamId);
     } else if (eventType == "MIC_UNMUTED"){
       console.log("Microphone unmuted for : ", eventStreamId);
-    } else if (eventType == "AUDIO_TRACK_ASSIGNMENT"){     
+    } else if (eventType == "AUDIO_TRACK_ASSIGNMENT"){
       var assignments = notificationEvent.assignments;
-      
+
       assignments.forEach(item => {
         var trackId = item.trackId;
         var audioLevel = item.audioLevel;
-        
+
         console.log(trackId+" - "+audioLevel);
       });
     } else if (eventType == "UPDATE_STATUS"){
@@ -504,12 +513,12 @@ function streamInformation(obj) {
 function updateStatus() {
 	var payload = {streamId:publishStreamId, pinnedId:fullScreenId, mic:isMicMuted, camera:isCameraOff};
 	sendNotificationEvent("UPDATE_STATUS", payload);
-	
+
     var requestedMediaConstraints = {
           width: isPinned ? 1080 : 360,
           height: isPinned ? 720 : 240,
-    }	
-	
+    }
+
     webRTCAdaptor.applyConstraints(payload.streamId, requestedMediaConstraints);
     console.log("current reslution:"+requestedMediaConstraints.height);
     isPinned = false;
@@ -533,7 +542,7 @@ function playVideo(obj) {
   if (video == null) {
     createRemoteVideo(index);
     video = document.getElementById("remoteVideo"+index);
-    video.srcObject = new MediaStream();  
+    video.srcObject = new MediaStream();
   }
 
   video.srcObject.addTrack(obj.track)
@@ -554,7 +563,7 @@ function createRemoteVideo(streamId) {
 
   generateStreamCol(streamId);
 
-  if(fullScreenId == -1) {  
+  if(fullScreenId == -1) {
     doLayout(streamIdList.length);
   }
 
@@ -628,7 +637,7 @@ function generateStreamCol(streamId){
     +"<div class='overlay'><span>"+streamName+"   </span>"
     +"<span><a href=\"javascript:makeFullScreen('"+streamId+"');\"><img src='images/icons/fullscreen.svg'></a></span>"
     +"</div></div>"
-   
+
    if(streamId.startsWith("audioTrack")) {
      div.style.display = "none";
    }
@@ -653,7 +662,7 @@ function removeRemoteVideo(streamId) {
       }
     }
 
-    if(fullScreenId == -1) {  
+    if(fullScreenId == -1) {
       doLayout(streamIdList.length);
     }
 
@@ -704,7 +713,7 @@ if (location.protocol.startsWith("https")) {
   websocketURL = "wss://" + path;
 }
 
-var webRTCAdaptor = new WebRTCAdaptor(	
+var webRTCAdaptor = new WebRTCAdaptor(
 {
   websocket_url : websocketURL,
   mediaConstraints : mediaConstraints,
@@ -716,7 +725,7 @@ var webRTCAdaptor = new WebRTCAdaptor(
   callback : (info, obj) => {
    if (info == "initialized") {
     console.log("initialized");
-  } 
+  }
   else if (info == "joinedTheRoom") {
     var room = obj.ATTR_ROOM_NAME;
 		roomOfStream[obj.streamId] = room;
@@ -731,37 +740,37 @@ var webRTCAdaptor = new WebRTCAdaptor(
 		if(playOnly) {
 			isCameraOff = true;
 			handleCameraButtons();
-			webRTCAdaptor.play(roomName, token, roomName, streamIdList);	
+			webRTCAdaptor.play(roomName, token, roomName, streamIdList);
 		}
 		else {
       publish(obj.streamId, token, subscriberId, subscriberCode, streamName);
     }
 
-    roomTimerId = setInterval(() => {			
+    roomTimerId = setInterval(() => {
       webRTCAdaptor.getRoomInfo(roomName, publishStreamId);
     }, 5000);
   }
   else if (info == "newStreamAvailable") {
-    playVideo(obj);          
-  } 
+    playVideo(obj);
+  }
   else if (info == "publish_started") {
 	  //stream is being published
 		console.debug("publish started to room: "
 			+ roomOfStream[obj.streamId]);
 
 		webRTCAdaptor.getRoomInfo(roomName, publishStreamId);
-	} 
+	}
   else if (info == "publish_finished") {
 	  //stream is being finished
     console.debug("publish finished");
-  } 
+  }
   else if (info == "screen_share_stopped") {
     console.log("screen share stopped");
   }
   else if (info == "browser_screen_share_supported") {
     screen_share_on_button.disabled = false;
 		console.log("browser screen share supported");
-  } 
+  }
   else if (info == "leavedFromRoom") {
     var room = obj.ATTR_ROOM_NAME;
 		console.debug("leaved from the room:" + room);
@@ -770,7 +779,7 @@ var webRTCAdaptor = new WebRTCAdaptor(
 			clearInterval(roomTimerId);
 			clearInterval(statusTimerId);
 		}
-						
+
 		if (streamsList != null) {
 			streamsList.forEach(function(item) {
 			  removeRemoteVideo(item);
@@ -781,26 +790,26 @@ var webRTCAdaptor = new WebRTCAdaptor(
     streamDetailsList = new Array();
 		isPlaying = false;
     publishStreamId = null;
-  } 
+  }
   else if (info == "closed") {
     if (typeof obj != "undefined") {
     console.log("Connecton closed: "
       + JSON.stringify(obj));
     }
-  } 
+  }
   else if (info == "play_finished") {
     console.log("play_finished");
     removeRemoteVideo(obj.streamId);
     isPlaying = false;
-  } 
+  }
   else if (info == "streamInformation") {
     streamInformation(obj);
-  } 
+  }
   else if (info == "roomInformation") {
     var tempList = obj.streams;
 		tempList.push("!"+publishStreamId);
 		if(!isPlaying) {
-			webRTCAdaptor.play(roomName, token, roomName, tempList);	
+			webRTCAdaptor.play(roomName, token, roomName, tempList);
 			isPlaying = true;
 		}
     //Lastly updates the current streamlist with the fetched one.
@@ -813,11 +822,11 @@ var webRTCAdaptor = new WebRTCAdaptor(
   else if (info == "data_channel_opened") {
     console.log("Data Channel open for stream id", obj );
     isDataChannelOpen = true;
-  } 
+  }
   else if (info == "data_channel_closed") {
     console.log("Data Channel closed for stream id", obj );
     isDataChannelOpen = false;
-  } 
+  }
   else if(info == "data_received") {
     try {
       handleNotificationEvent(obj);
@@ -864,9 +873,13 @@ callbackError : function(error, message) {
   } else if (error.indexOf("ScreenSharePermissionDenied") != -1) {
     errorMessage = "You are not allowed to access screen share";
     stopScreenShare();
-  } 
+  }
 
-  alert(errorMessage);
+  $.notify(errorMessage, {
+    autoHideDelay:5000,
+    className:'error',
+    position:'top center'
+  });
   }
 });
 
@@ -888,7 +901,7 @@ function copyWindowLocation(){
 
 window.getWindowLocation = getWindowLocation
 window.copyWindowLocation = copyWindowLocation
-window.makeFullScreen = makeFullScreen 
+window.makeFullScreen = makeFullScreen
 </script>
 
 </html>

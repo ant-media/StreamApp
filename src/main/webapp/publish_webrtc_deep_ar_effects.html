@@ -28,12 +28,14 @@
 		let url_string = "samples/publish_webrtc_deep_ar_effects_frame.html";
 
 		var debug = getUrlParameter("debug");
+		var Apikey = getUrlParameter("Apikey");
+
 		if (debug == null) {
 			debug = false;
 		}
 		url_string += "?debug=" + debug;
 		url_string += getQueryParameter("id");
-
+		url_string += "&Apikey=" + Apikey;
 		console.log(url_string);
 		myIframe.src = url_string;
 	</script>

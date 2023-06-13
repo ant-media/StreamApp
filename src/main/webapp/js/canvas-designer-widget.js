@@ -59,16 +59,19 @@ export function CanvasDesigner() {
         });
     }
 
-    var syncDataListener = function(data) {};
-    var dataURLListener = function(dataURL) {};
-    var captureStreamCallback = function() {};
+    var syncDataListener = function (data) {
+    };
+    var dataURLListener = function (dataURL) {
+    };
+    var captureStreamCallback = function () {
+    };
 
     function onMessage(event) {
         if (!event.data || event.data.uid !== designer.uid) return;
 
-        if(!!event.data.sdp) {
-            webrtcHandler.createAnswer(event.data, function(response) {
-                if(response.sdp) {
+        if (!!event.data.sdp) {
+            webrtcHandler.createAnswer(event.data, function (response) {
+                if (response.sdp) {
                     designer.postMessage(response);
                     return;
                 }
@@ -105,13 +108,14 @@ export function CanvasDesigner() {
 
     designer.uid = getRandomString();
 
-    designer.appendTo = function(parentNode, callback) {
-        callback = callback || function() {};
+    designer.appendTo = function (parentNode, callback) {
+        callback = callback || function () {
+        };
 
         designer.iframe = document.createElement('iframe');
-        
+
         // designer load callback
-        designer.iframe.onload = function() {
+        designer.iframe.onload = function () {
             callback();
             callback = null;
         };
@@ -127,7 +131,7 @@ export function CanvasDesigner() {
         parentNode.appendChild(designer.iframe);
     };
 
-    designer.destroy = function() {
+    designer.destroy = function () {
         if (designer.iframe) {
             designer.iframe.parentNode.removeChild(designer.iframe);
             designer.iframe = null;
@@ -135,23 +139,23 @@ export function CanvasDesigner() {
         window.removeEventListener('message', onMessage);
     };
 
-    designer.addSyncListener = function(callback) {
+    designer.addSyncListener = function (callback) {
         syncDataListener = callback;
     };
 
     designer.syncData = syncData;
 
-    designer.setTools = function(_tools) {
+    designer.setTools = function (_tools) {
         tools = _tools;
     };
 
-    designer.setSelected = function(icon) {
+    designer.setSelected = function (icon) {
         if (typeof tools[icon] !== 'undefined') {
             selectedIcon = icon;
         }
     };
 
-    designer.toDataURL = function(format, callback) {
+    designer.toDataURL = function (format, callback) {
         dataURLListener = callback;
 
         if (!designer.iframe) return;
@@ -161,7 +165,7 @@ export function CanvasDesigner() {
         });
     };
 
-    designer.sync = function() {
+    designer.sync = function () {
         if (!designer.iframe) return;
         designer.postMessage({
             syncPoints: true
@@ -170,10 +174,10 @@ export function CanvasDesigner() {
 
     designer.pointsLength = 0;
 
-    designer.undo = function(index) {
+    designer.undo = function (index) {
         if (!designer.iframe) return;
 
-        if(typeof index === 'string' && tools[index]) {
+        if (typeof index === 'string' && tools[index]) {
             designer.postMessage({
                 undo: true,
                 tool: index
@@ -187,14 +191,14 @@ export function CanvasDesigner() {
         });
     };
 
-    designer.postMessage = function(message) {
+    designer.postMessage = function (message) {
         if (!designer.iframe) return;
 
         message.uid = designer.uid;
         designer.iframe.contentWindow.postMessage(message, '*');
     };
 
-    designer.captureStream = function(callback) {
+    designer.captureStream = function (callback) {
         if (!designer.iframe) return;
 
         captureStreamCallback = callback;
@@ -211,7 +215,7 @@ export function CanvasDesigner() {
         });
     };
 
-    designer.renderStream = function() {
+    designer.renderStream = function () {
         if (!designer.iframe) return;
 
         designer.postMessage({
