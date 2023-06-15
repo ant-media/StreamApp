@@ -529,7 +529,7 @@ video, canvas {
 					else{
 						$.notify("Please select one of the AWS or Google APIs", {
 							autoHideDelay:5000,
-							className:'warn',
+							className:'error',
 							position:'top center'
 						});
 					}
@@ -709,7 +709,7 @@ video, canvas {
 			console.log("error callback: " + JSON.stringify(error));
 			$.notify(JSON.stringify(error), {
 				autoHideDelay:5000,
-				className:'warn',
+				className:'error',
 				position:'top center'
 			});
 		}

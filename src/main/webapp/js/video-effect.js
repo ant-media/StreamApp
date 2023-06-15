@@ -1,6 +1,8 @@
 import "./external/selfie-segmentation/selfie_segmentation.js";
 import {WebRTCAdaptor} from "./webrtc_adaptor.js";
+import "./external/loglevel.min.js";
 
+const Logger = window.log;
 /**
  * This class is used to apply a video effect to the video stream.
  * It's compatible with Ant Media Server JavaScript SDK v2.5.2+
@@ -147,7 +149,7 @@ export class VideoEffect {
 
             var fps = (this.renderedFrameCount - this.lastRenderedFrameCount) / deltaTime;
             this.renderedFrameCount = this.lastRenderedFrameCount;
-            console.log("Fps: " + fps + "fps");
+            Logger.warn("Fps: " + fps + "fps");
 
         }, 1000);
     }
@@ -180,7 +182,7 @@ export class VideoEffect {
     async enableEffect(effectName, deepARApiKey, deepARModel) {
 
         if (!this.isInitialized) {
-            console.error("VideoEffect is not initialized!");
+            Logger.error("VideoEffect is not initialized!");
             return;
         }
         switch (effectName) {
@@ -190,7 +192,7 @@ export class VideoEffect {
             case VideoEffect.NO_EFFECT:
                 break;
             default:
-                console.warn("Unknown effect name please use the constants VideoEffect.VIRTUAL_BACKGROUND,VideoEffect.BLUR_BACKGROUND or VideoEffect.NO_EFFECT ");
+                Logger.warn("Unknown effect name please use the constants VideoEffect.VIRTUAL_BACKGROUND,VideoEffect.BLUR_BACKGROUND or VideoEffect.NO_EFFECT ");
                 return;
         }
         var currentEffectName = this.effectName;
@@ -225,7 +227,7 @@ export class VideoEffect {
                             );
                         }).catch(err => {
                             //log and throw again to let the catch in the chain it
-                            console.error(err);
+                            Logger.error(err);
                             throw err;
                         });
                     }
@@ -238,7 +240,7 @@ export class VideoEffect {
         } else if (effectName === VideoEffect.DEEPAR) {
             if (deepARApiKey === undefined || deepARApiKey === null || deepARApiKey === ""
                 || deepARModel === undefined || deepARModel === null || deepARModel === "") {
-                console.error("DeepAR API key or DeepAR Model is not set!");
+                Logger.error("DeepAR API key or DeepAR Model is not set!");
                 return;
             }
             if (currentEffectName === VideoEffect.DEEPAR) {

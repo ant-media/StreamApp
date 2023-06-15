@@ -1,5 +1,9 @@
 'use strict';
 
+import "./external/loglevel.min.js";
+
+const Logger = window.log;
+
 export class SoundMeter {
 
 	constructor(context) {
@@ -13,15 +17,16 @@ export class SoundMeter {
 	  return this.context.audioWorklet.addModule(new URL('./volume-meter-processor.js', import.meta.url)).then(()=> {
 			this.mic = this.context.createMediaStreamSource(stream);
 	        this.volumeMeterNode = new AudioWorkletNode(this.context, 'volume-meter');
-	        
+
 	        this.volumeMeterNode.port.onmessage = (event) => {
 				if (event.data.type == 'debug') {
-					console.debug(event.data.message);
+					Logger.debug(event.data.message);
 				}
 				else {
 	            	this.instant = event.data;
 	            	levelCallback(this.instant.toFixed(2));
-					console.debug("Audio level: " + this.instant.toFixed(2));
+					Logger.debug("Audio level: " + this.instant.toFixed(2));
+
 				}
 	        };
 	        this.mic.connect(this.volumeMeterNode);
@@ -30,7 +35,7 @@ export class SoundMeter {
             if (errorCallback !== undefined) {
                 errorCallback(err);
             }
-            console.error("Error in soundmeter: " + err);
+			Logger.error("Error in soundmeter: " + err);
             throw err;
         });
 	}

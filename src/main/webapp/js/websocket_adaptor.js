@@ -1,3 +1,7 @@
+import "./external/loglevel.min.js";
+
+const Logger = window.log;
+
 export class WebSocketAdaptor {
     constructor(initialValues) {
 
@@ -31,7 +35,7 @@ export class WebSocketAdaptor {
         this.wsConn = new WebSocket(this.websocket_url);
         this.wsConn.onopen = () => {
             if (this.debug) {
-                console.debug("websocket connected");
+                Logger.debug("websocket connected");
             }
 
             this.pingTimerId = setInterval(() => {
@@ -54,15 +58,15 @@ export class WebSocketAdaptor {
                 //this command is received first, when publishing so playmode is false
 
                 if (this.debug) {
-                    console.debug("received start command");
+                    Logger.debug("received start command");
                 }
 
                 this.webrtcadaptor.startPublishing(obj.streamId);
             } else if (obj.command == "takeCandidate") {
 
                 if (this.debug) {
-                    console.debug("received ice candidate for stream id " + obj.streamId);
-                    console.debug(obj.candidate);
+                    Logger.debug("received ice candidate for stream id " + obj.streamId);
+                    Logger.debug(obj.candidate);
                 }
 
                 this.webrtcadaptor.takeCandidate(obj.streamId, obj.label, obj.candidate);
@@ -70,16 +74,16 @@ export class WebSocketAdaptor {
             } else if (obj.command == "takeConfiguration") {
 
                 if (this.debug) {
-                    console.debug("received remote description type for stream id: " + obj.streamId + " type: " + obj.type);
+                    Logger.debug("received remote description type for stream id: " + obj.streamId + " type: " + obj.type);
                 }
                 this.webrtcadaptor.takeConfiguration(obj.streamId, obj.sdp, obj.type, obj.idMapping);
 
             } else if (obj.command == "stop") {
                 if (this.debug) {
-                    console.debug("Stop command received");
+                    Logger.debug("Stop command received");
                 }
                 //server sends stop command when the peers are connected to each other in peer-to-peer.
-                //It is not being sent in publish,play modes  
+                //It is not being sent in publish,play modes
                 this.webrtcadaptor.closePeerConnection(obj.streamId);
             } else if (obj.command == "error") {
                 this.callbackError(obj.definition, obj);
@@ -104,7 +108,7 @@ export class WebSocketAdaptor {
         this.wsConn.onerror = (error) => {
             this.connecting = false;
             this.connected = false;
-            console.info(" error occured: " + JSON.stringify(error));
+            Logger.info(" error occured: " + JSON.stringify(error));
 
             this.clearPingTimer();
             this.callbackError("WebSocketNotConnected", error)
@@ -114,7 +118,7 @@ export class WebSocketAdaptor {
             this.connecting = false;
             this.connected = false;
             if (this.debug) {
-                console.debug("connection closed.");
+                Logger.debug("connection closed.");
             }
             this.clearPingTimer();
             this.callback("closed", event);
@@ -125,7 +129,7 @@ export class WebSocketAdaptor {
     clearPingTimer() {
         if (this.pingTimerId != -1) {
             if (this.debug) {
-                console.debug("Clearing ping message timer");
+                Logger.debug("Clearing ping message timer");
             }
             clearInterval(this.pingTimerId);
             this.pingTimerId = -1;
@@ -151,14 +155,14 @@ export class WebSocketAdaptor {
             });
             return;
         }
-        try {  
+        try {
             this.wsConn.send(text);
             if (this.debug) {
-                console.debug("sent message:" + text);
+                Logger.debug("sent message:" + text);
             }
-        } 
+        }
         catch (error) {
-            console.warn("Cannot send message:" + text);
+            Logger.warn("Cannot send message:" + text);
         }
     }
 

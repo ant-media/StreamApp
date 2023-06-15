@@ -1,5 +1,7 @@
 import {SoundMeter} from "./soundmeter.js"
+import "./external/loglevel.min.js";
 
+const Logger = window.log;
 /**
  * Media management class is responsible to manage audio and video
  * sources and tracks management for the local stream.
@@ -65,19 +67,19 @@ export class MediaManager {
          * It may be camera, screen, screen+camera
          */
         this.publishMode = "camera"; //screen, screen+camera
-        
+
         /**
          * Default callback. It's overriden below if it exists
          */
         this.callback = (info, obj) => {
-			console.debug("Callback info: " + info + " object: " + typeof obj !== undefined ? JSON.stringify(obj) : "");
+            Logger.debug("Callback info: " + info + " object: " + typeof obj !== undefined ? JSON.stringify(obj) : "");
 		};
-		
+
 		/**
 		 * Default callback error implementation. It's overriden below if it exists
 		 */
 		this.callbackError = (err) => {
-			console.error(err)
+            Logger.error(err)
 		}
 
         /**
@@ -221,7 +223,7 @@ export class MediaManager {
         } else {
             //neither video nor audio is requested
             //just return null stream
-            console.log("no media requested, just return an empty stream");
+            Logger.debug("no media requested, just return an empty stream");
             return new Promise((resolve, reject) => {
                 resolve(null);
             });
@@ -234,13 +236,13 @@ export class MediaManager {
     */
     checkWebRTCPermissions() {
         if (!("WebSocket" in window)) {
-            console.log("WebSocket not supported.");
+            Logger.debug("WebSocket not supported.");
             this.callbackError("WebSocketNotSupported");
             return;
         }
 
         if (typeof navigator.mediaDevices == "undefined") {
-            console.log("Cannot open camera and mic because of unsecure context. Please Install SSL(https)");
+            Logger.debug("Cannot open camera and mic because of unsecure context. Please Install SSL(https)");
             this.callbackError("UnsecureContext");
             return;
         }
@@ -272,14 +274,14 @@ export class MediaManager {
 
             //TODO: is the following part necessary. why?
             if (checkAudio == false && this.localStream == null) {
-                console.log("Audio input not found")
-                console.log("Retrying to get user media without audio")
+                Logger.debug("Audio input not found")
+                Logger.debug("Retrying to get user media without audio")
                 if (this.inputDeviceNotFoundLimit < 2) {
                     if (checkVideo != false) {
                         this.openStream({video: true, audio: false}, this.mode)
                         this.inputDeviceNotFoundLimit++;
                     } else {
-                        console.log("Video input not found")
+                        Logger.debug("Video input not found")
                         alert("There is no video or audio input")
                     }
                 } else {
@@ -288,7 +290,7 @@ export class MediaManager {
             }
             return deviceArray;
         }).catch(err => {
-            console.error("Cannot get devices -> error name: " + err.name + ": " + err.message);
+            Logger.error("Cannot get devices -> error name: " + err.name + ": " + err.message);
             throw err;
         });
     }
@@ -458,7 +460,7 @@ export class MediaManager {
                     this.callbackError(error.name, error.message);
                 }
             } else {
-                console.warn(error);
+                Logger.warn(error);
 
             }
             //throw error if there is a promise
@@ -482,7 +484,7 @@ export class MediaManager {
             })
             .catch(error => {
                 if (error.name === "NotAllowedError") {
-                    console.debug("Permission denied error");
+                    Logger.debug("Permission denied error");
                     this.callbackError("ScreenSharePermissionDenied");
 
                     // If error catched then redirect Default Stream Camera
@@ -551,7 +553,7 @@ export class MediaManager {
         } else {
             return new Promise((resolve, reject) => {
                 this.callbackError("media_constraint_video_not_defined");
-                console.error("MediaConstraint video is not defined");
+                Logger.error("MediaConstraint video is not defined");
                 reject("media_constraint_video_not_defined");
             });
         }
@@ -676,7 +678,7 @@ export class MediaManager {
 
             })
             .catch(function (err) {
-                console.log("Can't get the soundlevel on mute")
+                Logger.debug("Can't get the soundlevel on mute")
             });
     }
 
@@ -706,7 +708,7 @@ export class MediaManager {
      * @returns mixed stream.
      */
     mixAudioStreams(stream, secondStream) {
-        //console.debug("audio stream track count: " + audioStream.getAudioTracks().length);
+        //Logger.debug("audio stream track count: " + audioStream.getAudioTracks().length);
         var composedStream = new MediaStream();
         //added the video stream from the screen
         stream.getVideoTracks().forEach(function (videoTrack) {
@@ -724,7 +726,7 @@ export class MediaManager {
 
             audioSource.connect(this.primaryAudioTrackGainNode).connect(audioDestionation);
         } else {
-            console.debug("Origin stream does not have audio track")
+            Logger.debug("Origin stream does not have audio track")
         }
 
         if (secondStream.getAudioTracks().length > 0) {
@@ -736,12 +738,12 @@ export class MediaManager {
             var audioSource2 = this.audioContext.createMediaStreamSource(secondStream);
             audioSource2.connect(this.secondaryAudioTrackGainNode).connect(audioDestionation);
         } else {
-            console.debug("Second stream does not have audio track")
+            Logger.debug("Second stream does not have audio track")
         }
 
         audioDestionation.stream.getAudioTracks().forEach(function (track) {
             composedStream.addTrack(track);
-            console.log("audio destination add track");
+            Logger.debug("audio destination add track");
         });
 
         return composedStream;
@@ -941,7 +943,7 @@ export class MediaManager {
         if (audioTrack) {
             audioTrack.stop();
         } else {
-            console.warn("There is no audio track in local stream");
+            Logger.warn("There is no audio track in local stream");
         }
 
         if (typeof deviceId != "undefined") {
@@ -989,7 +991,7 @@ export class MediaManager {
             var videoTrack = this.localStream.getVideoTracks()[0];
             videoTrack.stop();
         } else {
-            console.warn("There is no video track in local stream");
+            Logger.warn("There is no video track in local stream");
         }
 
         this.publishMode = "camera";
@@ -1009,7 +1011,7 @@ export class MediaManager {
             }
             ;
             //If no matching device found don't adjust the media constraints let it be true instead of a device ID
-            console.debug("Given deviceId = " + deviceId + " - Media constraints video property = " + this.mediaConstraints.video);
+            Logger.debug("Given deviceId = " + deviceId + " - Media constraints video property = " + this.mediaConstraints.video);
             return this.setVideoCameraSource(streamId, this.mediaConstraints, null, true, deviceId);
         })
 
@@ -1056,7 +1058,7 @@ export class MediaManager {
             var videoTrack = this.localStream.getVideoTracks()[0];
             videoTrack.stop();
         } else {
-            console.warn("There is no video track in local stream");
+            Logger.warn("There is no video track in local stream");
         }
 
         // When device id set, facing mode is not working
@@ -1074,7 +1076,7 @@ export class MediaManager {
             videoConstraint);
 
         this.publishMode = "camera";
-        console.debug("Media constraints video property = " + this.mediaConstraints.video);
+        Logger.debug("Media constraints video property = " + this.mediaConstraints.video);
         return this.setVideoCameraSource(streamId, {video: this.mediaConstraints.video}, null, true);
     }
 
@@ -1093,7 +1095,7 @@ export class MediaManager {
                 this.updateLocalAudioStream(stream, onEndedCallback);
 
             }).catch(function (error) {
-                console.log(error.name);
+                Logger.debug(error.name);
             });
         } else {
             this.updateLocalAudioStream(stream, onEndedCallback);
@@ -1118,7 +1120,7 @@ export class MediaManager {
                 this.updateLocalVideoStream(stream, onEndedCallback, stopDesktop);
 
             }).catch(error => {
-                console.log(error.name);
+                Logger.debug(error.name);
             });
         } else {
             this.updateLocalVideoStream(stream, onEndedCallback, stopDesktop);
@@ -1320,7 +1322,7 @@ export class MediaManager {
             this.localStreamSoundMeter.stop();
             this.localStreamSoundMeter = null;
         }
-    }      
+    }
 
     /**
      * Called by user
@@ -1369,8 +1371,8 @@ export class MediaManager {
         if (constraints.audio !== undefined) {
             //just give the audio constraints not to get video stream
             //we dont call applyContrains for audio because it does not work. I think this is due to gainStream things. This is why we call getUserMedia again
-            
-            //use the publishStreamId because we don't have streamId in the parameter anymore 
+
+            //use the publishStreamId because we don't have streamId in the parameter anymore
             promise = this.setAudioInputSource(this.publishStreamId, {audio: this.mediaConstraints.audio}, null);
         }
 

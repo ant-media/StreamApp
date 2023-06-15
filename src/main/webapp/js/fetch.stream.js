@@ -1,3 +1,7 @@
+import "./external/loglevel.min.js";
+
+const Logger = window.log;
+
 //ask if adaptive m3u8 file
 
 if (!String.prototype.endsWith) {
@@ -25,20 +29,20 @@ export function tryToPlay(name, token, type, subscriberId, subscriberCode, noStr
                         if (response.status == 200) {
                             initializePlayer(name, type, token, subscriberId, subscriberCode);
                         } else {
-                            console.log("No stream found");
+                            Logger.warn("No stream found");
                             if (typeof noStreamCallback != "undefined") {
                                 noStreamCallback();
                             }
                         }
                     }).catch(function (err) {
-                    console.log("Error: " + err);
+                    Logger.warn("Error: " + err);
                     if (typeof noStreamCallback != "undefined") {
                         noStreamCallback();
                     }
                 });
             }
         }).catch(function (err) {
-        console.log("Error: " + err);
+        Logger.warn("Error: " + err);
         if (typeof noStreamCallback != "undefined") {
             noStreamCallback();
         }
@@ -74,7 +78,7 @@ function getURL(name, playType, token, subscriberId, subscriberCode) {
 export function tryToVODPlay(name, token, subscriberId, subscriberCode, noStreamCallback, playType) {
 
     if (typeof playType == "undefined" || playType == null || playType.length == 0) {
-        console.error("playType is not defined");
+        Logger.error("playType is not defined");
         return;
     }
     var firstPlayType = playType[0];
@@ -106,25 +110,25 @@ export function tryToVODPlay(name, token, subscriberId, subscriberCode, noStream
                                         //secondPlayType exists, play it
                                         initializePlayer(name, secondPlayType, token, subscriberId, subscriberCode)
                                     } else {
-                                        console.log("No stream found");
+                                        Logger.warn("No stream found");
                                         if (typeof noStreamCallback != "undefined") {
                                             noStreamCallback();
                                         }
                                     }
                                 }).catch(function (err) {
-                                console.log("Error: " + err);
+                                Logger.warn("Error: " + err);
                                 if (typeof noStreamCallback != "undefined") {
                                     noStreamCallback();
                                 }
                             });
                         } else {
-                            console.log("No stream found");
+                            Logger.warn("No stream found");
                             if (typeof noStreamCallback != "undefined") {
                                 noStreamCallback();
                             }
                         }
                     }).catch(function (err) {
-                    console.log("Error: " + err);
+                    Logger.warn("Error: " + err);
                     if (typeof noStreamCallback != "undefined") {
                         noStreamCallback();
                     }
@@ -132,7 +136,7 @@ export function tryToVODPlay(name, token, subscriberId, subscriberCode, noStream
             }
 
         }).catch(function (err) {
-        console.log("Error: " + err);
+        Logger.warn("Error: " + err);
         if (typeof noStreamCallback != "undefined") {
             noStreamCallback();
         }
@@ -159,7 +163,7 @@ export function getUrlParameter(sParam, search) {
 	if (typeof search === undefined || search == null) {
 		search = window.location.search;
 	}
-	
+
     var sPageURL = decodeURIComponent(search.substring(1)),
         sURLVariables = sPageURL.split('&'),
         sParameterName,

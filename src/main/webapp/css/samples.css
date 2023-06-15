@@ -93,3 +93,6 @@ video{
 	position: absolute;
 	left: 0;	
 }
+.notifyjs-bootstrap-base {
+	background-position-y: center !important;
+}
