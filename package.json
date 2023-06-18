@@ -12,7 +12,9 @@
   "scripts": {
     "compile": "rollup -c rollup.config.module.cjs && rollup -c rollup.config.browser.cjs ",
     "test": "karma start karma.conf.cjs",
-    "codecov": "codecov"
+    "codecov": "codecov",
+    "prebuild:types": "rimraf ./tsbuild",
+    "build:types": "tsc -p ./tsconfig.json && api-extractor run"
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.org/"
@@ -33,6 +35,8 @@
     "@rollup/plugin-babel": "^6.0.3",
     "chai": "^4.3.7",
     "codecov": "^3.8.3",
+    "eslint": "^8.9.0",
+    "jsdoc": "^3.6.10",
     "karma": "^6.4.2",
     "karma-chai": "^0.1.0",
     "karma-chrome-launcher": "^3.2.0",
@@ -40,10 +44,15 @@
     "karma-mocha": "^2.0.1",
     "karma-sinon": "^1.0.5",
     "mocha": "^10.2.0",
+    "prettier": "^2.5.1",
+    "rimraf": "^3.0.2",
     "rollup": "^3.21.2",
-    "sinon": "^15.0.4"
+    "sinon": "^15.0.4",
+    "typescript": "^4.5.5",
+    "@microsoft/api-extractor": "^7.35.4"
   },
   "dependencies": {
+    "typescript": "^5.1.3",
     "url": "^0.11.1"
   },
   "_comment": "url polyfill is added as compatibility with webpack > 5 because webpack > 5 does not include url polyfill by default. webrtc_adaptor uses url as import.meta.url"

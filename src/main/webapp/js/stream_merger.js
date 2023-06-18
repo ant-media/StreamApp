@@ -3,6 +3,13 @@ import "./external/loglevel.min.js";
 const Logger = window.log;
 
 export class StreamMerger {
+    /**
+     * 
+     * @param {number} width 
+     * @param {number} height 
+     * @param {boolean} autoMode 
+     * @param {*} aspectRatio 
+     */
     constructor(width, height, autoMode, aspectRatio) {
         this.streams = [];
         this.width = width;
@@ -45,7 +52,10 @@ export class StreamMerger {
         Logger.warn("Changing aspect ratio to: " + ratio);
         this.resizeAndSortV2();
     }
-
+    /**
+     * 
+     * @param {number} height 
+     */
     changeStreamSize(height) {
         this.stream_height = height;
         Logger.warn("Changing merged streams size to = " + height + "p");
@@ -66,8 +76,13 @@ export class StreamMerger {
     * Xindex = placement index of videos, index 0 means width * 0, index 1 means width * 1 as starting points
     * Yindex = placement index of videos, index 0 means height * 0, index 1 means height* 1 as starting points
     * mute = mute stream or not
-    *
+    * 
     */
+    /**
+     * 
+     * @param {MediaStream} mediaStream 
+     * @param {object} options 
+     */
     addStream(mediaStream, options) {
         this.streamCount++;
         const stream = {}
@@ -364,6 +379,10 @@ export class StreamMerger {
     }
 
     //Mutes or unmutes given streamId in merged stream
+    /**
+     * 
+     * @param {string} streamId 
+     */
     muteStream(streamId) {
         for (let i = 0; i < this.streams.length; i++) {
             const stream = this.streams[i]
@@ -378,7 +397,10 @@ export class StreamMerger {
             }
         }
     }
-
+    /**
+     * 
+     * @param {string} streamId 
+     */
     removeStream(streamId) {
         let removed = false;
         for (let i = 0; i < this.streams.length; i++) {
