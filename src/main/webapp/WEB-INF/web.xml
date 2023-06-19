@@ -207,16 +207,15 @@
 	</filter-mapping>
 
 	<filter>
-		<filter-name>RestAuthenticationFiler</filter-name>
+		<filter-name>IPFilter</filter-name>
 		<filter-class>io.antmedia.filter.IPFilter</filter-class>
 		<async-supported>true</async-supported>
 	</filter>
 	<filter-mapping>
-		<filter-name>RestAuthenticationFiler</filter-name>
+		<filter-name>IPFilter</filter-name>
 		<url-pattern>/rest/*</url-pattern>
-
-		<!-- Add chunked servlet security filter. I'm not sure it's a good idea but it provides just simple protection  -->
 		<url-pattern>/chunked/*</url-pattern>
+		<url-pattern>/hls-upload/*</url-pattern>
 	</filter-mapping>
 
 	<filter>
