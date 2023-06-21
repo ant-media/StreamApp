@@ -24,7 +24,7 @@ $ yarn add @antmedia/webrtc_adaptor
 ## <a name="requirements"></a>Requirements
 
 Before start using Ant Media Server WebRTC SDK, you need a distribution of the Ant Media Server running on a server or local machine.
-[Quick Start - Ant Media Server](https://resources.antmedia.io/docs/quick-start)
+[Quick Start - Ant Media Server](https://antmedia.io/docs/)
 
 ## <a name="usage">Usage
 
@@ -74,10 +74,10 @@ webRTCAdaptor.play(streamId);
 ```
 
 ## Samples
-Visit The [Samples List](https://resources.antmedia.io/docs/sample-tools-and-applications) and look at their [sources codes](https://github.com/ant-media/StreamApp/tree/master/src/main/webapp)
+Visit The [Samples List](https://antmedia.io/webrtc-samples/) and look at their [sources codes](https://github.com/ant-media/StreamApp/tree/master/src/main/webapp)
 
 ## <a name="documentation">Documentation
-[Javascript SDK Documentation](https://resources.antmedia.io/docs/javascript-sdk)
+[Javascript SDK Documentation](https://antmedia.io/docs/guides/developer-sdk-and-api/sdk-integration/javascript-sdk/)
 
 ## <a name="livedemo">Live Demo
 You can check our [live demo](https://antmedia.io/live-demo).

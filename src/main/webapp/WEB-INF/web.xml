@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <web-app xmlns="http://java.sun.com/xml/ns/j2ee"
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://java.sun.com/xml/ns/javaee 
+	xsi:schemaLocation="http://java.sun.com/xml/ns/javaee
           http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd"
 	version="3.0">
 
-	<!-- The display-name element contains a short name that is intended to 
+	<!-- The display-name element contains a short name that is intended to
 		be displayed by tools. The display name need not be unique. -->
 	<display-name>StreamApp</display-name>
 
-	<!-- The context-param element contains the declaration of a web application's 
+	<!-- The context-param element contains the declaration of a web application's
 		servlet context initialization parameters. -->
 	<context-param>
 		<param-name>webAppRootKey</param-name>
@@ -20,12 +20,12 @@
 		<listener-class>org.red5.logging.ContextLoggingListener
 		</listener-class>
 	</listener>
-	
+
 	<context-param>
         <param-name>logbackDisableServletContainerInitializer</param-name>
         <param-value>true</param-value>
     </context-param>
-	
+
 
 	<listener>
 		<listener-class>io.antmedia.filter.TokenSessionFilter</listener-class>
@@ -59,7 +59,7 @@
 		<filter-name>TokenFilter</filter-name>
 		<url-pattern>/streams/*</url-pattern>
 	</filter-mapping>
-	
+
 	<filter>
 		<filter-name>HttpForwardFilter</filter-name>
 		<filter-class>io.antmedia.filter.HttpForwardFilter</filter-class>
@@ -89,7 +89,7 @@
 		<filter-name>DashStatisticsFilter</filter-name>
 		<url-pattern>/streams/*</url-pattern>
 	</filter-mapping>
-	
+
 	<filter>
 		<filter-name>CorsFilter</filter-name>
 		<filter-class>io.antmedia.filter.CorsHeaderFilter</filter-class>
@@ -101,8 +101,8 @@
 		 	<param-name>cors.allowed.methods</param-name>
 		 	<param-value>GET,POST,HEAD,OPTIONS,PUT,DELETE</param-value>
 		 </init-param>
-		 
-		 <!-- cors.allowed.origins -> * and credentials are not supported at the same time.  
+
+		 <!-- cors.allowed.origins -> * and credentials are not supported at the same time.
 		 If you set to cors.allowed.origins to specific domains and support credentials open the below lines
 		 <init-param>
             <param-name>cors.support.credentials</param-name>
@@ -141,7 +141,7 @@
 		<servlet-name>jersey-serlvet</servlet-name>
 		<url-pattern>/rest/*</url-pattern>
 	</servlet-mapping>
-	
+
 	<servlet>
 		<servlet-name>chunked-transfer-servlet</servlet-name>
 		<servlet-class>io.antmedia.servlet.ChunkedTransferServlet</servlet-class>
@@ -154,8 +154,18 @@
 		<url-pattern>*.mpd</url-pattern>
 		<url-pattern>*.m4s</url-pattern>
 	</servlet-mapping>
-	
-	
+
+	<servlet>
+		<servlet-name>hls-upload-servlet</servlet-name>
+		<servlet-class>io.antmedia.servlet.UploadHLSChunk</servlet-class>
+		<async-supported>true</async-supported>
+		<load-on-startup>1</load-on-startup>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>hls-upload-servlet</servlet-name>
+		<url-pattern>/hls-upload/*</url-pattern>
+	</servlet-mapping>
+
 	<servlet-mapping>
 		<servlet-name>jsp</servlet-name>
 		<url-pattern>*.html</url-pattern>
@@ -169,17 +179,17 @@
 		<extension>ts</extension>
 		<mime-type>video/MP2T</mime-type>
 	</mime-mapping>
-	
+
 	<mime-mapping>
 		<extension>mpd</extension>
 		<mime-type>application/dash+xml</mime-type>
 	</mime-mapping>
-	
+
 	<mime-mapping>
 		<extension>m4s</extension>
 		<mime-type>video/iso.segment</mime-type>
 	</mime-mapping>
-	
+
 	<mime-mapping>
 		<extension>mjs</extension>
 		<mime-type>text/javascript</mime-type>
@@ -194,7 +204,7 @@
 		<filter-name>RestJWTAuthenticationFilter</filter-name>
 		<url-pattern>/rest/*</url-pattern>
 	</filter-mapping>
-	
+
 	<filter>
 		<filter-name>ContentSecurityPolicyHeaderFilter</filter-name>
 		<filter-class>io.antmedia.filter.ContentSecurityPolicyHeaderFilter</filter-class>
@@ -206,16 +216,15 @@
 	</filter-mapping>
 
 	<filter>
-		<filter-name>RestAuthenticationFiler</filter-name>
+		<filter-name>IPFilter</filter-name>
 		<filter-class>io.antmedia.filter.IPFilter</filter-class>
 		<async-supported>true</async-supported>
 	</filter>
 	<filter-mapping>
-		<filter-name>RestAuthenticationFiler</filter-name>
+		<filter-name>IPFilter</filter-name>
 		<url-pattern>/rest/*</url-pattern>
-		
-		<!-- Add chunked servlet security filter. I'm not sure it's a good idea but it provides just simple protection  -->
 		<url-pattern>/chunked/*</url-pattern>
+		<url-pattern>/hls-upload/*</url-pattern>
 	</filter-mapping>
 
 	<filter>
@@ -246,7 +255,7 @@
 		<dispatcher>REQUEST</dispatcher>
 	</filter-mapping>
 
-	<!-- The security-constraint element is used to associate security constraints 
+	<!-- The security-constraint element is used to associate security constraints
 		with one or more web resource collections -->
 	<security-constraint>
 		<web-resource-collection>

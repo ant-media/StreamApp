@@ -31,7 +31,7 @@
 				<label class=" mr-2" for="inlineFormCustomSelectPref">Max Video Bitrate(Kbps):</label>
 				<div class="form-inline">
 					<input type="text" class="form-control  mr-sm-2" id="maxBandwidthTextBox" name="maxBandwidthTextBox"
-						value="900">
+						value="1200">
 
 					<button type="button" class="btn btn-outline-primary btn-sm" id="max_bandwidth_apply">Apply</button>
 				</div>
@@ -143,22 +143,30 @@
 			</div>
 		</footer>
 
-	
+
 	</div>
 	<script src="../js/external/jquery-3.4.1.min.js" crossorigin="anonymous"></script>
 	<script src="../js/external/popper.min.js" crossorigin="anonymous"></script>
 	<script src="../js/external/bootstrap.min.js" crossorigin="anonymous"></script>
+	<script src="../js/external/notify.min.js" crossorigin="anonymous"></script>
 </body>
 <script type="module" lang="javascript">
 	import { WebRTCAdaptor } from "../js/webrtc_adaptor.js"
 	import { getUrlParameter } from "../js/fetch.stream.js"
 	import { SoundMeter } from "../js/soundmeter.js"
-	import { generateRandomString, getWebSocketURL  } from "../js/utility.js"
+	import { generateRandomString, getWebSocketURL, errorHandler } from "../js/utility.js"
 	var debug = getUrlParameter("debug");
 	if (debug == null) {
 		debug = false;
 	}
 
+	var mediaConstraints = {
+		audio: {
+			noiseSuppression: false,
+			echoCancellation: false
+		},
+		video: true
+	};
 
 
 	function init() {
@@ -186,7 +194,7 @@
 	var max_bandwidth_apply = document.getElementById("max_bandwidth_apply");
 	max_bandwidth_apply.addEventListener("click", setBitrateValue, false);
 
-	var maxVideoBitrateKbps = 900;
+	var maxVideoBitrateKbps = 1200;
 	var subscriberId = getUrlParameter("subscriberId");
 	var subscriberCode = getUrlParameter("subscriberCode");
 	var streamName = getUrlParameter("streamName");
@@ -221,15 +229,6 @@
 	var toggleEchoCancellation = document.getElementById("echoCancellation");
 	toggleEchoCancellation.addEventListener("click", changeAudioConstraints, false);
 
-	/**
-	 * If publishing stops for any reason, it tries to republish again.
-	 */
-	var autoRepublishEnabled = true;
-	/**
-	 * Timer job that checks the WebRTC connection 
-	 */
-	var autoRepublishIntervalJob = null;
-
 	var streamId;
 
 	var token = getUrlParameter("token");
@@ -260,7 +259,7 @@
 		else {
 			var bitrate = parseInt(bitrateBoxValue);
 			if (bitrate == NaN) {
-				maxVideoBitrateKbps = 900;
+				maxVideoBitrateKbps = 1200;
 			}
 			else if (bitrate < 100) {
 				maxVideoBitrateKbps = 100;
@@ -326,13 +325,20 @@
 			) {
 				webRTCAdaptor.sendData(streamIdBox.value, data);
 			} else {
-				alert("WebRTC connection is not active. Please click start first");
+				$(".badge").notify("WebRTC connection is not active. Please click start first", {
+					autoHideDelay:5000,
+					className:'error',
+					position:'top center'
+				});
+
 			}
 		} catch (exception) {
 			console.error(exception);
-			alert(
-				"Message cannot be sent. Make sure you've enabled data channel on server web panel"
-			);
+			$(".badge").notify("Message cannot be sent. Make sure you've enabled data channel on server web panel", {
+				autoHideDelay:5000,
+				className:'error',
+				position:'top center'
+			});
 		}
 	}
 
@@ -353,15 +359,11 @@
 	}
 
 	function stopPublishing() {
-		if (autoRepublishIntervalJob != null) {
-			clearInterval(autoRepublishIntervalJob);
-			autoRepublishIntervalJob = null;
-		}
 		webRTCAdaptor.stop(streamId);
 	}
 
 	function switchVideoMode(chbx) {
-		//If video device changes manually 
+		//If video device changes manually
 
 		if (chbx.value == "screen") {
 			//webRTCAdaptor.switchDesktopWithMicAudio(streamId);
@@ -426,25 +428,20 @@
 				$("#dataTextbox").val("");
 			}
 			else {
-				alert("WebRTC publishing is not active. Please click Start Publishing first")
+				$(".badge").notify("WebRTC publishing is not active. Please click Start Publishing first", {
+					autoHideDelay:5000,
+					className:'error',
+					position:'top center'
+				});
 			}
 		}
 		catch (exception) {
 			console.error(exception);
-			alert("Message cannot be sent. Make sure you've enabled data channel on server web panel");
-		}
-	}
-
-
-	function checkAndRepublishIfRequired() {
-		var iceState = webRTCAdaptor.iceConnectionState(streamId);
-		console.log("Ice state checked = " + iceState);
-
-		if (iceState == null || iceState == "failed" || iceState == "disconnected") {
-			webRTCAdaptor.stop(streamId);
-			webRTCAdaptor.closePeerConnection(streamId);
-			webRTCAdaptor.closeWebSocket();
-			initWebRTCAdaptor(true, autoRepublishEnabled);
+			$(".badge").notify("Message cannot be sent. Make sure you've enabled data channel on server web panel", {
+				autoHideDelay:5000,
+				className:'error',
+				position:'top center'
+			});
 		}
 	}
 
@@ -492,7 +489,14 @@
 				break;
 			}
 		}
-		webRTCAdaptor.applyConstraints(constraint);
+
+		webRTCAdaptor.applyConstraints(constraint).then((value) => {
+			console.log("Applied audio constraints: " + JSON.stringify(constraint));
+		})
+		.catch((error) => {
+			console.error("Audio Constraints could not be applied" + JSON.stringify(constraint));
+			console.error(error);
+		});
 	}
 
 	var websocketURL = getWebSocketURL(location, rtmpForward);
@@ -501,11 +505,12 @@
 	var selectedRadio = null;
 	var selectedAudio = null;
 
-	function initWebRTCAdaptor(publishImmediately, autoRepublishEnabled) {
+	function initWebRTCAdaptor(publishImmediately) {
 		webRTCAdaptor = new WebRTCAdaptor({
 			websocket_url: websocketURL,
-			localVideoId: "localVideo",
+			localVideoElement: document.getElementById("localVideo"),
 			debug: debug,
+			mediaConstraints: mediaConstraints,
 			bandwidth: maxVideoBitrateKbps,
 			dataChannelEnabled: true,
 			callback: (info, obj) => {
@@ -523,11 +528,6 @@
 					start_publish_button.disabled = true;
 					stop_publish_button.disabled = false;
 					startAnimation();
-					if (autoRepublishEnabled && autoRepublishIntervalJob == null) {
-						autoRepublishIntervalJob = setInterval(() => {
-							checkAndRepublishIfRequired();
-						}, 3000);
-					}
 					webRTCAdaptor.enableStats(obj.streamId);
 					enableAudioLevel();
 				} else if (info == "publish_finished") {
@@ -536,6 +536,8 @@
 					start_publish_button.disabled = false;
 					stop_publish_button.disabled = true;
 					$("#stats_panel").hide();
+					webRTCAdaptor.disableAudioLevelForLocalStream();
+
 				}
 				else if (info == "browser_screen_share_supported") {
 					$(".video-source").prop("disabled", false);
@@ -544,7 +546,7 @@
 					browser_screen_share_doesnt_support.style.display = "none";
 				}
 				else if (info == "screen_share_stopped") {
-					//choose the first video source. It may not be correct for all cases. 
+					//choose the first video source. It may not be correct for all cases.
 					$(".video-source").first().prop("checked", true);
 					console.log("screen share stopped");
 				}
@@ -557,9 +559,6 @@
 				else if (info == "pong") {
 					//ping/pong message are sent to and received from server to make the connection alive all the time
 					//It's especially useful when load balancer or firewalls close the websocket connection due to inactivity
-				}
-				else if (info == "refreshConnection") {
-					checkAndRepublishIfRequired();
 				}
 				else if (info == "ice_connection_state_changed") {
 					console.log("iceConnectionState Changed: ", JSON.stringify(obj));
@@ -739,66 +738,17 @@
 				//some of the possible errors, NotFoundError, SecurityError,PermissionDeniedError
 
 				console.log("error callback: " + JSON.stringify(error));
-				var errorMessage = JSON.stringify(error);
-				if (typeof message != "undefined") {
-					errorMessage = message;
-				}
-				var errorMessage = JSON.stringify(error);
-
-				if (error.indexOf("WebSocketNotConnected") != -1) {
-					errorMessage = "WebSocket Connection is disconnected.";
-				}
-				else if (error.indexOf("not_initialized_yet") != -1) {
-					errorMessage = "Server is getting initialized.";
-				}
-				else if (error.indexOf("data_store_not_available") != -1) {
-					errorMessage = "Data store is not available. It's likely that server is initialized or getting closed";
-				}
-				else {
-					if (error.indexOf("NotFoundError") != -1) {
-						errorMessage = "Camera or Mic are not found or not allowed in your device";
-					}
-					else if (error.indexOf("NotReadableError") != -1 || error.indexOf("TrackStartError") != -1) {
-						errorMessage = "Camera or Mic are already in use and they cannot be opened. Choose another video/audio source if you have on the page below ";
-
-						$(".options").show();
-
-					}
-					else if (error.indexOf("OverconstrainedError") != -1 || error.indexOf("ConstraintNotSatisfiedError") != -1) {
-						errorMessage = "There is no device found that fits your video and audio constraints. You may change video and audio constraints"
-					}
-					else if (error.indexOf("NotAllowedError") != -1 || error.indexOf("PermissionDeniedError") != -1) {
-						errorMessage = "You are not allowed to access camera and mic.";
-					}
-					else if (error.indexOf("TypeError") != -1) {
-						errorMessage = "Video/Audio is required";
-					}
-					else if (error.indexOf("getUserMediaIsNotAllowed") != -1) {
-						errorMessage = "You are not allowed to reach devices from an insecure origin, please enable ssl";
-					}
-					else if (error.indexOf("ScreenSharePermissionDenied") != -1) {
-						errorMessage = "You are not allowed to access screen share";
-						$(".video-source").first().prop("checked", true);
-					}
-					else if (error.indexOf("UnsecureContext") != -1) {
-						errorMessage = "Please Install SSL(https). Camera and mic cannot be opened because of unsecure context. ";
-					}
-					else {
-						errorMessage = error
-					}
-					alert(errorMessage);
-
-				}
-				console.error(errorMessage);
-				if (message !== undefined) {
-					console.error(message);
-				}
+				$(".badge").notify("Warning: " + errorHandler(error, message), {
+					autoHideDelay:5000,
+					className:'error',
+					position:'top center'
+				});
 			}
 		});
 	}
 
 	//initialize the WebRTCAdaptor
-	initWebRTCAdaptor(false, autoRepublishEnabled);
+	initWebRTCAdaptor(false);
 
 	window.webRTCAdaptor = webRTCAdaptor;
 </script>

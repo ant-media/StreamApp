@@ -109,6 +109,7 @@
 <script src="../js/external/jquery-3.4.1.min.js" crossorigin="anonymous"></script>
 <script src="../js/external/popper.min.js" crossorigin="anonymous"></script>
 <script src="../js/external/bootstrap.min.js" crossorigin="anonymous"></script>
+<script src="../js/external/notify.min.js" crossorigin="anonymous"></script>
 </body>
 <script type="module">
     import {WebRTCAdaptor} from "../js/webrtc_adaptor.js"
@@ -251,7 +252,11 @@
             callbackError: function (error, message) {
                 //some possible errors, NotFoundError, SecurityError,PermissionDeniedError
 
-                errorHandler(error, message);
+				$(".badge").notify("Warning: " + errorHandler(error, message), {
+							autoHideDelay:5000,
+							className:'error',
+							position:'top right'
+						});
             }
         });
     }
@@ -290,7 +295,11 @@
             console.log("Effect: "+ effectName+" is enabled");
         }).catch(err => {
             console.error("Effect: "+ effectName+" is not enabled. Error is " + err);
-            alert(err.name);
+            $.notify(err.name, {
+                autoHideDelay:5000,
+                className:'error',
+                position:'top center'
+            });
         });
     }
 </script>

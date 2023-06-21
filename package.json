@@ -1,15 +1,18 @@
 {
   "name": "@antmedia/webrtc_adaptor",
-  "version": "2.5.3",
+  "version": "2.6.1",
   "description": "WebRTC Adaptor for implementing a front end using Ant Media Server.",
-  "main": "dist/webrtc_adaptor.js",
+  "main": "dist/index.js",
+  "module": "dist/es/index.js",
+  "browser": "dist/browser/webrtc_adaptor.js",
   "type": "commonjs",
   "directories": {
     "doc": "doc"
   },
   "scripts": {
-    "compile": "babel --plugins @babel/plugin-transform-modules-commonjs src/main/webapp/js/ -d dist",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "compile": "rollup -c rollup.config.module.cjs && rollup -c rollup.config.browser.cjs ",
+    "test": "karma start karma.conf.cjs",
+    "codecov": "codecov"
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.org/"
@@ -24,10 +27,24 @@
     "url": "https://github.com/ant-media/StreamApp/issues"
   },
   "homepage": "https://github.com/ant-media/StreamApp#readme",
-  "dependencies": {
-    "@babel/cli": "^7.19.6"
-  },
   "devDependencies": {
-    "@babel/plugin-transform-modules-commonjs": "^7.19.6"
-  }
+    "@babel/core": "^7.21.5",
+    "@babel/preset-env": "^7.21.5",
+    "@rollup/plugin-babel": "^6.0.3",
+    "chai": "^4.3.7",
+    "codecov": "^3.8.3",
+    "karma": "^6.4.2",
+    "karma-chai": "^0.1.0",
+    "karma-chrome-launcher": "^3.2.0",
+    "karma-coverage": "^2.2.0",
+    "karma-mocha": "^2.0.1",
+    "karma-sinon": "^1.0.5",
+    "mocha": "^10.2.0",
+    "rollup": "^3.21.2",
+    "sinon": "^15.0.4"
+  },
+  "dependencies": {
+    "url": "^0.11.1"
+  },
+  "_comment": "url polyfill is added as compatibility with webpack > 5 because webpack > 5 does not include url polyfill by default. webrtc_adaptor uses url as import.meta.url"
 }
