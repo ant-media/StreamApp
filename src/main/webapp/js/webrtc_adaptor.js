@@ -2,12 +2,10 @@ import {PeerStats} from "./peer_stats.js"
 import {WebSocketAdaptor} from "./websocket_adaptor.js"
 import {MediaManager} from "./media_manager.js"
 import {SoundMeter} from "./soundmeter.js"
-import log from 'loglevel';
+import "./external/loglevel.min.js";
 
-window.log=log
-const Logger = log;
+const Logger = window.log;
 
-console.log(Logger)
 /**
  * This structure is used to handle large size data channel messages (like image)
  * which should be splitted into chunks while sending and receiving.
