@@ -42,6 +42,7 @@ export class PeerStats {
 
         this.audioJitterAverageDelay = 0;
         this.videoJitterAverageDelay = 0;
+        this.availableOutgoingBitrate = Infinity;
     }
 
     //kbits/sec

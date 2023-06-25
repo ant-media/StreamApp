@@ -2,10 +2,12 @@ import {PeerStats} from "./peer_stats.js"
 import {WebSocketAdaptor} from "./websocket_adaptor.js"
 import {MediaManager} from "./media_manager.js"
 import {SoundMeter} from "./soundmeter.js"
-import "./external/loglevel.min.js";
+import log from 'loglevel';
 
-const Logger = window.log;
+window.log=log
+const Logger = log;
 
+console.log(Logger)
 /**
  * This structure is used to handle large size data channel messages (like image)
  * which should be splitted into chunks while sending and receiving.
@@ -1374,12 +1376,10 @@ export class WebRTCAdaptor {
 
             var audioJitterAverageDelay = -1;
             var videoJitterAverageDelay = -1;
-
+            var availableOutgoingBitrate = Infinity;
 
             stats.forEach(value => {
-
                 //Logger.debug(value);
-
                 if (value.type == "inbound-rtp" && typeof value.kind != "undefined") {
                     bytesReceived += value.bytesReceived;
                     if (value.kind == "audio") {
@@ -1469,6 +1469,9 @@ export class WebRTCAdaptor {
                         fps = value.framesPerSecond;
                     }
                 }
+                else if(value.type == "candidate-pair" && value.state == "succeeded" && value.availableOutgoingBitrate !=undefined){
+                    availableOutgoingBitrate = value.availableOutgoingBitrate/1000
+                }
             });
 
             this.remotePeerConnectionStats[streamId].totalBytesReceived = bytesReceived;
@@ -1497,6 +1500,7 @@ export class WebRTCAdaptor {
 
             this.remotePeerConnectionStats[streamId].videoJitterAverageDelay = videoJitterAverageDelay;
             this.remotePeerConnectionStats[streamId].audioJitterAverageDelay = audioJitterAverageDelay;
+            this.remotePeerConnectionStats[streamId].availableOutgoingBitrate = availableOutgoingBitrate;
 
 
             this.notifyEventListeners("updated_stats", this.remotePeerConnectionStats[streamId]);
