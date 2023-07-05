@@ -1,6 +1,11 @@
-video {
+video{
 	width: 100%;
 	max-width: 640px;
+}
+.embedded-player {
+	width: 100%;
+	max-width: 640px;
+	height: 480px;
 }
 
 /* Everything but the jumbotron gets side spacing for mobile first views */
@@ -31,6 +36,7 @@ video {
 .jumbotron {
 	text-align: center;
 	padding: 2em;
+	padding-top: 3em;
 }
 #stats_panel {
 	display: none;
@@ -86,4 +92,7 @@ video {
 .custom-file-input {
 	position: absolute;
 	left: 0;	
+}
+.notifyjs-bootstrap-base {
+	background-position-y: center !important;
 }

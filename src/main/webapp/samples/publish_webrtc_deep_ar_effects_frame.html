@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Ant Media Server WebRTC Custom Video Source Publish</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="../css/external/bootstrap4/bootstrap.min.css">
+    <link rel="stylesheet" href="../css/common.css"/>
+    <script src="../js/external/adapter-latest.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/deepar@4.0.3/js/deepar.js"></script>
+
+    <style>
+        video {
+            width: 100%;
+            max-width: 640px;
+        }
+
+        /* Everything but the jumbotron gets side spacing for mobile first views */
+        .header, .marketing, .footer {
+            padding: 15px;
+        }
+
+        /* Custom page header */
+        .header {
+            padding-bottom: 20px;
+        }
+
+        /* Customize container */
+        @media ( min-width: 768px) {
+            .container {
+                max-width: 730px;
+            }
+        }
+
+        .container-narrow > hr {
+            margin: 30px 0;
+        }
+
+        /* Main marketing message and sign up button */
+        .jumbotron {
+            text-align: center;
+        }
+
+        /* Responsive: Portrait tablets and up */
+        @media screen and (min-width: 768px) {
+            /* Remove the padding we set earlier */
+            .header, .marketing, .footer {
+                padding-right: 0;
+                padding-left: 0;
+            }
+        }
+
+    </style>
+</head>
+<body>
+<div>
+
+    <div class="jumbotron">
+        <div class="col-sm-12 form-group">
+            <video id="localVideo" autoplay muted controls playsinline></video>
+        </div>
+
+        <div class="form-group col-sm-12 text-left">
+            <input type="text" class="form-control"
+                   id="streamId" name="streamIdTextBox" placeholder="Type stream ID">
+        </div>
+        Select Effects :
+        <select id="select_effect">
+            <option>No Effect</option>
+        </select>
+
+        <div class="form-group col-sm-12 text-center" id="offlineInfo">
+            <div class="form-group col-sm-4 offset-sm-4 text-center" style="margin-bottom: 16px;font-size:1em;">
+                <a href="" target="_blank">&nbsp;</a> <!-- this is a place holder to keep the same alignment -->
+            </div>
+            <div class="form-group col-sm-4 offset-sm-4 text-center" style="font-size:1.2em">
+                <span class="badge  badge-secondary">Status: Offline</span>
+            </div>
+        </div>
+        <div class="form-group col-sm-12 text-center" id="broadcastingInfo" style="display: none;">
+            <div class="form-group text-center" style="margin-bottom: 8px;margin-top: 16px;font-size:1em;">
+                <a href="" id="playlink" target="_blank" data-toggle="tooltip" title="Opens in New Tab">Play with
+                    WebRTC</a>
+            </div>
+            <div class="form-group text-center" style="font-size:1.2em">
+                <span class="badge  badge-success">Status: Publishing</span>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <button class="btn btn-primary" disabled
+                    id="start_publish_button">Start Publishing
+            </button>
+            <button class="btn btn-primary" disabled
+                    id="stop_publish_button">Stop Publishing
+            </button>
+        </div>
+
+    </div>
+    <footer class="footer text-left">
+        <div class="row">
+            <div class="col-sm-6 text-left"><a target="_parent" href="https://github.com/ant-media/StreamApp/tree/master/src/main/webapp/samples/publish_webrtc_deep_ar_effects_frame.html">View Source on Github</a></div>
+            <div class="col-sm-6 text-right">
+                <a href="http://antmedia.io" target="_parent">antmedia.io</a>
+            </div>
+        </div>
+    </footer>
+</div>
+<script src="../js/external/jquery-3.4.1.min.js" crossorigin="anonymous"></script>
+<script src="../js/external/popper.min.js" crossorigin="anonymous"></script>
+<script src="../js/external/bootstrap.min.js" crossorigin="anonymous"></script>
+<script src="../js/external/notify.min.js" crossorigin="anonymous"></script>
+</body>
+<script type="module">
+    import {WebRTCAdaptor} from "../js/webrtc_adaptor.js"
+    import {getUrlParameter} from "../js/fetch.stream.js"
+    import {VideoEffect} from "../js/video-effect.js"
+    import { generateRandomString, getWebSocketURL, errorHandler , updateBroadcastStatusInfo} from "../js/utility.js"
+
+    var debug = getUrlParameter("debug");
+
+    if (debug == null) {
+        debug = false;
+    }
+
+    function init() {
+        var id = getUrlParameter("id");
+        if (typeof id != "undefined") {
+            $("#streamId").val(id);
+        } else {
+            id = getUrlParameter("name");
+            if (typeof id != "undefined") {
+                $("#streamId").val(id);
+            } else {
+                $("#streamId").val("streamId_" + generateRandomString(9));
+            }
+        }
+    }
+
+    $(function () {
+        init();
+    });
+
+    var subscriberId = getUrlParameter("subscriberId");
+    var subscriberCode = getUrlParameter("subscriberCode");
+    var streamName = getUrlParameter("streamName");
+    var mainTrack = getUrlParameter("mainTrack");
+
+    var start_publish_button = document.getElementById("start_publish_button");
+    start_publish_button.addEventListener("click", startPublishing, false);
+    var stop_publish_button = document.getElementById("stop_publish_button");
+    stop_publish_button.addEventListener("click", stopPublishing, false);
+
+    document.getElementById("streamId").defaultValue = "Goofy"
+    var streamIdBox = document.getElementById("streamId");
+
+    var streamId;
+
+    var token = getUrlParameter("token");
+
+    function startPublishing() {
+        streamId = streamIdBox.value;
+        webRTCAdaptor.publish(streamId, token, subscriberId, subscriberCode, streamName, mainTrack);
+    }
+
+    function stopPublishing() {
+        webRTCAdaptor.stop(streamId);
+    }
+
+    var pc_config = {
+        'iceServers': [{
+            'urls': 'stun:stun1.l.google.com:19302'
+        }]
+    };
+
+    var sdpConstraints = {
+        OfferToReceiveAudio: false,
+        OfferToReceiveVideo: false
+    };
+
+    var mediaConstraints = {
+        video: true,
+        audio: true,
+    };
+
+    var websocketURL = getWebSocketURL(location);
+
+    var webRTCAdaptor = null;
+
+    function initWebRTCAdaptor(publishImmediately) {
+        webRTCAdaptor = new WebRTCAdaptor({
+            websocket_url: websocketURL,
+            mediaConstraints: mediaConstraints,
+            peerconnection_config: pc_config,
+            sdp_constraints: sdpConstraints,
+            localVideoElement: document.getElementById("localVideo"),
+            debug: debug,
+            bandwidth: 1200,
+            dataChannelEnabled: true,
+            callback: (info, obj) => {
+                if (info == "initialized") {
+                    console.log("initialized");
+                    start_publish_button.disabled = false;
+                    stop_publish_button.disabled = true;
+                    if (publishImmediately) {
+                        webRTCAdaptor.publish(streamId, token, subscriberId, subscriberCode, streamName)
+                    }
+
+                } else if (info == "publish_started") {
+                    //stream is being published
+                    console.log("publish started");
+                    start_publish_button.disabled = true;
+                    stop_publish_button.disabled = false;
+                    updateBroadcastStatusInfo(streamId);
+                } else if (info == "publish_finished") {
+                    //stream is being finished
+                    console.log("publish finished");
+                    start_publish_button.disabled = false;
+                    stop_publish_button.disabled = true;
+                } else if (info == "browser_screen_share_supported") {
+                    console.log("browser screen share supported");
+                } else if (info == "screen_share_stopped") {
+                    //choose the first video source. It may not be correct for all cases.
+                    console.log("screen share stopped");
+                } else if (info == "closed") {
+                    if (typeof obj != "undefined") {
+                        console.log("Connecton closed: " + JSON.stringify(obj));
+                    }
+                } else if (info == "ice_connection_state_changed") {
+                    console.log("iceConnectionState Changed: ", JSON.stringify(obj));
+                } else if (info == "updated_stats") {
+                    //obj is the PeerStats which has fields
+                    //averageOutgoingBitrate - kbits/sec
+                    //currentOutgoingBitrate - kbits/sec
+                    console.log("Average outgoing bitrate " + obj.averageOutgoingBitrate + " kbits/sec"
+                        + " Current outgoing bitrate: " + obj.currentOutgoingBitrate + " kbits/sec"
+                        + " video source width: " + obj.resWidth + " video source height: " + obj.resHeight
+                        + "frame width: " + obj.frameWidth + " frame height: " + obj.frameHeight
+                        + " video packetLost: " + obj.videoPacketsLost + " audio packetsLost: " + obj.audioPacketsLost
+                        + " video RTT: " + obj.videoRoundTripTime + " audio RTT: " + obj.audioRoundTripTime
+                        + " video jitter: " + obj.videoJitter + " audio jitter: " + obj.audioJitter);
+
+                } else if (info == "session_restored") {
+                    start_publish_button.disabled = true;
+                    stop_publish_button.disabled = false;
+                    updateBroadcastStatusInfo();
+                    console.log(info + "notification received");
+                } else {
+                    console.log(info + " notification received");
+                }
+            },
+            callbackError: function (error, message) {
+                //some possible errors, NotFoundError, SecurityError,PermissionDeniedError
+
+				$(".badge").notify("Warning: " + errorHandler(error, message), {
+							autoHideDelay:5000,
+							className:'error',
+							position:'top right'
+						});
+            }
+        });
+    }
+
+    //initialize the WebRTCAdaptor
+    initWebRTCAdaptor(false);
+
+    window.webRTCAdaptor = webRTCAdaptor;
+    let select_effect = document.getElementById("select_effect");
+
+    let deepARApiKey = getUrlParameter("Apikey");
+
+    if (deepARApiKey === undefined || deepARApiKey === null || deepARApiKey === "") {
+        deepARApiKey = "fdaad676ff58ff11f453db2d781073f105c94f14a8dc0f88c96049d4d20bf18aff2364181ac69a7a";
+    }
+
+    window.deepARApiKey=deepARApiKey;
+
+    var effectName = VideoEffect.NO_EFFECT;
+
+    for (let i = 0; i < VideoEffect.deepARModelList.length; i++) {
+        let option = document.createElement("option");
+        option.value = VideoEffect.deepARModelList[i];
+        option.text = VideoEffect.deepARModelList[i];
+        select_effect.appendChild(option);
+    }
+    select_effect.onchange = () => {
+        let selected_option = select_effect.options[select_effect.selectedIndex].text;
+        if( selected_option === "No Effect"){
+            effectName = VideoEffect.NO_EFFECT;
+        } else {
+            effectName = VideoEffect.DEEPAR;
+        }
+        console.log("effect changed", selected_option);
+        webRTCAdaptor.enableEffect(effectName, deepARApiKey, selected_option).then(() => {
+            console.log("Effect: "+ effectName+" is enabled");
+        }).catch(err => {
+            console.error("Effect: "+ effectName+" is not enabled. Error is " + err);
+            $.notify(err.name, {
+                autoHideDelay:5000,
+                className:'error',
+                position:'top center'
+            });
+        });
+    }
+</script>
+</html>

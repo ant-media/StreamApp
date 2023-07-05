@@ -1,0 +1,95 @@
+<html>
+<head>
+<title>WebRTC Samples > Play</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="UTF-8">
+<link rel="stylesheet" href="../css/external/bootstrap4/bootstrap.min.css">
+<link rel="stylesheet" href="../css/common.css" />
+<link rel="stylesheet" href="../css/samples.css" />
+<script src="../js/external/adapter-latest.js"></script>
+
+</head>
+<body>
+	<div>
+		<div class="jumbotron">
+			<div class="alert alert-primary text-center enterprise-feature" role="alert" style="margin-top:-2em">
+			WebRTC Playback is an enterprise edition feature. <br/>
+			<a href="https://antmedia.io">Try Enterprise Edition for free at antmedia.io</a> <br/><br/>
+			</div>
+			<div class="form-group col-sm-12 text-center">
+				<iframe id="embedded-player" class="embedded-player" style="background-color: #000"></iframe>
+			</div>
+			<div class="form-group col-sm-12 text-center">
+				<div class="form-group col-sm-12 text-left">
+					<input type="text" class="form-control"
+						id="streamName" placeholder="Type stream name">
+				</div>
+				
+			</div>
+			<div class="form-group">
+				<button class="btn btn-primary"
+					id="start_play_button">Start Playing</button>
+				<button class="btn btn-primary"
+					id="stop_play_button">Stop Playing</button>
+			</div>
+		</div>
+		<footer class="footer text-left">
+			<div class="row">
+				<div class="col-sm-6 text-left"><a target="_parent" href="https://github.com/ant-media/StreamApp/tree/master/src/main/webapp/samples/play_webrtc.html">View Source on Github</a></div>
+				<div class="col-sm-6 text-right">
+					<a href="http://antmedia.io" target="_parent">antmedia.io</a>
+				</div>
+			</div>
+		</footer>
+	</div>
+	<script src="../js/external/jquery-3.4.1.min.js" crossorigin="anonymous"></script>
+	<script src="../js/external/popper.min.js" crossorigin="anonymous"></script>
+	<script src="../js/external/bootstrap.min.js" crossorigin="anonymous"></script>
+</body>
+<script type="module">
+	import {WebRTCAdaptor} from "../js/webrtc_adaptor.js"
+	import {getUrlParameter} from "../js/fetch.stream.js" 
+    import { generateRandomString, getSrtURL, getRtmpUrl } from "../js/utility.js"
+    
+	var id = getUrlParameter("id");	  
+
+	var streamId = "stream1";
+	if (typeof id != "undefined") {
+		streamId = id;
+	}
+	else {
+		streamId = "streamId_" + generateRandomString(9);
+	}
+    
+	var playType = "webrtc";
+
+	var streamNameBox = document.getElementById("streamName")
+	streamNameBox.defaultValue = "stream1";
+
+	var start_play_button = document.getElementById("start_play_button");
+	start_play_button.addEventListener("click", startPlaying, false)
+	var stop_play_button = document.getElementById("stop_play_button");
+	stop_play_button.addEventListener("click",stopPlaying,false);
+
+    let embeddedPlayer = document.getElementById("embedded-player");
+	function startPlaying() {
+		streamId = streamNameBox.value;
+        embeddedPlayer.src = "../play.html?id=" + streamId + "&playOrder=webrtc";
+        start_play_button.disabled = true;
+        stop_play_button.disabled = false;
+	}
+
+	function stopPlaying() {
+        embeddedPlayer.src = "";
+        start_play_button.disabled = false;
+        stop_play_button.disabled = true;
+	}
+
+    start_play_button.disabled = false;
+    stop_play_button.disabled = true;
+
+	
+	
+
+</script>
+</html>

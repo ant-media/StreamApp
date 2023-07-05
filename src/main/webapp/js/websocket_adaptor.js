@@ -1,21 +1,23 @@
+import "./external/loglevel.min.js";
 
-export class WebSocketAdaptor 
-{
-    constructor(initialValues){
-        
+const Logger = window.log;
+
+export class WebSocketAdaptor {
+    constructor(initialValues) {
+
         this.debug = false;
-        for(var key in initialValues) {
-			if(initialValues.hasOwnProperty(key)) {
-				this[key] = initialValues[key];
-			}
+        for (var key in initialValues) {
+            if (initialValues.hasOwnProperty(key)) {
+                this[key] = initialValues[key];
+            }
         }
-        
-		this.initWebSocketConnection();
 
-     }
+        this.initWebSocketConnection();
 
-    initWebSocketConnection(callbackConnected)  {
-		this.connecting = true;
+    }
+
+    initWebSocketConnection(callbackConnected) {
+        this.connecting = true;
         this.connected = false;
         this.pingTimerId = -1;
 
@@ -24,63 +26,47 @@ export class WebSocketAdaptor
         * It uses one of the nodes on Cluster mode
         * Example parameters: "origin" or "edge"
         */
-        if (this.websocket_url.indexOf("?") == -1) {
-            //if there is no question mark just add it to give extra parameter
-            this.websocket_url+="?";
-        }
-        else {
-            //if there is a question mark, just append extra parameter
-            this.websocket_url+="&";
-        }
-        //add the target field
-        this.websocket_url+="target=";
-
-        //add the target value
-        if(this.webrtcadaptor.isPlayMode){
-            this.websocket_url+="edge";
-        }
-        else{
-           this.websocket_url+="origin";
+        const url = new URL(this.websocket_url);
+        if (!['origin', 'edge'].includes(url.searchParams.get('target'))) {
+            url.searchParams.set('target', this.webrtcadaptor.isPlayMode ? 'edge' : 'origin');
+            this.websocket_url = url.toString();
         }
 
-		this.wsConn = new WebSocket(this.websocket_url);
+        this.wsConn = new WebSocket(this.websocket_url);
         this.wsConn.onopen = () => {
-            if (this.debug) 
-            {
-                console.debug("websocket connected");
+            if (this.debug) {
+                Logger.debug("websocket connected");
             }
-    
+
             this.pingTimerId = setInterval(() => {
                 this.sendPing();
             }, 3000);
-    
+
             this.connected = true;
             this.connecting = false;
             this.callback("initialized");
 
-			if (typeof callbackConnected != "undefined") {
-				callbackConnected();
-			}
+            if (typeof callbackConnected != "undefined") {
+                callbackConnected();
+            }
         }
 
         this.wsConn.onmessage = (event) => {
             var obj = JSON.parse(event.data);
 
-            if (obj.command == "start")
-            {
+            if (obj.command == "start") {
                 //this command is received first, when publishing so playmode is false
 
                 if (this.debug) {
-                    console.debug("received start command");
+                    Logger.debug("received start command");
                 }
 
                 this.webrtcadaptor.startPublishing(obj.streamId);
-            }
-            else if (obj.command == "takeCandidate") {
+            } else if (obj.command == "takeCandidate") {
 
                 if (this.debug) {
-                    console.debug("received ice candidate for stream id " + obj.streamId);
-                    console.debug(obj.candidate);
+                    Logger.debug("received ice candidate for stream id " + obj.streamId);
+                    Logger.debug(obj.candidate);
                 }
 
                 this.webrtcadaptor.takeCandidate(obj.streamId, obj.label, obj.candidate);
@@ -88,72 +74,62 @@ export class WebSocketAdaptor
             } else if (obj.command == "takeConfiguration") {
 
                 if (this.debug) {
-                    console.debug("received remote description type for stream id: " + obj.streamId + " type: " + obj.type );
+                    Logger.debug("received remote description type for stream id: " + obj.streamId + " type: " + obj.type);
                 }
                 this.webrtcadaptor.takeConfiguration(obj.streamId, obj.sdp, obj.type, obj.idMapping);
 
-            }
-            else if (obj.command == "stop") {
-            	if (this.debug){
-                	console.debug("Stop command received");
+            } else if (obj.command == "stop") {
+                if (this.debug) {
+                    Logger.debug("Stop command received");
                 }
+                //server sends stop command when the peers are connected to each other in peer-to-peer.
+                //It is not being sent in publish,play modes
                 this.webrtcadaptor.closePeerConnection(obj.streamId);
-            }
-            else if (obj.command == "error") {
+            } else if (obj.command == "error") {
                 this.callbackError(obj.definition, obj);
-            }
-            else if (obj.command == "notification") {
+            } else if (obj.command == "notification") {
                 this.callback(obj.definition, obj);
-                if (obj.definition == "play_finished" || obj.definition == "publish_finished") {
-                    this.webrtcadaptor.closePeerConnection(obj.streamId);
-                }
-            }
-            else if (obj.command == "streamInformation") {
+            } else if (obj.command == "streamInformation") {
                 this.callback(obj.command, obj);
-            }
-            else if (obj.command == "roomInformation") {
+            } else if (obj.command == "roomInformation") {
                 this.callback(obj.command, obj);
-            }
-            else if (obj.command == "pong") {
+            } else if (obj.command == "pong") {
                 this.callback(obj.command);
-            }
-            else if (obj.command == "trackList") {
+            } else if (obj.command == "trackList") {
                 this.callback(obj.command, obj);
-            }
-            else if (obj.command == "connectWithNewId") {
+            } else if (obj.command == "connectWithNewId") {
                 this.multiPeerStreamId = obj.streamId;
                 this.join(obj.streamId);
-            }
-            else if (obj.command == "peerMessageCommand") {
+            } else if (obj.command == "peerMessageCommand") {
                 this.callback(obj.command, obj);
             }
         }
 
         this.wsConn.onerror = (error) => {
-        	this.connecting = false;
-        	this.connected = false;
-            console.info(" error occured: " + JSON.stringify(error));
-            
+            this.connecting = false;
+            this.connected = false;
+            Logger.info(" error occured: " + JSON.stringify(error));
+
             this.clearPingTimer();
             this.callbackError("WebSocketNotConnected", error)
         }
 
         this.wsConn.onclose = (event) => {
-        	this.connecting = false;
+            this.connecting = false;
             this.connected = false;
             if (this.debug) {
-            	console.debug("connection closed.");
+                Logger.debug("connection closed.");
             }
             this.clearPingTimer();
             this.callback("closed", event);
         }
 
-	}
+    }
 
-    clearPingTimer(){
+    clearPingTimer() {
         if (this.pingTimerId != -1) {
             if (this.debug) {
-                console.debug("Clearing ping message timer");
+                Logger.debug("Clearing ping message timer");
             }
             clearInterval(this.pingTimerId);
             this.pingTimerId = -1;
@@ -162,7 +138,7 @@ export class WebSocketAdaptor
 
     sendPing() {
         var jsCmd = {
-                command : "ping"
+            command: "ping"
         };
         this.wsConn.send(JSON.stringify(jsCmd));
     }
@@ -170,27 +146,31 @@ export class WebSocketAdaptor
     close() {
         this.wsConn.close();
     }
-	
-    send(text) {
 
+    send(text) {
         if (this.connecting == false && this.connected == false) {
-			//try to reconnect
-			this.initWebSocketConnection(() => {
-				this.send(text);
-			});
+            //try to reconnect
+            this.initWebSocketConnection(() => {
+                this.send(text);
+            });
             return;
         }
-        this.wsConn.send(text);
-        if (this.debug) {
-        	console.debug("sent message:" +text);
+        try {
+            this.wsConn.send(text);
+            if (this.debug) {
+                Logger.debug("sent message:" + text);
+            }
+        }
+        catch (error) {
+            Logger.warn("Cannot send message:" + text);
         }
     }
 
-    isConnected(){
+    isConnected() {
         return this.connected;
     }
-    
+
     isConnecting() {
-    	return this.connecting;
+        return this.connecting;
     }
 }

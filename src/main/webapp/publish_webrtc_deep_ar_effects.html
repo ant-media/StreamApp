@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<title>WebRTC Samples > Publish</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta charset="UTF-8">
+	<link rel="stylesheet" href="css/external/bootstrap4/bootstrap.min.css">
+	<link rel="stylesheet" href="css/samples.css" />
+</head>
+
+<body>
+	<div class="container">
+		<div class="header clearfix">
+			<div class="row">
+				<h3 class="col text-muted"><a href="samples.html">WebRTC Samples</a> > Publish DeepAR Effects</h3>
+			</div>
+		</div>
+
+		<iframe class="embed-frame" id="webrtc-publish-frame" allow="camera;microphone;display-capture"></iframe>
+
+	</div>
+	<script  type="module">
+		import {getUrlParameter} from "./js/fetch.stream.js"
+		import {getQueryParameter} from "./js/utility.js"
+
+		let myIframe = document.getElementById("webrtc-publish-frame");
+		let url_string = "samples/publish_webrtc_deep_ar_effects_frame.html";
+
+		var debug = getUrlParameter("debug");
+		var Apikey = getUrlParameter("Apikey");
+
+		if (debug == null) {
+			debug = false;
+		}
+		url_string += "?debug=" + debug;
+		url_string += getQueryParameter("id");
+		url_string += "&Apikey=" + Apikey;
+		console.log(url_string);
+		myIframe.src = url_string;
+	</script>
+
+</body>
+
+
+</html>

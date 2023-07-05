@@ -3,3 +3,5 @@
 /target/
 /codesigning.asc
 node_modules
+/dist
+/coverage/

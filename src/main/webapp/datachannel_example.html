@@ -235,6 +235,7 @@
       src="js/external/bootstrap.min.js"
       crossorigin="anonymous"
     ></script>
+  <script src="./js/external/notify.min.js"></script>
   </body>
 
   <script type="module" lang="javascript">
@@ -293,15 +294,6 @@
     } else if (mode == "peer") {
       console.log("setting mode to peer");
     }
-
-    /**
-     * If publishing stops for any reason, it tries to republish again.
-     */
-    var autoRepublishEnabled = true;
-    /**
-     * Timer job that checks the WebRTC connection
-     */
-    var autoRepublishIntervalJob = null;
 
     var file_input = document.getElementById("file-input");
     var start_button = document.getElementById("start_button");
@@ -420,7 +412,7 @@
         stopPlaying();
       } else {
         leave();
-      }     
+      }
     }
     function join() {
       webRTCAdaptor.join(streamNameBox.value);
@@ -436,10 +428,6 @@
     }
 
     function stopPublishing() {
-      if (autoRepublishIntervalJob != null) {
-        clearInterval(autoRepublishIntervalJob);
-        autoRepublishIntervalJob = null;
-      }
       webRTCAdaptor.stop(streamId);
     }
 
@@ -450,21 +438,6 @@
 
     function stopPlaying() {
       webRTCAdaptor.stop(streamId);
-    }
-
-    function checkAndRepublishIfRequired() {
-      var iceState = webRTCAdaptor.signallingState(streamId);
-      if (
-        iceState == null ||
-        iceState == "failed" ||
-        iceState == "disconnected"
-      ) {
-        console.log("Publish has stopped and will try to re-publish");
-        webRTCAdaptor.stop(streamId);
-        webRTCAdaptor.closePeerConnection(streamId);
-        webRTCAdaptor.closeWebSocket();
-        initWebRTCAdaptor(true, autoRepublishEnabled);
-      }
     }
 
     function turnOffLocalCamera() {
@@ -503,13 +476,19 @@
         ) {
           webRTCAdaptor.sendData(streamNameBox.value, data);
         } else {
-          alert("WebRTC connection is not active. Please click start first");
+          $.notify("WebRTC connection is not active. Please click start first", {
+            autoHideDelay:5000,
+            className:'error',
+            position:'top center'
+          });
         }
       } catch (exception) {
         console.error(exception);
-        alert(
-          "Message cannot be sent. Make sure you've enabled data channel on server web panel"
-        );
+        $.notify("Message cannot be sent. Make sure you've enabled data channel on server web panel", {
+          autoHideDelay:5000,
+          className:'error',
+          position:'top center'
+        });
       }
     }
 
@@ -544,11 +523,6 @@
               console.log("publish started");
               start_button.disabled = true;
               stop_button.disabled = false;
-              if (autoRepublishEnabled && autoRepublishIntervalJob == null) {
-                autoRepublishIntervalJob = setInterval(() => {
-                  checkAndRepublishIfRequired();
-                }, 3000);
-              }
             } else if (info == "publish_finished") {
               //stream is being finished
               console.log("publish finished");
@@ -631,7 +605,11 @@
             } else if (error.indexOf("WebSocketNotConnected") != -1) {
               errorMessage = "WebSocket Connection is disconnected.";
             }
-            alert(errorMessage);
+            $.notify(errorMessage, {
+              autoHideDelay:5000,
+              className:'error',
+              position:'top center'
+            });
           },
         });
       } else if (mode == "play") {
@@ -687,7 +665,11 @@
             //some of the possible errors, NotFoundError, SecurityError,PermissionDeniedError
 
             console.log("error callback: " + JSON.stringify(error));
-            alert(JSON.stringify(error));
+            $.notify(JSON.stringify(error), {
+              autoHideDelay:5000,
+              className:'error',
+              position:'top center'
+            });
           },
         });
       } else {
@@ -733,7 +715,11 @@
               console.log("received data channel error");
             } else {
               console.log("error callback: " + error);
-              alert(error);
+              $.notify(error, {
+                autoHideDelay:5000,
+                className:'error',
+                position:'top center'
+              });
             }
           },
         });

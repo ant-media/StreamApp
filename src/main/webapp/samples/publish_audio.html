@@ -11,7 +11,6 @@
 <body>
 	<div>
 		<div class="jumbotron">
-
 			<div class="form-group col-sm-12 text-center">
 				<audio id="localVideo" autoplay controls muted></audio>
 			</div>
@@ -58,6 +57,7 @@
 	<script src="../js/external/jquery-3.4.1.min.js" crossorigin="anonymous"></script>
 	<script src="../js/external/popper.min.js" crossorigin="anonymous"></script>
 	<script src="../js/external/bootstrap.min.js" crossorigin="anonymous"></script>
+	<script src="../js/external/notify.min.js" crossorigin="anonymous"></script>
 </body>
 <script type="module">
 	import { WebRTCAdaptor } from "../js/webrtc_adaptor.js"
@@ -202,30 +202,12 @@
 		},
 		callbackError: function (error, message) {
 			//some of the possible errors, NotFoundError, SecurityError,PermissionDeniedError
-
-			console.log("error callback: " + JSON.stringify(error));
-			var errorMessage = JSON.stringify(error);
-			if (typeof message != "undefined") {
-				errorMessage = message;
-			}
-			var errorMessage = JSON.stringify(error);
-			if (error.indexOf("NotFoundError") != -1) {
-				errorMessage = "Camera or Mic are not found or not allowed in your device";
-			}
-			else if (error.indexOf("NotReadableError") != -1 || error.indexOf("TrackStartError") != -1) {
-				errorMessage = "Camera or Mic is being used by some other process that does not let read the devices";
-			}
-			else if (error.indexOf("OverconstrainedError") != -1 || error.indexOf("ConstraintNotSatisfiedError") != -1) {
-				errorMessage = "There is no device found that fits your video and audio constraints. You may change video and audio constraints"
-			}
-			else if (error.indexOf("NotAllowedError") != -1 || error.indexOf("PermissionDeniedError") != -1) {
-				errorMessage = "You are not allowed to access camera and mic.";
-			}
-			else if (error.indexOf("TypeError") != -1) {
-				errorMessage = "Video/Audio is required";
-			}
-
-			alert(errorMessage);
+ 
+			$.notify("Warning: " + errorHandler(error, message), {
+							autoHideDelay:5000,
+							className:'error',
+							position:'top center'
+						});
 		}
 	});
 </script>

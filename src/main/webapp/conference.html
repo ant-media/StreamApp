@@ -110,7 +110,7 @@ body {
 </head>
 <body>
 <div class="container">
-	
+
 	<div class="header clearfix">
 		<div class="row">
 			<h3 class="col text-muted">WebRTC Conference</h3>
@@ -124,10 +124,13 @@ body {
 
 	<div class="jumbotron">
 		<div class="alert alert-primary text-center enterprise-feature" role="alert" style="margin-top:-2em">
-				WebRTC Conference is an Enterprise Edition. <br/>
-			<a href="https://antmedia.io">Try Enterprise Edition for free at antmedia.io</a> <br/><br/>
-			<a href="https://github.com/ant-media/Ant-Media-Server/wiki#community-edition--enterprise-edition" style="font-size:12px">Comparison between Community and Enterprise</a>		 
+				WebRTC Conference is an enterprise edition feature. <br/>
+			<a href="https://antmedia.io">Try Enterprise Edition for free at antmedia.io</a> <br/>
 			</div>
+		<div class="alert alert-primary text-center" role="alert" style="margin-top:-2em">
+				This conference solution is deprecated. Please use performance efficient <a href="multitrack-conference.html">Multitrack Conferencing</a>
+			 <br/>
+		</div>
 		<div id="players" class="row">
 			<div class="col-sm-3" >
 				<video style="margin-top:23px;" id="localVideo" autoplay muted controls playsinline></video>
@@ -141,7 +144,7 @@ body {
 					<input type="text" class="form-control" value="room1"
 						   id="roomName" placeholder="Type room name">
 				</div>
-				<div style="padding-top:5px;padding-bottom: 25px;">  
+				<div style="padding-top:5px;padding-bottom: 25px;">
 					<input type="checkbox" class="form-check-input" id="enableMCU">
 					<label for="enableMCU" class="form-check-label">Enable MCU</label>
 					<a href=" https://antmedia.io/mcu-conference/" target="_blank" style="font-size: 12px;">(What is MCU and How to use?)</a>
@@ -161,28 +164,28 @@ body {
 					<button id="mute_mic_button" class="btn btn-outline-primary">Mute Local Mic</button>
 					<button id="unmute_mic_button" disabled  class="btn btn-outline-primary">Unmute Local Mic</button>
 				</div>
-				
+
 				<div id="notification" style="display: none;">
 					<span class="dismiss"><a title="dismiss this notification">x</a></span>
 				</div>
 
 				<div class="form-check form-check-inline" >
 
-					<input class="form-check-input video-source" disabled name="videoSource" type="radio" value="camera" 
+					<input class="form-check-input video-source" disabled name="videoSource" type="radio" value="camera"
 					id="camera_checkbox" checked>
 					<label class="form-check-label" for="camera_checkbox" style="font-weight:normal">
 							Camera
 					</label>
 			    </div>
 				<div class="form-check form-check-inline" >
-					<input class="form-check-input video-source" disabled name="videoSource"  type="radio" value="screen" 
+					<input class="form-check-input video-source" disabled name="videoSource"  type="radio" value="screen"
 					id="screen_share_checkbox">
 					<label class="form-check-label" for="screen_share_checkbox" style="font-weight:normal">
 							Screen
 					</label>
 				</div>
 				<div class="form-check form-check-inline" >
-					<input class="form-check-input video-source" disabled name="videoSource" type="radio" value="screen+camera" 
+					<input class="form-check-input video-source" disabled name="videoSource" type="radio" value="screen+camera"
 						id="screen_share_with_camera_checkbox">
 					<label class="form-check-label" for="screen_share_with_camera_checkbox" style="font-weight:normal">
 							Screen with Camera
@@ -194,7 +197,7 @@ body {
 				<div class="badge badge-success" id="broadcastingInfo"
 					  style="font-size: 14px; display: none" style="display: none">Publishing</div>
 			</div>
-			
+
 		</div>
 
 
@@ -208,15 +211,16 @@ body {
 
 </div>
 </body>
+<script src="./js/external/notify.min.js"></script>
 <script type="module">
 	import {WebRTCAdaptor} from "./js/webrtc_adaptor.js"
-    import {getUrlParameter} from "./js/fetch.stream.js" 
+    import {getUrlParameter} from "./js/fetch.stream.js"
 
     /**
     * This page accepts 3 arguments through url parameter
     * 1. "streamId": the stream id to publish stream. It's optional. ?streamId=stream1
     * 2. "playOnly": If it's true, user does not publish stream. It only play streams in the room.
-    * 3. "token": It's experimental. 
+    * 3. "token": It's experimental.
     */
 
 	var token = getUrlParameter("token");
@@ -361,7 +365,7 @@ body {
 		var tmpMax = 0;
 		var tmpStreamId = null;
 		var threshold = 0.01;
-		
+
 		for(let i = 0; i < streamsList.length; i++){
 			let nextStreamId = streamsList[i];
 			let tmpValue = streamSoundList[nextStreamId]
@@ -527,7 +531,7 @@ body {
 		websocketURL = "wss://" + path;
 	}
 
-	var webRTCAdaptor = new WebRTCAdaptor(	
+	var webRTCAdaptor = new WebRTCAdaptor(
 			{
 				websocket_url : websocketURL,
 				mediaConstraints : mediaConstraints,
@@ -546,7 +550,7 @@ body {
 							isCameraOff = true;
 							handleCameraButtons();
 						}
-					} 
+					}
 					else if (info == "joinedTheRoom") {
 						var room = obj.ATTR_ROOM_NAME;
 						roomOfStream[obj.streamId] = room;
@@ -565,7 +569,7 @@ body {
 						else {
 							publish(obj.streamId, token);
 						}
-						
+
 						if (obj.streams != null) {
 							obj.streams.forEach(function(item) {
 								console.log("Stream joined with ID: "+item);
@@ -574,12 +578,12 @@ body {
 							});
 							streamsList = obj.streams;
 						}
-						roomTimerId = setInterval(() => {			
+						roomTimerId = setInterval(() => {
 							webRTCAdaptor.getRoomInfo(roomNameBox.value, publishStreamId);
 						}, 5000);
 
 						if(streamsList.length > 0){
-							dominantSpeakerFinderId = setInterval(() => {			
+							dominantSpeakerFinderId = setInterval(() => {
 							webRTCAdaptor.getSoundLevelList(streamsList);
 						}, 200);
 						}
@@ -587,11 +591,11 @@ body {
 					else if (info == "newStreamAvailable") {
 						playVideo(obj);
 						if(dominantSpeakerFinderId == null){
-							dominantSpeakerFinderId = setInterval(() => {			
+							dominantSpeakerFinderId = setInterval(() => {
 							webRTCAdaptor.getSoundLevelList(streamsList);
 							}, 200);
 						}
-					} 
+					}
 					else if (info == "publish_started") {
 						//stream is being published
 						console.debug("publish started to room: "
@@ -603,7 +607,7 @@ body {
 					else if (info == "publish_finished") {
 						//stream is being finished
 						console.debug("publish finished");
-					} 
+					}
 					else if (info == "screen_share_stopped") {
 						console.log("screen share stopped");
 					}
@@ -616,7 +620,7 @@ body {
 						screen_share_with_camera_checkbox.disabled = false;
 						console.log("browser screen share supported");
 						browser_screen_share_doesnt_support.style.display = "none";
-					} 
+					}
 					else if (info == "leavedFromRoom") {
 						var room = obj.ATTR_ROOM_NAME;
 						console.debug("leaved from the room:" + room);
@@ -629,7 +633,7 @@ body {
 
 						join_publish_button.disabled = false;
 						stop_publish_button.disabled = true;
-						
+
 						if (streamsList != null) {
 							streamsList.forEach(function(item) {
 								removeRemoteVideo(item);
@@ -637,21 +641,21 @@ body {
 						}
 						// we need to reset streams list
 						streamsList = new Array();
-					} 
+					}
 					else if (info == "closed") {
 						//console.log("Connection closed");
 						if (typeof obj != "undefined") {
 							console.log("Connecton closed: "
 									+ JSON.stringify(obj));
 						}
-					} 
+					}
 					else if (info == "play_finished") {
 						console.log("play_finished");
 						removeRemoteVideo(obj.streamId);
-					} 
+					}
 					else if (info == "streamInformation") {
 						streamInformation(obj);
-					} 
+					}
 					else if (info == "roomInformation") {
 						//Checks if any new stream has added, if yes, plays.
 						for(let str of obj.streams){
@@ -675,11 +679,11 @@ body {
 					else if (info == "data_channel_opened") {
 						console.log("Data Channel open for stream id", obj );
 						isDataChannelOpen = true;
-					} 
+					}
 					else if (info == "data_channel_closed") {
 						console.log("Data Channel closed for stream id", obj );
 						isDataChannelOpen = false;
-					} 
+					}
 					else if(info == "data_received") {
 						handleNotificationEvent(obj);
 					}
@@ -697,7 +701,7 @@ body {
 								mutedAlertPresent = false;
 							}, 3000)
 						}
-          }	
+          }
 					else if(info == "session_restored"){
 						handleCameraButtons();
 						startAnimation();
@@ -744,12 +748,16 @@ body {
 						errorMessage = "You are not allowed to access screen share";
 						screen_share_checkbox.checked = false;
 						camera_checkbox.checked = true;
-					} 
+					}
 
-					alert(errorMessage);
+					$.notify(errorMessage, {
+						autoHideDelay:5000,
+						className:'error',
+						position:'top center'
+					});
 				}
 			});
 
-	
+
 </script>
 </html>
