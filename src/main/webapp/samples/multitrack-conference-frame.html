@@ -122,6 +122,8 @@ body {
 							id="join_publish_button">Join Room</button>
 					<button class="btn btn-primary" disabled
 							id="stop_publish_button">Leave Room</button>
+					<button class="btn btn-info"
+							id="open_in_new_tab">Join in new Tab</button>
 				</div>
 
 				<div style="padding:10px">
@@ -244,6 +246,8 @@ body {
 	toggle_camera_button.addEventListener("click", toggleLocalCamera,false)
 	var toggle_mic_button = document.getElementById("toggle_mic_button");
 	toggle_mic_button.addEventListener("click", toggleLocalMic,false)
+	var open_in_new_tab = document.getElementById("open_in_new_tab");
+	open_in_new_tab.addEventListener("click",openInNewTab,false);
 	var options = document.getElementById("options");
 	options.addEventListener("click", toggleOptions, false);
 	var send = document.getElementById("send");
@@ -285,38 +289,41 @@ body {
   			webRTCAdaptor.switchVideoCameraCapture(publishStreamId, chbx.value);
   		}
 	}
+	function openInNewTab(){
+		let parrentURL= getUrlParameter("parrentURL")
+		window.open(parrentURL+"?roomname="+roomNameBox.value );
+	}
+	function toggleLocalCamera() {
+		if (isCameraOff) {
+			webRTCAdaptor.turnOnLocalCamera();
+			isCameraOff = false;
+			handleCameraButtons();
+			sendNotificationEvent("CAM_TURNED_ON");
 
-function toggleLocalCamera() {
-    if (isCameraOff) {
-        webRTCAdaptor.turnOnLocalCamera();
-        isCameraOff = false;
-        handleCameraButtons();
-        sendNotificationEvent("CAM_TURNED_ON");
+		}
+		else {
+			webRTCAdaptor.turnOffLocalCamera();
+			isCameraOff = true;
+			handleCameraButtons();
+			sendNotificationEvent("CAM_TURNED_OFF");
 
-    }
-    else {
-        webRTCAdaptor.turnOffLocalCamera();
-        isCameraOff = true;
-        handleCameraButtons();
-        sendNotificationEvent("CAM_TURNED_OFF");
+		}
+	}
 
-    }
-}
-
-function toggleLocalMic() {
-    if (isMicMuted) {
-        webRTCAdaptor.unmuteLocalMic();
-		isMicMuted = false;
-        handleMicButtons();
-        sendNotificationEvent("MIC_UNMUTED");
-    }
-    else {
-        webRTCAdaptor.muteLocalMic();
-        isMicMuted = true;
-        handleMicButtons();
-        sendNotificationEvent("MIC_MUTED");
-    }
-}
+	function toggleLocalMic() {
+		if (isMicMuted) {
+			webRTCAdaptor.unmuteLocalMic();
+			isMicMuted = false;
+			handleMicButtons();
+			sendNotificationEvent("MIC_UNMUTED");
+		}
+		else {
+			webRTCAdaptor.muteLocalMic();
+			isMicMuted = true;
+			handleMicButtons();
+			sendNotificationEvent("MIC_MUTED");
+		}
+	}
 
 	function sendNotificationEvent(eventType) {
 		if(isDataChannelOpen) {
@@ -673,4 +680,4 @@ function toggleLocalMic() {
 
 	window.webRTCAdaptor = webRTCAdaptor;
 </script>
-</html>	
+</html>

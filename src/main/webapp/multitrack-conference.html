@@ -32,6 +32,14 @@
 
 		let myIframe = document.getElementById("conferencing-frame");
 		let url_string = "samples/multitrack-conference-frame.html";
+		let parrentURL = getQueryParameter("parrentURL") 
+		if(parrentURL == "" || parrentURL ==undefined){
+			parrentURL = (window.location != window.parent.location)
+            ? document.referrer
+            : document.location.href;
+		}
+
+		console.log(parrentURL)
 
 		var debug = getUrlParameter("debug");
 		if (debug == null) {
@@ -45,6 +53,7 @@
 		url_string += getQueryParameter("dcOnly");
         url_string += getQueryParameter("streamName");
         url_string += getQueryParameter("roomname");
+		url_string += "&parrentURL=" + parrentURL;
 
         
 		console.log(url_string);
