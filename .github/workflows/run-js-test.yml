@@ -14,5 +14,4 @@ jobs:
       - run: npm install --include=dev
       - run: npm test
       - run: npm run compile
-      - run: npm run compile:ts
       - run: npm run codecov

@@ -9,8 +9,10 @@
     "doc": "doc"
   },
   "scripts": {
-    "compile": "rollup -c rollup.config.module.cjs && rollup -c rollup.config.browser.cjs ",
-    "compile:ts": "tsc -p ./tsconfig.json && api-extractor run && rimraf ./tsbuild",
+    "compile": "npm run cleanup:tsbuild; npm run compile:js && npm run compile:ts ; npm run cleanup:tsbuild",
+    "compile:js": "rollup -c rollup.config.module.cjs && rollup -c rollup.config.browser.cjs ",
+    "compile:ts": "tsc -p ./tsconfig.json && api-extractor run",
+    "cleanup:tsbuild": "rimraf ./tsbuild",
     "test": "karma start karma.conf.cjs",
     "codecov": "codecov"
   },
