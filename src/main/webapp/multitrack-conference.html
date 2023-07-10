@@ -457,9 +457,9 @@ body {
 		video.srcObject.addTrack(obj.track)
 
 		obj.stream.onremovetrack = event => {
-			console.log("track is removed with id: " + event.track.trackId )
+			console.log("track is removed with id: " + event.track.id )
 			console.log(event);
-			var removedTrackId = obj.trackId.substring("ARDAMSx".length);
+			var removedTrackId = event.track.id.substring("ARDAMSx".length);
 			removeRemoteVideo(removedTrackId);
 		}
 
