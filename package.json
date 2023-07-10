@@ -10,10 +10,9 @@
   },
   "scripts": {
     "compile": "rollup -c rollup.config.module.cjs && rollup -c rollup.config.browser.cjs ",
+    "compile:ts": "tsc -p ./tsconfig.json && api-extractor run && rimraf ./tsbuild",
     "test": "karma start karma.conf.cjs",
-    "codecov": "codecov",
-    "prebuild:types": "rimraf ./tsbuild",
-    "build:types": "tsc -p ./tsconfig.json && api-extractor run"
+    "codecov": "codecov"
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.org/"
@@ -47,7 +46,7 @@
     "rollup": "^3.21.2",
     "sinon": "^15.0.4",
     "typescript": "^5.1.3",
-    "@microsoft/api-extractor": "^7.35.4"
+    "@microsoft/api-extractor": "^7.36.1"
   },
   "dependencies": {
     "url": "^0.11.1"
