@@ -5,14 +5,23 @@ import "./external/loglevel.min.js";
 const Logger = window.log;
 
 export class SoundMeter {
-
+	/**
+	 * 
+	 * @param {AudioContext} context 
+	 */
 	constructor(context) {
 		this.context = context;
     	this.instant = 0.0;
 		this.mic = null;
 		this.volumeMeterNode = null;
 	}
-
+	/**
+	 * 
+	 * @param {MediaStream} stream 
+	 * @param {Function} levelCallback 
+	 * @param {Function} errorCallback 
+	 * @returns 
+	 */
 	connectToSource(stream, levelCallback, errorCallback) {
 	  return this.context.audioWorklet.addModule(new URL('./volume-meter-processor.js', import.meta.url)).then(()=> {
 			this.mic = this.context.createMediaStreamSource(stream);

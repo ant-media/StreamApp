@@ -54,7 +54,10 @@ class VolumeMeter extends AudioWorkletProcessor {
 
     return !this.stop;
   }
-
+  /**
+   * 
+   * @param {*} message 
+   */
   debug(message) {
     this.port.postMessage({ type: 'debug', message: message });
   }
