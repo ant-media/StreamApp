@@ -8,6 +8,10 @@ const Logger = window.log;
  * Also audio and video properties (like bitrate) are managed by this class .
  */
 export class MediaManager {
+    /**
+     * 
+     * @param {object} initialValues 
+     */
     constructor(initialValues) {
         /**
          * the maximum bandwith value that browser can send a stream
@@ -1300,7 +1304,7 @@ export class MediaManager {
      * Called by user
      * To create a sound meter for the local stream
      *
-     * @param {*} levelCallback : callback to provide the audio level to user
+     * @param {Function} levelCallback : callback to provide the audio level to user
      * @param {*} period : measurement period
      */
     enableAudioLevelForLocalStream(levelCallback) {

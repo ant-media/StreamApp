@@ -18,7 +18,9 @@ export class VideoEffect {
         'flower_face',
         'Ping_Pong'
     ];
-
+    /**
+     * @type {boolean}
+     */
     static DEBUG = false;
     /**
      * LOCATE_FILE_URL is optional, it's to give locate url of selfie segmentation
@@ -37,7 +39,10 @@ export class VideoEffect {
     static DEEP_AR_EXTENSION = ".deepar";
 
     #virtualBackgroundImage = null;
-
+    /**
+     * 
+     * @param {WebRTCAdaptor} webRTCAdaptor 
+     */
     constructor(webRTCAdaptor) {
         this.webRTCAdaptor = webRTCAdaptor;
 
@@ -69,7 +74,7 @@ export class VideoEffect {
 
     /**
      * This method is used to initialize the video effect.
-     * @param {HTMLElement} stream - Original stream to be manipulated.
+     * @param {MediaStream} stream - Original stream to be manipulated.
      * @returns {Promise<void>}
      */
     async init(stream) {
@@ -95,7 +100,7 @@ export class VideoEffect {
 
     /**
      * This method is used to set raw local video.
-     * @param stream
+     * @param {MediaStream} stream
      * @returns {Promise<void>}
      */
     setRawLocalVideo(stream) {
@@ -107,6 +112,8 @@ export class VideoEffect {
 
     /**
      * This method is used to create the canvas element which is used to apply the video effect.
+     * @param {number} height
+     * @param {number} width 
      */
     createEffectCanvas(width, height) {
         let effectCanvas = document.createElement('canvas');
@@ -136,7 +143,9 @@ export class VideoEffect {
         });
 
     }
-
+    /**
+     * @param {HTMLElement} imageElement
+     */
     set virtualBackgroundImage(imageElement) {
         this.#virtualBackgroundImage = imageElement;
     }
@@ -175,9 +184,9 @@ export class VideoEffect {
 
     /**
      * Enable effect
-     * @param {} effectName
-     * @param deepARApiKey
-     * @param deepARModel
+     * @param {string} effectName
+     * @param {string} deepARApiKey
+     * @param {*} deepARModel
      */
     async enableEffect(effectName, deepARApiKey, deepARModel) {
 
@@ -305,7 +314,7 @@ export class VideoEffect {
 
     /**
      * This method is used to draw the segmentation mask.
-     * @param segmentation
+     * @param {*} segmentation
      */
     drawSegmentationMask(segmentation) {
         this.ctx.drawImage(segmentation, 0, 0, this.effectCanvas.width, this.effectCanvas.height);
@@ -313,7 +322,7 @@ export class VideoEffect {
 
     /**
      * This method is called by mediapipe when the segmentation mask is ready.
-     * @param results
+     * @param {*} results
      */
     onResults(results) {
 
@@ -329,7 +338,7 @@ export class VideoEffect {
 
     /**
      * This method is used to draw the raw frame directly to the canvas.
-     * @param image
+     * @param {*} image
      */
     drawImageDirectly(image) {
         this.ctx.save();
@@ -341,9 +350,9 @@ export class VideoEffect {
 
     /**
      * This method is used to draw the frame with virtual background effect to the canvas.
-     * @param image
-     * @param segmentation
-     * @param virtualBackgroundImage
+     * @param {*} image
+     * @param {*} segmentation
+     * @param {*} virtualBackgroundImage
      */
     drawVirtualBackground(image, segmentation, virtualBackgroundImage) {
         this.ctx.save();
@@ -359,9 +368,9 @@ export class VideoEffect {
 
     /**
      * This method is used to draw frame with background blur effect to the canvas.
-     * @param image
-     * @param segmentation
-     * @param blurAmount
+     * @param {*} image
+     * @param {*} segmentation
+     * @param {*} blurAmount
      */
     drawBlurBackground(image, segmentation, blurAmount) {
         this.ctx.clearRect(0, 0, this.effectCanvas.width, this.effectCanvas.height);
