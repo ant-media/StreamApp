@@ -1344,167 +1344,168 @@ export class WebRTCAdaptor {
      */
     getStats(streamId) {
         Logger.debug("peerstatsgetstats = " + this.remotePeerConnectionStats[streamId]);
+        return new Promise((resolve, reject) => {
+            this.remotePeerConnection[streamId].getStats(null).then(stats => {
+                var bytesReceived = -1;
+                var videoPacketsLost = -1;
+                var audioPacketsLost = -1;
+                var fractionLost = -1;
+                var currentTime = -1;
+                var bytesSent = -1;
+                var videoPacketsSent = -1;
+                var audioPacketsSent = -1;
+                var audioLevel = -1;
+                var qlr = "";
+                var framesEncoded = -1;
+                var width = -1;
+                var height = -1;
+                var fps = -1;
+                var frameWidth = -1;
+                var frameHeight = -1;
+                var videoRoundTripTime = -1;
+                var videoJitter = -1;
 
-        this.remotePeerConnection[streamId].getStats(null).then(stats => {
-            var bytesReceived = -1;
-            var videoPacketsLost = -1;
-            var audioPacketsLost = -1;
-            var fractionLost = -1;
-            var currentTime = -1;
-            var bytesSent = -1;
-            var videoPacketsSent = -1;
-            var audioPacketsSent = -1;
-            var audioLevel = -1;
-            var qlr = "";
-            var framesEncoded = -1;
-            var width = -1;
-            var height = -1;
-            var fps = -1;
-            var frameWidth = -1;
-            var frameHeight = -1;
-            var videoRoundTripTime = -1;
-            var videoJitter = -1;
+                var audioRoundTripTime = -1;
+                var audioJitter = -1;
 
-            var audioRoundTripTime = -1;
-            var audioJitter = -1;
+                var framesDecoded = -1;
+                var framesDropped = -1;
+                var framesReceived = -1;
 
-            var framesDecoded = -1;
-            var framesDropped = -1;
-            var framesReceived = -1;
+                var audioJitterAverageDelay = -1;
+                var videoJitterAverageDelay = -1;
+                var availableOutgoingBitrate = Infinity;
 
-            var audioJitterAverageDelay = -1;
-            var videoJitterAverageDelay = -1;
-            var availableOutgoingBitrate = Infinity;
-
-            stats.forEach(value => {
-                //Logger.debug(value);
-                if (value.type == "inbound-rtp" && typeof value.kind != "undefined") {
-                    bytesReceived += value.bytesReceived;
-                    if (value.kind == "audio") {
-                        audioPacketsLost = value.packetsLost;
-                    } else if (value.kind == "video") {
-                        videoPacketsLost = value.packetsLost;
-                    }
-
-                    fractionLost += value.fractionLost;
-                    currentTime = value.timestamp;
-
-
-                } else if (value.type == "outbound-rtp") {//TODO: SPLIT AUDIO AND VIDEO BITRATES
-                    if (value.kind == "audio") {
-                        audioPacketsSent = value.packetsSent;
-                    } else if (value.kind == "video") {
-                        videoPacketsSent = value.packetsSent;
-                    }
-                    bytesSent += value.bytesSent
-                    currentTime = value.timestamp
-                    qlr = value.qualityLimitationReason;
-                    if (value.framesEncoded != null) { //audio tracks are undefined here
-                        framesEncoded += value.framesEncoded;
-                    }
-                } else if (value.type == "track" && typeof value.kind != "undefined" && value.kind == "audio") {
-                    if (typeof value.audioLevel != "undefined") {
-                        audioLevel = value.audioLevel;
-                    }
-
-                    if (typeof value.jitterBufferDelay != "undefined" && typeof value.jitterBufferEmittedCount != "undefined") {
-                        audioJitterAverageDelay = value.jitterBufferDelay / value.jitterBufferEmittedCount;
-                    }
-                } else if (value.type == "track" && typeof value.kind != "undefined" && value.kind == "video") {
-                    if (typeof value.frameWidth != "undefined") {
-                        frameWidth = value.frameWidth;
-                    }
-                    if (typeof value.frameHeight != "undefined") {
-                        frameHeight = value.frameHeight;
-                    }
-
-                    if (typeof value.framesDecoded != "undefined") {
-                        framesDecoded = value.framesDecoded;
-                    }
-
-                    if (typeof value.framesDropped != "undefined") {
-                        framesDropped = value.framesDropped;
-                    }
-
-                    if (typeof value.framesReceived != "undefined") {
-                        framesReceived = value.framesReceived;
-                    }
-
-                    if (typeof value.jitterBufferDelay != "undefined" && typeof value.jitterBufferEmittedCount != "undefined") {
-                        videoJitterAverageDelay = value.jitterBufferDelay / value.jitterBufferEmittedCount;
-                    }
-                } else if (value.type == "remote-inbound-rtp" && typeof value.kind != "undefined") {
-
-                    if (typeof value.packetsLost != "undefined") {
-                        if (value.kind == "video") {
-                            //this is the packetsLost for publishing
-                            videoPacketsLost = value.packetsLost;
-                        } else if (value.kind == "audio") {
-                            //this is the packetsLost for publishing
+                stats.forEach(value => {
+                    //Logger.debug(value);
+                    if (value.type == "inbound-rtp" && typeof value.kind != "undefined") {
+                        bytesReceived += value.bytesReceived;
+                        if (value.kind == "audio") {
                             audioPacketsLost = value.packetsLost;
+                        } else if (value.kind == "video") {
+                            videoPacketsLost = value.packetsLost;
+                        }
+
+                        fractionLost += value.fractionLost;
+                        currentTime = value.timestamp;
+
+
+                    } else if (value.type == "outbound-rtp") {//TODO: SPLIT AUDIO AND VIDEO BITRATES
+                        if (value.kind == "audio") {
+                            audioPacketsSent = value.packetsSent;
+                        } else if (value.kind == "video") {
+                            videoPacketsSent = value.packetsSent;
+                        }
+                        bytesSent += value.bytesSent
+                        currentTime = value.timestamp
+                        qlr = value.qualityLimitationReason;
+                        if (value.framesEncoded != null) { //audio tracks are undefined here
+                            framesEncoded += value.framesEncoded;
+                        }
+                    } else if (value.type == "track" && typeof value.kind != "undefined" && value.kind == "audio") {
+                        if (typeof value.audioLevel != "undefined") {
+                            audioLevel = value.audioLevel;
+                        }
+
+                        if (typeof value.jitterBufferDelay != "undefined" && typeof value.jitterBufferEmittedCount != "undefined") {
+                            audioJitterAverageDelay = value.jitterBufferDelay / value.jitterBufferEmittedCount;
+                        }
+                    } else if (value.type == "track" && typeof value.kind != "undefined" && value.kind == "video") {
+                        if (typeof value.frameWidth != "undefined") {
+                            frameWidth = value.frameWidth;
+                        }
+                        if (typeof value.frameHeight != "undefined") {
+                            frameHeight = value.frameHeight;
+                        }
+
+                        if (typeof value.framesDecoded != "undefined") {
+                            framesDecoded = value.framesDecoded;
+                        }
+
+                        if (typeof value.framesDropped != "undefined") {
+                            framesDropped = value.framesDropped;
+                        }
+
+                        if (typeof value.framesReceived != "undefined") {
+                            framesReceived = value.framesReceived;
+                        }
+
+                        if (typeof value.jitterBufferDelay != "undefined" && typeof value.jitterBufferEmittedCount != "undefined") {
+                            videoJitterAverageDelay = value.jitterBufferDelay / value.jitterBufferEmittedCount;
+                        }
+                    } else if (value.type == "remote-inbound-rtp" && typeof value.kind != "undefined") {
+
+                        if (typeof value.packetsLost != "undefined") {
+                            if (value.kind == "video") {
+                                //this is the packetsLost for publishing
+                                videoPacketsLost = value.packetsLost;
+                            } else if (value.kind == "audio") {
+                                //this is the packetsLost for publishing
+                                audioPacketsLost = value.packetsLost;
+                            }
+                        }
+
+                        if (typeof value.roundTripTime != "undefined") {
+                            if (value.kind == "video") {
+                                videoRoundTripTime = value.roundTripTime;
+                            } else if (value.kind == "audio") {
+                                audioRoundTripTime = value.roundTripTime;
+                            }
+                        }
+
+                        if (typeof value.jitter != "undefined") {
+                            if (value.kind == "video") {
+                                videoJitter = value.jitter;
+                            } else if (value.kind == "audio") {
+                                audioJitter = value.jitter;
+                            }
+                        }
+                    } else if (value.type == "media-source") {
+                        if (value.kind == "video") { //returns video source dimensions, not necessarily dimensions being encoded by browser
+                            width = value.width;
+                            height = value.height;
+                            fps = value.framesPerSecond;
                         }
                     }
-
-                    if (typeof value.roundTripTime != "undefined") {
-                        if (value.kind == "video") {
-                            videoRoundTripTime = value.roundTripTime;
-                        } else if (value.kind == "audio") {
-                            audioRoundTripTime = value.roundTripTime;
-                        }
+                    else if(value.type == "candidate-pair" && value.state == "succeeded" && value.availableOutgoingBitrate !=undefined){
+                        availableOutgoingBitrate = value.availableOutgoingBitrate/1000
                     }
+                });
 
-                    if (typeof value.jitter != "undefined") {
-                        if (value.kind == "video") {
-                            videoJitter = value.jitter;
-                        } else if (value.kind == "audio") {
-                            audioJitter = value.jitter;
-                        }
-                    }
-                } else if (value.type == "media-source") {
-                    if (value.kind == "video") { //returns video source dimensions, not necessarily dimensions being encoded by browser
-                        width = value.width;
-                        height = value.height;
-                        fps = value.framesPerSecond;
-                    }
-                }
-                else if(value.type == "candidate-pair" && value.state == "succeeded" && value.availableOutgoingBitrate !=undefined){
-                    availableOutgoingBitrate = value.availableOutgoingBitrate/1000
-                }
-            });
+                this.remotePeerConnectionStats[streamId].totalBytesReceived = bytesReceived;
+                this.remotePeerConnectionStats[streamId].videoPacketsLost = videoPacketsLost;
+                this.remotePeerConnectionStats[streamId].audioPacketsLost = audioPacketsLost;
+                this.remotePeerConnectionStats[streamId].fractionLost = fractionLost;
+                this.remotePeerConnectionStats[streamId].currentTime = currentTime;
+                this.remotePeerConnectionStats[streamId].totalBytesSent = bytesSent;
+                this.remotePeerConnectionStats[streamId].totalVideoPacketsSent = videoPacketsSent;
+                this.remotePeerConnectionStats[streamId].totalAudioPacketsSent = audioPacketsSent;
+                this.remotePeerConnectionStats[streamId].audioLevel = audioLevel;
+                this.remotePeerConnectionStats[streamId].qualityLimitationReason = qlr;
+                this.remotePeerConnectionStats[streamId].totalFramesEncoded = framesEncoded;
+                this.remotePeerConnectionStats[streamId].resWidth = width;
+                this.remotePeerConnectionStats[streamId].resHeight = height;
+                this.remotePeerConnectionStats[streamId].srcFps = fps;
+                this.remotePeerConnectionStats[streamId].frameWidth = frameWidth;
+                this.remotePeerConnectionStats[streamId].frameHeight = frameHeight;
+                this.remotePeerConnectionStats[streamId].videoRoundTripTime = videoRoundTripTime;
+                this.remotePeerConnectionStats[streamId].videoJitter = videoJitter;
+                this.remotePeerConnectionStats[streamId].audioRoundTripTime = audioRoundTripTime;
+                this.remotePeerConnectionStats[streamId].audioJitter = audioJitter;
+                this.remotePeerConnectionStats[streamId].framesDecoded = framesDecoded;
+                this.remotePeerConnectionStats[streamId].framesDropped = framesDropped;
+                this.remotePeerConnectionStats[streamId].framesReceived = framesReceived;
 
-            this.remotePeerConnectionStats[streamId].totalBytesReceived = bytesReceived;
-            this.remotePeerConnectionStats[streamId].videoPacketsLost = videoPacketsLost;
-            this.remotePeerConnectionStats[streamId].audioPacketsLost = audioPacketsLost;
-            this.remotePeerConnectionStats[streamId].fractionLost = fractionLost;
-            this.remotePeerConnectionStats[streamId].currentTime = currentTime;
-            this.remotePeerConnectionStats[streamId].totalBytesSent = bytesSent;
-            this.remotePeerConnectionStats[streamId].totalVideoPacketsSent = videoPacketsSent;
-            this.remotePeerConnectionStats[streamId].totalAudioPacketsSent = audioPacketsSent;
-            this.remotePeerConnectionStats[streamId].audioLevel = audioLevel;
-            this.remotePeerConnectionStats[streamId].qualityLimitationReason = qlr;
-            this.remotePeerConnectionStats[streamId].totalFramesEncoded = framesEncoded;
-            this.remotePeerConnectionStats[streamId].resWidth = width;
-            this.remotePeerConnectionStats[streamId].resHeight = height;
-            this.remotePeerConnectionStats[streamId].srcFps = fps;
-            this.remotePeerConnectionStats[streamId].frameWidth = frameWidth;
-            this.remotePeerConnectionStats[streamId].frameHeight = frameHeight;
-            this.remotePeerConnectionStats[streamId].videoRoundTripTime = videoRoundTripTime;
-            this.remotePeerConnectionStats[streamId].videoJitter = videoJitter;
-            this.remotePeerConnectionStats[streamId].audioRoundTripTime = audioRoundTripTime;
-            this.remotePeerConnectionStats[streamId].audioJitter = audioJitter;
-            this.remotePeerConnectionStats[streamId].framesDecoded = framesDecoded;
-            this.remotePeerConnectionStats[streamId].framesDropped = framesDropped;
-            this.remotePeerConnectionStats[streamId].framesReceived = framesReceived;
-
-            this.remotePeerConnectionStats[streamId].videoJitterAverageDelay = videoJitterAverageDelay;
-            this.remotePeerConnectionStats[streamId].audioJitterAverageDelay = audioJitterAverageDelay;
-            this.remotePeerConnectionStats[streamId].availableOutgoingBitrate = availableOutgoingBitrate;
+                this.remotePeerConnectionStats[streamId].videoJitterAverageDelay = videoJitterAverageDelay;
+                this.remotePeerConnectionStats[streamId].audioJitterAverageDelay = audioJitterAverageDelay;
+                this.remotePeerConnectionStats[streamId].availableOutgoingBitrate = availableOutgoingBitrate;
 
 
-            this.notifyEventListeners("updated_stats", this.remotePeerConnectionStats[streamId]);
-            return true;
-        }).catch(err=>{
-            return false;
+                this.notifyEventListeners("updated_stats", this.remotePeerConnectionStats[streamId]);
+                resolve(true);
+            }).catch(()=>{
+                resolve(false);
+            })
         });
     }
 
