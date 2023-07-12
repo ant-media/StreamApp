@@ -117,6 +117,19 @@ describe("WebRTCAdaptor", function() {
 		expect(closeWebsocketConnection.called).to.be.true;
 
 		expect(closeWebsocketConnection.calledWithMatch(streamId)).to.be.true;
+		
+		adaptor.enableStats(streamId);
+		expect(adaptor.remotePeerConnectionStats[streamId]).to.not.be.undefined
+		
+		console.log(adaptor.remotePeerConnectionStats[streamId])
+		let beforeCall = JSON.stringify(adaptor.remotePeerConnectionStats[streamId])
+		expect(adaptor.getStats(streamId)).to.be.true;
+		
+
+		console.log(adaptor.remotePeerConnectionStats[streamId])
+
+		console.log(beforeCall === JSON.stringify(adaptor.remotePeerConnectionStats[streamId]))
+		
 
 		adaptor.stop(streamId);
 

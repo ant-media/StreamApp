@@ -1502,7 +1502,9 @@ export class WebRTCAdaptor {
 
 
             this.notifyEventListeners("updated_stats", this.remotePeerConnectionStats[streamId]);
-
+            return true;
+        }).catch(err=>{
+            return false;
         });
     }
 
