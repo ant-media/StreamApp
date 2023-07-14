@@ -1,16 +1,18 @@
 {
   "name": "@antmedia/webrtc_adaptor",
-  "version": "2.6.1",
+  "version": "2.6.2",
   "description": "WebRTC Adaptor for implementing a front end using Ant Media Server.",
   "main": "dist/index.js",
   "module": "dist/es/index.js",
-  "browser": "dist/browser/webrtc_adaptor.js",
-  "type": "commonjs",
+  "type": "module",
   "directories": {
     "doc": "doc"
   },
   "scripts": {
-    "compile": "rollup -c rollup.config.module.cjs && rollup -c rollup.config.browser.cjs ",
+    "compile": "npm run cleanup:tsbuild; npm run compile:js && npm run compile:ts ; npm run cleanup:tsbuild",
+    "compile:js": "rollup -c rollup.config.module.cjs && rollup -c rollup.config.browser.cjs ",
+    "compile:ts": "tsc -p ./tsconfig.json && api-extractor run",
+    "cleanup:tsbuild": "rimraf ./tsbuild",
     "test": "karma start karma.conf.cjs",
     "codecov": "codecov"
   },
@@ -33,6 +35,8 @@
     "@rollup/plugin-babel": "^6.0.3",
     "chai": "^4.3.7",
     "codecov": "^3.8.3",
+    "eslint": "^8.9.0",
+    "jsdoc": "^3.6.10",
     "karma": "^6.4.2",
     "karma-chai": "^0.1.0",
     "karma-chrome-launcher": "^3.2.0",
@@ -40,8 +44,11 @@
     "karma-mocha": "^2.0.1",
     "karma-sinon": "^1.0.5",
     "mocha": "^10.2.0",
+    "rimraf": "^3.0.2",
     "rollup": "^3.21.2",
-    "sinon": "^15.0.4"
+    "sinon": "^15.0.4",
+    "typescript": "^5.1.3",
+    "@microsoft/api-extractor": "^7.36.1"
   },
   "dependencies": {
     "url": "^0.11.1"
