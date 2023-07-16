@@ -621,7 +621,9 @@ export class EmbeddedPlayer {
         });
 
         if (this.autoPlay) {
-            this.videojsPlayer.play();
+            this.videojsPlayer.play().catch((e) => {
+				 Logger.warn("Problem in playback the error is " + e);
+			});
         }
     }
 
