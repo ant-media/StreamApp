@@ -4,6 +4,8 @@ import "./external/loglevel.min.js";
 
 const Logger = window.log;
 
+const STATIC_VIDEO_HTML =  "<video id='video-player' class='video-js vjs-default-skin vjs-big-play-centered' controls playsinline></video>";
+
 export class EmbeddedPlayer {
 
 	static DEFAULT_PLAY_ORDER = ["webrtc", "hls"];;
@@ -21,7 +23,7 @@ export class EmbeddedPlayer {
 	*/
 	static STREAMS_FOLDER = "streams";
 
-	static VIDEO_HTML = "<video id='video-player' class='video-js vjs-default-skin vjs-big-play-centered' controls playsinline></video>";
+	static VIDEO_HTML = STATIC_VIDEO_HTML;
 
 	static VIDEO_PLAYER_ID = "video-player";
 
@@ -171,7 +173,7 @@ export class EmbeddedPlayer {
 		*/
 		EmbeddedPlayer.STREAMS_FOLDER = "streams";
 
-		EmbeddedPlayer.VIDEO_HTML = "<video id='video-player' class='video-js vjs-default-skin vjs-big-play-centered' controls></video>";
+		EmbeddedPlayer.VIDEO_HTML = STATIC_VIDEO_HTML;
 
 		EmbeddedPlayer.VIDEO_PLAYER_ID = "video-player";
 
