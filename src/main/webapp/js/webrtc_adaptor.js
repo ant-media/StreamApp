@@ -1354,6 +1354,7 @@ export class WebRTCAdaptor {
      */
     getStats(streamId) {
         Logger.debug("peerstatsgetstats = " + this.remotePeerConnectionStats[streamId]);
+        return new Promise((resolve, reject) => {
 
         this.remotePeerConnection[streamId].getStats(null).then(stats => {
             var bytesReceived = -1;
@@ -1384,12 +1385,10 @@ export class WebRTCAdaptor {
 
             var audioJitterAverageDelay = -1;
             var videoJitterAverageDelay = -1;
-
-
+            var availableOutgoingBitrate = Infinity;
+            
             stats.forEach(value => {
-
                 //Logger.debug(value);
-
                 if (value.type == "inbound-rtp" && typeof value.kind != "undefined") {
                     bytesReceived += value.bytesReceived;
                     if (value.kind == "audio") {
@@ -1479,6 +1478,9 @@ export class WebRTCAdaptor {
                         fps = value.framesPerSecond;
                     }
                 }
+                else if(value.type == "candidate-pair" && value.state == "succeeded" && value.availableOutgoingBitrate !=undefined){
+                    availableOutgoingBitrate = value.availableOutgoingBitrate/1000
+                }
             });
 
             this.remotePeerConnectionStats[streamId].totalBytesReceived = bytesReceived;
@@ -1507,10 +1509,14 @@ export class WebRTCAdaptor {
 
             this.remotePeerConnectionStats[streamId].videoJitterAverageDelay = videoJitterAverageDelay;
             this.remotePeerConnectionStats[streamId].audioJitterAverageDelay = audioJitterAverageDelay;
+            this.remotePeerConnectionStats[streamId].availableOutgoingBitrate = availableOutgoingBitrate;
 
 
             this.notifyEventListeners("updated_stats", this.remotePeerConnectionStats[streamId]);
-
+            resolve(true);
+        }).catch(err=>{
+            resolve(false);
+        });
         });
     }
 

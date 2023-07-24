@@ -208,6 +208,7 @@ export class PeerStats {
          * @type {number}
          */
         this.videoJitterAverageDelay = 0;
+        this.availableOutgoingBitrate = Infinity;
     }
     //kbits/sec
     get averageOutgoingBitrate() {
