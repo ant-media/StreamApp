@@ -1,6 +1,7 @@
 
 import { EmbeddedPlayer } from '../../../main/webapp/js/embedded-player.js';
 
+import { isMobile } from "../../../main/webapp/js/fetch.stream.js";
 
 describe("EmbeddedPlayer", function() {
 		
@@ -38,6 +39,10 @@ describe("EmbeddedPlayer", function() {
 	      expect(player.token).to.be.null;
 	      expect(player.is360).to.be.false;
 	      expect(player.playType).to.eql(['mp4','webm']);
+	      
+	      
+	      //the following is a test autoPlay is still true in mobile. We just try to play the stream if mobile browser can play or not
+		  //in autoPlay mode 
 	      expect(player.autoPlay).to.true;
 	      expect(player.mute).to.true;
 	      expect(player.isMuted()).to.be.true;
@@ -50,8 +55,9 @@ describe("EmbeddedPlayer", function() {
 	      expect(player.errorCalled).to.false;
 	      
 	      expect(player.getSecurityQueryParams()).to.be.equal("");
+	      
 	     
-	     	      
+	        	      
     
     });
     
@@ -520,6 +526,7 @@ describe("EmbeddedPlayer", function() {
 	    		
 	});
 	
+	
 	it("handleWebRTCInfoMessages", async function() {
 		var videoContainer = document.createElement("video_container");
 		  
@@ -593,6 +600,33 @@ describe("EmbeddedPlayer", function() {
 	    expect(handleWebRTCInfoMessages.calledWithMatch({ infos , event})).to.be.true;
 	    
 	})
+	
+	it("destroyVideoJSPlayer", async function() {
+		
+		var videoContainer = document.createElement("video_container");
+		  
+		var placeHolder = document.createElement("place_holder");
+		  			
+		var locationComponent =  { href : 'http://example.com?id=stream123', search: "?id=stream123", pathname: "/" };
+		var windowComponent = {  location : locationComponent,
+		  						  document:  document,
+		  						  addEventListener: window.addEventListener};
+		  						  		 	      
+	    var player = new EmbeddedPlayer(windowComponent, videoContainer, placeHolder);
+
+	    expect(player.videojsPlayer).to.be.null
+
+	    await player.playIfExists("webrtc");
+	    
+	    expect(player.videojsPlayer).to.not.be.null;
+	  
+	    player.destroyVideoJSPlayer();
+	    expect(player.videojsPlayer).to.be.null
+
+	    
+	})
+	
+	
     
     
 });

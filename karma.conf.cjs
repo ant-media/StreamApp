@@ -33,7 +33,7 @@ module.exports = function(config) {
     
     logLevel: config.LOG_INFO,
     
-    browsers: ['CustomChrome'],
+    browsers: ['CustomChrome', "ChromeMobileUserAgent"],
     //browsers: ['Chrome'],
     
 
@@ -49,8 +49,25 @@ module.exports = function(config) {
 				"--log-level=1",
 				"--remote-allow-origins=*",
 				"--use-fake-ui-for-media-stream",
-				"--use-fake-device-for-media-stream"]
-	  }
+				"--use-fake-device-for-media-stream",
+				]
+	  },
+	  ChromeMobileUserAgent: {
+	    base: 'Chrome',
+	    flags: [
+				'--headless',
+	    		'--disable-gpu', 
+	     		"--disable-gpu", 
+				"--headless=new",
+				"--no-sandbox",
+				"--disable-dev-shm-usage",
+				"--log-level=1",
+				"--remote-allow-origins=*",
+				"--use-fake-ui-for-media-stream",
+				"--use-fake-device-for-media-stream",
+				'--user-agent="Mozilla/5.0 (iPhone; CPU iPhone OS 10_3 like Mac OS X) AppleWebKit/602.1.50 (KHTML, like Gecko) CriOS/56.0.2924.75 Mobile/14E5239e Safari/602.1"'
+				]
+	  },
 	},
 	    
     autoWatch: true,
