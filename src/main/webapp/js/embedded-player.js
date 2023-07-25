@@ -1,5 +1,5 @@
 
-import { getUrlParameter, isMobile } from "./fetch.stream.js";
+import { getUrlParameter } from "./fetch.stream.js";
 import "./external/loglevel.min.js";
 
 const Logger = window.log;
@@ -185,6 +185,7 @@ export class EmbeddedPlayer {
         this.errorCalled = false;
         this.iceConnected = false;
         this.tryNextTechTimer = -1;
+        this.videojsPlayer = null;
 
         this.iceServers = '[ { "urls": "stun:stun1.l.google.com:19302" } ]';
 
