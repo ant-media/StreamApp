@@ -194,6 +194,12 @@ export class MediaManager {
          * For keeping track of whether user turned off the camera
          */
         this.cameraEnabled = true;
+        
+        
+        /**
+         * Replacement stream for video track when the camera is turn off
+		 */
+        this.replacementStream = null;
 
         /**
          * html video element that presents local stream
@@ -1188,13 +1194,6 @@ export class MediaManager {
                 resolve();
             });
         }
-    }
-
-	/**    
-    * @Deprecated use getBlackVideoTrack since 2.6.2
-	*/
-    initializeDummyFrame() {
-       return this.getBlackVideoTrack();
     }
     
     /**

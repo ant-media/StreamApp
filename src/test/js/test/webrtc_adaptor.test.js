@@ -369,7 +369,36 @@ describe("WebRTCAdaptor", function() {
 		expect(adaptor.mediaManager.localStream.getVideoTracks().length).to.be.equal(1)
 		expect(adaptor.mediaManager.localStream.getAudioTracks().length).to.be.equal(1)
 
+	});
+	
+	it("updateAudioTrack", async function() 
+	{
+		var adaptor = new WebRTCAdaptor({
+			websocketURL: "ws://localhost",
+			mediaConstraints: {
+				video: "dummy",
+				audio: "dummy"
+			},
+			initializeComponents: false
+		});
+		
+		await adaptor.initialize();
+		
+		expect(adaptor.mediaManager.localStreamSoundMeter).to.be.null;
 
+		adaptor.enableAudioLevelForLocalStream((value)=> {
+			
+		}, 200);
+		
+		expect(adaptor.mediaManager.localStreamSoundMeter).to.not.be.null;
+		
+		var audioTrack = adaptor.mediaManager.getSilentAudioTrack();
+		
+		var stream = new MediaStream();
+		stream.addTrack(audioTrack);
+		
+		await adaptor.updateAudioTrack(stream, null, null);
+		
 		
 		
 		
