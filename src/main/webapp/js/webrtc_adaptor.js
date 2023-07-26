@@ -1935,12 +1935,6 @@ export class WebRTCAdaptor {
     };
     
     /**
-	 * setter for constraints for using later. If you want to apply constraints to the current streams, just use applyConstraints
-	 */
-    setConstraints(newConstraints) {
-		this.mediaManager.setConstraints(newConstraints);
-	}
-    /**
      * 
      * @param {number} bandwidth 
      * @param {string} streamId 

@@ -203,11 +203,6 @@ export class MediaManager {
         //A dummy stream created to replace the tracks when camera is turned off.
         this.dummyCanvas = document.createElement("canvas");
 
-        /**
-         * The timer id for SoundMeter for the local stream
-         */
-        this.soundLevelProviderId = -1;
-
         // It should be compatible with previous version
         if (this.mediaConstraints) {
             if (this.mediaConstraints.video == "camera") {
@@ -652,10 +647,6 @@ export class MediaManager {
         }
         if (this.previousAudioTrack) {
             this.previousAudioTrack.stop();
-        }
-        if (this.soundLevelProviderId != -1) {
-            clearInterval(this.soundLevelProviderId);
-            this.soundLevelProviderId = -1;
         }
     }
 
@@ -1442,10 +1433,6 @@ export class MediaManager {
             this.localStreamSoundMeter = null;
         }
     }
-    
-    setConstraints(newConstraints) {
-		this.mediaConstraints = newConstraints;
-	}
 
     /**
      * Called by user
