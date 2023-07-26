@@ -105,6 +105,11 @@ export class MediaManager {
          * Keeps the audio track to be closed in case of audio track change
          */
         this.previousAudioTrack = null;
+        
+        /**
+		 * silent audio track for switching between dummy track to real tracks on the fly
+		 */
+		this.silentAudioTrack = null;
 
         /**
          * The screen video track in screen+camera mode
@@ -116,11 +121,21 @@ export class MediaManager {
          * The camera (overlay) video track in screen+camera mode
          */
         this.smallVideoTrack = null;
+        
+        /**
+		 * black video track for switching between dummy video track to real tracks on the fly
+		 */
+		this.blackVideoTrack = null;
 
         /**
          * Audio context to use for meter, mix, gain
          */
         this.audioContext = new AudioContext();
+        
+        /**
+		 * osciallator to generate silent audio
+		 */
+        this.oscillator = null;
 
         /**
          * the main audio in single audio case
@@ -216,9 +231,12 @@ export class MediaManager {
      */
     initLocalStream() {
         this.checkWebRTCPermissions();
-        if (typeof this.mediaConstraints.video != "undefined" && this.mediaConstraints.video != false) {
+        if (typeof this.mediaConstraints.video != "undefined" && this.mediaConstraints.video != false) 
+        {
             return this.openStream(this.mediaConstraints, this.mode);
-        } else if (typeof this.mediaConstraints.audio != "undefined" && this.mediaConstraints.audio != false) {
+        } 
+        else if (typeof this.mediaConstraints.audio != "undefined" && this.mediaConstraints.audio != false) 
+        {
             // get only audio
             var media_audio_constraint = {audio: this.mediaConstraints.audio};
             return this.navigatorUserMedia(media_audio_constraint, stream => {
@@ -400,7 +418,7 @@ export class MediaManager {
         //now get only audio to add this stream
         if (audioConstraint != "undefined" && audioConstraint != false) {
             var media_audio_constraint = {audio: audioConstraint};
-            return this.navigatorUserMedia(media_audio_constraint, audioStream => {
+            return this.navigatorUserMedia(media_audio_constraint).then((audioStream) => {
 
                 //here audioStream has onr audio track only
                 audioStream = this.setGainNodeStream(audioStream);
@@ -437,7 +455,16 @@ export class MediaManager {
 
                     return this.gotStream(stream);
                 }
-            }, true)
+            }).catch (error => {
+	            if (error.name == "NotFoundError") {
+	                this.getDevices()
+	            } 
+                else {
+	                this.callbackError(error.name, error.message);
+	            }
+	            //throw error for promise
+                throw error;
+            });
         } else {
             return this.gotStream(stream);
         }
@@ -451,25 +478,47 @@ export class MediaManager {
      * @param {*} catch_error : error is checked if catch_error is true
      */
     navigatorUserMedia(mediaConstraints, func, catch_error) {
-        return navigator.mediaDevices.getUserMedia(mediaConstraints).then((stream) => {
-            if (typeof func != "undefined" || func != null) {
-                func(stream);
-            }
-            return stream;
-        }).catch(error => {
-            if (catch_error == true) {
-                if (error.name == "NotFoundError") {
-                    this.getDevices()
-                } else {
-                    this.callbackError(error.name, error.message);
-                }
-            } else {
-                Logger.warn(error);
-
-            }
-            //throw error if there is a promise
-            throw error;
-        });
+	
+		if (mediaConstraints.video == "dummy" || mediaConstraints.audio == "dummy") {
+			var stream = new MediaStream();
+			
+			if (mediaConstraints.audio == "dummy") 
+			{
+				stream.addTrack(this.getSilentAudioTrack());
+			}
+			
+			if (mediaConstraints.video == "dummy") 
+			{	
+				stream.addTrack(this.getBlackVideoTrack());
+			}
+			
+			return new Promise((resolve, reject) => {
+            	resolve(stream);
+        	})
+		}
+		else 
+		{	
+				
+			return navigator.mediaDevices.getUserMedia(mediaConstraints).then((stream) => {
+	            if (typeof func != "undefined" || func != null) {
+	                func(stream);
+	            }
+	            return stream;
+	        }).catch(error => {
+	            if (catch_error == true) {
+	                if (error.name == "NotFoundError") {
+	                    this.getDevices()
+	                } else {
+	                    this.callbackError(error.name, error.message);
+	                }
+	            } else {
+	                Logger.warn(error);
+	
+	            }
+	            //throw error if there is a promise
+	            throw error;
+	        });
+        }
     }
 
     /**
@@ -873,6 +922,8 @@ export class MediaManager {
             var audioTrack = this.localStream.getAudioTracks()[0];
             this.localStream.removeTrack(audioTrack);
             audioTrack.stop();
+            
+            this.stopSilentAudioTrack();
             this.localStream.addTrack(newAudioTrack);
         } else if (this.localStream != null) {
             this.localStream.addTrack(newAudioTrack);
@@ -916,6 +967,11 @@ export class MediaManager {
             var videoTrack = this.localStream.getVideoTracks()[0];
             this.localStream.removeTrack(videoTrack);
             videoTrack.stop();
+
+            //just stop/clear if the blackVideoTrack if it's active
+           	this.stopBlackVideoTrack();
+           	this.clearBlackVideoTrackTimer();
+			
             this.localStream.addTrack(newVideoTrack);
         } else if (this.localStream != null) {
             this.localStream.addTrack(newVideoTrack);
@@ -1100,6 +1156,7 @@ export class MediaManager {
 
             }).catch(function (error) {
                 Logger.debug(error.name);
+                throw error;
             });
         } else {
             this.updateLocalAudioStream(stream, onEndedCallback);
@@ -1119,7 +1176,8 @@ export class MediaManager {
      */
     updateVideoTrack(stream, streamId, onEndedCallback, stopDesktop) {
         var videoTrackSender = this.getSender(streamId, "video");
-        if (videoTrackSender) {
+        if (videoTrackSender) 
+        {
             return videoTrackSender.replaceTrack(stream.getVideoTracks()[0]).then(result => {
                 this.updateLocalVideoStream(stream, onEndedCallback, stopDesktop);
 
@@ -1134,14 +1192,60 @@ export class MediaManager {
         }
     }
 
+	/**    
+    * @Deprecated use getBlackVideoTrack since 2.6.2
+	*/
+    initializeDummyFrame() {
+       return this.getBlackVideoTrack();
+    }
+    
     /**
      * If you mute turn off the camera still some data should be sent
      * Tihs method create a black frame to reduce data transfer
      */
-    initializeDummyFrame() {
-        this.dummyCanvas.getContext('2d').fillRect(0, 0, 320, 240);
-        this.replacementStream = this.dummyCanvas.captureStream();
-    }
+    getBlackVideoTrack() {
+		this.dummyCanvas.getContext('2d').fillRect(0, 0, 320, 240);
+		
+		//REFACTOR: it's not good to set to a replacement stream  
+		this.replacementStream = this.dummyCanvas.captureStream();
+		 //We need to send black frames within a time interval, because when the user turn off the camera,
+        //player can't connect to the sender since there is no data flowing. Sending a black frame in each 3 seconds resolves it.
+        if (this.blackFrameTimer == null) {
+            this.blackFrameTimer = setInterval(() => {
+                this.getBlackVideoTrack();
+            }, 3000);
+        }
+        
+        this.blackVideoTrack = this.replacementStream.getVideoTracks()[0];
+        return this.blackVideoTrack;
+	}
+    
+    /**
+     * Silent audio track
+	 */
+    getSilentAudioTrack() 
+    {
+		this.oscillator = this.audioContext.createOscillator();
+  		let dst = this.oscillator.connect(this.audioContext.createMediaStreamDestination());
+  		this.oscillator.start();
+  		this.silentAudioTrack = dst.stream.getAudioTracks()[0];
+  		return this.silentAudioTrack;
+	}
+	
+	
+	stopSilentAudioTrack() {
+		if (this.oscillator != null) {
+			this.oscillator.stop();
+			this.oscillator.disconnect();
+			this.oscillator = null;
+		}
+		
+		if (this.silentAudioTrack != null) {
+			this.silentAudioTrack.stop();
+			this.silentAudioTrack = null;
+		}
+ 
+	}
 
     /**
      * Called by User
@@ -1149,17 +1253,10 @@ export class MediaManager {
      */
     turnOffLocalCamera(streamId) {
         //Initialize the first dummy frame for switching.
-        this.initializeDummyFrame();
+        this.getBlackVideoTrack();
 
-        //We need to send black frames within a time interval, because when the user turn off the camera,
-        //player can't connect to the sender since there is no data flowing. Sending a black frame in each 3 seconds resolves it.
-        if (this.blackFrameTimer == null) {
-            this.blackFrameTimer = setInterval(() => {
-                this.initializeDummyFrame();
-            }, 3000);
-        }
-
-        if (this.localStream != null) {
+        if (this.localStream != null) 
+        {
             let choosenId;
             if (streamId != null || typeof streamId != "undefined") {
                 choosenId = streamId;
@@ -1168,26 +1265,42 @@ export class MediaManager {
             }
             this.cameraEnabled = false;
             return this.updateVideoTrack(this.replacementStream, choosenId, null, true);
-        } else {
+        } 
+        else {
 
             return new Promise((resolve, reject) => {
                 this.callbackError("NoActiveConnection");
                 reject("NoActiveStream");
             });
         }
-
-
     }
+    
+    clearBlackVideoTrackTimer() 
+    {
+		if (this.blackFrameTimer != null) {
+            clearInterval(this.blackFrameTimer);
+            this.blackFrameTimer = null;
+        }
+	}
+	
+	stopBlackVideoTrack() 
+	{
+		 if (this.blackVideoTrack != null) {
+			this.blackVideoTrack.stop();
+			this.blackVideoTrack = null;
+		}
+	}
 
     /**
      * Called by User
      * turns of the camera stream and starts streaming camera again instead of black dummy frame
      */
     turnOnLocalCamera(streamId) {
-        if (this.blackFrameTimer != null) {
-            clearInterval(this.blackFrameTimer);
-            this.blackFrameTimer = null;
-        }
+        this.clearBlackVideoTrackTimer();
+        
+        this.stopBlackVideoTrack();
+       
+		
         if (this.localStream == null) {
             return this.navigatorUserMedia(this.mediaConstraints, stream => {
                 this.gotStream(stream);
@@ -1327,6 +1440,10 @@ export class MediaManager {
             this.localStreamSoundMeter = null;
         }
     }
+    
+    setConstraints(newConstraints) {
+		this.mediaConstraints = newConstraints;
+	}
 
     /**
      * Called by user
@@ -1361,7 +1478,8 @@ export class MediaManager {
 
 
         var promise = null;
-        if (constraints.video !== undefined) {
+        if (constraints.video !== undefined) 
+        {
             if (this.localStream && this.localStream.getVideoTracks().length > 0) {
                 var videoTrack = this.localStream.getVideoTracks()[0];
                 promise = videoTrack.applyConstraints(this.mediaConstraints.video);

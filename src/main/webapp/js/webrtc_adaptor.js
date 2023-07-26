@@ -1866,6 +1866,17 @@ export class WebRTCAdaptor {
     }
 
     /**
+     * Update audio track of the stream. Updates the audio track on the fly as well. It just replaces the audio track with the first one in the stream
+     * @param {*} stream 
+     * @param {*} streamId 
+     * @param {*} onEndedCallback 
+     * @returns 
+     */
+    updateAudioTrack(stream, streamId, onEndedCallback) {
+        return this.mediaManager.updateAudioTrack(stream, streamId, onEndedCallback);
+    }
+
+    /**
      * Called by User
      * to switch between front and back camera on mobile devices
      *
@@ -1922,6 +1933,13 @@ export class WebRTCAdaptor {
     applyConstraints(constraints) {
         return this.mediaManager.applyConstraints(constraints)
     };
+    
+    /**
+	 * setter for constraints for using later. If you want to apply constraints to the current streams, just use applyConstraints
+	 */
+    setConstraints(newConstraints) {
+		this.mediaManager.setConstraints(newConstraints);
+	}
     /**
      * 
      * @param {number} bandwidth 
