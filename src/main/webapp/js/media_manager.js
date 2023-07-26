@@ -228,7 +228,7 @@ export class MediaManager {
         this.checkWebRTCPermissions();
         if (typeof this.mediaConstraints.video != "undefined" && this.mediaConstraints.video != false) 
         {
-            return this.openStream(this.mediaConstraints, this.mode);
+            return this.openStream(this.mediaConstraints);
         } 
         else if (typeof this.mediaConstraints.audio != "undefined" && this.mediaConstraints.audio != false) 
         {
@@ -295,7 +295,7 @@ export class MediaManager {
                 Logger.debug("Retrying to get user media without audio")
                 if (this.inputDeviceNotFoundLimit < 2) {
                     if (checkVideo != false) {
-                        this.openStream({video: true, audio: false}, this.mode)
+                        this.openStream({video: true, audio: false})
                         this.inputDeviceNotFoundLimit++;
                     } else {
                         Logger.debug("Video input not found")
@@ -463,7 +463,8 @@ export class MediaManager {
                             return this.gotStream(stream);
                         });
                     }
-                    else {
+                    else 
+                    {
                         return this.gotStream(stream);
                     }
                 }
@@ -613,7 +614,17 @@ export class MediaManager {
      */
     openStream(mediaConstraints, streamId) {
         this.mediaConstraints = mediaConstraints;
-        return this.getMedia(mediaConstraints, streamId);
+        
+        return this.getMedia(mediaConstraints, streamId).then(() => {
+			if (this.mediaConstraints.video != "dummy" && this.mediaConstraints.video != undefined) {
+				this.stopBlackVideoTrack();
+				this.clearBlackVideoTrackTimer();
+			}
+			
+			if (this.mediaConstraints.audio != "dummy" && this.mediaConstraints.audio != undefined) {
+				this.stopSilentAudioTrack();
+			}			
+		});
     }
 
 
@@ -915,15 +926,14 @@ export class MediaManager {
             var audioTrack = this.localStream.getAudioTracks()[0];
             this.localStream.removeTrack(audioTrack);
             audioTrack.stop();
-            
-            this.stopSilentAudioTrack();
             this.localStream.addTrack(newAudioTrack);
         } else if (this.localStream != null) {
             this.localStream.addTrack(newAudioTrack);
         } else {
             this.localStream = stream;
         }
-
+        
+  
         if (this.localVideo != null) {   //it can be null
             this.localVideo.srcObject = this.localStream;
         }
@@ -959,12 +969,7 @@ export class MediaManager {
         if (this.localStream != null && this.localStream.getVideoTracks()[0] != null) {
             var videoTrack = this.localStream.getVideoTracks()[0];
             this.localStream.removeTrack(videoTrack);
-            videoTrack.stop();
-
-            //just stop/clear if the blackVideoTrack if it's active
-           	this.stopBlackVideoTrack();
-           	this.clearBlackVideoTrackTimer();
-			
+            videoTrack.stop();		
             this.localStream.addTrack(newVideoTrack);
         } else if (this.localStream != null) {
             this.localStream.addTrack(newVideoTrack);
@@ -1218,6 +1223,7 @@ export class MediaManager {
 	 */
     getSilentAudioTrack() 
     {
+		this.stopSilentAudioTrack();
 		this.oscillator = this.audioContext.createOscillator();
   		let dst = this.oscillator.connect(this.audioContext.createMediaStreamDestination());
   		this.oscillator.start();
@@ -1237,6 +1243,7 @@ export class MediaManager {
 			this.silentAudioTrack.stop();
 			this.silentAudioTrack = null;
 		}
+		
  
 	}
 
