@@ -1966,11 +1966,12 @@ export class WebRTCAdaptor {
     }
     /**
      * 
-     * @param {object} mediaConstraints 
+     * @param {object} mediaConstraints, media constraints to be used for opening the stream 
+     * @param {string} streamId, id of the stream to replace tracks with
      * @returns 
      */
-    openStream(mediaConstraints) {
-        return this.mediaManager.openStream(mediaConstraints);
+    openStream(mediaConstraints, streamId) {
+        return this.mediaManager.openStream(mediaConstraints, streamId);
     }
 
     closeStream() {

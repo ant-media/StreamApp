@@ -453,7 +453,24 @@ export class MediaManager {
                         stream.addTrack(audioStream.getAudioTracks()[0]);
                     }
 
-                    return this.gotStream(stream);
+                    if (stream.getVideoTracks().length > 0) 
+                    {
+                        return this.updateVideoTrack(stream, streamId, null, null).then(() => 
+                        {
+                            return this.updateAudioTrack(stream, streamId, null).then(() => {
+                                return this.gotStream(stream);
+                            });
+                        });
+                    }
+                    else if (stream.getAudioTracks().length > 0)
+                    {
+                        return this.updateAudioTrack(stream, streamId, null).then(() => {
+                            return this.gotStream(stream);
+                        });
+                    }
+                    else {
+                        return this.gotStream(stream);
+                    }
                 }
             }).catch (error => {
 	            if (error.name == "NotFoundError") {
@@ -557,11 +574,16 @@ export class MediaManager {
 
     /**
      * Called to get the media (User Media or Display Media)
-     * @param {*} mediaConstraints
-     * @param {*} audioConstraint
-     * @param {*} streamId
+     * @param {*} mediaConstraints, media constraints 
+     * @param {*} streamId, streamId to be used to replace track if there is an active peer connection
      */
-    getMedia(mediaConstraints, audioConstraint, streamId) {
+    getMedia(mediaConstraints, streamId) 
+    {
+        var audioConstraint = false;
+        if (typeof mediaConstraints.audio != "undefined" && mediaConstraints.audio != false) {
+            audioConstraint = mediaConstraints.audio;
+        }
+
         if (this.desktopCameraCanvasDrawerTimer != null) {
             clearInterval(this.desktopCameraCanvasDrawerTimer);
             this.desktopCameraCanvasDrawerTimer = null;
@@ -575,7 +597,6 @@ export class MediaManager {
                 return this.prepareStreamTracks(mediaConstraints, audioConstraint, stream, streamId);
             });
         }
-        // If mediaConstraints only user camera
         else {
             return this.navigatorUserMedia(mediaConstraints).then(stream => {
                 if (this.smallVideoTrack)
@@ -591,26 +612,16 @@ export class MediaManager {
         }
     }
 
+
     /**
      * Open media stream, it may be screen, camera or audio
      */
-    openStream(mediaConstraints) {
+    openStream(mediaConstraints, streamId) {
         this.mediaConstraints = mediaConstraints;
-        var audioConstraint = false;
-        if (typeof mediaConstraints.audio != "undefined" && mediaConstraints.audio != false) {
-            audioConstraint = mediaConstraints.audio;
-        }
-
-        if (typeof mediaConstraints.video != "undefined") {
-            return this.getMedia(mediaConstraints, audioConstraint);
-        } else {
-            return new Promise((resolve, reject) => {
-                this.callbackError("media_constraint_video_not_defined");
-                Logger.error("MediaConstraint video is not defined");
-                reject("media_constraint_video_not_defined");
-            });
-        }
+        return this.getMedia(mediaConstraints, streamId);
     }
+
+
 
     /**
      * Closes stream, if you want to stop peer connection, call stop(streamId)
@@ -878,16 +889,11 @@ export class MediaManager {
     switchDesktopCapture(streamId) {
         this.publishMode = "screen";
 
-        var audioConstraint = false;
-        if (typeof this.mediaConstraints.audio != "undefined" && this.mediaConstraints.audio != false) {
-            audioConstraint = this.mediaConstraints.audio;
-        }
-
         if (typeof this.mediaConstraints.video != "undefined" && this.mediaConstraints.video != false) {
             this.mediaConstraints.video = true
         }
         //TODO: I don't think we need to get audio again. We just need to switch the video stream
-        return this.getMedia(this.mediaConstraints, audioConstraint, streamId);
+        return this.getMedia(this.mediaConstraints, streamId);
     }
 
     /**
@@ -903,12 +909,8 @@ export class MediaManager {
 
         this.publishMode = "screen+camera";
 
-        var audioConstraint = false;
-        if (typeof this.mediaConstraints.audio != "undefined" && this.mediaConstraints.audio != false) {
-            audioConstraint = this.mediaConstraints.audio;
-        }
         //TODO: I don't think we need to get audio again. We just need to switch the video stream
-        return this.getMedia(this.mediaConstraints, audioConstraint, streamId);
+        return this.getMedia(this.mediaConstraints, streamId);
     }
 
     /**
