@@ -948,7 +948,7 @@ export class MediaManager {
         }
 
         if (this.localStreamSoundMeter != null) {
-            this.connectSoundMeterToLocalStream();
+            this.enableAudioLevelForLocalStream(this.levelCallback)
         }
     }
 
