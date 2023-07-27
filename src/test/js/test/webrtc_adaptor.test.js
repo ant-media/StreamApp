@@ -306,10 +306,6 @@ describe("WebRTCAdaptor", function() {
 
 		expect(adaptor.mediaManager.localStreamSoundMeter).to.be.null;
 
-
-
-
-
 	});
 
 	it("sendData", async function() {
@@ -333,4 +329,80 @@ describe("WebRTCAdaptor", function() {
 			assert(false);
 		}
 	});
+	
+	it("dummyStreamAndSwitch", async function() 
+	{
+		
+		var adaptor = new WebRTCAdaptor({
+			websocketURL: "ws://localhost",
+			mediaConstraints: {
+				video: "dummy",
+				audio: "dummy"
+			},
+			initializeComponents: false
+		});
+		
+		
+		expect(adaptor.mediaManager.blackVideoTrack).to.be.null
+		expect(adaptor.mediaManager.silentAudioTrack).to.be.null
+		expect(adaptor.mediaManager.oscillator).to.be.null
+		
+		await adaptor.initialize();
+		
+		
+		expect(adaptor.mediaManager.mediaConstraints).to.deep.equal({video:"dummy", audio:"dummy"});
+		
+		expect(adaptor.mediaManager.blackVideoTrack).to.not.be.null
+		expect(adaptor.mediaManager.silentAudioTrack).to.not.be.null
+		expect(adaptor.mediaManager.oscillator).to.not.be.null
+		expect(adaptor.mediaManager.localStream.getVideoTracks().length).to.be.equal(1)
+		expect(adaptor.mediaManager.localStream.getAudioTracks().length).to.be.equal(1)
+		
+
+		await adaptor.openStream({video:true, audio:true});
+		
+		expect(adaptor.mediaManager.blackVideoTrack).to.be.null
+		expect(adaptor.mediaManager.silentAudioTrack).to.be.null
+		expect(adaptor.mediaManager.oscillator).to.be.null
+		
+		expect(adaptor.mediaManager.mediaConstraints).to.deep.equal({video:true, audio:true});
+		expect(adaptor.mediaManager.localStream.getVideoTracks().length).to.be.equal(1)
+		expect(adaptor.mediaManager.localStream.getAudioTracks().length).to.be.equal(1)
+
+	});
+	
+	it("updateAudioTrack", async function() 
+	{
+		var adaptor = new WebRTCAdaptor({
+			websocketURL: "ws://localhost",
+			mediaConstraints: {
+				video: "dummy",
+				audio: "dummy"
+			},
+			initializeComponents: false
+		});
+		
+		await adaptor.initialize();
+		
+		expect(adaptor.mediaManager.localStreamSoundMeter).to.be.null;
+
+		adaptor.enableAudioLevelForLocalStream((value)=> {
+			
+		}, 200);
+		
+		expect(adaptor.mediaManager.localStreamSoundMeter).to.not.be.null;
+		
+		var audioTrack = adaptor.mediaManager.getSilentAudioTrack();
+		
+		var stream = new MediaStream();
+		stream.addTrack(audioTrack);
+		
+		await adaptor.updateAudioTrack(stream, null, null);
+		
+		
+		
+		
+	});
+	
+	
 });
