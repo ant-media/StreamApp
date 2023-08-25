@@ -1,8 +1,10 @@
 
-import { getUrlParameter, isMobile } from "./fetch.stream.js";
+import { getUrlParameter } from "./fetch.stream.js";
 import "./external/loglevel.min.js";
 
 const Logger = window.log;
+
+const STATIC_VIDEO_HTML =  "<video id='video-player' class='video-js vjs-default-skin vjs-big-play-centered' controls playsinline></video>";
 
 export class EmbeddedPlayer {
 
@@ -21,7 +23,7 @@ export class EmbeddedPlayer {
 	*/
 	static STREAMS_FOLDER = "streams";
 
-	static VIDEO_HTML = "<video id='video-player' class='video-js vjs-default-skin vjs-big-play-centered' controls></video>";
+	static VIDEO_HTML = STATIC_VIDEO_HTML;
 
 	static VIDEO_PLAYER_ID = "video-player";
 
@@ -171,7 +173,7 @@ export class EmbeddedPlayer {
 		*/
 		EmbeddedPlayer.STREAMS_FOLDER = "streams";
 
-		EmbeddedPlayer.VIDEO_HTML = "<video id='video-player' class='video-js vjs-default-skin vjs-big-play-centered' controls></video>";
+		EmbeddedPlayer.VIDEO_HTML = STATIC_VIDEO_HTML;
 
 		EmbeddedPlayer.VIDEO_PLAYER_ID = "video-player";
 
@@ -183,6 +185,7 @@ export class EmbeddedPlayer {
         this.errorCalled = false;
         this.iceConnected = false;
         this.tryNextTechTimer = -1;
+        this.videojsPlayer = null;
 
         this.iceServers = '[ { "urls": "stun:stun1.l.google.com:19302" } ]';
 
@@ -223,15 +226,12 @@ export class EmbeddedPlayer {
 			this.token = null;
 		}
 
-        if (isMobile()) {
-            this.autoPlay = false;
+    
+        var localAutoPlay = getUrlParameter("autoplay", this.window.location.search);
+        if (localAutoPlay != null) {
+            this.autoPlay = localAutoPlay.toLocaleLowerCase() == "true";
         }
-        else {
-            var localAutoPlay = getUrlParameter("autoplay", this.window.location.search);
-            if (localAutoPlay != null) {
-                this.autoPlay = localAutoPlay.toLocaleLowerCase() == "true";
-            }
-        }
+        
 
         var localMute = getUrlParameter("mute",this.window.location.search);
         if (localMute != null) {
@@ -621,7 +621,9 @@ export class EmbeddedPlayer {
         });
 
         if (this.autoPlay) {
-            this.videojsPlayer.play();
+            this.videojsPlayer.play().catch((e) => {
+				 Logger.warn("Problem in playback. The error is " + e);
+			});
         }
     }
 
