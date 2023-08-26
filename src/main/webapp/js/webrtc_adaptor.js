@@ -1121,6 +1121,7 @@ export class WebRTCAdaptor {
      * @param {string} streamId: unique id for the stream
      */
     gotDescription(configuration, streamId) {
+	
         this.remotePeerConnection[streamId]
             .setLocalDescription(configuration)
             .then(responose => {
@@ -1134,10 +1135,7 @@ export class WebRTCAdaptor {
 
                 };
 
-                if (this.debug) {
-                    Logger.debug("local sdp: ");
-                    Logger.debug(configuration.sdp);
-                }
+                Logger.debug("setLocalDescription:"+configuration.sdp);
 
                 this.webSocketAdaptor.send(JSON.stringify(jsCmd));
 
@@ -1171,6 +1169,8 @@ export class WebRTCAdaptor {
 
         this.initPeerConnection(streamId, dataChannelMode);
 
+		Logger.debug("setRemoteDescription:" + conf);
+		
         this.remotePeerConnection[streamId].setRemoteDescription(new RTCSessionDescription({
             sdp: conf,
             type: type
