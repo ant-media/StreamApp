@@ -928,11 +928,15 @@ export class MediaManager {
     updateLocalAudioStream(stream, onEndedCallback) {
         var newAudioTrack = stream.getAudioTracks()[0];
 
-        if (this.localStream != null && this.localStream.getAudioTracks()[0] != null) {
+        if (this.localStream != null && this.localStream.getAudioTracks()[0] != null) 
+        {
             var audioTrack = this.localStream.getAudioTracks()[0];
-            this.localStream.removeTrack(audioTrack);
-            audioTrack.stop();
-            this.localStream.addTrack(newAudioTrack);
+            if (audioTrack != newAudioTrack) 
+            {
+	            this.localStream.removeTrack(audioTrack);
+	            audioTrack.stop();
+	            this.localStream.addTrack(newAudioTrack);
+            }
         } else if (this.localStream != null) {
             this.localStream.addTrack(newAudioTrack);
         } else {
@@ -972,11 +976,16 @@ export class MediaManager {
 
         var newVideoTrack = stream.getVideoTracks()[0];
 
-        if (this.localStream != null && this.localStream.getVideoTracks()[0] != null) {
+        if (this.localStream != null && this.localStream.getVideoTracks()[0] != null ) 
+        {
             var videoTrack = this.localStream.getVideoTracks()[0];
-            this.localStream.removeTrack(videoTrack);
-            videoTrack.stop();		
-            this.localStream.addTrack(newVideoTrack);
+            
+            if (videoTrack != newVideoTrack) 
+            {
+	            this.localStream.removeTrack(videoTrack);
+	            videoTrack.stop();		
+	            this.localStream.addTrack(newVideoTrack);
+            }
         } else if (this.localStream != null) {
             this.localStream.addTrack(newVideoTrack);
         } else {
