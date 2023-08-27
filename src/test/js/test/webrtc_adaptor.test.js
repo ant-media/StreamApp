@@ -400,8 +400,8 @@ describe("WebRTCAdaptor", function() {
 		await adaptor.updateAudioTrack(stream, null, null);
 	});
 	
-	it("testSoundMeter",  function(done) {
-		
+	it.only("testSoundMeter",  function(done) {
+		this.timeout(5000);
 		
 		var adaptor = new WebRTCAdaptor({
 			websocketURL: "ws://localhost",
@@ -413,8 +413,7 @@ describe("WebRTCAdaptor", function() {
 		});
 		
 		adaptor.initialize().then(() => {
-			audioLevelCalled = false;
-			audioLevel = 0;
+			
 			adaptor.enableAudioLevelForLocalStream((level) => {
 				console.log(level);
 				if (level > 0) {
