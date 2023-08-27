@@ -400,7 +400,7 @@ describe("WebRTCAdaptor", function() {
 		await adaptor.updateAudioTrack(stream, null, null);
 	});
 	
-	it.only("testSoundMeter",  function(done) {
+	it("testSoundMeter",  function(done) {
 		
 		
 		var adaptor = new WebRTCAdaptor({
