@@ -398,11 +398,35 @@ describe("WebRTCAdaptor", function() {
 		stream.addTrack(audioTrack);
 		
 		await adaptor.updateAudioTrack(stream, null, null);
-		
-		
-		
-		
 	});
+	
+	it("testSoundMeter",  function(done) {
+		this.timeout(5000);
+		
+		var adaptor = new WebRTCAdaptor({
+			websocketURL: "ws://localhost",
+			mediaConstraints: {
+				video: true,
+				audio: true
+			},
+			initializeComponents: false
+		});
+		
+		adaptor.initialize().then(() => {
+			
+			adaptor.enableAudioLevelForLocalStream((level) => {
+				console.log(level);
+				if (level > 0) {
+					done();
+				}				
+			});
+			
+			expect(adaptor.mediaManager.localStreamSoundMeter).to.not.be.null;
+		})
+		
+		
+		
+	})
 	
 	
 });
