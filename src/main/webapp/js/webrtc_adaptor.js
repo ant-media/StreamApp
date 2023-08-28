@@ -1241,6 +1241,8 @@ export class WebRTCAdaptor {
 
         var dataChannelMode = "peer";
         this.initPeerConnection(streamId, dataChannelMode);
+        
+       	Logger.debug("takeCandidate:" + candidateSdp)
 
         if (this.remoteDescriptionSet[streamId] == true) {
             this.addIceCandidate(streamId, candidate);

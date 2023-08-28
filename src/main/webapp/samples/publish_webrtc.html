@@ -155,10 +155,18 @@
 	import { getUrlParameter } from "../js/fetch.stream.js"
 	import { SoundMeter } from "../js/soundmeter.js"
 	import { generateRandomString, getWebSocketURL, errorHandler } from "../js/utility.js"
+
+	import "../js/external/loglevel.min.js";
+
+	const Logger = window.log;
+	
+	Logger.setLevel("debug");
+
 	var debug = getUrlParameter("debug");
 	if (debug == null) {
 		debug = false;
 	}
+	
 
 	var mediaConstraints = {
 		audio: {
