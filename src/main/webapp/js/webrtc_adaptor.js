@@ -1782,6 +1782,12 @@ export class WebRTCAdaptor {
     /**
      * Called by user
      * This message is used to send audio level in a conference.
+     * 
+	 * IMPORTANT: AMS v2.7+ can get the audio level from the RTP header and sends audio level to the viewers the same way here. 
+     *  Just one difference, AMS sends the audio level in the range of 0 and 127. 0 is max, 127 is ms
+     
+     *  It means that likely you don't need to send UPDATE_AUDIO_LEVEL anymore 
+     *
      * @param {string} streamId
      * @param {*} value : audio lavel
      * @returns 
