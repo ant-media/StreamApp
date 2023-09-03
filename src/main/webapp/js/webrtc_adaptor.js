@@ -1624,7 +1624,10 @@ export class WebRTCAdaptor {
         var CHUNK_SIZE = 16000;
         if (this.remotePeerConnection[streamId] !== undefined) {
             var dataChannel = this.remotePeerConnection[streamId].dataChannel;
-            if (dataChannel == undefined || dataChannel.readyState !== 'open') {
+            if (dataChannel === undefined || dataChannel === null || typeof dataChannel === 'undefined') {
+                console.warn('dataChannel is null or undefined');
+                return;
+            } else if (dataChannel.readyState !== 'open') {
                 console.warn('dataChannel.readyState is not open: ' + dataChannel.readyState);
                 return;
             }
