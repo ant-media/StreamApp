@@ -229,6 +229,7 @@ body {
 		dcOnly = false;
 	}
 
+	var roomId = getUrlParameter("roomId");
 	var streamName = getUrlParameter("streamName");
 
 	var volume_change_input = document.getElementById("volume_change_input");
@@ -278,8 +279,13 @@ body {
   		});
 	}
 
+	
 	var roomNameBox = document.getElementById("roomName");
 
+	if (roomId != null) {
+		roomNameBox.value = roomId;
+	}
+	
 	var isDataChannelOpen = false;
 	var isMicMuted = false;
 	var isCameraOff = false;
@@ -468,7 +474,9 @@ body {
 	function enableAudioLevel() {
 		//TODO: Disable this one if user stops publishing
 		webRTCAdaptor.enableAudioLevelForLocalStream((value) => {
-			webRTCAdaptor.updateAudioLevel(publishStreamId,  Math.floor(value*100));
+
+			//PAY ATTENTION: No need to send audio level any more because server side can get it from the RTP header in AMS v2.7+ 
+			//webRTCAdaptor.updateAudioLevel(publishStreamId,  Math.floor(value*100));
 		}, 200);
 	};
 

@@ -1014,13 +1014,21 @@ export class EmbeddedPlayer {
      * @param {*} data
      */
     sendWebRTCData(data) {
-        if (this.videojsPlayer && this.currentPlayType == "webrtc") {
-            this.videojsPlayer.sendDataViaWebRTC(data);
-        }
-        else {
-            Logger.warn("Player is not ready or playType is not WebRTC");
-        }
-    }
+	    try {
+	        if (this.videojsPlayer && this.currentPlayType == "webrtc") {
+	            this.videojsPlayer.sendDataViaWebRTC(data);
+	            return true;
+	        }
+	        else {
+	            Logger.warn("Player is not ready or playType is not WebRTC");
+	        }
+	    } catch (error) {
+	        // Handle the error here
+	        Logger.error("An error occurred while sending WebRTC data: ", error);
+	    }
+	    return false;
+	}
+
 
 
 

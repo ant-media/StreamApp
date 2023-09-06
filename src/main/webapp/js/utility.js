@@ -120,7 +120,7 @@ export function errorHandler(error, message) {
     }
 
     if (error.indexOf("WebSocketNotConnected") != -1) {
-        errorMessage = "WebSocket Connection is disconnected.";
+        errorMessage = "WebSocket is disconnected.";
     } else if (error.indexOf("not_initialized_yet") != -1) {
         errorMessage = "Server is getting initialized.";
     } else if (error.indexOf("data_store_not_available") != -1) {
