@@ -1922,6 +1922,7 @@ export class WebRTCAdaptor {
     }
     /**
      * 
+     * Using sound meter in order to get audio level may cause audio distortion in Windows browsers 
      * @param {Function} levelCallback 
      * @param {number} period 
      * @returns 

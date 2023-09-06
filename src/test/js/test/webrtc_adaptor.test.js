@@ -423,10 +423,50 @@ describe("WebRTCAdaptor", function() {
 			
 			expect(adaptor.mediaManager.localStreamSoundMeter).to.not.be.null;
 		})
-		
-		
-		
 	})
+	
+	it("takeConfiguration", async function() {
+		var adaptor = new WebRTCAdaptor({
+			websocketURL: "ws://localhost",
+			mediaConstraints: {
+				video: true,
+				audio: true
+			},
+			initializeComponents: false
+		});
+		
+		await adaptor.initialize();
+		expect(adaptor.remotePeerConnection["stream1"]).to.be.undefined;
+
+		adaptor.takeConfiguration("stream1", "conf", "offer", "track1");
+		
+		expect(adaptor.remotePeerConnection["stream1"]).to.not.be.undefined;
+		
+	});
+	
+	it("takeCandidate", async function() {
+		var adaptor = new WebRTCAdaptor({
+			websocketURL: "ws://localhost",
+			mediaConstraints: {
+				video: true,
+				audio: true
+			},
+			initializeComponents: false
+		});
+		
+		await adaptor.initialize();
+		
+		expect(adaptor.remotePeerConnection["stream1"]).to.be.undefined;
+		expect(adaptor.iceCandidateList["stream1"]).to.be.undefined;
+
+
+		adaptor.takeCandidate ("stream1", "label", "candidate");
+		
+		expect(adaptor.remotePeerConnection["stream1"]).to.not.be.undefined;
+
+		expect(adaptor.iceCandidateList["stream1"].length).to.be.equal(1);
+		
+	});
 	
 	
 });
