@@ -48,7 +48,7 @@
 				<legend class="col-form-label audio-quality-legend">Audio Quality</legend>
 				<div class="form-check-inline form-inline">
 					<div class="custom-control custom-switch">
-						<input type="checkbox" class="custom-control-input" name="noiseSuppression"
+						<input type="checkbox" class="custom-control-input" name="noiseSuppression"  checked="true"
 							id="noiseSuppression">
 						<label class="custom-control-label" for="noiseSuppression">Noise Supression</label>
 					</div>
@@ -56,7 +56,7 @@
 				<div class="form-check-inline form-inline">
 					<div class="custom-control custom-switch">
 						<input type="checkbox" class="custom-control-input" name="echoCancellation"
-							id="echoCancellation">
+							id="echoCancellation" checked="true">
 						<label class="custom-control-label" for="echoCancellation">Echo Cancellation</label>
 					</div>
 				</div>
@@ -155,15 +155,23 @@
 	import { getUrlParameter } from "../js/fetch.stream.js"
 	import { SoundMeter } from "../js/soundmeter.js"
 	import { generateRandomString, getWebSocketURL, errorHandler } from "../js/utility.js"
+
+	import "../js/external/loglevel.min.js";
+
+	const Logger = window.log;
+	
+	Logger.setLevel("debug");
+
 	var debug = getUrlParameter("debug");
 	if (debug == null) {
 		debug = false;
 	}
+	
 
 	var mediaConstraints = {
 		audio: {
-			noiseSuppression: false,
-			echoCancellation: false
+			noiseSuppression: true,
+			echoCancellation: true
 		},
 		video: true
 	};
@@ -277,15 +285,38 @@
 	}
 
 	let meterRefresh = null;
-
+	var audioLevelTimerId = -1;
 
 	const instantMeter = document.querySelector('#audio_level_text_container');
 	const instantValueDisplay = document.querySelector('#audio_level_text');
 
+	function disableAudioLevel() 
+	{
+		if (audioLevelTimerId != -1) 
+		{
+			clearInterval(audioLevelTimerId);
+			audioLevelTimerId = -1;
+		}
+	}
 	function enableAudioLevel() {
-		webRTCAdaptor.enableAudioLevelForLocalStream((value) => {
-			instantMeter.value = instantValueDisplay.innerText = value;
-		}, 200);
+		//ATTENTION: Using sound meter in order to get audio level may cause audio distortion in Windows browsers 
+		//webRTCAdaptor.enableAudioLevelForLocalStream((value) => {
+		//	instantMeter.value = instantValueDisplay.innerText = value;
+		//}, 200);
+
+		audioLevelTimerId = setInterval(() => {
+			webRTCAdaptor.remotePeerConnection[streamId].getStats(null).then(stats => {
+				for (const stat of stats.values()) 
+				{
+					if (stat.type === 'media-source' && stat.kind === 'audio') {
+						instantMeter.value = instantValueDisplay.innerText = stat.audioLevel.toFixed(2);
+						return;
+					}
+				}
+			})
+		}, 250);
+
+
 	};
 
 	var file_input = document.getElementById("file-input");
@@ -534,8 +565,7 @@
 					start_publish_button.disabled = false;
 					stop_publish_button.disabled = true;
 					$("#stats_panel").hide();
-					webRTCAdaptor.disableAudioLevelForLocalStream();
-
+					disableAudioLevel();
 				}
 				else if (info == "browser_screen_share_supported") {
 					$(".video-source").prop("disabled", false);

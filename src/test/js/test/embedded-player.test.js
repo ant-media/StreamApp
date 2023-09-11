@@ -622,9 +622,56 @@ describe("EmbeddedPlayer", function() {
 	  
 	    player.destroyVideoJSPlayer();
 	    expect(player.videojsPlayer).to.be.null
-
-	    
 	})
+	
+	it("sendWebRTCData", async function() {
+		
+		
+		var videoContainer = document.createElement("video_container");
+		  
+		var placeHolder = document.createElement("place_holder");
+		
+		var videoPlayer = document.createElement("video");
+		videoPlayer.id = EmbeddedPlayer.VIDEO_PLAYER_ID;
+		  			
+		var locationComponent =  { href : 'http://example.com?id=stream123', search: "?id=stream123",  pathname: "/", hostname:"example.com", port:5080 };
+		var windowComponent = {  location : locationComponent,
+		  						  document:  document,
+		  						  };
+		  						  
+		  						  
+		var player = new EmbeddedPlayer(windowComponent, videoContainer, placeHolder);
+		//var playWithVideoJS = sinon.replace(player, "playWithVideoJS", sinon.fake());
+		
+		await player.playIfExists("webrtc");	
+		
+		
+		var sendDataViaWebRTC = sinon.fake();
+		player.videojsPlayer.sendDataViaWebRTC = sendDataViaWebRTC;
+		
+		//send data and it should increase the call count
+		var result = player.sendWebRTCData("data");
+		expect(sendDataViaWebRTC.callCount).to.be.equal(1);
+		expect(result).to.be.true;
+		
+		
+		sendDataViaWebRTC = sinon.fake.throws(new Error("error"));
+		player.videojsPlayer.sendDataViaWebRTC = sendDataViaWebRTC;
+		result = player.sendWebRTCData("data");
+		expect(result).to.be.false;
+		expect(sendDataViaWebRTC.callCount).to.be.equal(1);
+		
+		
+		//destroy the player and send again, it should not increase the call count
+		player.destroyVideoJSPlayer();
+		result = player.sendWebRTCData("data");
+		expect(result).to.be.false;
+		expect(sendDataViaWebRTC.callCount).to.be.equal(1);
+		
+	    
+	    
+		
+	});
 	
 	
     

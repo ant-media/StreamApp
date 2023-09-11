@@ -1121,6 +1121,7 @@ export class WebRTCAdaptor {
      * @param {string} streamId: unique id for the stream
      */
     gotDescription(configuration, streamId) {
+	
         this.remotePeerConnection[streamId]
             .setLocalDescription(configuration)
             .then(responose => {
@@ -1134,10 +1135,7 @@ export class WebRTCAdaptor {
 
                 };
 
-                if (this.debug) {
-                    Logger.debug("local sdp: ");
-                    Logger.debug(configuration.sdp);
-                }
+                Logger.debug("setLocalDescription:"+configuration.sdp);
 
                 this.webSocketAdaptor.send(JSON.stringify(jsCmd));
 
@@ -1171,6 +1169,8 @@ export class WebRTCAdaptor {
 
         this.initPeerConnection(streamId, dataChannelMode);
 
+		Logger.debug("setRemoteDescription:" + conf);
+		
         this.remotePeerConnection[streamId].setRemoteDescription(new RTCSessionDescription({
             sdp: conf,
             type: type
@@ -1241,6 +1241,8 @@ export class WebRTCAdaptor {
 
         var dataChannelMode = "peer";
         this.initPeerConnection(streamId, dataChannelMode);
+        
+       	Logger.debug("takeCandidate:" + candidateSdp)
 
         if (this.remoteDescriptionSet[streamId] == true) {
             this.addIceCandidate(streamId, candidate);
@@ -1783,6 +1785,12 @@ export class WebRTCAdaptor {
     /**
      * Called by user
      * This message is used to send audio level in a conference.
+     * 
+	 * IMPORTANT: AMS v2.7+ can get the audio level from the RTP header and sends audio level to the viewers the same way here. 
+     *  Just one difference, AMS sends the audio level in the range of 0 and 127. 0 is max, 127 is ms
+     
+     *  It means that likely you don't need to send UPDATE_AUDIO_LEVEL anymore 
+     *
      * @param {string} streamId
      * @param {*} value : audio lavel
      * @returns 
@@ -1917,6 +1925,7 @@ export class WebRTCAdaptor {
     }
     /**
      * 
+     * Using sound meter in order to get audio level may cause audio distortion in Windows browsers 
      * @param {Function} levelCallback 
      * @param {number} period 
      * @returns 
