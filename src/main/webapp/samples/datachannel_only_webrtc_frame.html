@@ -157,7 +157,7 @@
             if (iceState != null && iceState != "failed" && iceState != "disconnected") {
 
 				webRTCAdaptor.sendData($("#streamName").val(), $("#dataTextbox").val());
-				$("#dataMessagesTextarea").append("Sent: " + $("#dataTextbox").val() + "\r\n");
+				$("#dataMessagesTextarea").text("Sent: " + $("#dataTextbox").val()  + "\r\n");
 				$("#dataTextbox").val("");
 			}
 			else {
@@ -226,7 +226,7 @@
 					}
 					else if (info == "data_received") {
 						console.log("Data received: " + obj.data + " type: " + obj.type + " for stream: " + obj.streamId);
-						$("#dataMessagesTextarea").append("Received: " + obj.data + "\r\n");
+						$("#dataMessagesTextarea").text("Received: " + obj.data + "\r\n");
 					}
 					else {
 						console.log( info + " notification received");
