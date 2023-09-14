@@ -232,6 +232,9 @@ body {
 	var roomId = getUrlParameter("roomId");
 	var streamName = getUrlParameter("streamName");
 
+	var subscriberId = getUrlParameter("subscriberId");
+	var subscriberCode = getUrlParameter("subscriberCode");
+
 	var volume_change_input = document.getElementById("volume_change_input");
 	volume_change_input.addEventListener("change", changeVolume);
 
@@ -434,7 +437,8 @@ body {
 	function publish(streamId, token) {
 		//update the publishStreamId to make sure it's correct
 		publishStreamId = streamId;
-		webRTCAdaptor.publish(publishStreamId, token, "", "", streamName, roomNameBox.value,"{someKey:someValue}");
+		webRTCAdaptor.publish(publishStreamId, token, subscriberId, subscriberCode, streamName, roomNameBox.value,"{someKey:someValue}");
+
 	}
 
 	function playVideo(obj) {
@@ -584,7 +588,8 @@ body {
 							var tempList = obj.streams;
 							//just disable itself
 							tempList.push("!"+publishStreamId);
-							webRTCAdaptor.play(roomNameBox.value, token, roomNameBox.value); //, tempList);
+
+							webRTCAdaptor.play(roomNameBox.value, token, roomNameBox.value, [], subscriberId, subscriberCode);
 						}
 
 						//just call once - no need to have periodic check
@@ -642,7 +647,7 @@ body {
 							var tempList = obj.streams;
 							//just disable itself
 							tempList.push("!"+publishStreamId);
-							webRTCAdaptor.play(roomNameBox.value, token, roomNameBox.value, tempList);
+							webRTCAdaptor.play(roomNameBox.value, token, roomNameBox.value, tempList, subscriberId, subscriberCode);
 							isPlaying = true;
 						}
 					}
