@@ -403,6 +403,9 @@ describe("WebRTCAdaptor", function() {
 	it("testSoundMeter",  function(done) {
 		this.timeout(5000);
 		
+		
+		console.log("Starting testSoundMeter");
+		
 		var adaptor = new WebRTCAdaptor({
 			websocketURL: "ws://localhost",
 			mediaConstraints: {
@@ -412,10 +415,12 @@ describe("WebRTCAdaptor", function() {
 			initializeComponents: false
 		});
 		
+		//fake stream in te browser is a period audio and silence, so getting sound level more than 0 requires 
+
 		adaptor.initialize().then(() => {
 			
 			adaptor.enableAudioLevelForLocalStream((level) => {
-				console.log(level);
+				console.log("sound level -> " + level);
 				if (level > 0) {
 					done();
 				}				
