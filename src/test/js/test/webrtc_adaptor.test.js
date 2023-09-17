@@ -209,6 +209,9 @@ describe("WebRTCAdaptor", function() {
 
 		var closePeerConnection = sinon.replace(adaptor, "closePeerConnection", sinon.fake());
 
+		// some times Data.now() returns 0 and it is blocking the test
+		// so we set lastReconnectiontionTrialTime to -3000 to avoid this
+		adaptor.lastReconnectiontionTrialTime = -3000;
 		adaptor.tryAgain();
 
 		clock.tick(3000);
