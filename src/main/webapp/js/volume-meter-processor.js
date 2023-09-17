@@ -4,8 +4,7 @@
 
 /* global currentTime */
 
-const SMOOTHING_FACTOR = 0.8;
-const FRAME_PER_SECOND = 5;
+const FRAME_PER_SECOND = 10;
 const FRAME_INTERVAL = 1 / FRAME_PER_SECOND;
 
 /**
