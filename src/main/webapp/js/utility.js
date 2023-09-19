@@ -2,7 +2,11 @@ import {getUrlParameter} from "./fetch.stream.js";
 import "./external/loglevel.min.js";
 
 const Logger = window.log;
-
+/**
+ * 
+ * @param {number} n 
+ * @returns 
+ */
 export function generateRandomString(n) {
     let randomString = '';
     let characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -12,7 +16,12 @@ export function generateRandomString(n) {
     }
     return randomString;
 }
-
+/**
+ * 
+ * @param {Location} location 
+ * @param {string} rtmpForward 
+ * @returns 
+ */
 export function getWebSocketURL(location, rtmpForward) {
     var appName = location.pathname.substring(1, location.pathname.indexOf("/", 1) + 1);
     var path = location.hostname + ":" + location.port + "/" + appName + "websocket";
@@ -26,18 +35,33 @@ export function getWebSocketURL(location, rtmpForward) {
     }
     return websocketURL;
 }
-
+/**
+ * 
+ * @param {Location} location 
+ * @param {string} id 
+ * @param {number} port 
+ * @returns 
+ */
 export function getSrtURL(location, id, port) {
     var appName = location.pathname.substring(1, location.pathname.indexOf("/", 1) + 1);
     return "srt://" + location.hostname + ":" + port + "?streamid=" + appName + id;
 
 }
-
+/**
+ * 
+ * @param {Location} location 
+ * @param {string} id 
+ * @returns 
+ */
 export function getRtmpUrl(location, id) {
     var appName = location.pathname.substring(1, location.pathname.indexOf("/", 1) + 1);
     return "rtmp://" + location.hostname + "/" + appName + id;
 }
-
+/**
+ * 
+ * @param {string} paramName 
+ * @returns 
+ */
 export function getQueryParameter(paramName) {
     var value = getUrlParameter(paramName);
     if (typeof value != "undefined") {
@@ -47,7 +71,11 @@ export function getQueryParameter(paramName) {
     //if it does not match, it returns "undefined"
 
 }
-
+/**
+ * 
+ * @param {string} streamId 
+ * @param {string} linkUrl 
+ */
 export function updateBroadcastStatusInfo(streamId, linkUrl) {
     $("#offlineInfo").hide();
     $("#broadcastingInfo").show();
@@ -76,7 +104,12 @@ export function updateBroadcastStatusInfo(streamId, linkUrl) {
     }, 200);
 
 }
-
+/**
+ * 
+ * @param {*} error 
+ * @param {string} message 
+ * @returns 
+ */
 export function errorHandler(error, message) {
     Logger.warn("error callback: " + JSON.stringify(error));
     var errorMessage = JSON.stringify(error);
@@ -87,7 +120,7 @@ export function errorHandler(error, message) {
     }
 
     if (error.indexOf("WebSocketNotConnected") != -1) {
-        errorMessage = "WebSocket Connection is disconnected.";
+        errorMessage = "WebSocket is disconnected.";
     } else if (error.indexOf("not_initialized_yet") != -1) {
         errorMessage = "Server is getting initialized.";
     } else if (error.indexOf("data_store_not_available") != -1) {

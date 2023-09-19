@@ -1,17 +1,17 @@
 name: Run JS Tests & Check Coverage
 
-on: push 
+on: push
 
-jobs:   
-  run-js-tests:    
-    runs-on: ubuntu-latest  
-    steps:  
-      - uses: actions/checkout@v3   
-      - uses: actions/setup-node@v3 
-        with:   
-         node-version: '16.x'   
-         registry-url: 'https://registry.npmjs.org' 
-      - run: npm install --include=dev  
+jobs:
+  run-js-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+         node-version: '16.x'
+         registry-url: 'https://registry.npmjs.org'
+      - run: npm install --include=dev
       - run: npm test
       - run: npm run compile
       - run: npm run codecov

@@ -41,7 +41,7 @@
             return obj && viewClasses.indexOf(Object.prototype.toString.call(obj)) > -1
         }
     }
-
+    
     function normalizeName(name) {
         if (typeof name !== 'string') {
             name = String(name)
@@ -302,7 +302,11 @@
 
     // HTTP methods whose capitalization should be normalized
     var methods = ['DELETE', 'GET', 'HEAD', 'OPTIONS', 'POST', 'PUT']
-
+    /**
+     * 
+     * @param {string} method 
+     * @returns 
+     */
     function normalizeMethod(method) {
         var upcased = method.toUpperCase()
         return (methods.indexOf(upcased) > -1) ? upcased : method

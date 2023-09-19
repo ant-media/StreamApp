@@ -89,7 +89,16 @@
 		<filter-name>WaitingViewerFilter</filter-name>
 		<url-pattern>/streams/*</url-pattern>
 	</filter-mapping>
-	
+	<filter>
+		<filter-name>SubscriberBlockFilter</filter-name>
+		<filter-class>io.antmedia.filter.SubscriberBlockFilter</filter-class>
+		<async-supported>true</async-supported>
+	</filter>
+	<filter-mapping>
+		<filter-name>SubscriberBlockFilter</filter-name>
+		<url-pattern>/streams/*</url-pattern>
+	</filter-mapping>
+
 	<filter>
 		<filter-name>CorsFilter</filter-name>
 		<filter-class>io.antmedia.filter.CorsHeaderFilter</filter-class>

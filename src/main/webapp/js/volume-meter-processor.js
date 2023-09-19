@@ -4,8 +4,7 @@
 
 /* global currentTime */
 
-const SMOOTHING_FACTOR = 0.8;
-const FRAME_PER_SECOND = 60;
+const FRAME_PER_SECOND = 10;
 const FRAME_INTERVAL = 1 / FRAME_PER_SECOND;
 
 /**
@@ -39,7 +38,7 @@ class VolumeMeter extends AudioWorkletProcessor {
 
     // Calculate the RMS level and update the volume.
     let rms = Math.sqrt(sum / inputChannelData.length);
-    this._volume = Math.max(rms, this._volume * SMOOTHING_FACTOR);
+    this._volume = rms;
   }
 
   process(inputs, outputs) {
@@ -54,7 +53,10 @@ class VolumeMeter extends AudioWorkletProcessor {
 
     return !this.stop;
   }
-
+  /**
+   * 
+   * @param {*} message 
+   */
   debug(message) {
     this.port.postMessage({ type: 'debug', message: message });
   }
