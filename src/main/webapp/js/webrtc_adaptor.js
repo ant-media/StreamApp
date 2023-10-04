@@ -639,7 +639,7 @@ export class WebRTCAdaptor {
 	    		this.iceConnectionState(this.publishStreamId) != "completed")
 	    {
 	        this.closePeerConnection(this.publishStreamId);
-	        console.log("It will try to publish again because it is not stopped on purpose")
+            Logger.log("It will try to publish again because it is not stopped on purpose")
 	        this.publish(this.publishStreamId, this.publishToken, this.publishSubscriberId, this.publishSubscriberCode, this.publishStreamName, this.publishMainTrack, this.publishMetaData);
 	    }
 
@@ -653,7 +653,7 @@ export class WebRTCAdaptor {
 	        	this.iceConnectionState(streamId) != "connected" &&
 	        	this.iceConnectionState(streamId) != "completed")
 	       {
-	            console.log("It will try to play again because it is not stopped on purpose")
+               Logger.log("It will try to play again because it is not stopped on purpose")
 	            this.closePeerConnection(streamId);
 	            this.play(streamId, this.playToken, this.playRoomId, this.playEnableTracks, this.playSubscriberId, this.playSubscriberCode, this.playMetaData);
 	        }
@@ -1653,10 +1653,10 @@ export class WebRTCAdaptor {
         if (this.remotePeerConnection[streamId] !== undefined) {
             var dataChannel = this.remotePeerConnection[streamId].dataChannel;
             if (dataChannel === undefined || dataChannel === null || typeof dataChannel === 'undefined') {
-                console.warn('dataChannel is null or undefined');
+                Logger.warn('dataChannel is null or undefined');
                 return;
             } else if (dataChannel.readyState !== 'open') {
-                console.warn('dataChannel.readyState is not open: ' + dataChannel.readyState);
+                Logger.warn('dataChannel.readyState is not open: ' + dataChannel.readyState);
                 return;
             }
             var length = data.length || data.size || data.byteLength;
