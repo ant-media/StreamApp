@@ -638,7 +638,7 @@ export class WebRTCAdaptor {
 	    		this.iceConnectionState(this.publishStreamId) != "connected" &&
 	    		this.iceConnectionState(this.publishStreamId) != "completed")
 	    {
-            // notify that reconnection process started
+            // notify that reconnection process started for publish
             this.notifyEventListeners("reconnection_attempt_for_publisher", this.publishStreamId);
 
 	        this.closePeerConnection(this.publishStreamId);
@@ -656,7 +656,7 @@ export class WebRTCAdaptor {
 	        	this.iceConnectionState(streamId) != "connected" &&
 	        	this.iceConnectionState(streamId) != "completed")
 	       {
-                // notify that reconnection process started
+                // notify that reconnection process started for play
                 this.notifyEventListeners("reconnection_attempt_for_player", streamId);
 
 	            console.log("It will try to play again because it is not stopped on purpose")

@@ -193,13 +193,17 @@ describe("WebRTCAdaptor", function() {
 
 	it("Test reconnection process started callback", async function()
 	{
-		var isReconnectionProcessStarted = false;
+		var isReconnectionProcessStartedForPublisher = false;
+		var isReconnectionProcessStartedForPlayer = false;
+
 		var adaptor = new WebRTCAdaptor({
 			websocketURL: "ws://example.com",
 			isPlayMode: true,
 			callback: (info, obj) => {
-				if (info === "reconnection_process_started") {
-					isReconnectionProcessStarted = true;
+				if (info === "reconnection_attempt_for_publisher") {
+					isReconnectionProcessStartedForPublisher = true;
+				} else if (info === "reconnection_attempt_for_player") {
+					isReconnectionProcessStartedForPlayer = true;
 				}
 			}
 		});
@@ -212,11 +216,21 @@ describe("WebRTCAdaptor", function() {
 		// some times Data.now() returns 0 and it is blocking the test
 		// so we set lastReconnectiontionTrialTime to -3000 to avoid this
 		adaptor.lastReconnectiontionTrialTime = -3000;
+
+		adaptor.publishStreamId = "testPublisher";
+		adaptor.remotePeerConnection["testPublisher"] = sinon.mock(RTCPeerConnection);
+		adaptor.remotePeerConnection["testPublisher"].iceConnectionState = "disconnected";
+
+		adaptor.playStreamId.push("testPlayer");
+		adaptor.remotePeerConnection["testPlayer"] = sinon.mock(RTCPeerConnection);
+		adaptor.remotePeerConnection["testPlayer"].iceConnectionState = "disconnected";
+
 		adaptor.tryAgain();
 
 		clock.tick(3000);
 
-		expect(isReconnectionProcessStarted).equal(true);
+		expect(isReconnectionProcessStartedForPublisher).equal(true);
+		expect(isReconnectionProcessStartedForPlayer).equal(true);
 	});
 
 	it("Reconnection for play", async function()
