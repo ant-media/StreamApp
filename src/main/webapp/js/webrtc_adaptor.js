@@ -1833,22 +1833,6 @@ export class WebRTCAdaptor {
 
     /**
      * Called by user
-     * This message is used to get video track assignments from server in conference.
-     * It's suggested to use it after reconnection happened.
-     * @param {string} streamId
-     * @returns
-     */
-    getVideoTrackAssigments(streamId) {
-        var jsCmd = {
-            streamId: streamId,
-            command: "getVideoTrackAssigments",
-        };
-
-        this.webSocketAdaptor.send(JSON.stringify(jsCmd));
-    }
-
-    /**
-     * Called by user
      * This message is used to get debug data from server for debugging purposes in conference.
      * @param {string} streamId
      * @returns
