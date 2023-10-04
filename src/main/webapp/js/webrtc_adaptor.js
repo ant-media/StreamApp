@@ -780,12 +780,38 @@ export class WebRTCAdaptor {
     }
 
     /**
+     * Called to get the list of video track assignments. AMS responds with the videoTrackAssignmentList message.
+     * Parameters:
+     * @param {string} streamId: unique id for the stream that you want to get info about
+     */
+    requestVideoTrackAssignments(streamId) {
+        var jsCmd = {
+            command: "getVideoTrackAssignments",
+            streamId: streamId,
+        };
+        this.webSocketAdaptor.send(JSON.stringify(jsCmd));
+    }
+
+    /**
+     * Called to get the broadcast object for a specific stream. AMS responds with the broadcastObject callback.
+     * Parameters:
+     * @param {string} streamId: unique id for the stream that you want to get info about
+     */
+    getBroadcastObject(streamId) {
+        var jsCmd = {
+            command: "getBroadcastObject",
+            streamId: streamId,
+        };
+        this.webSocketAdaptor.send(JSON.stringify(jsCmd));
+    }
+
+    /**
      * Called to update the meta information for a specific stream.
      * Parameters:
      * @param {string} streamId: unique id for the stream that you want to update MetaData
      * @param {string}  metaData: new free text information for the stream
      */
-    upateStreamMetaData(streamId, metaData) {
+    updateStreamMetaData(streamId, metaData) {
         var jsCmd = {
             command: "updateStreamMetaData",
             streamId: streamId,
