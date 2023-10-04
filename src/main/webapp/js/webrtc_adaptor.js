@@ -629,7 +629,7 @@ export class WebRTCAdaptor {
         }
         this.lastReconnectiontionTrialTime = now;
 
-	 	//reconnect publish
+        //reconnect publish
 		//if remotePeerConnection has a peer connection for the stream id, it means that it is not stopped on purpose
 
 	    if (this.remotePeerConnection[this.publishStreamId] != null &&
@@ -638,6 +638,9 @@ export class WebRTCAdaptor {
 	    		this.iceConnectionState(this.publishStreamId) != "connected" &&
 	    		this.iceConnectionState(this.publishStreamId) != "completed")
 	    {
+            // notify that reconnection process started for publish
+            this.notifyEventListeners("reconnection_attempt_for_publisher", this.publishStreamId);
+
 	        this.closePeerConnection(this.publishStreamId);
             Logger.log("It will try to publish again because it is not stopped on purpose")
 	        this.publish(this.publishStreamId, this.publishToken, this.publishSubscriberId, this.publishSubscriberCode, this.publishStreamName, this.publishMainTrack, this.publishMetaData);
@@ -653,7 +656,10 @@ export class WebRTCAdaptor {
 	        	this.iceConnectionState(streamId) != "connected" &&
 	        	this.iceConnectionState(streamId) != "completed")
 	       {
-               Logger.log("It will try to play again because it is not stopped on purpose")
+              // notify that reconnection process started for play
+              this.notifyEventListeners("reconnection_attempt_for_player", streamId);
+
+	            Logger.log("It will try to play again because it is not stopped on purpose")
 	            this.closePeerConnection(streamId);
 	            this.play(streamId, this.playToken, this.playRoomId, this.playEnableTracks, this.playSubscriberId, this.playSubscriberCode, this.playMetaData);
 	        }
