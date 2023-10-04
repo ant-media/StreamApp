@@ -805,7 +805,7 @@ export class WebRTCAdaptor {
      * @param {string} streamId: unique id for the stream that you want to update MetaData
      * @param {string}  metaData: new free text information for the stream
      */
-    upateStreamMetaData(streamId, metaData) {
+    updateStreamMetaData(streamId, metaData) {
         var jsCmd = {
             command: "updateStreamMetaData",
             streamId: streamId,
