@@ -117,16 +117,16 @@ describe("WebRTCAdaptor", function() {
 		expect(closeWebsocketConnection.called).to.be.true;
 
 		expect(closeWebsocketConnection.calledWithMatch(streamId)).to.be.true;
-		
+
 		adaptor.enableStats(streamId);
 		expect(adaptor.remotePeerConnectionStats[streamId]).to.not.be.undefined
-		
+
 		expect(await adaptor.getStats(streamId)).to.be.true;
-		
+
 
 		console.log(adaptor.remotePeerConnectionStats[streamId])
 
-		
+
 
 		adaptor.stop(streamId);
 
@@ -189,6 +189,48 @@ describe("WebRTCAdaptor", function() {
 		clock.tick(3000);
 		adaptor.tryAgain();
 		expect(adaptor.lastReconnectiontionTrialTime).not.to.be.equal(lrt);
+	});
+
+	it("Test reconnection process started callback", async function()
+	{
+		var isReconnectionProcessStartedForPublisher = false;
+		var isReconnectionProcessStartedForPlayer = false;
+
+		var adaptor = new WebRTCAdaptor({
+			websocketURL: "ws://example.com",
+			isPlayMode: true,
+			callback: (info, obj) => {
+				if (info === "reconnection_attempt_for_publisher") {
+					isReconnectionProcessStartedForPublisher = true;
+				} else if (info === "reconnection_attempt_for_player") {
+					isReconnectionProcessStartedForPlayer = true;
+				}
+			}
+		});
+		var webSocketAdaptor = sinon.mock(adaptor.webSocketAdaptor);
+
+		var closeExpectation = webSocketAdaptor.expects("close");
+
+		var closePeerConnection = sinon.replace(adaptor, "closePeerConnection", sinon.fake());
+
+		// some times Data.now() returns 0 and it is blocking the test
+		// so we set lastReconnectiontionTrialTime to -3000 to avoid this
+		adaptor.lastReconnectiontionTrialTime = -3000;
+
+		adaptor.publishStreamId = "testPublisher";
+		adaptor.remotePeerConnection["testPublisher"] = sinon.mock(RTCPeerConnection);
+		adaptor.remotePeerConnection["testPublisher"].iceConnectionState = "disconnected";
+
+		adaptor.playStreamId.push("testPlayer");
+		adaptor.remotePeerConnection["testPlayer"] = sinon.mock(RTCPeerConnection);
+		adaptor.remotePeerConnection["testPlayer"].iceConnectionState = "disconnected";
+
+		adaptor.tryAgain();
+
+		clock.tick(3000);
+
+		expect(isReconnectionProcessStartedForPublisher).equal(true);
+		expect(isReconnectionProcessStartedForPlayer).equal(true);
 	});
 
 	it("Reconnection for play", async function()
@@ -329,10 +371,10 @@ describe("WebRTCAdaptor", function() {
 			assert(false);
 		}
 	});
-	
-	it("dummyStreamAndSwitch", async function() 
+
+	it("dummyStreamAndSwitch", async function()
 	{
-		
+
 		var adaptor = new WebRTCAdaptor({
 			websocketURL: "ws://localhost",
 			mediaConstraints: {
@@ -341,37 +383,37 @@ describe("WebRTCAdaptor", function() {
 			},
 			initializeComponents: false
 		});
-		
-		
+
+
 		expect(adaptor.mediaManager.blackVideoTrack).to.be.null
 		expect(adaptor.mediaManager.silentAudioTrack).to.be.null
 		expect(adaptor.mediaManager.oscillator).to.be.null
-		
+
 		await adaptor.initialize();
-		
-		
+
+
 		expect(adaptor.mediaManager.mediaConstraints).to.deep.equal({video:"dummy", audio:"dummy"});
-		
+
 		expect(adaptor.mediaManager.blackVideoTrack).to.not.be.null
 		expect(adaptor.mediaManager.silentAudioTrack).to.not.be.null
 		expect(adaptor.mediaManager.oscillator).to.not.be.null
 		expect(adaptor.mediaManager.localStream.getVideoTracks().length).to.be.equal(1)
 		expect(adaptor.mediaManager.localStream.getAudioTracks().length).to.be.equal(1)
-		
+
 
 		await adaptor.openStream({video:true, audio:true});
-		
+
 		expect(adaptor.mediaManager.blackVideoTrack).to.be.null
 		expect(adaptor.mediaManager.silentAudioTrack).to.be.null
 		expect(adaptor.mediaManager.oscillator).to.be.null
-		
+
 		expect(adaptor.mediaManager.mediaConstraints).to.deep.equal({video:true, audio:true});
 		expect(adaptor.mediaManager.localStream.getVideoTracks().length).to.be.equal(1)
 		expect(adaptor.mediaManager.localStream.getAudioTracks().length).to.be.equal(1)
 
 	});
-	
-	it("updateAudioTrack", async function() 
+
+	it("updateAudioTrack", async function()
 	{
 		var adaptor = new WebRTCAdaptor({
 			websocketURL: "ws://localhost",
@@ -381,31 +423,31 @@ describe("WebRTCAdaptor", function() {
 			},
 			initializeComponents: false
 		});
-		
+
 		await adaptor.initialize();
-		
+
 		expect(adaptor.mediaManager.localStreamSoundMeter).to.be.null;
 
 		adaptor.enableAudioLevelForLocalStream((value)=> {
-			
+
 		}, 200);
-		
+
 		expect(adaptor.mediaManager.localStreamSoundMeter).to.not.be.null;
-		
+
 		var audioTrack = adaptor.mediaManager.getSilentAudioTrack();
-		
+
 		var stream = new MediaStream();
 		stream.addTrack(audioTrack);
-		
+
 		await adaptor.updateAudioTrack(stream, null, null);
 	});
-	
+
 	it("testSoundMeter",  function(done) {
 		this.timeout(5000);
-		
-		
+
+
 		console.log("Starting testSoundMeter");
-		
+
 		var adaptor = new WebRTCAdaptor({
 			websocketURL: "ws://localhost",
 			mediaConstraints: {
@@ -414,22 +456,22 @@ describe("WebRTCAdaptor", function() {
 			},
 			initializeComponents: false
 		});
-		
-		//fake stream in te browser is a period audio and silence, so getting sound level more than 0 requires 
+
+		//fake stream in te browser is a period audio and silence, so getting sound level more than 0 requires
 
 		adaptor.initialize().then(() => {
-			
+
 			adaptor.enableAudioLevelForLocalStream((level) => {
 				console.log("sound level -> " + level);
 				if (level > 0) {
 					done();
-				}				
+				}
 			});
-			
+
 			expect(adaptor.mediaManager.localStreamSoundMeter).to.not.be.null;
 		})
 	})
-	
+
 	it("takeConfiguration", async function() {
 		var adaptor = new WebRTCAdaptor({
 			websocketURL: "ws://localhost",
@@ -439,16 +481,16 @@ describe("WebRTCAdaptor", function() {
 			},
 			initializeComponents: false
 		});
-		
+
 		await adaptor.initialize();
 		expect(adaptor.remotePeerConnection["stream1"]).to.be.undefined;
 
 		adaptor.takeConfiguration("stream1", "conf", "offer", "track1");
-		
+
 		expect(adaptor.remotePeerConnection["stream1"]).to.not.be.undefined;
-		
+
 	});
-	
+
 	it("takeCandidate", async function() {
 		var adaptor = new WebRTCAdaptor({
 			websocketURL: "ws://localhost",
@@ -458,20 +500,20 @@ describe("WebRTCAdaptor", function() {
 			},
 			initializeComponents: false
 		});
-		
+
 		await adaptor.initialize();
-		
+
 		expect(adaptor.remotePeerConnection["stream1"]).to.be.undefined;
 		expect(adaptor.iceCandidateList["stream1"]).to.be.undefined;
 
 
 		adaptor.takeCandidate ("stream1", "label", "candidate");
-		
+
 		expect(adaptor.remotePeerConnection["stream1"]).to.not.be.undefined;
 
 		expect(adaptor.iceCandidateList["stream1"].length).to.be.equal(1);
-		
+
 	});
-	
-	
+
+
 });

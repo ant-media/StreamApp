@@ -13,8 +13,8 @@ const Logger = window.log;
  */
 class ReceivingMessage {
     /**
-     * 
-     * @param {number} size 
+     *
+     * @param {number} size
      */
     constructor(size) {
         this.size = size;
@@ -57,8 +57,8 @@ export class WebRTCAdaptor {
         WebRTCAdaptor.pluginInitMethods.push(pluginInitMethod);
     }
     /**
-     * 
-     * @param {object} initialValues 
+     *
+     * @param {object} initialValues
      */
     constructor(initialValues) {
         /**
@@ -629,7 +629,7 @@ export class WebRTCAdaptor {
         }
         this.lastReconnectiontionTrialTime = now;
 
-	 	//reconnect publish
+        //reconnect publish
 		//if remotePeerConnection has a peer connection for the stream id, it means that it is not stopped on purpose
 
 	    if (this.remotePeerConnection[this.publishStreamId] != null &&
@@ -638,13 +638,16 @@ export class WebRTCAdaptor {
 	    		this.iceConnectionState(this.publishStreamId) != "connected" &&
 	    		this.iceConnectionState(this.publishStreamId) != "completed")
 	    {
+            // notify that reconnection process started for publish
+            this.notifyEventListeners("reconnection_attempt_for_publisher", this.publishStreamId);
+
 	        this.closePeerConnection(this.publishStreamId);
 	        console.log("It will try to publish again because it is not stopped on purpose")
 	        this.publish(this.publishStreamId, this.publishToken, this.publishSubscriberId, this.publishSubscriberCode, this.publishStreamName, this.publishMainTrack, this.publishMetaData);
 	    }
 
 	    //reconnect play
-	    for (var index in this.playStreamId) 
+	    for (var index in this.playStreamId)
 	    {
             var streamId = this.playStreamId[index];
             if (this.remotePeerConnection[streamId] != "null" &&
@@ -653,6 +656,9 @@ export class WebRTCAdaptor {
 	        	this.iceConnectionState(streamId) != "connected" &&
 	        	this.iceConnectionState(streamId) != "completed")
 	       {
+                // notify that reconnection process started for play
+                this.notifyEventListeners("reconnection_attempt_for_player", streamId);
+
 	            console.log("It will try to play again because it is not stopped on purpose")
 	            this.closePeerConnection(streamId);
 	            this.play(streamId, this.playToken, this.playRoomId, this.playEnableTracks, this.playSubscriberId, this.playSubscriberCode, this.playMetaData);
@@ -774,12 +780,38 @@ export class WebRTCAdaptor {
     }
 
     /**
+     * Called to get the list of video track assignments. AMS responds with the videoTrackAssignmentList message.
+     * Parameters:
+     * @param {string} streamId: unique id for the stream that you want to get info about
+     */
+    requestVideoTrackAssignments(streamId) {
+        var jsCmd = {
+            command: "getVideoTrackAssignments",
+            streamId: streamId,
+        };
+        this.webSocketAdaptor.send(JSON.stringify(jsCmd));
+    }
+
+    /**
+     * Called to get the broadcast object for a specific stream. AMS responds with the broadcastObject callback.
+     * Parameters:
+     * @param {string} streamId: unique id for the stream that you want to get info about
+     */
+    getBroadcastObject(streamId) {
+        var jsCmd = {
+            command: "getBroadcastObject",
+            streamId: streamId,
+        };
+        this.webSocketAdaptor.send(JSON.stringify(jsCmd));
+    }
+
+    /**
      * Called to update the meta information for a specific stream.
      * Parameters:
      * @param {string} streamId: unique id for the stream that you want to update MetaData
      * @param {string}  metaData: new free text information for the stream
      */
-    upateStreamMetaData(streamId, metaData) {
+    updateStreamMetaData(streamId, metaData) {
         var jsCmd = {
             command: "updateStreamMetaData",
             streamId: streamId,
@@ -1121,7 +1153,7 @@ export class WebRTCAdaptor {
      * @param {string} streamId: unique id for the stream
      */
     gotDescription(configuration, streamId) {
-	
+
         this.remotePeerConnection[streamId]
             .setLocalDescription(configuration)
             .then(responose => {
@@ -1170,7 +1202,7 @@ export class WebRTCAdaptor {
         this.initPeerConnection(streamId, dataChannelMode);
 
 		Logger.debug("setRemoteDescription:" + conf);
-		
+
         this.remotePeerConnection[streamId].setRemoteDescription(new RTCSessionDescription({
             sdp: conf,
             type: type
@@ -1241,7 +1273,7 @@ export class WebRTCAdaptor {
 
         var dataChannelMode = "peer";
         this.initPeerConnection(streamId, dataChannelMode);
-        
+
        	Logger.debug("takeCandidate:" + candidateSdp)
 
         if (this.remoteDescriptionSet[streamId] == true) {
@@ -1388,7 +1420,7 @@ export class WebRTCAdaptor {
             var audioJitterAverageDelay = -1;
             var videoJitterAverageDelay = -1;
             var availableOutgoingBitrate = Infinity;
-            
+
             stats.forEach(value => {
                 //Logger.debug(value);
                 if (value.type == "inbound-rtp" && typeof value.kind != "undefined") {
@@ -1782,15 +1814,15 @@ export class WebRTCAdaptor {
     /**
      * Called by user
      * This message is used to send audio level in a conference.
-     * 
-	 * IMPORTANT: AMS v2.7+ can get the audio level from the RTP header and sends audio level to the viewers the same way here. 
+     *
+	 * IMPORTANT: AMS v2.7+ can get the audio level from the RTP header and sends audio level to the viewers the same way here.
      *  Just one difference, AMS sends the audio level in the range of 0 and 127. 0 is max, 127 is ms
-     
-     *  It means that likely you don't need to send UPDATE_AUDIO_LEVEL anymore 
+
+     *  It means that likely you don't need to send UPDATE_AUDIO_LEVEL anymore
      *
      * @param {string} streamId
      * @param {*} value : audio lavel
-     * @returns 
+     * @returns
      */
     updateAudioLevel(streamId, value) {
         var jsCmd = {
@@ -1827,9 +1859,9 @@ export class WebRTCAdaptor {
         this.mediaManager.turnOffLocalCamera(streamId);
     }
     /**
-     * 
-     * @param {string} streamId 
-     * @returns 
+     *
+     * @param {string} streamId
+     * @returns
      */
     turnOnLocalCamera(streamId) {
         return this.mediaManager.turnOnLocalCamera(streamId);
@@ -1843,9 +1875,9 @@ export class WebRTCAdaptor {
         this.mediaManager.unmuteLocalMic();
     }
     /**
-     * 
-     * @param {string} streamId 
-     * @returns 
+     *
+     * @param {string} streamId
+     * @returns
      */
     switchDesktopCapture(streamId) {
         return this.mediaManager.switchDesktopCapture(streamId);
@@ -1875,10 +1907,10 @@ export class WebRTCAdaptor {
 
     /**
      * Update audio track of the stream. Updates the audio track on the fly as well. It just replaces the audio track with the first one in the stream
-     * @param {*} stream 
-     * @param {*} streamId 
-     * @param {*} onEndedCallback 
-     * @returns 
+     * @param {*} stream
+     * @param {*} streamId
+     * @param {*} onEndedCallback
+     * @returns
      */
     updateAudioTrack(stream, streamId, onEndedCallback) {
         return this.mediaManager.updateAudioTrack(stream, streamId, onEndedCallback);
@@ -1897,35 +1929,35 @@ export class WebRTCAdaptor {
         return this.mediaManager.switchVideoCameraFacingMode(streamId, facingMode);
     }
     /**
-     * 
-     * @param {string} streamId 
-     * @returns 
+     *
+     * @param {string} streamId
+     * @returns
      */
     switchDesktopCaptureWithCamera(streamId) {
         return this.mediaManager.switchDesktopCaptureWithCamera(streamId);
     }
     /**
-     * 
-     * @param {string} streamId 
-     * @param {string} deviceId 
-     * @returns 
+     *
+     * @param {string} streamId
+     * @param {string} deviceId
+     * @returns
      */
     switchAudioInputSource(streamId, deviceId) {
         return this.mediaManager.switchAudioInputSource(streamId, deviceId);
     }
     /**
-     * 
-     * @param {number} volumeLevel 
+     *
+     * @param {number} volumeLevel
      */
     setVolumeLevel(volumeLevel) {
         this.mediaManager.setVolumeLevel(volumeLevel);
     }
     /**
-     * 
-     * Using sound meter in order to get audio level may cause audio distortion in Windows browsers 
-     * @param {Function} levelCallback 
-     * @param {number} period 
-     * @returns 
+     *
+     * Using sound meter in order to get audio level may cause audio distortion in Windows browsers
+     * @param {Function} levelCallback
+     * @param {number} period
+     * @returns
      */
     enableAudioLevelForLocalStream(levelCallback, period) {
         return this.mediaManager.enableAudioLevelForLocalStream(levelCallback, period);
@@ -1935,18 +1967,18 @@ export class WebRTCAdaptor {
         this.mediaManager.disableAudioLevelForLocalStream();
     }
     /**
-     * 
-     * @param {object} constraints 
-     * @returns 
+     *
+     * @param {object} constraints
+     * @returns
      */
     applyConstraints(constraints) {
         return this.mediaManager.applyConstraints(constraints)
     };
-    
+
     /**
-     * 
-     * @param {number} bandwidth 
-     * @param {string} streamId 
+     *
+     * @param {number} bandwidth
+     * @param {string} streamId
      */
     changeBandwidth(bandwidth, streamId) {
         this.mediaManager.changeBandwidth(bandwidth, streamId);
@@ -1960,18 +1992,18 @@ export class WebRTCAdaptor {
         this.mediaManager.disableAudioLevelWhenMuted();
     }
     /**
-     * 
-     * @param {string} streamId 
-     * @returns 
+     *
+     * @param {string} streamId
+     * @returns
      */
     getVideoSender(streamId) {
         return this.mediaManager.getVideoSender(streamId);
     }
     /**
-     * 
-     * @param {object} mediaConstraints, media constraints to be used for opening the stream 
+     *
+     * @param {object} mediaConstraints, media constraints to be used for opening the stream
      * @param {string} streamId, id of the stream to replace tracks with
-     * @returns 
+     * @returns
      */
     openStream(mediaConstraints, streamId) {
         return this.mediaManager.openStream(mediaConstraints, streamId);
