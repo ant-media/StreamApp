@@ -774,6 +774,9 @@ export class MediaManager {
 
 
     /**
+	 * @Deprecated. It's not the job of SDK to make these things. It increases the complexity of the code. 
+     * We provide samples for having these function
+     * 
      * This method mixed the first stream audio to the second stream audio and
      * @param {*} stream  : Primary stream that contain video and audio (system audio)
      * @param {*} secondStream :stream has device audio
