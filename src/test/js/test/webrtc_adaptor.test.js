@@ -361,10 +361,17 @@ describe("WebRTCAdaptor", function() {
 			var webSocketAdaptor = sinon.mock(adaptor.webSocketAdaptor);
 
 			adaptor.remotePeerConnection[streamId] = sinon.mock(RTCPeerConnection);
+
 			adaptor.remotePeerConnection[streamId].dataChannel = sinon.fake.returns({
 				readyState: "open",
 				send: sinon.fake()
 			});
+			adaptor.sendData(streamId, "test");
+
+			adaptor.remotePeerConnection[streamId].dataChannel = undefined
+			adaptor.sendData(streamId, "test");
+
+			adaptor.remotePeerConnection[streamId].dataChannel = null
 			adaptor.sendData(streamId, "test");
 		} catch (e) {
 			console.error(e);
