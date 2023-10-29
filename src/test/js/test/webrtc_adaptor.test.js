@@ -260,6 +260,17 @@ describe("WebRTCAdaptor", function() {
 
 	});
 
+	it("sanatize HTML",async function(){
+		var adaptor = new WebRTCAdaptor({
+			websocketURL: "ws://example.com",
+			isPlayMode: true
+		});
+		var text = "<script>alert(1)</script>";
+		var message = adaptor.sanitizeHTML(text);
+		if(message == text)
+			assert(false)
+	})
+	
 	it("Reconnection for publish", async function()
 	{
 		var adaptor = new WebRTCAdaptor({
