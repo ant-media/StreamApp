@@ -892,7 +892,12 @@ export class WebRTCAdaptor {
             Logger.debug("No event.candidate in the iceCandidate event");
         }
     }
-
+    // sanatize text if it contains script to prevent xss
+    sanitizeHTML(text) {
+        if(text.includes("script"))
+            return text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        return text
+        }
     /**
      * Called internally to initiate Data Channel.
      * Note that Data Channel should be enabled fromAMS settings.
@@ -921,6 +926,7 @@ export class WebRTCAdaptor {
             var data = obj.data;
 
             if (typeof data === 'string' || data instanceof String) {
+                obj.data = this.sanitizeHTML(obj.data)
                 this.notifyEventListeners("data_received", obj);
             } else {
                 var length = data.length || data.size || data.byteLength;
