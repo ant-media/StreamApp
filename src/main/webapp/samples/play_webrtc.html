@@ -7,6 +7,7 @@
 <link rel="stylesheet" href="../css/common.css" />
 <link rel="stylesheet" href="../css/samples.css" />
 <script src="../js/external/adapter-latest.js"></script>
+<script type="text/javascript" src="https://cdn.bitmovin.com/analytics/web/2/bitmovinanalytics.min.js"></script>
 
 </head>
 <body>
@@ -50,7 +51,8 @@
 	import {WebRTCAdaptor} from "../js/webrtc_adaptor.js"
 	import {getUrlParameter} from "../js/fetch.stream.js" 
     import { generateRandomString, getSrtURL, getRtmpUrl } from "../js/utility.js"
-    
+	import {Analytics} from "../js/analytics.js"
+
 	var id = getUrlParameter("id");	  
 
 	var streamId = "stream1";

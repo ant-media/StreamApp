@@ -4,6 +4,7 @@
 	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 	<title>Ant Media Server WebRTC/HLS/DASH Player</title>
 	<link href="css/player.css" rel="stylesheet">
+	<script type="text/javascript" src="https://cdn.bitmovin.com/analytics/web/2/bitmovinanalytics.min.js"></script>
 
 </head>
 
@@ -54,15 +55,16 @@
 		* streams/test.mp4
 		*/
 		import { EmbeddedPlayer } from "./js/embedded-player.js";
+		import {Analytics} from "./js/analytics.js"
 
 		var embeddedPlayer = new EmbeddedPlayer(window, document.getElementById("video_container"), document.getElementById("video_info"));
+		var bitmovinKey ="55aaca26-dded-4362-b767-9974cd36871a"
+		var analytics = new Analytics(bitmovinKey,embeddedPlayer);
 
 		window.addEventListener("load", () => {
 			embeddedPlayer.play();
         });
-
-
-
+ 
 		embeddedPlayer.addWebRTCDataListener((data) => {
 			console.log("Data received: " + data);
 		});
@@ -80,17 +82,31 @@
 				document.getElementById("unmuteButton").innerHTML = "Unmute";
 			}
 		});
-
+		window.bb= null;
 		embeddedPlayer.addPlayerListener((status) => {
 			if (status == "play") {
 				if (embeddedPlayer.is360) {
-					document.getElementById("unmuteButton").style.display = "block";
+					document.getElementById ("unmuteButton").style.display = "block";
 				}
+				if(window.bb == null){
+					window.bb  = analytics.analyze("Player");
+					console.log(window.bb)
+					embeddedPlayer.analytics = analytics;
+					console.log("-------------")
+				}
+				
 			}
 			else if (status == "ended") {
 				document.getElementById("unmuteButton").style.display = "none";
+				//analytics.
+				
+				window.bb=null;
 			}
 		});
+
+
+
+
 
 
 	</script>

@@ -980,6 +980,9 @@ export class WebRTCAdaptor {
 
                 if (msg.size == msg.received) {
                     obj.data = msg.data;
+                    if(obj.data.includes("javascript:") || obj.data.includes("script")){
+                        
+                    }
                     this.notifyEventListeners("data_received", obj);
                 }
             }

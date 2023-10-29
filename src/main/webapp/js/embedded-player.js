@@ -1,6 +1,7 @@
 
 import { getUrlParameter } from "./fetch.stream.js";
 import "./external/loglevel.min.js";
+import { Analytics } from "./analytics.js";
 
 const Logger = window.log;
 
@@ -26,7 +27,6 @@ export class EmbeddedPlayer {
 	static VIDEO_HTML = STATIC_VIDEO_HTML;
 
 	static VIDEO_PLAYER_ID = "video-player";
-
 
     /**
     *  "playOrder": the order which technologies is used in playing. Optional. Default value is "webrtc,hls".
@@ -155,6 +155,8 @@ export class EmbeddedPlayer {
      * Field to keep if tryNextMethod is already called
      */
     tryNextTechTimer;
+
+    analytics;
 
     constructor(window, containerElement, placeHolderElement) {
 
@@ -383,6 +385,7 @@ export class EmbeddedPlayer {
 				Logger.debug("Ice connection is not connected. tryNextTech to replay");
 				this.tryNextTech();
 			}
+            
 
         }
         else if (infos["info"] == "closed") {
@@ -390,6 +393,11 @@ export class EmbeddedPlayer {
 			Logger.debug("Websocket is closed. tryNextTech to replay");
 			this.tryNextTech();
 		}
+        if(this.analytics != null){
+            if(infos["obj"] && Analytics.webrtInfoList.includes(infos["obj"]["definition"])){
+                this.analytics.setStats(infos["obj"]);
+            }
+        }
 	}
 
     /**
@@ -500,7 +508,7 @@ export class EmbeddedPlayer {
 	        });
 
 	        this.videojsPlayer.on("webrtc-data-received", (event, obj) => {
-	            Logger.warn("webrtc-data-received: " + JSON.stringify(obj));
+	           // Logger.warn("webrtc-data-received: " + JSON.stringify(obj));
 	            if (this.webRTCDataListener != null) {
 	                this.webRTCDataListener(obj);
 	            }
@@ -812,6 +820,11 @@ export class EmbeddedPlayer {
             this.tryNextTech();
         });
         this.dashPlayer.on(dashjs.MediaPlayer.events.ERROR, (event) => {
+            this.destroyDashPlayer();
+            this.setPlayerVisible(false);
+            if (this.playerListener != null) {
+                this.playerListener("ended");
+            }
             this.tryNextTech();
         });
     }

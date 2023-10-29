@@ -1,5 +1,5 @@
 #!/bin/sh
-AMS_DIR=~/softwares/ant-media-server
+AMS_DIR=/usr/local/antmedia
 mvn clean install -DskipTests -Dgpg.skip=true
 OUT=$?
 
