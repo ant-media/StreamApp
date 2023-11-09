@@ -265,9 +265,13 @@ describe("WebRTCAdaptor", function() {
 			websocketURL: "ws://example.com",
 			isPlayMode: true
 		});
-		var text = "<script>alert(1)</script>";
+		var text = "<script>alert(1)</script>"; //message with script
 		var message = adaptor.sanitizeHTML(text);
 		if(message == text)
+			assert(false)
+		text="hi how are you"; //message wit
+		message = adaptor.sanitizeHTML(message)
+		if(message !=text)
 			assert(false)
 	})
 	
