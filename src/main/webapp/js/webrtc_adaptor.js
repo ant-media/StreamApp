@@ -927,7 +927,7 @@ export class WebRTCAdaptor {
     // sanatize text if it contains script to prevent xss
     sanitizeHTML(text) {
         if(text.includes("script"))
-            return text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            return text.replace(/</g, "&lt;").replace(/>/g, "&gt;"); 
         return text
         }
     /**
