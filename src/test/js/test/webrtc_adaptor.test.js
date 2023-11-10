@@ -269,7 +269,7 @@ describe("WebRTCAdaptor", function() {
 		var message = adaptor.sanitizeHTML(text);
 		if(message == text)
 			assert(false)
-		text="hi how are you"; //message wit
+		text="hi how are you"; //message without scirpt
 		message = adaptor.sanitizeHTML(message)
 		if(message !=text)
 			assert(false)
