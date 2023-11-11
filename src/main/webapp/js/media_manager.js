@@ -454,7 +454,7 @@ export class MediaManager {
             return this.handleScreenCameraMode(audioStream, audioTracks, stream, streamId, onended);
         }
 
-        return this.handleDefaultMode(audioStream, audioTracks, stream, streamId);
+        return this.handleDefaultMode(mediaConstraints.audio, audioStream, audioTracks, stream, streamId);
     }
 
     handleScreenMode(audioStream, audioTracks, stream, streamId) {
@@ -476,7 +476,7 @@ export class MediaManager {
         });
     }
 
-    handleDefaultMode(audioStream, audioTracks, stream, streamId) {
+    handleDefaultMode(audioConstraint,audioStream, audioTracks, stream, streamId) {
         if (audioConstraint !== false && audioConstraint !== undefined) {
             stream.addTrack(audioStream.getAudioTracks()[0]);
         }
