@@ -260,7 +260,7 @@ describe("WebRTCAdaptor", function() {
 
 	});
 
-	it("sanatize HTML",async function(){
+	it("sanitize HTML",async function(){
 		var adaptor = new WebRTCAdaptor({
 			websocketURL: "ws://example.com",
 			isPlayMode: true
@@ -273,6 +273,7 @@ describe("WebRTCAdaptor", function() {
 		message = adaptor.sanitizeHTML(message)
 		if(message !=text)
 			assert(false)
+		assert(true)
 	})
 	
 	it("Reconnection for publish", async function()
