@@ -267,8 +267,7 @@ describe("WebRTCAdaptor", function() {
 		});
 		var text = "<script>alert(1)</script>"; //message with script
 		var message = adaptor.sanitizeHTML(text);
-		if(message == text)
-			assert(false)
+		assert.notEqual(text,message)
 
 		text="hi how are you"; //message without script
 		message = adaptor.sanitizeHTML(message)
