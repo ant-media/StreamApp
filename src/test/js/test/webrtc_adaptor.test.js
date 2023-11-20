@@ -270,7 +270,7 @@ describe("WebRTCAdaptor", function() {
 		assert.notEqual(scriptMsg,sanitizeMsg)
 
 		var text="hi how are you"; //message without script
-		var message = adaptor.sanitizeHTML(message)
+		var message = adaptor.sanitizeHTML(text)
 		assert.strictEqual(text,message)
 	})
 	
