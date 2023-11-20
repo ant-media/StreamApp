@@ -269,11 +269,10 @@ describe("WebRTCAdaptor", function() {
 		var message = adaptor.sanitizeHTML(text);
 		if(message == text)
 			assert(false)
-		text="hi how are you"; //message without scirpt
+
+		text="hi how are you"; //message without script
 		message = adaptor.sanitizeHTML(message)
-		if(message !=text)
-			assert(false)
-		assert(true)
+		assert.strictEqual(text,message)
 	})
 	
 	it("Reconnection for publish", async function()
