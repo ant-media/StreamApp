@@ -207,10 +207,10 @@ export declare class EmbeddedPlayer {
     /**
      *
      * @param {string} sParam
-     * @param {string} search
+     * @param {string=} search
      * @returns
      */
-    export declare function getUrlParameter(sParam: string, search: string): string | true | undefined;
+    export declare function getUrlParameter(sParam: string, search?: string | undefined): string | true | undefined;
 
     /**
      * Media management class is responsible to manage audio and video
@@ -978,7 +978,7 @@ export declare class EmbeddedPlayer {
         /**
          * This is the stream id of the main track that the current publishStreamId is going to be subtrack of it. It's added here to use in reconnect scenario
          */
-        publishMainTrack: MediaStreamTrack | null | undefined;
+        publishMainTrack: string | null | undefined;
         /**
          * This is the metadata that is being used to publish the stream. It's added here to use in reconnect scenario
          */
@@ -986,28 +986,28 @@ export declare class EmbeddedPlayer {
         /**
          * This is the token to play the stream. It's added here to use in reconnect scenario
          */
-        playToken: string | null;
+        playToken: string | null | undefined;
         /**
          * This is the room id to play the stream. It's added here to use in reconnect scenario
          * This approach is old conferencing. It's better to use multi track conferencing
          */
-        playRoomId: string | null;
+        playRoomId: string | null | undefined;
         /**
          * These are enabled tracks to play the stream. It's added here to use in reconnect scenario
          */
-        playEnableTracks: MediaStreamTrack | null;
+        playEnableTracks: MediaStreamTrack[] | null | undefined;
         /**
          * This is the subscriber Id to play the stream. It's added here to use in reconnect scenario
          */
-        playSubscriberId: string | null;
+        playSubscriberId: string | null | undefined;
         /**
          * This is the subscriber code to play the stream. It's added here to use in reconnect scenario
          */
-        playSubscriberCode: string | null;
+        playSubscriberCode: string | null | undefined;
         /**
          * This is the meta data to play the stream. It's added here to use in reconnect scenario
          */
-        playMetaData: string | null;
+        playMetaData: string | null | undefined;
         /**
          * This is the time info for the last reconnection attempt
          */
@@ -1053,16 +1053,16 @@ export declare class EmbeddedPlayer {
          * Called to start a new WebRTC stream. AMS responds with start message.
          * Parameters:
          *  @param {string} streamId : unique id for the stream
-         *  @param {string} [token] : required if any stream security (token control) enabled. Check https://github.com/ant-media/Ant-Media-Server/wiki/Stream-Security-Documentation
-         *  @param {string} [subscriberId] : required if TOTP enabled. Check https://github.com/ant-media/Ant-Media-Server/wiki/Time-based-One-Time-Password-(TOTP)
-         *  @param {string} [subscriberCode] : required if TOTP enabled. Check https://github.com/ant-media/Ant-Media-Server/wiki/Time-based-One-Time-Password-(TOTP)
-         *  @param {string} [streamName] : required if you want to set a name for the stream
-         *  @param {MediaStreamTrack} [mainTrack] :  required if you want to start the stream as a subtrack for a main streamwhich has id of this parameter.
+         *  @param {string=} [token] : required if any stream security (token control) enabled. Check https://github.com/ant-media/Ant-Media-Server/wiki/Stream-Security-Documentation
+         *  @param {string=} [subscriberId] : required if TOTP enabled. Check https://github.com/ant-media/Ant-Media-Server/wiki/Time-based-One-Time-Password-(TOTP)
+         *  @param {string=} [subscriberCode] : required if TOTP enabled. Check https://github.com/ant-media/Ant-Media-Server/wiki/Time-based-One-Time-Password-(TOTP)
+         *  @param {string=} [streamName] : required if you want to set a name for the stream
+         *  @param {string=} [mainTrack] :  required if you want to start the stream as a subtrack for a main stream which has id of this parameter.
          *                Check:https://antmedia.io/antmediaserver-webrtc-multitrack-playing-feature/
          *                !!! for multitrack conference set this value with roomName
-         *  @param {string} [metaData] : a free text information for the stream to AMS. It is provided to Rest methods by the AMS
+         *  @param {string=} [metaData] : a free text information for the stream to AMS. It is provided to Rest methods by the AMS
          */
-        publish(streamId: string, token?: string | undefined, subscriberId?: string | undefined, subscriberCode?: string | undefined, streamName?: string | undefined, mainTrack?: MediaStreamTrack | undefined, metaData?: string | undefined): void;
+        publish(streamId: string, token?: string | undefined, subscriberId?: string | undefined, subscriberCode?: string | undefined, streamName?: string | undefined, mainTrack?: string | undefined, metaData?: string | undefined): void;
         sendPublishCommand(streamId: any, token: any, subscriberId: any, subscriberCode: any, streamName: any, mainTrack: any, metaData: any, videoEnabled: any, audioEnabled: any): void;
         /**
          * Called to join a room. AMS responds with joinedTheRoom message.
@@ -1078,15 +1078,15 @@ export declare class EmbeddedPlayer {
          * Called to start a playing session for a stream. AMS responds with start message.
          * Parameters:
          *  @param {string} streamId :(string) unique id for the stream that you want to play
-         *  @param {string} token :(string) required if any stream security (token control) enabled. Check https://github.com/ant-media/Ant-Media-Server/wiki/Stream-Security-Documentation
-         *  @param {string} roomId :(string) required if this stream is belonging to a room participant
-         *  @param {MediaStreamTrack} enableTracks :(array) required if the stream is a main stream of multitrack playing. You can pass the the subtrack id list that you want to play.
+         *  @param {string=} token :(string) required if any stream security (token control) enabled. Check https://github.com/ant-media/Ant-Media-Server/wiki/Stream-Security-Documentation
+         *  @param {string=} roomId :(string) required if this stream is belonging to a room participant
+         *  @param {Array.<MediaStreamTrack>=} enableTracks :(array) required if the stream is a main stream of multitrack playing. You can pass the the subtrack id list that you want to play.
          *                    you can also provide a track id that you don't want to play by adding ! before the id.
-         *  @param {string} subscriberId:(string) required if TOTP enabled. Check https://github.com/ant-media/Ant-Media-Server/wiki/Time-based-One-Time-Password-(TOTP)
-         *  @param {string} subscriberCode:(string) required if TOTP enabled. Check https://github.com/ant-media/Ant-Media-Server/wiki/Time-based-One-Time-Password-(TOTP)
-         *  @param {string} metaData:(string, json) a free text information for the stream to AMS. It is provided to Rest methods by the AMS
+         *  @param {string=} subscriberId :(string) required if TOTP enabled. Check https://github.com/ant-media/Ant-Media-Server/wiki/Time-based-One-Time-Password-(TOTP)
+         *  @param {string=} subscriberCode :(string) required if TOTP enabled. Check https://github.com/ant-media/Ant-Media-Server/wiki/Time-based-One-Time-Password-(TOTP)
+         *  @param {string=} metaData :(string, json) a free text information for the stream to AMS. It is provided to Rest methods by the AMS
          */
-        play(streamId: string, token: string, roomId: string, enableTracks: MediaStreamTrack, subscriberId: string, subscriberCode: string, metaData: string): void;
+        play(streamId: string, token?: string | undefined, roomId?: string | undefined, enableTracks?: Array<MediaStreamTrack> | undefined, subscriberId?: string | undefined, subscriberCode?: string | undefined, metaData?: string | undefined): void;
         /**
          * Reconnects to the stream if it is not stopped on purpose
          * @param {number} [delayMs]
@@ -1097,13 +1097,13 @@ export declare class EmbeddedPlayer {
         /**
          * Called to stop a publishing/playing session for a stream. AMS responds with publishFinished or playFinished message.
          * Parameters:
-         *  @param {string} streamId: unique id for the stream that you want to stop publishing or playing
+         *  @param {string} streamId : unique id for the stream that you want to stop publishing or playing
          */
         stop(streamId: string): void;
         /**
          * Called to join a peer-to-peer mode session as peer. AMS responds with joined message.
          * Parameters:
-         * @param {string} streamId: unique id for the peer-to-peer session
+         * @param {string} streamId : unique id for the peer-to-peer session
          */
         join(streamId: string): void;
         /**
@@ -1128,26 +1128,26 @@ export declare class EmbeddedPlayer {
         /**
          * Called to get a stream information for a specific stream. AMS responds with streamInformation message.
          * Parameters:
-         * @param {string} streamId: unique id for the stream that you want to get info about
+         * @param {string} streamId : unique id for the stream that you want to get info about
          */
         getStreamInfo(streamId: string): void;
         /**
          * Called to get the list of video track assignments. AMS responds with the videoTrackAssignmentList message.
          * Parameters:
-         * @param {string} streamId: unique id for the stream that you want to get info about
+         * @param {string} streamId : unique id for the stream that you want to get info about
          */
         requestVideoTrackAssignments(streamId: string): void;
         /**
          * Called to get the broadcast object for a specific stream. AMS responds with the broadcastObject callback.
          * Parameters:
-         * @param {string} streamId: unique id for the stream that you want to get info about
+         * @param {string} streamId : unique id for the stream that you want to get info about
          */
         getBroadcastObject(streamId: string): void;
         /**
          * Called to update the meta information for a specific stream.
          * Parameters:
-         * @param {string} streamId: unique id for the stream that you want to update MetaData
-         * @param {string}  metaData: new free text information for the stream
+         * @param {string} streamId : unique id for the stream that you want to update MetaData
+         * @param {string}  metaData : new free text information for the stream
          */
         updateStreamMetaData(streamId: string, metaData: string): void;
         /**
@@ -1155,14 +1155,14 @@ export declare class EmbeddedPlayer {
          * which includes the ids and names of the streams in that room.
          * If there is no active streams in the room, AMS returns error `no_active_streams_in_room` in error callback
          * Parameters:
-         * @param {string} roomName: unique id for the room that you want to get info about
-         * @param {string} streamId: unique id for the stream that is streamed by this @WebRTCAdaptor
+         * @param {string} roomName : unique id for the room that you want to get info about
+         * @param {string} streamId : unique id for the stream that is streamed by this @WebRTCAdaptor
          */
         getRoomInfo(roomName: string, streamId: string): void;
         /**
          * Called to enable/disable data flow from the AMS for a specific track under a main track.
          * Parameters:
-         * @param {string}  mainTrackId: unique id for the main stream
+         * @param {string}  mainTrackId : unique id for the main stream
          * @param {string}  trackId : unique id for the track that you want to enable/disable data flow for
          * @param {boolean} enabled : true or false
          */
@@ -1171,7 +1171,7 @@ export declare class EmbeddedPlayer {
          * Called to get the track ids under a main stream. AMS responds with trackList message.
          * Parameters:
          * @param {string} streamId : unique id for the main stream
-         * @param {string} [token] : not used
+         * @param {string=} [token] : not used
          * TODO: check this function
          */
         getTracks(streamId: string, token?: string | undefined): void;
@@ -1182,54 +1182,59 @@ export declare class EmbeddedPlayer {
          *     streamId: unique id for the stream
          */
         iceCandidateReceived(event: any, streamId: any): void;
+        /**
+         * Called internally to sanitize the text if it contains script to prevent xss
+         * @param text
+         * @returns {*}
+         */
         sanitizeHTML(text: any): any;
         /**
          * Called internally to initiate Data Channel.
          * Note that Data Channel should be enabled fromAMS settings.
-         *  @param {string}  streamId: unique id for the stream
-         *  @param {*} dataChannel: provided by PeerConnection
+         *  @param {string}  streamId : unique id for the stream
+         *  @param {*} dataChannel : provided by PeerConnection
          */
         initDataChannel(streamId: string, dataChannel: any): void;
         /**
          * Called internally to initiate PeerConnection.
-         * @param {string} streamId: unique id for the stream
-         * @param {string}  dataChannelMode: can be "publish" , "play" or "peer" based on this it is decided which way data channel is created
+         * @param {string} streamId : unique id for the stream
+         * @param {string}  dataChannelMode : can be "publish" , "play" or "peer" based on this it is decided which way data channel is created
          */
         initPeerConnection(streamId: string, dataChannelMode: string): void;
         /**
          * Called internally to close PeerConnection.
-         * @param {string} streamId: unique id for the stream
+         * @param {string} streamId : unique id for the stream
          */
         closePeerConnection(streamId: string): void;
         /**
          * Called to get the signalling state for a stream.
          * This information can be used for error handling.
          * Check: https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection/connectionState
-         * @param {string} streamId: unique id for the stream
+         * @param {string} streamId : unique id for the stream
          */
         signallingState(streamId: string): any;
         /**
          * Called to get the ice connection state for a stream.
          * This information can be used for error handling.
          * Check: https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection/iceConnectionState
-         * @param {string} streamId: unique id for the stream
+         * @param {string} streamId : unique id for the stream
          */
         iceConnectionState(streamId: string): any;
         /**
          * Called by browser when Local Configuration (SDP) is created successfully.
          * It is set as LocalDescription first then sent to AMS.
-         * @param {object} configuration: created Local Configuration (SDP)
-         * @param {string} streamId: unique id for the stream
+         * @param {object} configuration : created Local Configuration (SDP)
+         * @param {string} streamId : unique id for the stream
          */
         gotDescription(configuration: object, streamId: string): void;
         /**
          * Called by WebSocketAdaptor when Remote Configuration (SDP) is received from AMS.
          * It is set as RemoteDescription first then if @iceCandidateList has candidate that
          * is received bfore this message, it is added as ice candidate.
-         * @param {object} configuration: received Remote Configuration (SDP)
-         * @param {string} idOfStream: unique id for the stream
+         * @param {object} configuration : received Remote Configuration (SDP)
+         * @param {string} idOfStream : unique id for the stream
          * @param {string} typeOfConfiguration
-         * @param {string} idMapping: stream id and track id (which is provided in SDP) mapping in MultiTrack Playback and conference.
+         * @param {string} idMapping : stream id and track id (which is provided in SDP) mapping in MultiTrack Playback and conference.
          *                It is recorded to match stream id as new tracks are added with @onTrack
          */
         takeConfiguration(idOfStream: string, configuration: object, typeOfConfiguration: string, idMapping: string): void;
@@ -1237,38 +1242,38 @@ export declare class EmbeddedPlayer {
          * Called by WebSocketAdaptor when new ice candidate is received from AMS.
          * If Remote Description (SDP) is already set, the candidate is added immediately,
          * otherwise stored in @iceCandidateList to add after Remote Description (SDP) set.
-         *     idOfTheStream: unique id for the stream
-         *     tmpLabel: sdpMLineIndex
-         *     tmpCandidate: ice candidate
+         * @param {string} idOfTheStream : unique id for the stream
+         * @param {number|null} tmpLabel : sdpMLineIndex
+         * @param {string} tmpCandidate : ice candidate
          */
-        takeCandidate(idOfTheStream: any, tmpLabel: any, tmpCandidate: any): void;
+        takeCandidate(idOfTheStream: string, tmpLabel: number | null, tmpCandidate: string): void;
         /**
          * Called internally to add the Ice Candidate to PeerConnection
-         *  @param {string} streamId: unique id for the stream
-         *  @param {object} tmpCandidate : ice candidate
+         *  @param {string} streamId : unique id for the stream
+         *  @param {object} candidate : ice candidate
          */
-        addIceCandidate(streamId: string, candidate: any): void;
+        addIceCandidate(streamId: string, candidate: object): void;
         /**
          * Called by WebSocketAdaptor when start message is received //TODO: may be changed. this logic shouldn't be in WebSocketAdaptor
-         * @param {string} idOfStream: unique id for the stream
+         * @param {string} idOfStream : unique id for the stream
          */
         startPublishing(idOfStream: string): void;
         /**
          * Toggle video track on the server side.
          *
-         * @param {string}  streamId: is the id of the stream
-         * @param {string}  trackId: is the id of the track. streamId is also one of the trackId of the stream. If you are having just a single track on your
+         * @param {string}  streamId : is the id of the stream
+         * @param {string}  trackId : is the id of the track. streamId is also one of the trackId of the stream. If you are having just a single track on your
          *         stream, you need to give streamId as trackId parameter as well.
-         * @param {boolean}  enabled: is the enable/disable video track. If it's true, server sends video track. If it's false, server does not send video
+         * @param {boolean}  enabled : is the enable/disable video track. If it's true, server sends video track. If it's false, server does not send video
          */
         toggleVideo(streamId: string, trackId: string, enabled: boolean): void;
         /**
          * Toggle audio track on the server side.
          *
-         * @param {string} streamId: is the id of the stream
-         * @param {string}  trackId: is the id of the track. streamId is also one of the trackId of the stream. If you are having just a single track on your
+         * @param {string} streamId : is the id of the stream
+         * @param {string}  trackId : is the id of the track. streamId is also one of the trackId of the stream. If you are having just a single track on your
          *            stream, you need to give streamId as trackId parameter as well.
-         * @param {boolean}  enabled: is the enable/disable video track. If it's true, server sends audio track. If it's false, server does not send audio
+         * @param {boolean}  enabled : is the enable/disable video track. If it's true, server sends audio track. If it's false, server does not send audio
          *
          */
         toggleAudio(streamId: string, trackId: string, enabled: boolean): void;
@@ -1281,13 +1286,13 @@ export declare class EmbeddedPlayer {
         /**
          * Called to start a periodic timer to get statistics periodically (5 seconds) for a specific stream.
          *
-         * @param {string} streamId: unique id for the stream
+         * @param {string} streamId : unique id for the stream
          */
         enableStats(streamId: string): void;
         /**
          * Called to stop the periodic timer which is set by @enableStats
          *
-         * @param {string} streamId: unique id for the stream
+         * @param {string} streamId : unique id for the stream
          */
         disableStats(streamId: string): void;
         /**
@@ -1309,14 +1314,14 @@ export declare class EmbeddedPlayer {
         /**
          * Called to force AMS to send the video with the specified resolution in case of Adaptive Streaming (ABR) enabled.
          * Normally the resolution is automatically determined by AMS according to the network condition.
-         * @param {string}  streamId: unique id for the stream
-         * @param {*}  resolution: default is auto. You can specify any height value from the ABR list.
+         * @param {string}  streamId : unique id for the stream
+         * @param {*}  resolution : default is auto. You can specify any height value from the ABR list.
          */
         forceStreamQuality(streamId: string, resolution: any): void;
         /**
          * Called to send data via DataChannel. DataChannel should be enabled on AMS settings.
-         * @param {string} streamId: unique id for the stream
-         * @param {*}  data: data that you want to send. It may be a text (may in Json format or not) or binary
+         * @param {string} streamId : unique id for the stream
+         * @param {*}  data : data that you want to send. It may be a text (may in Json format or not) or binary
          */
         sendData(streamId: string, data: any): void;
         /**
@@ -1384,7 +1389,7 @@ export declare class EmbeddedPlayer {
          *  It means that likely you don't need to send UPDATE_AUDIO_LEVEL anymore
          *
          * @param {string} streamId
-         * @param {*} value : audio lavel
+         * @param {*} value : audio level
          * @returns
          */
         updateAudioLevel(streamId: string, value: any): void;
@@ -1498,8 +1503,8 @@ export declare class EmbeddedPlayer {
         getVideoSender(streamId: string): any;
         /**
          *
-         * @param {object} mediaConstraints, media constraints to be used for opening the stream
-         * @param {string} streamId, id of the stream to replace tracks with
+         * @param {object} mediaConstraints : media constraints to be used for opening the stream
+         * @param {string} streamId : id of the stream to replace tracks with
          * @returns
          */
         openStream(mediaConstraints: object, streamId: string): Promise<void>;

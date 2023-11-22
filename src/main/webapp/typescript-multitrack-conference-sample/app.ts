@@ -1,9 +1,7 @@
 import {WebRTCAdaptor} from '../js'
 import {getUrlParameter} from '../js'
 // @ts-ignore
-import { generateRandomString, getWebSocketURL, errorHandler , updateBroadcastStatusInfo} from "./js/utility.js"
-// @ts-ignore
-import { notify } from "./js/notify.min.js"
+import { generateRandomString, getWebSocketURL, errorHandler } from "./js/utils.js";
 /**
  * This page accepts 3 arguments through url parameter
  * 1. "streamId": the stream id to publish stream. It's optional. ?streamId=stream1
@@ -11,43 +9,16 @@ import { notify } from "./js/notify.min.js"
  * 3. "token": It's experimental.
  */
 
-var token: string | boolean | undefined = getUrlParameter("token");
-var publishStreamId: string | boolean | undefined = getUrlParameter("streamId");
-var playOnly: string | boolean | undefined = getUrlParameter("playOnly");
-var dcOnly: string | boolean | undefined = getUrlParameter("dcOnly");
+var token: string = typeof getUrlParameter("token") == "string" ? <string> getUrlParameter("token") : "";
+var publishStreamId: string = typeof getUrlParameter("streamId") == "string" ? <string>  getUrlParameter("streamId") : generateRandomString();
+var playOnly: boolean = getUrlParameter("playOnly") == "boolean" ? <boolean>  getUrlParameter("playOnly") : false;
+var dcOnly: boolean = typeof getUrlParameter("dcOnly") == "boolean" ? <boolean> getUrlParameter("dcOnly") : false;
 
-if(playOnly == null) {
-    playOnly = false;
-}
+var roomId: string = typeof getUrlParameter("roomId") == "string" ? <string> getUrlParameter("roomId") : "";
+var streamName: string = typeof getUrlParameter("streamName") == "string"? <string>  getUrlParameter("streamName") : "";
 
-if(dcOnly == null) {
-    dcOnly = false;
-}
-
-var roomId: string | true | undefined = getUrlParameter("roomId");
-var streamName: string | true | undefined = getUrlParameter("streamName");
-
-var subscriberId: string | true | undefined = getUrlParameter("subscriberId");
-var subscriberCode: string | true | undefined = getUrlParameter("subscriberCode");
-
-var volume_change_input: HTMLElement | null = document.getElementById("volume_change_input");
-volume_change_input?.addEventListener("change", changeVolume);
-
-function changeVolume(){
-    /**
-     * Change the gain levels on the input selector.
-     */
-    if(document.getElementById('volume_change_input') != null){
-        webRTCAdaptor.currentVolume = this.value;
-        if(webRTCAdaptor.soundOriginGainNode != null){
-            webRTCAdaptor.soundOriginGainNode.gain.value = this.value; // Any number between 0 and 1.
-        }
-
-        if(webRTCAdaptor.secondStreamGainNode != null){
-            webRTCAdaptor.secondStreamGainNode.gain.value = this.value; // Any number between 0 and 1.
-        }
-    }
-}
+var subscriberId: string = typeof getUrlParameter("subscriberId") == "string" ? <string>  getUrlParameter("subscriberId") : "";
+var subscriberCode: string = typeof getUrlParameter("subscriberCode") == "string" ? <string>  getUrlParameter("subscriberCode") : "";
 
 var join_publish_button: HTMLElement | null = document.getElementById("join_publish_button");
 join_publish_button?.addEventListener("click", joinRoom, false);
@@ -71,7 +42,7 @@ send?.addEventListener("click", sendData, false);
 if (document.querySelector('input[name="videoSource"]')) {
     document.querySelectorAll('input[name="videoSource"]').forEach((elem) => {
         elem.addEventListener("change", function(event) {
-            var item = event.target;
+            var item: HTMLInputElement = <HTMLInputElement> event.target;
             switchVideoMode(item)
         });
     });
@@ -87,7 +58,7 @@ if (roomId != null && typeof roomId === "string") {
 var isDataChannelOpen: boolean = false;
 var isMicMuted: boolean = false;
 var isCameraOff: boolean = false;
-var roomTimerId: number = -1;
+var roomTimerId: ReturnType<typeof setTimeout> | number = -1;
 
 
 function toggleOptions() {
@@ -107,14 +78,14 @@ function switchVideoMode(chbx: HTMLInputElement){
 }
 
 function turnOffLocalCamera() {
-    webRTCAdaptor.turnOffLocalCamera();
+    webRTCAdaptor.turnOffLocalCamera(publishStreamId);
     isCameraOff = true;
     handleCameraButtons();
     sendNotificationEvent("CAM_TURNED_OFF");
 }
 
 function turnOnLocalCamera() {
-    webRTCAdaptor.turnOnLocalCamera();
+    webRTCAdaptor.turnOnLocalCamera(publishStreamId);
     isCameraOff = false;
     handleCameraButtons();
     sendNotificationEvent("CAM_TURNED_ON");
@@ -157,20 +128,11 @@ function sendData() {
             $("#dataTextbox").val("");
         }
         else {
-            $.notify("WebRTC playing is not active. Please click Start Playing first", {
-                autoHideDelay:5000,
-                className:'error',
-                position:'top center'
-            });
+            console.warn("WebRTC playing is not active. Please click Start Playing first");
         }
     }
     catch (exception) {
         console.error(exception);
-        $.notify("Message cannot be sent. Make sure you've enabled data channel and choose the correct player distribution on server web panel", {
-            autoHideDelay:5000,
-            className:'error',
-            position:'top center'
-        });
     }
 }
 
@@ -226,14 +188,14 @@ function leaveRoom() {
         clearInterval(roomTimerId);
         roomTimerId = -1;
     }
-    webRTCAdaptor.leaveFromRoom(roomNameBox?.value);
+    let roomName: string = roomNameBox?.value != null ? roomNameBox.value : "";
+    webRTCAdaptor.leaveFromRoom(roomName);
 }
 
-function publish(streamId: string | undefined, token: string | undefined) {
+function publish(streamId: string, token: string) {
     //update the publishStreamId to make sure it's correct
     publishStreamId = streamId;
-    webRTCAdaptor.publish(publishStreamId, token, subscriberId, subscriberCode, streamName, roomNameBox?.value,"{someKey:someValue}");
-
+    webRTCAdaptor.publish(publishStreamId, token, subscriberId, subscriberCode, streamName, roomNameBox!!.value,"{someKey:someValue}");
 }
 
 function playVideo(obj: any) {
@@ -259,6 +221,7 @@ function playVideo(obj: any) {
         video.srcObject = new MediaStream();
     }
 
+    // @ts-ignore
     video.srcObject?.addTrack(obj.track)
 
     obj.stream.onremovetrack = (event: any) => {
@@ -350,7 +313,7 @@ var webRTCAdaptor: WebRTCAdaptor = new WebRTCAdaptor(
         isPlayMode : playOnly,
         onlyDataChannel : dcOnly,
         debug : true,
-        callback : (info, obj): void => {
+        callback : (info: any, obj: any): void => {
             if (info == "initialized") {
                 console.log("initialized");
                 join_publish_button?.removeAttribute("disabled");
@@ -384,13 +347,13 @@ var webRTCAdaptor: WebRTCAdaptor = new WebRTCAdaptor(
                     //just disable itself
                     tempList.push("!"+publishStreamId);
 
-                    webRTCAdaptor.play(roomNameBox?.value, token, roomNameBox?.value, [], subscriberId, subscriberCode);
+                    webRTCAdaptor.play(roomNameBox!!.value, token, roomNameBox!!.value, [], subscriberId, subscriberCode, "{someKey:someValue}");
                 }
 
                 //just call once - no need to have periodic check
                 roomTimerId = setTimeout(function () {
 
-                    webRTCAdaptor.getRoomInfo(roomNameBox?.value, publishStreamId);
+                    webRTCAdaptor.getRoomInfo(roomNameBox!!.value, publishStreamId);
                 }, 3000);
 
             }
@@ -411,11 +374,7 @@ var webRTCAdaptor: WebRTCAdaptor = new WebRTCAdaptor(
                 console.debug("publish finished");
             }
             else if (info == "browser_screen_share_supported") {
-                screen_share_checkbox?.setAttribute("disabled", "false");
-                camera_checkbox?.setAttribute("disabled", "false");
-                screen_share_with_camera_checkbox?.setAttribute("disabled", "false");
                 console.log("browser screen share supported");
-                browser_screen_share_doesnt_support.style.display = "none";
             }
             else if (info == "leavedFromRoom") {
                 var room = obj.ATTR_ROOM_NAME;
@@ -442,7 +401,7 @@ var webRTCAdaptor: WebRTCAdaptor = new WebRTCAdaptor(
                     var tempList = obj.streams;
                     //just disable itself
                     tempList.push("!"+publishStreamId);
-                    webRTCAdaptor.play(roomNameBox!!.value, token, roomNameBox.value, tempList, subscriberId, subscriberCode);
+                    webRTCAdaptor.play(roomNameBox!!.value, token, roomNameBox!!.value, tempList, subscriberId, subscriberCode, "{someKey:someValue}");
                     isPlaying = true;
                 }
             }
@@ -470,12 +429,8 @@ var webRTCAdaptor: WebRTCAdaptor = new WebRTCAdaptor(
             if (error.indexOf("NotAllowedError") != -1
                 || error.indexOf("PermissionDeniedError") != -1) {
                 errorMessage = "You are not allowed to access camera and mic.";
-                screen_share_checkbox?.setAttribute("disabled", "false");
-                camera_checkbox?.setAttribute("disabled", "false");
             } else if (error.indexOf("ScreenSharePermissionDenied") != -1) {
                 errorMessage = "You are not allowed to access screen share";
-                screen_share_checkbox?.setAttribute("disabled", "false");
-                camera_checkbox?.setAttribute("disabled", "true");
             }
 
             if (error.indexOf("no_active_streams_in_room") != -1){
@@ -485,12 +440,7 @@ var webRTCAdaptor: WebRTCAdaptor = new WebRTCAdaptor(
                 }, 3000);
             }
             else {
-                //errorHandler(error, message);
-                $('video').notify("Warning: " + errorHandler(error, message), {
-                    autoHideDelay:5000,
-                    className:'error',
-                    position:'top right'
-                });
+                console.error("Warning: " + errorHandler(error, message));
             }
 
         }
