@@ -372,9 +372,6 @@
       createNewMessage(text, dateObj.toLocaleTimeString(), true);
       $("#dataTextbox").val("");
     }
-    function sanitizeHTML(text) {
-    return text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-    }
     function createNewMessage(message, date, sentByUs) {
       if ($.trim(message) == "") {
         return false;
@@ -382,7 +379,7 @@
       if (sentByUs) {
         $(
           '<div class="outgoing_msg row"><div class="col"><div class="sent_msg">	<p>' +
-            sanitizeHTML(message) +
+            webRTCAdaptor.sanitizeHTML(message) +
             '</p><span class="time_date">' +
             date +
             "</span></div></div></div>"
@@ -390,7 +387,7 @@
       } else {
         $(
           '<div class="incoming_msg row"><div class="col" ><div class="received_msg"><div class="received_withd_msg"><p>' +
-            sanitizeHTML(message)  +
+            message  +
             '</p><span class="time_date">' +
             date +
             "</span></div></div></div>"
