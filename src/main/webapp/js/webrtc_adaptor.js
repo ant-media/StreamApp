@@ -483,8 +483,8 @@ export class WebRTCAdaptor {
                 var videoEnabled = false;
                 var audioEnabled = false;
                 if (this.mediaManager.localStream != null) {
-                    videoEnabled = this.mediaManager.localStream.getVideoTracks().length > 0 ? true : false;
-                    audioEnabled = this.mediaManager.localStream.getAudioTracks().length > 0 ? true : false;
+                    videoEnabled = this.mediaManager.localStream.getVideoTracks().length > 0;
+                    audioEnabled = this.mediaManager.localStream.getAudioTracks().length > 0;
                 }
                 this.sendPublishCommand(streamId, token, subscriberId, subscriberCode, streamName, mainTrack, metaData, videoEnabled, audioEnabled)
 
@@ -493,8 +493,8 @@ export class WebRTCAdaptor {
                 throw error;
             });
         } else {
-            var videoEnabled = this.mediaManager.localStream.getVideoTracks().length > 0 ? true : false;
-            var audioEnabled = this.mediaManager.localStream.getAudioTracks().length > 0 ? true : false;
+            var videoEnabled = this.mediaManager.localStream.getVideoTracks().length > 0;
+            var audioEnabled = this.mediaManager.localStream.getAudioTracks().length > 0;
             this.sendPublishCommand(streamId, token, subscriberId, subscriberCode, streamName, mainTrack, metaData, videoEnabled, audioEnabled);
         }
         //init peer connection for reconnectIfRequired
@@ -529,9 +529,9 @@ export class WebRTCAdaptor {
     /**
      * Called to join a room. AMS responds with joinedTheRoom message.
      * Parameters:
-     *     roomName: unique id of the room
-     *     stream: unique id of the stream belogns to this participant
-     *     mode:    legacy for older implementation (default value)
+     * @param {string} roomName : unique id of the room
+     * @param {string=} streamId : unique id of the stream belongs to this participant
+     * @param {string=} mode :    legacy for older implementation (default value)
      *            mcu for merging streams
      *            amcu: audio only conferences with mixed audio
      */

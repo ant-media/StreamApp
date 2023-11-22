@@ -849,7 +849,7 @@ export declare class EmbeddedPlayer {
         /**
          * This is the name for the room that is desired to join in conference mode.
          */
-        roomName: any;
+        roomName: string | null;
         /**
          * This keeps StreamIds for the each playing session.
          * It is an array because one @WebRTCAdaptor instance can manage multiple playing sessions.
@@ -1067,13 +1067,13 @@ export declare class EmbeddedPlayer {
         /**
          * Called to join a room. AMS responds with joinedTheRoom message.
          * Parameters:
-         *     roomName: unique id of the room
-         *     stream: unique id of the stream belogns to this participant
-         *     mode:    legacy for older implementation (default value)
+         * @param {string} roomName : unique id of the room
+         * @param {string=} streamId : unique id of the stream belongs to this participant
+         * @param {string=} mode :    legacy for older implementation (default value)
          *            mcu for merging streams
          *            amcu: audio only conferences with mixed audio
          */
-        joinRoom(roomName: any, streamId: any, mode: any): void;
+        joinRoom(roomName: string, streamId?: string | undefined, mode?: string | undefined): void;
         /**
          * Called to start a playing session for a stream. AMS responds with start message.
          * Parameters:
