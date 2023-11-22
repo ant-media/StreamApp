@@ -1,0 +1,207 @@
+<html>
+<head>
+<title>Ant Media Server WebRTC Conference Room</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta charset="UTF-8">
+	<link rel="stylesheet" href="css/external//bootstrap4/bootstrap.min.css">
+	<script src="js/external/adapter-latest.js"></script>
+	<script src="js/external/jquery-3.4.1.min.js"></script>
+	<script src="js/external/notify.min.js" crossorigin="anonymous"></script>
+	<link rel="stylesheet" href="css/common.css" />
+	<style>
+video {
+	width: 100%;
+	max-width: 320px;
+	height: 100%;
+	max-height: 240px;
+}
+/* Space out content a bit */
+body {
+	padding-top: 20px;
+	padding-bottom: 20px;
+}
+
+.options {
+		display:none;
+	}
+/* Everything but the jumbotron gets side spacing for mobile first views */
+.header, .marketing, .footer {
+	padding-right: 15px;
+	padding-left: 15px;
+}
+
+/* Custom page header */
+.header {
+	padding-bottom: 20px;
+	border-bottom: 1px solid #e5e5e5;
+}
+/* Make the masthead heading the same height as the navigation */
+.header h3 {
+	margin-top: 0;
+	margin-bottom: 0;
+	line-height: 40px;
+}
+
+/* Custom page footer */
+.footer {
+	padding-top: 19px;
+	color: #777;
+	border-top: 1px solid #e5e5e5;
+}
+
+/* Customize container */
+@media ( min-width : 768px) {
+	.container {
+		/*max-width: 730px;
+		*/
+		width: 100%;
+	}
+}
+
+.container-narrow>hr {
+	margin: 30px 0;
+}
+
+/* Main marketing message and sign up button */
+.jumbotron {
+	text-align: center;
+	border-bottom: 1px solid #e5e5e5;
+}
+
+/* Responsive: Portrait tablets and up */
+@media screen and (min-width: 768px) {
+	/* Remove the padding we set earlier */
+	.header, .marketing, .footer {
+		padding-right: 0;
+		padding-left: 0;
+	}
+	/* Space out the masthead */
+	.header {
+		margin-bottom: 30px;
+	}
+	/* Remove the bottom border on the jumbotron for visual effect */
+	.jumbotron {
+		border-bottom: 0;
+	}
+}
+
+.message_area {
+	height: 300px;
+	overflow-y: auto;
+	border-style: groove;
+	border-width: thin;
+	background-color: white;
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+	<div class="header clearfix">
+		<div class="row">
+			<h3 class="col text-muted">WebRTC Conference</h3>
+			<nav class="col align-self-center">
+				<ul class="nav float-right">
+					<li><a href="http://antmedia.io">Contact</a></li>
+				</ul>
+			</nav>
+		</div>
+	</div>
+
+	<div class="jumbotron">
+	   <div class="alert alert-primary text-center enterprise-feature" role="alert" style="margin-top:-2em">
+				WebRTC Conference is an enterprise edition feature. <br/>
+				<a href="https://antmedia.io">Try Enterprise Edition for free at antmedia.io</a>
+		</div>
+		<div id="players" class="row">
+			<div class="col-sm-3">
+				<video id="localVideo" autoplay muted controls playsinline></video>
+				<div style="margin-top:10px;" class="col-sm-8 col-sm-offset-2">Microphone Gain: <input type=range id=volume_change_input min=0 max=1 value=1 step=0.01></div>
+			</div>
+		</div>
+
+
+
+		<div class="row" style="padding: 15px;">
+			<div class="col-sm-8 offset-sm-2">
+				<div style="padding:5px" class="form-check form-check-inline col-sm-10" >
+					<input type="text" class="form-control" value="room1"
+						   id="roomName" placeholder="Type room name">
+				</div>
+				<div style="padding:5px">
+					<button class="btn btn-primary" disabled
+							id="join_publish_button">Join Room</button>
+					<button class="btn btn-primary" disabled
+							id="stop_publish_button">Leave Room</button>
+				</div>
+
+				<div style="padding:10px">
+					<button id="turn_off_camera_button" class="btn btn-outline-primary"  >Turn off Camera</button>
+					<button id="turn_on_camera_button" disabled class="btn btn-outline-primary"  >Turn on Camera</button>
+
+					<button id="mute_mic_button" class="btn btn-outline-primary">Mute Local Mic</button>
+					<button id="unmute_mic_button" disabled  class="btn btn-outline-primary">Unmute Local Mic</button>
+				</div>
+
+				<div class="form-check form-check-inline" >
+
+					<input class="form-check-input video-source" disabled name="videoSource" type="radio" value="camera"
+					id="camera_checkbox" checked>
+					<label class="form-check-label" for="camera_checkbox" style="font-weight:normal">
+							Camera
+					</label>
+			    </div>
+				<div class="form-check form-check-inline" >
+					<input class="form-check-input video-source" disabled name="videoSource"  type="radio" value="screen"
+					id="screen_share_checkbox">
+					<label class="form-check-label" for="screen_share_checkbox" style="font-weight:normal">
+							Screen
+					</label>
+				</div>
+				<div class="form-check form-check-inline" >
+					<input class="form-check-input video-source" disabled name="videoSource" type="radio" value="screen+camera"
+						id="screen_share_with_camera_checkbox">
+					<label class="form-check-label" for="screen_share_with_camera_checkbox" style="font-weight:normal">
+							Screen with Camera
+					</label>
+					<div class="form-check form-check-inline"></div>
+						<a id="browser_screen_share_doesnt_support" href="https://caniuse.com/#search=getDisplayMedia">Your browser doesn't support screen share. You can see supported browsers in this link </a>
+				</div>
+				<div class="badge badge-success" id="broadcastingInfo"
+					  style="font-size: 14px; display: none" style="display: none">Publishing</div>
+
+
+
+					<div class="col-sm-12 text-right">
+						<button type="button" id="options" class="btn btn-outline-primary btn-sm">Options</button>
+					</div>
+					<div class="form-group col-sm-12 text-left options">
+						<div class="dropdown-divider"></div>
+						<label>Data Channel Messages</label>
+						<div id="all-messages" class="message_area"></div>
+						<div class="form-row">
+							<div class="form-group col-sm-10">
+								<input type="text" class="form-control" id="dataTextbox" placeholder="Write your message to send publisher/players">
+							</div>
+							<div class="form-group col-sm-2">
+							<button type="button" id="send" class="btn btn-outline-primary btn-block">Send</button>
+							</div>
+						</div>
+					</div>
+			</div>
+		</div>
+
+
+	</div>
+	<footer class="footer">
+		<p>
+			<a href="http://antmedia.io">Ant Media Server Enterprise
+				Edition</a>
+		</p>
+	</footer>
+
+</div>
+</body>
+<script src="./js/external/notify.min.js" crossorigin="anonymous"></script>
+<script type="module" src="app.ts"></script>
+</html>
