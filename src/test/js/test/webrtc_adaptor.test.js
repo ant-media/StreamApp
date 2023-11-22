@@ -260,6 +260,20 @@ describe("WebRTCAdaptor", function() {
 
 	});
 
+	it("sanitize HTML",async function(){
+		var adaptor = new WebRTCAdaptor({
+			websocketURL: "ws://example.com",
+			isPlayMode: true
+		});
+		var scriptMsg = "<script>alert(1)</script>"; //message with script
+		var sanitizeMsg = adaptor.sanitizeHTML(scriptMsg);
+		assert.notEqual(scriptMsg,sanitizeMsg)
+
+		var text="hi how are you"; //message without script
+		var message = adaptor.sanitizeHTML(text)
+		assert.strictEqual(text,message)
+	})
+	
 	it("Reconnection for publish", async function()
 	{
 		var adaptor = new WebRTCAdaptor({
