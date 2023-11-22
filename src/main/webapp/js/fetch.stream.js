@@ -179,7 +179,7 @@ export function isMobile() {
 /**
  * 
  * @param {string} sParam 
- * @param {string} search 
+ * @param {string=} search
  * @returns 
  */
 export function getUrlParameter(sParam, search) {
