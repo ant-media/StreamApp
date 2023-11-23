@@ -1,6 +1,7 @@
 
 import { EmbeddedPlayer } from '../../../main/webapp/js/embedded-player.js';
 
+import { isMobile } from "../../../main/webapp/js/fetch.stream.js";
 
 describe("EmbeddedPlayer", function() {
 		
@@ -38,6 +39,10 @@ describe("EmbeddedPlayer", function() {
 	      expect(player.token).to.be.null;
 	      expect(player.is360).to.be.false;
 	      expect(player.playType).to.eql(['mp4','webm']);
+	      
+	      
+	      //the following is a test autoPlay is still true in mobile. We just try to play the stream if mobile browser can play or not
+		  //in autoPlay mode 
 	      expect(player.autoPlay).to.true;
 	      expect(player.mute).to.true;
 	      expect(player.isMuted()).to.be.true;
@@ -50,8 +55,9 @@ describe("EmbeddedPlayer", function() {
 	      expect(player.errorCalled).to.false;
 	      
 	      expect(player.getSecurityQueryParams()).to.be.equal("");
+	      
 	     
-	     	      
+	        	      
     
     });
     
@@ -520,6 +526,7 @@ describe("EmbeddedPlayer", function() {
 	    		
 	});
 	
+	
 	it("handleWebRTCInfoMessages", async function() {
 		var videoContainer = document.createElement("video_container");
 		  
@@ -593,6 +600,80 @@ describe("EmbeddedPlayer", function() {
 	    expect(handleWebRTCInfoMessages.calledWithMatch({ infos , event})).to.be.true;
 	    
 	})
+	
+	it("destroyVideoJSPlayer", async function() {
+		
+		var videoContainer = document.createElement("video_container");
+		  
+		var placeHolder = document.createElement("place_holder");
+		  			
+		var locationComponent =  { href : 'http://example.com?id=stream123', search: "?id=stream123", pathname: "/" };
+		var windowComponent = {  location : locationComponent,
+		  						  document:  document,
+		  						  addEventListener: window.addEventListener};
+		  						  		 	      
+	    var player = new EmbeddedPlayer(windowComponent, videoContainer, placeHolder);
+
+	    expect(player.videojsPlayer).to.be.null
+
+	    await player.playIfExists("webrtc");
+	    
+	    expect(player.videojsPlayer).to.not.be.null;
+	  
+	    player.destroyVideoJSPlayer();
+	    expect(player.videojsPlayer).to.be.null
+	})
+	
+	it("sendWebRTCData", async function() {
+		
+		
+		var videoContainer = document.createElement("video_container");
+		  
+		var placeHolder = document.createElement("place_holder");
+		
+		var videoPlayer = document.createElement("video");
+		videoPlayer.id = EmbeddedPlayer.VIDEO_PLAYER_ID;
+		  			
+		var locationComponent =  { href : 'http://example.com?id=stream123', search: "?id=stream123",  pathname: "/", hostname:"example.com", port:5080 };
+		var windowComponent = {  location : locationComponent,
+		  						  document:  document,
+		  						  };
+		  						  
+		  						  
+		var player = new EmbeddedPlayer(windowComponent, videoContainer, placeHolder);
+		//var playWithVideoJS = sinon.replace(player, "playWithVideoJS", sinon.fake());
+		
+		await player.playIfExists("webrtc");	
+		
+		
+		var sendDataViaWebRTC = sinon.fake();
+		player.videojsPlayer.sendDataViaWebRTC = sendDataViaWebRTC;
+		
+		//send data and it should increase the call count
+		var result = player.sendWebRTCData("data");
+		expect(sendDataViaWebRTC.callCount).to.be.equal(1);
+		expect(result).to.be.true;
+		
+		
+		sendDataViaWebRTC = sinon.fake.throws(new Error("error"));
+		player.videojsPlayer.sendDataViaWebRTC = sendDataViaWebRTC;
+		result = player.sendWebRTCData("data");
+		expect(result).to.be.false;
+		expect(sendDataViaWebRTC.callCount).to.be.equal(1);
+		
+		
+		//destroy the player and send again, it should not increase the call count
+		player.destroyVideoJSPlayer();
+		result = player.sendWebRTCData("data");
+		expect(result).to.be.false;
+		expect(sendDataViaWebRTC.callCount).to.be.equal(1);
+		
+	    
+	    
+		
+	});
+	
+	
     
     
 });

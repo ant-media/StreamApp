@@ -1,8 +1,10 @@
 
-import { getUrlParameter, isMobile } from "./fetch.stream.js";
+import { getUrlParameter } from "./fetch.stream.js";
 import "./external/loglevel.min.js";
 
 const Logger = window.log;
+
+const STATIC_VIDEO_HTML =  "<video id='video-player' class='video-js vjs-default-skin vjs-big-play-centered' controls playsinline></video>";
 
 export class EmbeddedPlayer {
 
@@ -21,7 +23,7 @@ export class EmbeddedPlayer {
 	*/
 	static STREAMS_FOLDER = "streams";
 
-	static VIDEO_HTML = "<video id='video-player' class='video-js vjs-default-skin vjs-big-play-centered' controls></video>";
+	static VIDEO_HTML = STATIC_VIDEO_HTML;
 
 	static VIDEO_PLAYER_ID = "video-player";
 
@@ -171,7 +173,7 @@ export class EmbeddedPlayer {
 		*/
 		EmbeddedPlayer.STREAMS_FOLDER = "streams";
 
-		EmbeddedPlayer.VIDEO_HTML = "<video id='video-player' class='video-js vjs-default-skin vjs-big-play-centered' controls></video>";
+		EmbeddedPlayer.VIDEO_HTML = STATIC_VIDEO_HTML;
 
 		EmbeddedPlayer.VIDEO_PLAYER_ID = "video-player";
 
@@ -183,6 +185,7 @@ export class EmbeddedPlayer {
         this.errorCalled = false;
         this.iceConnected = false;
         this.tryNextTechTimer = -1;
+        this.videojsPlayer = null;
 
         this.iceServers = '[ { "urls": "stun:stun1.l.google.com:19302" } ]';
 
@@ -223,15 +226,12 @@ export class EmbeddedPlayer {
 			this.token = null;
 		}
 
-        if (isMobile()) {
-            this.autoPlay = false;
+    
+        var localAutoPlay = getUrlParameter("autoplay", this.window.location.search);
+        if (localAutoPlay != null) {
+            this.autoPlay = localAutoPlay.toLocaleLowerCase() == "true";
         }
-        else {
-            var localAutoPlay = getUrlParameter("autoplay", this.window.location.search);
-            if (localAutoPlay != null) {
-                this.autoPlay = localAutoPlay.toLocaleLowerCase() == "true";
-            }
-        }
+        
 
         var localMute = getUrlParameter("mute",this.window.location.search);
         if (localMute != null) {
@@ -481,7 +481,8 @@ export class EmbeddedPlayer {
 
 	            if (errors["error"] == "no_stream_exist" || errors["error"] == "WebSocketNotConnected"
 	                || errors["error"] == "not_initialized_yet" || errors["error"] == "data_store_not_available"
-	                || errors["error"] == "highResourceUsage" || errors["error"] == "unauthorized_access") {
+	                || errors["error"] == "highResourceUsage" || errors["error"] == "unauthorized_access"
+	                || errors["error"] == "user_blocked") {
 
 	                //handle high resource usage and not authroized errors && websocket disconnected
 	                //Even if webrtc adaptor has auto reconnect scenario, we dispose the videojs immediately in tryNextTech
@@ -621,7 +622,9 @@ export class EmbeddedPlayer {
         });
 
         if (this.autoPlay) {
-            this.videojsPlayer.play();
+            this.videojsPlayer.play().catch((e) => {
+				 Logger.warn("Problem in playback. The error is " + e);
+			});
         }
     }
 
@@ -1012,13 +1015,21 @@ export class EmbeddedPlayer {
      * @param {*} data
      */
     sendWebRTCData(data) {
-        if (this.videojsPlayer && this.currentPlayType == "webrtc") {
-            this.videojsPlayer.sendDataViaWebRTC(data);
-        }
-        else {
-            Logger.warn("Player is not ready or playType is not WebRTC");
-        }
-    }
+	    try {
+	        if (this.videojsPlayer && this.currentPlayType == "webrtc") {
+	            this.videojsPlayer.sendDataViaWebRTC(data);
+	            return true;
+	        }
+	        else {
+	            Logger.warn("Player is not ready or playType is not WebRTC");
+	        }
+	    } catch (error) {
+	        // Handle the error here
+	        Logger.error("An error occurred while sending WebRTC data: ", error);
+	    }
+	    return false;
+	}
+
 
 
 
