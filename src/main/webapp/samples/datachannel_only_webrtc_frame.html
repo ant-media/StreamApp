@@ -226,9 +226,7 @@
 					}
 					else if (info == "data_received") {
 						console.log("Data received: " + obj.data + " type: " + obj.type + " for stream: " + obj.streamId);
-						if (obj.data.eventType === undefined){
 						$("#dataMessagesTextarea").append("Received: " + obj.data + "\r\n");
-						}
 					}
 					else {
 						console.log( info + " notification received");

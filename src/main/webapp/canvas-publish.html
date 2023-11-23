@@ -17,7 +17,7 @@
 	<style>
 		video {
 			position: relative;
-			left: 0;
+			left: 40px;
 			right: 0;
 			top: 0;
 			/* If you want to fit canvas-designer and video to fit perfectly
@@ -43,7 +43,8 @@
 			*/
 			border-color: black !important;
 			border: 0 solid black !important;
-			top: 0;
+			top:0;
+			left: -25px;
 			clear: both;
 		}
 
@@ -128,7 +129,7 @@
 		<div class="row">
 			<div class="col-md-12">
 
-				<div class="jumbotron">
+				<div class="jumbotron" style="height: 900px;">
 
 
 					<video id="localVideo" autoplay muted controls playsinline></video>
@@ -167,9 +168,11 @@
 					</div>
 
 					<div class="dropdown-divider"></div>
-
-					<span class="badge badge-warning"  style="font-size:14px; margin:15px;">Make sure Data channel is enabled on App Settings. Otherwise it does not work.</span>
-
+					<div>
+					<span class="badge badge-info" style="font-size:14px; margin:15px; display: block; text-align: center;">
+						Make sure Data channel is enabled on App Settings.<br>Otherwise, it does not work.
+					</span>
+					</div>
 					<div class="form-group">
 						<button class="btn btn-primary" disabled id="start_publish_button">Start Publishing</button>
 						<button class="btn btn-primary" disabled id="stop_publish_button">Stop Publishing</button>
