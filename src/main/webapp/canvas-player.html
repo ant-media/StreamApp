@@ -39,6 +39,7 @@
 			position: absolute;
 			*/
 			top: 0;
+			margin-left: -40px;
 		}
 
 		/* Everything but the jumbotron gets side spacing for mobile first views */
@@ -116,7 +117,7 @@
 		<div class="row">
 			<div class="col-md-12">
 
-				<div class="jumbotron">
+				<div class="jumbotron"  style="height: 900px;">
 
 					<video id="remoteVideo" autoplay muted controls playsinline></video>
 					<div id="canvas-designer"></div>
@@ -146,7 +147,9 @@
 						</div>
 
 						<div class="dropdown-divider"></div>
-
+						<span class="badge badge-info" style="font-size:14px; margin:15px; display: block; text-align: center;">
+							Make sure Data channel is enabled on App Settings.<br>Otherwise, it does not work.
+						</span>
 						<div class="form-group">
 							<button class="btn btn-primary"
 							id="start_play_button">Start Playing</button>
@@ -627,5 +630,3 @@ designer.addSyncListener(function(data) {
 
 </script>
 </html>
-
-
