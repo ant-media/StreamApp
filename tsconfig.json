@@ -1,0 +1,21 @@
+{
+  "include": ["./src/main/webapp/js/*.js"],
+  "exclude": ["./src/main/webapp/js/videojs-webrtc-plugin.js","./src/main/webapp/js/external/loglevel.min.js"],
+  "compilerOptions": {
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
+    "allowJs": true,
+    "declaration": true,
+    "declarationMap": true,
+    "emitDeclarationOnly": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "node",
+    "strict": true,
+    "target": "ES2017",
+    "outDir": "./tsbuild"
+  }
+}
