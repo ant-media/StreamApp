@@ -283,9 +283,6 @@ body {
 	var roomNameBox = document.getElementById("roomName");
 
 	if (roomId != null) {
-	var roomname = getUrlParameter("roomname");
-	if(roomname != "undefined" && roomname != undefined)
-		roomNameBox.value=roomname;
 	roomNameBox.value = roomId;
 	}
 	
@@ -313,9 +310,9 @@ body {
 
 	function openInNewTab(){
 		let parrentURL= getUrlParameter("parrentURL")
-		if(parrentURL==null)
+		if(parrentURL==null || parrentURL==undefined)
 			parrentURL=""
-		window.open(parrentURL+"?roomname="+roomNameBox.value );
+		window.open(parrentURL+"?roomname="+roomNameBox.value);
 	}
 
 	function toggleLocalCamera() {
