@@ -505,10 +505,10 @@ body {
 		//remove all remote video under players
 		//just don't remove the first element because it's local camera
 		var children = document.getElementById("players").children;
-		let i = 1;
-		while (i < children.length) {
-			document.getElementById("players").removeChild(children[i]);
-			i++;
+		let i = children.length - 1;
+		while (i > 0) {
+		  document.getElementById("players").removeChild(children[i]);
+		  i--;
 		}
 	}
 
