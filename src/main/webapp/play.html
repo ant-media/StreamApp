@@ -82,25 +82,23 @@
 				document.getElementById("unmuteButton").innerHTML = "Unmute";
 			}
 		});
-		window.bb= null;
+		window.analyzer= null;
 		embeddedPlayer.addPlayerListener((status) => {
 			if (status == "play") {
 				if (embeddedPlayer.is360) {
 					document.getElementById ("unmuteButton").style.display = "block";
 				}
-				if(window.bb == null){
-					window.bb  = analytics.analyze("Player");
-					console.log(window.bb)
+				if(window.analyzer == null){
+					window.analyzer  = analytics.analyze("Player");
+					console.log(window.analyzer)
 					embeddedPlayer.analytics = analytics;
-					console.log("-------------")
 				}
 				
 			}
 			else if (status == "ended") {
-				document.getElementById("unmuteButton").style.display = "none";
-				//analytics.
-				
-				window.bb=null;
+				analytics.stop();
+				document.getElementById("unmuteButton").style.display = "none";			
+				window.analyzer=null;
 			}
 		});
 
