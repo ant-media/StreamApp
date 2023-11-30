@@ -642,7 +642,7 @@ export class WebRTCAdaptor {
             this.notifyEventListeners("reconnection_attempt_for_publisher", this.publishStreamId);
 
 	        this.closePeerConnection(this.publishStreamId);
-	        console.log("It will try to publish again because it is not stopped on purpose")
+            Logger.log("It will try to publish again because it is not stopped on purpose")
 	        this.publish(this.publishStreamId, this.publishToken, this.publishSubscriberId, this.publishSubscriberCode, this.publishStreamName, this.publishMainTrack, this.publishMetaData);
 	    }
 
@@ -656,10 +656,10 @@ export class WebRTCAdaptor {
 	        	this.iceConnectionState(streamId) != "connected" &&
 	        	this.iceConnectionState(streamId) != "completed")
 	       {
-                // notify that reconnection process started for play
-                this.notifyEventListeners("reconnection_attempt_for_player", streamId);
+              // notify that reconnection process started for play
+              this.notifyEventListeners("reconnection_attempt_for_player", streamId);
 
-	            console.log("It will try to play again because it is not stopped on purpose")
+	            Logger.log("It will try to play again because it is not stopped on purpose")
 	            this.closePeerConnection(streamId);
 	            this.play(streamId, this.playToken, this.playRoomId, this.playEnableTracks, this.playSubscriberId, this.playSubscriberCode, this.playMetaData);
 	        }
@@ -924,7 +924,12 @@ export class WebRTCAdaptor {
             Logger.debug("No event.candidate in the iceCandidate event");
         }
     }
-
+    // sanatize text if it contains script to prevent xss
+    sanitizeHTML(text) {
+        if(text.includes("script"))
+            return text.replace(/</g, "&lt;").replace(/>/g, "&gt;"); 
+        return text
+        }
     /**
      * Called internally to initiate Data Channel.
      * Note that Data Channel should be enabled fromAMS settings.
@@ -953,6 +958,7 @@ export class WebRTCAdaptor {
             var data = obj.data;
 
             if (typeof data === 'string' || data instanceof String) {
+                obj.data = this.sanitizeHTML(obj.data)
                 this.notifyEventListeners("data_received", obj);
             } else {
                 var length = data.length || data.size || data.byteLength;
@@ -1661,8 +1667,11 @@ export class WebRTCAdaptor {
         var CHUNK_SIZE = 16000;
         if (this.remotePeerConnection[streamId] !== undefined) {
             var dataChannel = this.remotePeerConnection[streamId].dataChannel;
-            if (dataChannel == undefined || dataChannel.readyState !== 'open') {
-                console.warn('dataChannel.readyState is not open: ' + dataChannel.readyState);
+            if (dataChannel === undefined || dataChannel === null || typeof dataChannel === 'undefined') {
+                Logger.warn('dataChannel is null or undefined');
+                return;
+            } else if (dataChannel.readyState !== 'open') {
+                Logger.warn('dataChannel.readyState is not open: ' + dataChannel.readyState);
                 return;
             }
             var length = data.length || data.size || data.byteLength;
