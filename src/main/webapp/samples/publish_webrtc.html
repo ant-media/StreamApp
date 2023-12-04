@@ -9,6 +9,8 @@
 	<link rel="stylesheet" href="../css/common.css" />
 	<link rel="stylesheet" href="../css/samples.css" />
 	<script src="../js/external/adapter-latest.js"></script>
+	<script type="text/javascript" src="https://cdn.bitmovin.com/analytics/web/2/bitmovinanalytics.min.js"></script>
+
 </head>
 
 <body>
@@ -155,9 +157,10 @@
 	import { getUrlParameter } from "../js/fetch.stream.js"
 	import { SoundMeter } from "../js/soundmeter.js"
 	import { generateRandomString, getWebSocketURL, errorHandler } from "../js/utility.js"
-
+	import {Analytics} from "../js/analytics.js"
 	import "../js/external/loglevel.min.js";
-
+	var bitmovinKey ="55aaca26-dded-4362-b767-9974cd36871a"
+	var analytics = null;
 	const Logger = window.log;
 	
 	Logger.setLevel("debug");
@@ -385,10 +388,12 @@
 		webRTCAdaptor.bandwidth = maxVideoBitrateKbps;
 		streamId = streamIdBox.value;
 		webRTCAdaptor.publish(streamId, token, subscriberId, subscriberCode, streamName, mainTrack);
+		analytics.analyze("Publish");
 	}
 
 	function stopPublishing() {
 		webRTCAdaptor.stop(streamId);
+
 	}
 
 	function switchVideoMode(chbx) {
@@ -781,6 +786,7 @@
         //initialize the WebRTCAdaptor
 	    initWebRTCAdaptor(false);
 		window.webRTCAdaptor = webRTCAdaptor;
+		analytics = new Analytics(bitmovinKey,webRTCAdaptor);
 	});
 
 	
