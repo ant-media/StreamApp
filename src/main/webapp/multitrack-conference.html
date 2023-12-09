@@ -133,14 +133,13 @@ body {
 							id="join_publish_button">Join Room</button>
 					<button class="btn btn-primary" disabled
 							id="stop_publish_button">Leave Room</button>
+					<button class="btn btn-info"
+							id="open_in_new_tab">Join in new Tab</button>
 				</div>
 
 				<div style="padding:10px">
-					<button id="turn_off_camera_button" class="btn btn-outline-primary"  >Turn off Camera</button>
-					<button id="turn_on_camera_button" disabled class="btn btn-outline-primary"  >Turn on Camera</button>
-
-					<button id="mute_mic_button" class="btn btn-outline-primary">Mute Local Mic</button>
-					<button id="unmute_mic_button" disabled  class="btn btn-outline-primary">Unmute Local Mic</button>
+					<img id="toggle_camera_button" class="btn btn-outline-primary" src="images/camon.png" alt="Turn off Camera">
+					<img id="toggle_mic_button" class="btn btn-outline-primary"    src="images/unmute.png" alt="Unmute Local Mic">
 				</div>
 
 				<div class="form-check form-check-inline" >
@@ -258,14 +257,12 @@ body {
 	join_publish_button.addEventListener("click", joinRoom, false);
 	var stop_publish_button = document.getElementById("stop_publish_button");
 	stop_publish_button.addEventListener("click", leaveRoom, false);
-	var turn_off_camera_button = document.getElementById("turn_off_camera_button");
-	turn_off_camera_button.addEventListener("click", turnOffLocalCamera,false)
-	var turn_on_camera_button = document.getElementById("turn_on_camera_button");
-	turn_on_camera_button.addEventListener("click", turnOnLocalCamera,false)
-	var mute_mic_button = document.getElementById("mute_mic_button");
-	mute_mic_button.addEventListener("click", muteLocalMic,false)
-	var unmute_mic_button = document.getElementById("unmute_mic_button");
-	unmute_mic_button.addEventListener("click", unmuteLocalMic,false)
+	var toggle_camera_button = document.getElementById("toggle_camera_button");
+	toggle_camera_button.addEventListener("click", toggleLocalCamera,false)
+	var toggle_mic_button = document.getElementById("toggle_mic_button");
+	toggle_mic_button.addEventListener("click", toggleLocalMic,false)
+	var open_in_new_tab = document.getElementById("open_in_new_tab");
+	open_in_new_tab.addEventListener("click",openInNewTab,false);
 	var options = document.getElementById("options");
 	options.addEventListener("click", toggleOptions, false);
 	var send = document.getElementById("send");
@@ -286,7 +283,7 @@ body {
 	var roomNameBox = document.getElementById("roomName");
 
 	if (roomId != null) {
-		roomNameBox.value = roomId;
+	roomNameBox.value = roomId;
 	}
 	
 	var isDataChannelOpen = false;
@@ -311,32 +308,43 @@ body {
   		}
 	}
 
-	function turnOffLocalCamera() {
-		webRTCAdaptor.turnOffLocalCamera();
-		isCameraOff = true;
-		handleCameraButtons();
-		sendNotificationEvent("CAM_TURNED_OFF");
+	function openInNewTab(){
+		let parrentURL= getUrlParameter("parrentURL")
+		if(parrentURL==null || parrentURL==undefined)
+			parrentURL=""
+		window.open(parrentURL+"?roomId="+roomNameBox.value);
 	}
 
-	function turnOnLocalCamera() {
-		webRTCAdaptor.turnOnLocalCamera();
-		isCameraOff = false;
-		handleCameraButtons();
-		sendNotificationEvent("CAM_TURNED_ON");
+	function toggleLocalCamera() {
+		if (isCameraOff) {
+			webRTCAdaptor.turnOnLocalCamera();
+			isCameraOff = false;
+			handleCameraButtons();
+			sendNotificationEvent("CAM_TURNED_ON");
+
+		}
+		else {
+			webRTCAdaptor.turnOffLocalCamera();
+			isCameraOff = true;
+			handleCameraButtons();
+			sendNotificationEvent("CAM_TURNED_OFF");
+
+		}
 	}
 
-	function muteLocalMic(){
-		webRTCAdaptor.muteLocalMic();
-		isMicMuted = true;
-		handleMicButtons();
-		sendNotificationEvent("MIC_MUTED");
-	}
-
-	function unmuteLocalMic() {
-		webRTCAdaptor.unmuteLocalMic();
-		isMicMuted = false;
-    handleMicButtons();
-		sendNotificationEvent("MIC_UNMUTED");
+	function toggleLocalMic() {
+		if (isMicMuted) {
+			webRTCAdaptor.unmuteLocalMic();
+			isMicMuted = false;
+			handleMicButtons();
+			sendNotificationEvent("MIC_UNMUTED");
+		}
+		else {
+			webRTCAdaptor.muteLocalMic();
+			isMicMuted = true;
+			handleMicButtons();
+			sendNotificationEvent("MIC_MUTED");
+		}
 	}
 
 	function sendNotificationEvent(eventType) {
@@ -380,22 +388,18 @@ body {
 	}
 
 	function handleCameraButtons() {
-		if(isCameraOff) {
-			turn_off_camera_button.disabled = true;
-			turn_on_camera_button.disabled = false;
+		if (isCameraOff) {
+			toggle_camera_button.src = "./images/camoff.png";
 		} else {
-			turn_off_camera_button.disabled = false;
-			turn_on_camera_button.disabled = true;
+			toggle_camera_button.src = "./images/camon.png";
 		}
 	}
 
 	function handleMicButtons() {
-		if(isMicMuted) {
-			mute_mic_button.disabled = true;
-			unmute_mic_button.disabled = false;
+		if (isMicMuted) {
+			toggle_mic_button.src = "./images/mute.png"
 		} else {
-			mute_mic_button.disabled = false;
-			unmute_mic_button.disabled = true;
+			toggle_mic_button.src = "./images/unmute.png"
 		}
 	}
 
