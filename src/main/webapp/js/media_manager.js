@@ -728,7 +728,7 @@ export class MediaManager {
      * Please don't forget to disable this function with disableAudioLevelWhenMuted if you use it.
      */
     enableAudioLevelWhenMuted() {
-        navigator.mediaDevices.getUserMedia({video: false, audio: true})
+        return navigator.mediaDevices.getUserMedia({video: false, audio: true})
             .then((stream) => {
                 this.mutedAudioStream = stream;
                 this.mutedSoundMeter = new SoundMeter(this.audioContext);
@@ -751,6 +751,7 @@ export class MediaManager {
             })
             .catch(function (err) {
                 Logger.debug("Can't get the soundlevel on mute")
+                throw err;
             });
     }
 

@@ -1346,7 +1346,7 @@ export class WebRTCAdaptor {
 
         this.initPeerConnection(streamId, "publish");
 
-        this.remotePeerConnection[streamId].createOffer(this.sdp_constraints)
+        return this.remotePeerConnection[streamId].createOffer(this.sdp_constraints)
             .then(configuration => {
                 this.gotDescription(configuration, streamId);
             })
