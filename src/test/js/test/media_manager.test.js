@@ -140,8 +140,9 @@ describe("MediaManager", function() {
 
 
 	});
-    it("muteLocalMic", async function(){
-		
+    it("muteUnmuteTest", async function(){
+        var videoElement = document.createElement("video");
+
 		var adaptor = new WebRTCAdaptor({
 			 websocketURL: "ws://example.com",
              localVideoElement : videoElement,
@@ -157,20 +158,6 @@ describe("MediaManager", function() {
         expect(adaptor.mediaManager.isMuted).to.be.equal(true);
         adaptor.mediaManager.localStream.getAudioTracks().forEach(track =>expect(track.enabled).to.be.equal(false));
 
-	});
-    it("unmuteLocalMic", async function(){
-		
-		var adaptor = new WebRTCAdaptor({
-			 websocketURL: "ws://example.com",
-             localVideoElement : videoElement,
-			 initializeComponents:false,
-			 mediaConstraints: {
-					video:true,
-					audio:true
-			}
-		});
-		  
-        await adaptor.mediaManager.initLocalStream();
         adaptor.mediaManager.unmuteLocalMic();
         expect(adaptor.mediaManager.isMuted).to.be.equal(false);
         adaptor.mediaManager.localStream.getAudioTracks().forEach(track =>expect(track.enabled).to.be.equal(true));
