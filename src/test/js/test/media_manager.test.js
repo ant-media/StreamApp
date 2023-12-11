@@ -140,4 +140,22 @@ describe("MediaManager", function() {
 
 
 	});
+    it("muteLocalMic", async function(){
+		
+		var adaptor = new WebRTCAdaptor({
+			 websocketURL: "ws://example.com",
+             localVideoElement : videoElement,
+			 initializeComponents:false,
+			 mediaConstraints: {
+					video:true,
+					audio:true
+			}
+		});
+		  
+        await adaptor.mediaManager.initLocalStream();
+        adaptor.mediaManager.muteLocalMic();
+        expect(adaptor.mediaManager.isMuted).to.be.equal(true);
+        adaptor.mediaManager.localStream.getAudioTracks().forEach(track =>expect(track.enabled).to.be.equal(false));
+
+	});
 });
