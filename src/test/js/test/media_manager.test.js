@@ -177,6 +177,8 @@ describe("MediaManager", function() {
 		});
 		  
         await adaptor.mediaManager.initLocalStream();
+        adaptor.mediaManager.secondaryAudioTrackGainNode = adaptor.mediaManager.audioContext.createGain();
+
         adaptor.mediaManager.enableSecondStreamInMixedAudio(true);
         expect(adaptor.mediaManager.secondaryAudioTrackGainNode.gain.value).to.be.equal(1);
         adaptor.mediaManager.enableSecondStreamInMixedAudio(false);
