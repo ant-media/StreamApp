@@ -116,5 +116,28 @@ describe("MediaManager", function() {
 	});
 	
 	
-	
+    it("changeLocalVideo", async function(){
+		
+        var videoElement = document.createElement("video");
+        videoElement.id="oldElement";
+        var newVideoElement = document.createElement("video");
+        newVideoElement.id="newElement"
+        
+		var adaptor = new WebRTCAdaptor({
+			 websocketURL: "ws://example.com",
+             localVideoElement : videoElement,
+			 initializeComponents:false,
+			 mediaConstraints: {
+					video:true,
+					audio:true
+			}
+		});
+		  
+        await adaptor.mediaManager.initLocalStream();
+        adaptor.mediaManager.changeLocalVideo(newVideoElement);
+        expect(this.localVideo.id).to.be.equal(newVideoElement.id);
+        expect(adaptor.mediaManager.localVideo.srcObject).to.be.equal(adaptor.mediaManager.localStream);
+
+
+	});
 });
