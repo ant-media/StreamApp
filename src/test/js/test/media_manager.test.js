@@ -109,7 +109,7 @@ describe("MediaManager", function() {
         
         expect(adaptor.mediaManager.blackVideoTrack).to.not.be.null;
         
-        await adaptor.mediaManager.turnOnLocalCamera();
+        await adaptor.turnOnLocalCamera();
         expect(adaptor.mediaManager.blackVideoTrack).to.be.null;
         expect(adaptor.mediaManager.blackFrameTimer).to.be.null;
       	
@@ -154,13 +154,34 @@ describe("MediaManager", function() {
 		});
 		  
         await adaptor.mediaManager.initLocalStream();
-        adaptor.mediaManager.muteLocalMic();
+        adaptor.muteLocalMic();
         expect(adaptor.mediaManager.isMuted).to.be.equal(true);
         adaptor.mediaManager.localStream.getAudioTracks().forEach(track =>expect(track.enabled).to.be.equal(false));
 
-        adaptor.mediaManager.unmuteLocalMic();
+        adaptor.unmuteLocalMic();
         expect(adaptor.mediaManager.isMuted).to.be.equal(false);
         adaptor.mediaManager.localStream.getAudioTracks().forEach(track =>expect(track.enabled).to.be.equal(true));
+
+	});
+    it("enableSecondStreamInMixedAudio", async function(){
+        var videoElement = document.createElement("video");
+
+		var adaptor = new WebRTCAdaptor({
+			 websocketURL: "ws://example.com",
+             localVideoElement : videoElement,
+			 initializeComponents:false,
+			 mediaConstraints: {
+					video:true,
+					audio:true
+			}
+		});
+		  
+        await adaptor.mediaManager.initLocalStream();
+        adaptor.mediaManager.enableSecondStreamInMixedAudio(true);
+        expect(adaptor.mediaManager.secondaryAudioTrackGainNode.gain.value).to.be.equal(1);
+        adaptor.mediaManager.enableSecondStreamInMixedAudio(false);
+        expect(adaptor.mediaManager.secondaryAudioTrackGainNode.gain.value).to.be.equal(0);
+
 
 	});
     
