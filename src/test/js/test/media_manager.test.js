@@ -136,7 +136,7 @@ describe("MediaManager", function() {
         await adaptor.mediaManager.initLocalStream();
         adaptor.mediaManager.changeLocalVideo(newVideoElement);
         expect(this.localVideo.id).to.be.equal(newVideoElement.id);
-        expect(adaptor.mediaManager.localVideo.srcObject).to.be.equal(adaptor.mediaManager.localStream);
+        expect(adaptor.mediaManager.localVideo.srcObject.id).to.be.equal(adaptor.mediaManager.localStream.id);
 
 
 	});
