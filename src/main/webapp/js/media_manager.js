@@ -739,7 +739,9 @@ export class MediaManager {
                 }, (e) => {
                     if (e) {
                         alert(e);
-                        return;
+                        return new Promise((resolve, reject) => {
+                            reject(e);
+                        });
                     }
                     this.meterRefresh = setInterval(() => {
                         if (soundMeter.instant.toFixed(2) > 0.1) {
@@ -747,7 +749,9 @@ export class MediaManager {
                         }
                     }, 200);
                 });
-
+                return new Promise((resolve, reject) => {
+                    resolve(null);
+                });
             })
             .catch(function (err) {
                 Logger.debug("Can't get the soundlevel on mute")

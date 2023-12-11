@@ -1346,7 +1346,7 @@ export class WebRTCAdaptor {
 
         this.initPeerConnection(streamId, "publish");
 
-        return this.remotePeerConnection[streamId].createOffer(this.sdp_constraints)
+        this.remotePeerConnection[streamId].createOffer(this.sdp_constraints)
             .then(configuration => {
                 this.gotDescription(configuration, streamId);
             })
@@ -2000,7 +2000,7 @@ export class WebRTCAdaptor {
     }
 
     enableAudioLevelWhenMuted() {
-        this.mediaManager.enableAudioLevelWhenMuted();
+        return this.mediaManager.enableAudioLevelWhenMuted();
     }
 
     disableAudioLevelWhenMuted() {
