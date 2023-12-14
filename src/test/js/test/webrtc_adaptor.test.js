@@ -455,8 +455,10 @@ describe("WebRTCAdaptor", function () {
 		await adaptor.updateAudioTrack(stream, null, null);
 	});
 
-	it("testSoundMeter", function (done) {
+	it("testSoundMeter",  function(done) {
 		this.timeout(5000);
+
+
 		console.log("Starting testSoundMeter");
 
 		var adaptor = new WebRTCAdaptor({
@@ -471,17 +473,7 @@ describe("WebRTCAdaptor", function () {
 		//fake stream in te browser is a period audio and silence, so getting sound level more than 0 requires
 
 		adaptor.initialize().then(() => {
-			var audioContext = new (window.AudioContext || window.webkitAudioContext)();
-			var oscillator = audioContext.createOscillator();
-			oscillator.type = "sine";
-			oscillator.frequency.value = 800;
-			var mediaStreamSource = audioContext.createMediaStreamDestination();
-			oscillator.connect(mediaStreamSource);
-			var mediaStreamTrack = mediaStreamSource.stream.getAudioTracks()[0];
-			oscillator.start();
 
-			adaptor.mediaManager.localStream = new MediaStream([mediaStreamTrack])
-			adaptor.mediaManager.audioContext = audioContext;
 			adaptor.enableAudioLevelForLocalStream((level) => {
 				console.log("sound level -> " + level);
 				if (level > 0) {
@@ -550,30 +542,14 @@ describe("WebRTCAdaptor", function () {
 			});
 
 			adaptor.initialize().then(async () => {
-				var audioContext = new (window.AudioContext || window.webkitAudioContext)();
-				var oscillator = audioContext.createOscillator();
-				oscillator.type = "sine";
-				oscillator.frequency.value = 800;
-				var mediaStreamSource = audioContext.createMediaStreamDestination();
-				oscillator.connect(mediaStreamSource);
-				var mediaStreamTrack = mediaStreamSource.stream.getAudioTracks()[0];
-				oscillator.start();
-
-				adaptor.muteLocalMic();
-				adaptor.mediaManager.mutedAudioStream = new MediaStream([mediaStreamTrack]);
-
-
-				adaptor.enableAudioLevelWhenMuted().then(() => {
-					adaptor.mediaManager.callback = (info) => {
-						console.log("callback ", info)
-						if (info == "speaking_but_muted") {
-							console.log("speaking_but_muted")
-							resolve();
-						}
+				adaptor.mediaManager.callback = (info) => {
+					console.log("callback ", info)
+					if (info == "speaking_but_muted") {
+						console.log("speaking_but_muted")
+						resolve();
 					}
-				});
-
-
+				}
+				adaptor.enableAudioLevelWhenMuted();
 			})
 		})
 	});
