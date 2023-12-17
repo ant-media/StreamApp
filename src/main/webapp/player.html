@@ -711,21 +711,28 @@
                 	handleImageData(data);
               	}
 			  	else {
-					var notificationEvent = JSON.parse(data);
-					if(notificationEvent != null && typeof(notificationEvent) == "object") 
-					{
-                        var eventType = notificationEvent.eventType;
-						if (eventType == "UPDATE_AUDIO_LEVEL") {
-							//
-							console.debug("Update audio level from server(max:0, min:127): " + notificationEvent.audioLevel);
+					var notificationEvent;
+					try {
+						notificationEvent = JSON.parse(data);
+						if(notificationEvent != null && typeof(notificationEvent) == "object") 
+						{
+							var eventType = notificationEvent.eventType;
+							if (eventType == "UPDATE_AUDIO_LEVEL") {
+								//
+								console.debug("Update audio level from server(max:0, min:127): " + notificationEvent.audioLevel);
+							}
+							else {
+								$("#all-messages").append("Received: " + data + "<br>");
+							}
 						}
 						else {
 							$("#all-messages").append("Received: " + data + "<br>");
 						}
 					}
-					else {
+					catch (exception) {
 						$("#all-messages").append("Received: " + data + "<br>");
 					}
+					
 			  	}
 			}
 			else if (info == "bitrateMeasurement") {
