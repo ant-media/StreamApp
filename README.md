@@ -69,7 +69,7 @@ webRTCAdaptor.publish(streamId);
 
 #### <a name="play">Play
 ```javascript
-// You can start streaming by calling the publish method
+// You can start playing the stream by calling the play method
 webRTCAdaptor.play(streamId);
 ```
 
