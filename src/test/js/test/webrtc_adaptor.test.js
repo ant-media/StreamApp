@@ -2,7 +2,7 @@
 import { WebRTCAdaptor } from '../../../main/webapp/js/webrtc_adaptor.js';
 
 
-describe("WebRTCAdaptor", function () {
+describe("WebRTCAdaptor", function() {
 
 	var clock;
 
@@ -11,20 +11,20 @@ describe("WebRTCAdaptor", function () {
 	var initialized = false;
 
 	beforeEach(function () {
-		clock = sinon.useFakeTimers();
-		sandbox = sinon.createSandbox();
+	  clock = sinon.useFakeTimers();
+	  sandbox = sinon.createSandbox();
 	});
 
 
 	afterEach(() => {
-		// Restore the default sandbox here
-		sinon.restore();
-		clock.restore();
-		sandbox.restore();
+	  // Restore the default sandbox here
+	  sinon.restore();
+	  clock.restore();
+	  sandbox.restore();
 	});
 
 
-	it("Initialize", async function () {
+	it("Initialize", async function() {
 
 		try {
 			var adaptor = new WebRTCAdaptor({
@@ -52,11 +52,11 @@ describe("WebRTCAdaptor", function () {
 	});
 
 
-	it("Auto reconnect play", async function () {
+	it("Auto reconnect play", async function() {
 
 		var adaptor = new WebRTCAdaptor({
 			websocketURL: "ws://example.com",
-			isPlayMode: true
+			isPlayMode:true
 		});
 
 		var webSocketAdaptor = sinon.mock(adaptor.webSocketAdaptor);
@@ -89,7 +89,7 @@ describe("WebRTCAdaptor", function () {
 
 	});
 
-	it("Auto reconnect publish", async function () {
+	it("Auto reconnect publish", async function() {
 
 		var adaptor = new WebRTCAdaptor({
 			websocketURL: "ws://example.com",
@@ -137,7 +137,8 @@ describe("WebRTCAdaptor", function () {
 	});
 
 
-	it("Close websocket", async function () {
+	it("Close websocket", async function()
+	{
 		var adaptor = new WebRTCAdaptor({
 			websocketURL: "ws://example.com",
 			isPlayMode: true
@@ -161,7 +162,8 @@ describe("WebRTCAdaptor", function () {
 
 	});
 
-	it("Frequent try again call", async function () {
+	it("Frequent try again call", async function()
+	{
 		var adaptor = new WebRTCAdaptor({
 			websocketURL: "ws://example.com",
 			isPlayMode: true
@@ -174,7 +176,7 @@ describe("WebRTCAdaptor", function () {
 		const now = Date.now();
 		adaptor.tryAgain();
 
-		expect(adaptor.lastReconnectiontionTrialTime - now).to.be.at.most(100);
+		expect(adaptor.lastReconnectiontionTrialTime-now).to.be.at.most(100);
 
 		const lrt = adaptor.lastReconnectiontionTrialTime;
 
@@ -189,7 +191,8 @@ describe("WebRTCAdaptor", function () {
 		expect(adaptor.lastReconnectiontionTrialTime).not.to.be.equal(lrt);
 	});
 
-	it("Test reconnection process started callback", async function () {
+	it("Test reconnection process started callback", async function()
+	{
 		var isReconnectionProcessStartedForPublisher = false;
 		var isReconnectionProcessStartedForPlayer = false;
 
@@ -230,14 +233,15 @@ describe("WebRTCAdaptor", function () {
 		expect(isReconnectionProcessStartedForPlayer).equal(true);
 	});
 
-	it("Reconnection for play", async function () {
+	it("Reconnection for play", async function()
+	{
 		var adaptor = new WebRTCAdaptor({
 			websocketURL: "ws://example.com",
 			isPlayMode: true
 		});
 		var fakeSend = sinon.replace(adaptor.webSocketAdaptor, "send", sinon.fake());
 
-		const streamId = "test" + Math.floor(Math.random() * 100);
+		const streamId = "test"+Math.floor(Math.random() * 100);
 		adaptor.playStreamId.push(streamId);
 		var mockPC = sinon.mock(RTCPeerConnection);
 		adaptor.remotePeerConnection[streamId] = mockPC
@@ -256,28 +260,29 @@ describe("WebRTCAdaptor", function () {
 
 	});
 
-	it("sanitize HTML", async function () {
+	it("sanitize HTML",async function(){
 		var adaptor = new WebRTCAdaptor({
 			websocketURL: "ws://example.com",
 			isPlayMode: true
 		});
 		var scriptMsg = "<script>alert(1)</script>"; //message with script
 		var sanitizeMsg = adaptor.sanitizeHTML(scriptMsg);
-		assert.notEqual(scriptMsg, sanitizeMsg)
+		assert.notEqual(scriptMsg,sanitizeMsg)
 
-		var text = "hi how are you"; //message without script
+		var text="hi how are you"; //message without script
 		var message = adaptor.sanitizeHTML(text)
-		assert.strictEqual(text, message)
+		assert.strictEqual(text,message)
 	})
-
-	it("Reconnection for publish", async function () {
+	
+	it("Reconnection for publish", async function()
+	{
 		var adaptor = new WebRTCAdaptor({
 			websocketURL: "ws://example.com",
 			isPlayMode: true
 		});
 		var fakeSendPublish = sinon.replace(adaptor, "sendPublishCommand", sinon.fake());
 
-		const streamId = "test" + Math.floor(Math.random() * 100);
+		const streamId = "test"+Math.floor(Math.random() * 100);
 		adaptor.publishStreamId = streamId;
 		var mockPC = sinon.mock(RTCPeerConnection);
 		adaptor.remotePeerConnection[streamId] = mockPC
@@ -287,7 +292,7 @@ describe("WebRTCAdaptor", function () {
 
 		adaptor.mediaManager.localStream = sinon.mock();
 		var callback = sinon.stub();
-		callback.returns([sinon.mock()]);
+    	callback.returns([sinon.mock()]);
 		adaptor.mediaManager.localStream.getVideoTracks = callback;
 		adaptor.mediaManager.localStream.getAudioTracks = callback;
 		adaptor.mediaManager.localStream.getTracks = sinon.stub().returns([]);
@@ -303,7 +308,8 @@ describe("WebRTCAdaptor", function () {
 
 	});
 
-	it("Websocket send try catch", async function () {
+	it("Websocket send try catch", async function()
+	{
 		var adaptor = new WebRTCAdaptor({
 			websocketURL: "ws://example.com",
 			isPlayMode: true
@@ -326,14 +332,14 @@ describe("WebRTCAdaptor", function () {
 
 
 	//there was a bug and this method is not initialized
-	it("enableAudioLevelForLocalStream", async function () {
+	it("enableAudioLevelForLocalStream", async function() {
 		var adaptor = new WebRTCAdaptor({
 			websocketURL: "ws://localhost",
 			initializeComponents: false
 		});
 
 		initialized = false;
-		await adaptor.initialize().then(() => {
+		await adaptor.initialize().then(()=> {
 			initialized = true;
 		})
 
@@ -344,7 +350,7 @@ describe("WebRTCAdaptor", function () {
 		initialized = false;
 		await adaptor.enableAudioLevelForLocalStream((event) => {
 			console.log("audio level: " + event.data);
-		}).then(() => {
+		}).then(()=> {
 			initialized = true;
 		}).catch((err) => {
 			console.error("audiolevel error " + err);
@@ -358,7 +364,7 @@ describe("WebRTCAdaptor", function () {
 
 	});
 
-	it("sendData", async function () {
+	it("sendData", async function() {
 		try {
 			var adaptor = new WebRTCAdaptor({
 				websocketURL: "ws://localhost",
@@ -387,7 +393,8 @@ describe("WebRTCAdaptor", function () {
 		}
 	});
 
-	it("dummyStreamAndSwitch", async function () {
+	it("dummyStreamAndSwitch", async function()
+	{
 
 		var adaptor = new WebRTCAdaptor({
 			websocketURL: "ws://localhost",
@@ -406,7 +413,7 @@ describe("WebRTCAdaptor", function () {
 		await adaptor.initialize();
 
 
-		expect(adaptor.mediaManager.mediaConstraints).to.deep.equal({ video: "dummy", audio: "dummy" });
+		expect(adaptor.mediaManager.mediaConstraints).to.deep.equal({video:"dummy", audio:"dummy"});
 
 		expect(adaptor.mediaManager.blackVideoTrack).to.not.be.null
 		expect(adaptor.mediaManager.silentAudioTrack).to.not.be.null
@@ -415,19 +422,20 @@ describe("WebRTCAdaptor", function () {
 		expect(adaptor.mediaManager.localStream.getAudioTracks().length).to.be.equal(1)
 
 
-		await adaptor.openStream({ video: true, audio: true });
+		await adaptor.openStream({video:true, audio:true});
 
 		expect(adaptor.mediaManager.blackVideoTrack).to.be.null
 		expect(adaptor.mediaManager.silentAudioTrack).to.be.null
 		expect(adaptor.mediaManager.oscillator).to.be.null
 
-		expect(adaptor.mediaManager.mediaConstraints).to.deep.equal({ video: true, audio: true });
+		expect(adaptor.mediaManager.mediaConstraints).to.deep.equal({video:true, audio:true});
 		expect(adaptor.mediaManager.localStream.getVideoTracks().length).to.be.equal(1)
 		expect(adaptor.mediaManager.localStream.getAudioTracks().length).to.be.equal(1)
 
 	});
 
-	it("updateAudioTrack", async function () {
+	it("updateAudioTrack", async function()
+	{
 		var adaptor = new WebRTCAdaptor({
 			websocketURL: "ws://localhost",
 			mediaConstraints: {
@@ -441,7 +449,7 @@ describe("WebRTCAdaptor", function () {
 
 		expect(adaptor.mediaManager.localStreamSoundMeter).to.be.null;
 
-		adaptor.enableAudioLevelForLocalStream((value) => {
+		adaptor.enableAudioLevelForLocalStream((value)=> {
 
 		}, 200);
 
@@ -493,7 +501,8 @@ describe("WebRTCAdaptor", function () {
 		})
 	})
 
-	it("takeConfiguration", async function () {
+
+	it("takeConfiguration", async function() {
 		var adaptor = new WebRTCAdaptor({
 			websocketURL: "ws://localhost",
 			mediaConstraints: {
@@ -512,7 +521,7 @@ describe("WebRTCAdaptor", function () {
 
 	});
 
-	it("takeCandidate", async function () {
+	it("takeCandidate", async function() {
 		var adaptor = new WebRTCAdaptor({
 			websocketURL: "ws://localhost",
 			mediaConstraints: {
@@ -528,14 +537,13 @@ describe("WebRTCAdaptor", function () {
 		expect(adaptor.iceCandidateList["stream1"]).to.be.undefined;
 
 
-		adaptor.takeCandidate("stream1", "label", "candidate");
+		adaptor.takeCandidate ("stream1", "label", "candidate");
 
 		expect(adaptor.remotePeerConnection["stream1"]).to.not.be.undefined;
 
 		expect(adaptor.iceCandidateList["stream1"].length).to.be.equal(1);
 
 	});
-
 	it("mutedButSpeaking", async () => {
         this.timeout(10000);
 		var adaptor = new WebRTCAdaptor({
