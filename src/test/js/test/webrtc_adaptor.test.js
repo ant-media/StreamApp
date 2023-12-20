@@ -538,29 +538,43 @@ describe("WebRTCAdaptor", function () {
 
 	it("mutedButSpeaking", async () => {
         this.timeout(10000);
-        return new Promise(function (resolve) {
-            var adaptor = new WebRTCAdaptor({
-                websocketURL: "ws://localhost",
-                mediaConstraints: {
-                    video: true,
-                    audio: true
-                },
-                initializeComponents: false
-            });
+		var adaptor = new WebRTCAdaptor({
+			websocketURL: "ws://localhost",
+			mediaConstraints: {
+				video: true,
+				audio: true
+			},
+			initializeComponents: false
+		});
 
-			var audioContext = new (window.AudioContext || window.webkitAudioContext)();
-			var oscillator = audioContext.createOscillator();
-			oscillator.type = "sine";
-			oscillator.frequency.value = 800;
-			var mediaStreamSource = audioContext.createMediaStreamDestination();
-			oscillator.connect(mediaStreamSource);
-			var mediaStreamTrack = mediaStreamSource.stream.getAudioTracks()[0];
-			oscillator.start();
+		var audioContext = new (window.AudioContext || window.webkitAudioContext)();
+		var oscillator = audioContext.createOscillator();
+		oscillator.type = "sine";
+		oscillator.frequency.value = 800;
+		var mediaStreamSource = audioContext.createMediaStreamDestination();
+		oscillator.connect(mediaStreamSource);
+		var mediaStreamTrack = mediaStreamSource.stream.getAudioTracks()[0];
+		oscillator.start();
 
+	
+		adaptor.mediaManager.mutedAudioStream = new MediaStream([mediaStreamTrack])
+		adaptor.mediaManager.localStream = new MediaStream([mediaStreamTrack])
+		adaptor.mediaManager.audioContext = audioContext;
+
+		var getUserMediaFailed = new Promise(function (resolve,reject) {
+			navigator.mediaDevices.getUserMedia = async () => {
+				return Promise.reject();
+			  };
+            adaptor.initialize().then(async () => {
+                adaptor.enableAudioLevelWhenMuted().then(()=>{}).catch((e)=>{
+					resolve()
+				})
+            })
+        });
 		
-			adaptor.mediaManager.mutedAudioStream = new MediaStream([mediaStreamTrack])
-			adaptor.mediaManager.localStream = new MediaStream([mediaStreamTrack])
-			adaptor.mediaManager.audioContext = audioContext;
+		var speakingButMuted = getUserMediaFailed.then(()=>{
+		return new Promise(function (resolve,reject) {
+	
 
 			navigator.mediaDevices.getUserMedia = async () => {
 				return Promise.resolve(new MediaStream([mediaStreamTrack]));
@@ -576,7 +590,12 @@ describe("WebRTCAdaptor", function () {
                 } 
                 adaptor.enableAudioLevelWhenMuted();
             })
-        })
+        });
+	});
+
+
+	return speakingButMuted;
+
     });
 
 });
