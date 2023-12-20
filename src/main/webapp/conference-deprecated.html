@@ -113,6 +113,10 @@ body {
 				WebRTC Conference is an enterprise edition feature. <br/>
 				<a href="https://antmedia.io">Try Enterprise Edition for free at antmedia.io</a>
 		</div>
+		<div class="alert alert-primary text-center" role="alert" style="margin-top:-2em">
+			This conference solution is deprecated. Please use performance efficient <a href="conference.html">Conference</a>
+			<br/>
+		</div>
 		<div id="players" class="row">
 			<div class="col-sm-3">
 				<video id="localVideo" autoplay muted controls playsinline></video>
@@ -282,13 +286,13 @@ body {
   		});
 	}
 
-	
+
 	var roomNameBox = document.getElementById("roomName");
 
 	if (roomId != null) {
 		roomNameBox.value = roomId;
 	}
-	
+
 	var isDataChannelOpen = false;
 	var isMicMuted = false;
 	var isCameraOff = false;
@@ -479,7 +483,7 @@ body {
 		//TODO: Disable this one if user stops publishing
 		webRTCAdaptor.enableAudioLevelForLocalStream((value) => {
 
-			//PAY ATTENTION: No need to send audio level any more because server side can get it from the RTP header in AMS v2.7+ 
+			//PAY ATTENTION: No need to send audio level any more because server side can get it from the RTP header in AMS v2.7+
 			//webRTCAdaptor.updateAudioLevel(publishStreamId,  Math.floor(value*100));
 		}, 200);
 	};
