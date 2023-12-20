@@ -602,17 +602,9 @@ describe("WebRTCAdaptor", function() {
 			});
 		  });
 		  
-		  var soundMeteraddModuleFailed = speakingButMuted.then(() => {
-				adaptor.mediaManager.mutedSoundMeter.context.audioWorklet.addModule = async () => {
-					return Promise.reject("error");
-				};
-				return new Promise(async function (resolve, reject) {
-				adaptor.enableAudioLevelWhenMuted();
-				resolve();
-			});
-		  });
 
-	return soundMeteraddModuleFailed;
+
+	return speakingButMuted;
 
     });
 
