@@ -737,26 +737,23 @@ export class MediaManager {
                         this.callback("speaking_but_muted");
                     }
                 }, (e) => {
+                    return new Promise((resolve, reject) => {
                     if (e) {
-                        alert(e);
-                        return new Promise((resolve, reject) => {
-                            reject(e);
-                        });
+                        reject(e);
                     }
                     this.meterRefresh = setInterval(() => {
                         if (this.mutedSoundMeter .instant.toFixed(2) > 0.1) {
                             this.callback("speaking_but_muted");
                         }
                     }, 200);
-                });
-                return new Promise((resolve, reject) => {
                     resolve(null);
                 });
             })
-            .catch(function (err) {
-                Logger.debug("Can't get the soundlevel on mute")
-                throw err;
-            });
+        })
+        .catch(function (err) {
+            Logger.debug("Can't get the soundlevel on mute")
+            throw err;
+        });
     }
 
     disableAudioLevelWhenMuted() {
