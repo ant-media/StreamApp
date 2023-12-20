@@ -561,40 +561,50 @@ describe("WebRTCAdaptor", function () {
 		adaptor.mediaManager.localStream = new MediaStream([mediaStreamTrack])
 		adaptor.mediaManager.audioContext = audioContext;
 
-		var getUserMediaFailed = new Promise(function (resolve,reject) {
+		var getUserMediaFailed = new Promise(function (resolve, reject) {
 			navigator.mediaDevices.getUserMedia = async () => {
-				return Promise.reject();
-			  };
-            adaptor.initialize().then(async () => {
-                adaptor.enableAudioLevelWhenMuted().then(()=>{}).catch((e)=>{
-					resolve()
-				})
-            })
-        });
-		
-		var speakingButMuted = getUserMediaFailed.then(()=>{
-		return new Promise(function (resolve,reject) {
-	
-
-			navigator.mediaDevices.getUserMedia = async () => {
+			  return Promise.reject();
+			};
+			adaptor.initialize().then(async () => {
+			  try {
+				await adaptor.enableAudioLevelWhenMuted();
+			  } catch (e) {
+				console.log("get user media failed test")
+				resolve();
+			  }
+			});
+		  });
+		  
+		  var speakingButMuted = getUserMediaFailed.then(() => {
+			return new Promise(function (resolve, reject) {
+			  navigator.mediaDevices.getUserMedia = async () => {
 				return Promise.resolve(new MediaStream([mediaStreamTrack]));
 			  };
+		  
+			  adaptor.initialize().then(async () => {
+				adaptor.mediaManager.callback = (info) => {
+				  console.log("callback ", info);
+				  if (info == "speaking_but_muted") {
+					console.log("speaking_but_muted1");
+					resolve();
+				  }
+				};
+				await adaptor.enableAudioLevelWhenMuted();
+			  });
+			});
+		  });
+		  
+		  var soundMeteraddModuleFailed = speakingButMuted.then(() => {
+				adaptor.mediaManager.mutedSoundMeter.context.audioWorklet.addModule = async () => {
+					return Promise.reject("error");
+				};
+				return new Promise(async function (resolve, reject) {
+				adaptor.enableAudioLevelWhenMuted();
+				resolve();
+			});
+		  });
 
-            adaptor.initialize().then(async () => {
-                adaptor.mediaManager.callback = (info) => {
-                    console.log("callback ", info)
-                    if (info == "speaking_but_muted") {
-                        console.log("speaking_but_muted")
-                        resolve();
-                    }
-                } 
-                adaptor.enableAudioLevelWhenMuted();
-            })
-        });
-	});
-
-
-	return speakingButMuted;
+	return soundMeteraddModuleFailed;
 
     });
 
