@@ -131,7 +131,7 @@ describe("MediaManager", function() {
             expect(adaptor.mediaManager.localStream.getVideoTracks().length).to.be.equal(1);
             var newStream = adaptor.mediaManager.localStream;
             var onEndedCallback = function(event){done()}
-            adaptor.mediaManager.switchVideoCameraCapture("stream1","test",onEndedCallback).then(()=>{
+            adaptor.switchVideoCameraCapture("stream1","test",onEndedCallback).then(()=>{
                 newStream.getVideoTracks()[0].onended();
 
             });
