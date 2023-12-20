@@ -1904,8 +1904,8 @@ export class WebRTCAdaptor {
      * @param {string} deviceId
      * @returns {Promise}
      */
-    switchVideoCameraCapture(streamId, deviceId) {
-        return this.mediaManager.switchVideoCameraCapture(streamId, deviceId);
+    switchVideoCameraCapture(streamId, deviceId,onEndedCallback) {
+        return this.mediaManager.switchVideoCameraCapture(streamId,deviceId,onEndedCallback);
     }
 
     /**
