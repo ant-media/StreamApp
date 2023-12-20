@@ -115,6 +115,26 @@ describe("MediaManager", function() {
       	
 	});
 	
-	
+    it("testOnEndedCallback", function(done){
+        this.timeout(5000);
+
+		var adaptor = new WebRTCAdaptor({
+			 websocketURL: "ws://example.com",
+			 initializeComponents:false,
+			 mediaConstraints: {
+					video:true,
+					audio:true
+			}
+		});
+
+        adaptor.mediaManager.initLocalStream().then(()=>{
+            expect(adaptor.mediaManager.localStream.getVideoTracks().length).to.be.equal(1);
+            var newStream = adaptor.mediaManager.localStream;
+            var onEndedCallback = function(event){done()}
+            adaptor.mediaManager.updateLocalVideoStream(newStream,onEndedCallback, false);
+
+            newStream.getVideoTracks()[0].onended();
+        });
+	});
 	
 });
