@@ -3,10 +3,11 @@
 <title>Ant Media Server WebRTC Conference Room</title>
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<meta charset="UTF-8">
-	<link rel="stylesheet" href="css/external//bootstrap4/bootstrap.min.css">
+	<link rel="stylesheet"
+		  href="css/external/bootstrap4/bootstrap.min.css"
+		   >
 	<script src="js/external/adapter-latest.js"></script>
 	<script src="js/external/jquery-3.4.1.min.js"></script>
-	<script src="js/external/notify.min.js" crossorigin="anonymous"></script>
 	<link rel="stylesheet" href="css/common.css" />
 	<style>
 video {
@@ -20,10 +21,31 @@ body {
 	padding-top: 20px;
 	padding-bottom: 20px;
 }
+#notification {
+    margin-left:110px;
+    width:65%;
+    z-index:105;
+    text-align:center;
+    font-weight:normal;
+    font-size:14px;
+    font-weight:bold;
+    color:white;
+    background-color:#ff4800;
+    padding:5px;
+}
+#notification span.dismiss {
+    border:2px solid #FFF;
+    padding:0 5px;
+    cursor:pointer;
+    float:right;
+    margin-right:10px;
+}
+#notification a {
+    color:white;
+    text-decoration:none;
+    font-weight:bold
+}
 
-.options {
-		display:none;
-	}
 /* Everything but the jumbotron gets side spacing for mobile first views */
 .header, .marketing, .footer {
 	padding-right: 15px;
@@ -84,14 +106,6 @@ body {
 		border-bottom: 0;
 	}
 }
-
-.message_area {
-	height: 300px;
-	overflow-y: auto;
-	border-style: groove;
-	border-width: thin;
-	background-color: white;
-}
 </style>
 </head>
 <body>
@@ -109,28 +123,32 @@ body {
 	</div>
 
 	<div class="jumbotron">
-	   <div class="alert alert-primary text-center enterprise-feature" role="alert" style="margin-top:-2em">
+		<div class="alert alert-primary text-center enterprise-feature" role="alert" style="margin-top:-2em">
 				WebRTC Conference is an enterprise edition feature. <br/>
-				<a href="https://antmedia.io">Try Enterprise Edition for free at antmedia.io</a>
-		</div>
+			<a href="https://antmedia.io">Try Enterprise Edition for free at antmedia.io</a> <br/>
+			</div>
 		<div class="alert alert-primary text-center" role="alert" style="margin-top:-2em">
-			This conference solution is deprecated. Please use performance efficient <a href="conference.html">Conference</a>
-			<br/>
+				This conference solution is deprecated. Please use performance efficient <a href="conference.html">Multitrack Conferencing</a>
+			 <br/>
 		</div>
 		<div id="players" class="row">
-			<div class="col-sm-3">
-				<video id="localVideo" autoplay muted controls playsinline></video>
-				<div style="margin-top:10px;" class="col-sm-8 col-sm-offset-2">Microphone Gain: <input type=range id=volume_change_input min=0 max=1 value=1 step=0.01></div>
+			<div class="col-sm-3" >
+				<video style="margin-top:23px;" id="localVideo" autoplay muted controls playsinline></video>
+				<div style="margin-top:10px;display: none;"  class="col-sm-8 offset-sm-2">Microphone Gain: <input type=range id=volume_change_input min=0 max=1 value=1 step=0.01></div>
 			</div>
 		</div>
-
-
 
 		<div class="row" style="padding: 15px;">
 			<div class="col-sm-8 offset-sm-2">
 				<div style="padding:5px" class="form-check form-check-inline col-sm-10" >
 					<input type="text" class="form-control" value="room1"
 						   id="roomName" placeholder="Type room name">
+				</div>
+				<div style="padding-top:5px;padding-bottom: 25px;">
+					<input type="checkbox" class="form-check-input" id="enableMCU">
+					<label for="enableMCU" class="form-check-label">Enable MCU</label>
+					<a href=" https://antmedia.io/mcu-conference/" target="_blank" style="font-size: 12px;">(What is MCU and How to use?)</a>
+
 				</div>
 				<div style="padding:5px">
 					<button class="btn btn-primary" disabled
@@ -145,6 +163,10 @@ body {
 
 					<button id="mute_mic_button" class="btn btn-outline-primary">Mute Local Mic</button>
 					<button id="unmute_mic_button" disabled  class="btn btn-outline-primary">Unmute Local Mic</button>
+				</div>
+
+				<div id="notification" style="display: none;">
+					<span class="dismiss"><a title="dismiss this notification">x</a></span>
 				</div>
 
 				<div class="form-check form-check-inline" >
@@ -171,28 +193,11 @@ body {
 					<div class="form-check form-check-inline"></div>
 						<a id="browser_screen_share_doesnt_support" href="https://caniuse.com/#search=getDisplayMedia">Your browser doesn't support screen share. You can see supported browsers in this link </a>
 				</div>
+				<br/>
 				<div class="badge badge-success" id="broadcastingInfo"
 					  style="font-size: 14px; display: none" style="display: none">Publishing</div>
-
-
-
-					<div class="col-sm-12 text-right">
-						<button type="button" id="options" class="btn btn-outline-primary btn-sm">Options</button>
-					</div>
-					<div class="form-group col-sm-12 text-left options">
-						<div class="dropdown-divider"></div>
-						<label>Data Channel Messages</label>
-						<div id="all-messages" class="message_area"></div>
-						<div class="form-row">
-							<div class="form-group col-sm-10">
-								<input type="text" class="form-control" id="dataTextbox" placeholder="Write your message to send publisher/players">
-							</div>
-							<div class="form-group col-sm-2">
-							<button type="button" id="send" class="btn btn-outline-primary btn-block">Send</button>
-							</div>
-						</div>
-					</div>
 			</div>
+
 		</div>
 
 
@@ -206,12 +211,10 @@ body {
 
 </div>
 </body>
-<script src="./js/external/notify.min.js" crossorigin="anonymous"></script>
+<script src="./js/external/notify.min.js"></script>
 <script type="module">
 	import {WebRTCAdaptor} from "./js/webrtc_adaptor.js"
     import {getUrlParameter} from "./js/fetch.stream.js"
-    import {SoundMeter} from "./js/soundmeter.js"
-	import { generateRandomString, getWebSocketURL, errorHandler , updateBroadcastStatusInfo} from "./js/utility.js"
 
     /**
     * This page accepts 3 arguments through url parameter
@@ -221,23 +224,11 @@ body {
     */
 
 	var token = getUrlParameter("token");
-	var publishStreamId = getUrlParameter("streamId");
+	var streamId = getUrlParameter("streamId");
 	var playOnly = getUrlParameter("playOnly");
-	var dcOnly = getUrlParameter("dcOnly");
-
 	if(playOnly == null) {
 		playOnly = false;
 	}
-
-	if(dcOnly == null) {
-		dcOnly = false;
-	}
-
-	var roomId = getUrlParameter("roomId");
-	var streamName = getUrlParameter("streamName");
-
-	var subscriberId = getUrlParameter("subscriberId");
-	var subscriberCode = getUrlParameter("subscriberCode");
 
 	var volume_change_input = document.getElementById("volume_change_input");
 	volume_change_input.addEventListener("change", changeVolume);
@@ -270,11 +261,10 @@ body {
 	mute_mic_button.addEventListener("click", muteLocalMic,false)
 	var unmute_mic_button = document.getElementById("unmute_mic_button");
 	unmute_mic_button.addEventListener("click", unmuteLocalMic,false)
-	var options = document.getElementById("options");
-	options.addEventListener("click", toggleOptions, false);
-	var send = document.getElementById("send");
-	send.addEventListener("click", sendData, false);
+	var mcuChbx = document.getElementById("enableMCU");
 
+	var dominantSpeakerFinderId = null;
+	var checkSpeakingStreamIds = new Array();
 
 	//Handles radio buttons for screen share feature
 	if (document.querySelector('input[name="videoSource"]')) {
@@ -286,22 +276,19 @@ body {
   		});
 	}
 
+	var mutedAlertPresent = false;
+	$("#notification").append('Are you talking? Microphone is muted');
 
 	var roomNameBox = document.getElementById("roomName");
 
-	if (roomId != null) {
-		roomNameBox.value = roomId;
-	}
+	var roomOfStream = new Array();
+	var streamsList = new Array();
 
+	var publishStreamId;
 	var isDataChannelOpen = false;
 	var isMicMuted = false;
 	var isCameraOff = false;
 	var roomTimerId = -1;
-
-
-	function toggleOptions() {
-		$(".options").toggle();
-	}
 
 	function switchVideoMode(chbx){
 		if(chbx.value == "screen") {
@@ -311,19 +298,19 @@ body {
 			  webRTCAdaptor.switchDesktopCaptureWithCamera(publishStreamId);
 		}
 		else {
-  			webRTCAdaptor.switchVideoCameraCapture(publishStreamId, chbx.value);
+  			webRTCAdaptor.switchVideoCameraCapture(publishStreamId);
   		}
 	}
 
 	function turnOffLocalCamera() {
-		webRTCAdaptor.turnOffLocalCamera();
+		webRTCAdaptor.turnOffLocalCamera(publishStreamId);
 		isCameraOff = true;
 		handleCameraButtons();
 		sendNotificationEvent("CAM_TURNED_OFF");
 	}
 
 	function turnOnLocalCamera() {
-		webRTCAdaptor.turnOnLocalCamera();
+		webRTCAdaptor.turnOnLocalCamera(publishStreamId);
 		isCameraOff = false;
 		handleCameraButtons();
 		sendNotificationEvent("CAM_TURNED_ON");
@@ -334,13 +321,15 @@ body {
 		isMicMuted = true;
 		handleMicButtons();
 		sendNotificationEvent("MIC_MUTED");
+		webRTCAdaptor.enableAudioLevelWhenMuted()
 	}
 
 	function unmuteLocalMic() {
 		webRTCAdaptor.unmuteLocalMic();
 		isMicMuted = false;
-    handleMicButtons();
+    	handleMicButtons();
 		sendNotificationEvent("MIC_UNMUTED");
+		webRTCAdaptor.disableAudioLevelWhenMuted();
 	}
 
 	function sendNotificationEvent(eventType) {
@@ -350,36 +339,6 @@ body {
 			webRTCAdaptor.sendData(publishStreamId, JSON.stringify(notEvent));
 		}	else {
 			console.log("Could not send the notification because data channel is not open.");
-		}
-	}
-
-	function sendData() {
-		try {
-			var iceState = webRTCAdaptor.iceConnectionState(publishStreamId);
-            if (iceState != null && iceState != "failed" && iceState != "disconnected") {
-
-				var msg = $("#dataTextbox").val();
-				var notEvent = { streamId: publishStreamId, eventType:"CHAT_MESSAGE", message:msg };
-
-				webRTCAdaptor.sendData(publishStreamId, JSON.stringify(notEvent));
-				$("#all-messages").append("Sent: " + msg+ "<br>");
-				$("#dataTextbox").val("");
-			}
-			else {
-				$.notify("WebRTC playing is not active. Please click Start Playing first", {
-					autoHideDelay:5000,
-					className:'error',
-					position:'top center'
-				});
-			}
-		}
-		catch (exception) {
-			console.error(exception);
-			$.notify("Message cannot be sent. Make sure you've enabled data channel and choose the correct player distribution on server web panel", {
-				autoHideDelay:5000,
-				className:'error',
-				position:'top center'
-			});
 		}
 	}
 
@@ -402,10 +361,38 @@ body {
 			unmute_mic_button.disabled = true;
 		}
 	}
+	function findDominantSpeaker(streamSoundList){
+		var tmpMax = 0;
+		var tmpStreamId = null;
+		var threshold = 0.01;
 
-	function handleNotificationEvent(data) {
-		console.log("Received data : ", data.data);
-		var notificationEvent = JSON.parse(data.data);
+		for(let i = 0; i < streamsList.length; i++){
+			let nextStreamId = streamsList[i];
+			let tmpValue = streamSoundList[nextStreamId]
+			if( tmpValue > threshold ){
+				if(tmpValue > tmpMax){
+					tmpMax = tmpValue;
+					tmpStreamId = nextStreamId;
+				}
+			}
+		}
+		if(tmpStreamId != null){
+			if(checkSpeakingStreamIds[tmpStreamId] == null || typeof checkSpeakingStreamIds[tmpStreamId] == "undefined"){
+				var icon = document.getElementById("audio"+tmpStreamId);
+				icon.style.visibility="visible";
+				checkSpeakingStreamIds[tmpStreamId] = true;
+				setTimeout(()=> {
+					var icon = document.getElementById("audio"+tmpStreamId);
+					icon.style.visibility="hidden";
+					checkSpeakingStreamIds[tmpStreamId] = null;
+				},1000)
+			}
+		}
+	}
+
+	function handleNotificationEvent(obj) {
+		console.log("Received data : ", obj.data);
+		var notificationEvent = JSON.parse(obj.data);
 		if(notificationEvent != null && typeof(notificationEvent) == "object") {
 		  var eventStreamId = notificationEvent.streamId;
 		  var eventTyp = notificationEvent.eventType;
@@ -418,81 +405,56 @@ body {
 					console.log("Microphone muted for : ", eventStreamId);
 			} else if (eventTyp == "MIC_UNMUTED"){
 					console.log("Microphone unmuted for : ", eventStreamId);
-			} else if (eventTyp == "CHAT_MESSAGE"){
-				$("#all-messages").append("Received: " + notificationEvent.message + "<br>");
+			}
+	  }
+	}
+
+	function joinRoom() {
+		var mode = mcuChbx.checked ? "mcu" : "legacy";
+		webRTCAdaptor.joinRoom(roomNameBox.value, streamId, mode);
+	}
+
+	function leaveRoom() {
+		webRTCAdaptor.leaveFromRoom(roomNameBox.value);
+
+		for (var node in document.getElementById("players").childNodes) {
+			if(node.tagName == 'DIV' && node.id != "localVideo") {
+				document.getElementById("players").removeChild(node);
 			}
 		}
 	}
 
-	function joinRoom() {
-		//if streamId is received as query parameter, use it to join the room
-		webRTCAdaptor.joinRoom(roomNameBox.value, publishStreamId, "multitrack");
+	function publish(streamName, token) {
+		publishStreamId = streamName;
+		webRTCAdaptor.publish(streamName, token);
 	}
 
-	function leaveRoom() {
-		if (roomTimerId != -1) {
-			//clear roomTimerId if user immediately joins and left the room
-			clearInterval(roomTimerId);
-			roomTimerId = -1;
-		}
-		webRTCAdaptor.leaveFromRoom(roomNameBox.value);
-	}
-
-	function publish(streamId, token) {
-		//update the publishStreamId to make sure it's correct
-		publishStreamId = streamId;
-		webRTCAdaptor.publish(publishStreamId, token, subscriberId, subscriberCode, streamName, roomNameBox.value,"{someKey:someValue}");
-
+	function streamInformation(obj) {
+		webRTCAdaptor.play(obj.streamId, token,	roomNameBox.value);
 	}
 
 	function playVideo(obj) {
+		var room = roomOfStream[obj.streamId];
+		console.log("new stream available with id: "
+				+ obj.streamId + "on the room:" + room);
 
-		//In multitrack conferencing the stream is same, tracks are being and remove from the stream
-
-		var roomId = roomNameBox.value;
-		console.log("new track available with id: "
-				+ obj.trackId + " and kind: " + obj.track.kind + " on the room:" + roomId);
-
-		//trackId is ARDAMSv+STREAM_ID or  ARDAMSa+STREAM_ID
-		var incomingTrackId = obj.trackId.substring("ARDAMSx".length);
-
-		if(incomingTrackId == roomId || incomingTrackId == publishStreamId) {
-			return;
-		}
-
-		var video = document.getElementById("remoteVideo"+incomingTrackId);
+		var video = document.getElementById("remoteVideo"+obj.streamId);
 
 		if (video == null) {
-			createRemoteVideo(incomingTrackId);
-			video = document.getElementById("remoteVideo"+incomingTrackId);
-			video.srcObject = new MediaStream();
+			createRemoteVideo(obj.streamId);
+			video = document.getElementById("remoteVideo"+obj.streamId);
 		}
 
-		video.srcObject.addTrack(obj.track)
+		video.srcObject = obj.stream;
 
-		obj.stream.onremovetrack = event => {
-			console.log("track is removed with id: " + event.track.id )
-			console.log(event);
-			var removedTrackId = event.track.id.substring("ARDAMSx".length);
-			removeRemoteVideo(removedTrackId);
-		}
-
+		webRTCAdaptor.enableAudioLevel(obj.stream, obj.streamId)
 	}
-
-	function enableAudioLevel() {
-		//TODO: Disable this one if user stops publishing
-		webRTCAdaptor.enableAudioLevelForLocalStream((value) => {
-
-			//PAY ATTENTION: No need to send audio level any more because server side can get it from the RTP header in AMS v2.7+
-			//webRTCAdaptor.updateAudioLevel(publishStreamId,  Math.floor(value*100));
-		}, 200);
-	};
 
 	function createRemoteVideo(streamId) {
 		var player = document.createElement("div");
 		player.className = "col-sm-3";
 		player.id = "player"+streamId;
-		player.innerHTML = '<video id="remoteVideo'+streamId+'"controls autoplay playsinline></video>'+streamId;
+		player.innerHTML = '<img id="audio'+streamId+'"src="images/audio.png" style="visibility: hidden;"></image>' + '<video id="remoteVideo'+streamId+'"controls autoplay playsinline></video>';
 		document.getElementById("players").appendChild(player);
 	}
 
@@ -503,17 +465,18 @@ body {
 			video.srcObject = null;
 			document.getElementById("players").removeChild(player);
 		}
+		webRTCAdaptor.stop(streamId);
+		streamsList = streamsList.filter(item => item !== streamId);
 	}
 
-	function removeAllRemoteVideos() {
-		//remove all remote video under players
-		//just don't remove the first element because it's local camera
-		var children = document.getElementById("players").children;
-		let i = children.length - 1;
-		while (i > 0) {
-		  document.getElementById("players").removeChild(children[i]);
-		  i--;
-		}
+	function checkVideoTrackStatus(streamsList){
+		streamsList.forEach(function(item) {
+			var video = document.getElementById("remoteVideo"+item);
+			if(video != null && !video.srcObject.active){
+				removeRemoteVideo(item);
+				playVideo(item);
+			}
+		});
 	}
 
 	function startAnimation() {
@@ -542,23 +505,42 @@ body {
 						});
 
 	}
+	var pc_config = {
+			'iceServers' : [ {
+				'urls' : 'stun:stun1.l.google.com:19302'
+			} ]
+		};
 
-	var mediaConstraints = {
-		video : !dcOnly ? { width: {min: 176, max:360}} : !dcOnly,
-		audio : !dcOnly
+	var sdpConstraints = {
+		OfferToReceiveAudio : false,
+		OfferToReceiveVideo : false
+
 	};
 
-	var websocketURL = getWebSocketURL(location);
+	var mediaConstraints = {
+		video : true,
+		audio : true
+	};
 
-	var isPlaying = false;
+	var appName = location.pathname.substring(0, location.pathname
+			.lastIndexOf("/") + 1);
+	var path = location.hostname + ":" + location.port + appName + "websocket";
+	var websocketURL = "ws://" + path;
+
+	if (location.protocol.startsWith("https")) {
+		websocketURL = "wss://" + path;
+	}
+
 	var webRTCAdaptor = new WebRTCAdaptor(
 			{
 				websocket_url : websocketURL,
 				mediaConstraints : mediaConstraints,
+				peerconnection_config : pc_config,
+				sdp_constraints : sdpConstraints,
 				localVideoId : "localVideo",
 				isPlayMode : playOnly,
-				onlyDataChannel : dcOnly,
 				debug : true,
+				dataChannelEnabled : true,
 				callback : (info, obj) => {
 					if (info == "initialized") {
 						console.log("initialized");
@@ -570,13 +552,13 @@ body {
 						}
 					}
 					else if (info == "joinedTheRoom") {
-						var room = obj.room;
-						console.log("joined the room: " + room);
+						var room = obj.ATTR_ROOM_NAME;
+						roomOfStream[obj.streamId] = room;
+						console.log("joined the room: "
+								+ roomOfStream[obj.streamId]);
 						console.log(obj)
 
-						publishStreamId = obj.streamId;
-
-						console.log(obj.streams);
+						publishStreamId = obj.streamId
 
 						if(playOnly) {
 							join_publish_button.disabled = true;
@@ -588,36 +570,49 @@ body {
 							publish(obj.streamId, token);
 						}
 
-						if (obj.streams.length > 0) {
-							var tempList = obj.streams;
-							//just disable itself
-							tempList.push("!"+publishStreamId);
-
-							webRTCAdaptor.play(roomNameBox.value, token, roomNameBox.value, [], subscriberId, subscriberCode);
+						if (obj.streams != null) {
+							obj.streams.forEach(function(item) {
+								console.log("Stream joined with ID: "+item);
+								webRTCAdaptor.play(item, token,
+										roomNameBox.value);
+							});
+							streamsList = obj.streams;
 						}
+						roomTimerId = setInterval(() => {
+							webRTCAdaptor.getRoomInfo(roomNameBox.value, publishStreamId);
+						}, 5000);
 
-						//just call once - no need to have periodic check
-						roomTimerId = setTimeout(function () {
-
-								webRTCAdaptor.getRoomInfo(roomNameBox.value, publishStreamId);
-							}, 3000);
-
+						if(streamsList.length > 0){
+							dominantSpeakerFinderId = setInterval(() => {
+							webRTCAdaptor.getSoundLevelList(streamsList);
+						}, 200);
+						}
 					}
-					else if (info == "newTrackAvailable") {
+					else if (info == "newStreamAvailable") {
 						playVideo(obj);
+						if(dominantSpeakerFinderId == null){
+							dominantSpeakerFinderId = setInterval(() => {
+							webRTCAdaptor.getSoundLevelList(streamsList);
+							}, 200);
+						}
 					}
 					else if (info == "publish_started") {
 						//stream is being published
-						console.debug("publish started to room " + roomNameBox.value);
+						console.debug("publish started to room: "
+								+ roomOfStream[obj.streamId]);
 						join_publish_button.disabled = true;
 						stop_publish_button.disabled = false;
 						startAnimation();
-
-						enableAudioLevel();
 					}
 					else if (info == "publish_finished") {
 						//stream is being finished
 						console.debug("publish finished");
+					}
+					else if (info == "screen_share_stopped") {
+						console.log("screen share stopped");
+					}
+					else if (info == "gotSoundList"){
+						findDominantSpeaker(obj);
 					}
 					else if (info == "browser_screen_share_supported") {
 						screen_share_checkbox.disabled = false;
@@ -629,31 +624,57 @@ body {
 					else if (info == "leavedFromRoom") {
 						var room = obj.ATTR_ROOM_NAME;
 						console.debug("leaved from the room:" + room);
+						if (roomTimerId != null)
+						{
+							clearInterval(roomTimerId);
+							clearInterval(dominantSpeakerFinderId);
+						}
+						dominantSpeakerFinderId = null;
 
 						join_publish_button.disabled = false;
 						stop_publish_button.disabled = true;
 
-						removeAllRemoteVideos();
-						isPlaying = false;
+						if (streamsList != null) {
+							streamsList.forEach(function(item) {
+								removeRemoteVideo(item);
+							});
+						}
+						// we need to reset streams list
+						streamsList = new Array();
 					}
-					else if (info == "play_started") {
-						isPlaying = true;
+					else if (info == "closed") {
+						//console.log("Connection closed");
+						if (typeof obj != "undefined") {
+							console.log("Connecton closed: "
+									+ JSON.stringify(obj));
+						}
 					}
 					else if (info == "play_finished") {
-						//this event is fired when room is finished to play
-						console.log("play_finished for stream:" + obj.streamId);
-						removeAllRemoteVideos();
-						isPlaying = false;
+						console.log("play_finished");
+						removeRemoteVideo(obj.streamId);
+					}
+					else if (info == "streamInformation") {
+						streamInformation(obj);
 					}
 					else if (info == "roomInformation") {
-
-						if(!isPlaying && obj.streams.length > 0) {
-							var tempList = obj.streams;
-							//just disable itself
-							tempList.push("!"+publishStreamId);
-							webRTCAdaptor.play(roomNameBox.value, token, roomNameBox.value, tempList, subscriberId, subscriberCode);
-							isPlaying = true;
+						//Checks if any new stream has added, if yes, plays.
+						for(let str of obj.streams){
+							if(!streamsList.includes(str)){
+								webRTCAdaptor.play(str, token,
+										roomNameBox.value);
+							}
 						}
+						// Checks if any stream has been removed, if yes, removes the view and stops webrtc connection.
+						for(let str of streamsList){
+							if(!obj.streams.includes(str)){
+								removeRemoteVideo(str);
+							}
+						}
+						//Lastly updates the current streamlist with the fetched one.
+						streamsList=obj.streams;
+
+						//Check video tracks active/inactive status
+						checkVideoTrackStatus(streamsList);
 					}
 					else if (info == "data_channel_opened") {
 						console.log("Data Channel open for stream id", obj );
@@ -666,6 +687,21 @@ body {
 					else if(info == "data_received") {
 						handleNotificationEvent(obj);
 					}
+					else if (info == "speaking_but_muted") {
+						if(!mutedAlertPresent){
+							mutedAlertPresent = true
+							$("#notification").fadeIn("slow");
+							$(".dismiss").click(function(){
+								$("#notification").fadeOut("slow");
+								mutedAlertPresent = false;
+							});
+
+							setTimeout(()=>{
+								$("#notification").fadeOut("slow");
+								mutedAlertPresent = false;
+							}, 3000)
+						}
+          }
 					else if(info == "session_restored"){
 						handleCameraButtons();
 						startAnimation();
@@ -675,36 +711,53 @@ body {
 				callbackError : function(error, message) {
 					//some of the possible errors, NotFoundError, SecurityError,PermissionDeniedError
 
-					var errorMessage = '';
-				    if (error.indexOf("NotAllowedError") != -1
+					if(error.indexOf("publishTimeoutError") != -1 && roomTimerId != null){
+						clearInterval(roomTimerId);
+					}
+
+					console.log("error callback: " + JSON.stringify(error));
+					var errorMessage = JSON.stringify(error);
+					if (typeof message != "undefined") {
+						errorMessage = message;
+					}
+					var errorMessage = JSON.stringify(error);
+					if (error.indexOf("NotFoundError") != -1) {
+						errorMessage = "Camera or Mic are not found or not allowed in your device.";
+					} else if (error.indexOf("NotReadableError") != -1
+							|| error.indexOf("TrackStartError") != -1) {
+						errorMessage = "Camera or Mic is being used by some other process that does not not allow these devices to be read.";
+					} else if (error.indexOf("OverconstrainedError") != -1
+							|| error.indexOf("ConstraintNotSatisfiedError") != -1) {
+						errorMessage = "There is no device found that fits your video and audio constraints. You may change video and audio constraints."
+					} else if (error.indexOf("NotAllowedError") != -1
 							|| error.indexOf("PermissionDeniedError") != -1) {
 						errorMessage = "You are not allowed to access camera and mic.";
 						screen_share_checkbox.checked = false;
 						camera_checkbox.checked = false;
+					} else if (error.indexOf("TypeError") != -1) {
+						errorMessage = "Video/Audio is required.";
+					} else if (error.indexOf("UnsecureContext") != -1) {
+						errorMessage = "Fatal Error: Browser cannot access camera and mic because of unsecure context. Please install SSL and access via https";
+					} else if (error.indexOf("WebSocketNotSupported") != -1) {
+						errorMessage = "Fatal Error: WebSocket not supported in this browser";
+					} else if (error.indexOf("no_stream_exist") != -1) {
+						//TODO: removeRemoteVideo(error.streamId);
+					} else if(error.indexOf("data_channel_error") != -1) {
+						errorMessage = "There was a error during data channel communication";
 					} else if (error.indexOf("ScreenSharePermissionDenied") != -1) {
 						errorMessage = "You are not allowed to access screen share";
 						screen_share_checkbox.checked = false;
 						camera_checkbox.checked = true;
 					}
 
-					if (error.indexOf("no_active_streams_in_room") != -1){
-
-							roomTimerId = setTimeout(function () {
-								webRTCAdaptor.getRoomInfo(roomNameBox.value, publishStreamId);
-							}, 3000);
-					}
-					else {
-						//errorHandler(error, message);
-						$('video').notify("Warning: " + errorHandler(error, message), {
-							autoHideDelay:5000,
-							className:'error',
-							position:'top right'
-						});
-					}
-
+					$.notify(errorMessage, {
+						autoHideDelay:5000,
+						className:'error',
+						position:'top center'
+					});
 				}
 			});
 
-	window.webRTCAdaptor = webRTCAdaptor;
+
 </script>
 </html>
