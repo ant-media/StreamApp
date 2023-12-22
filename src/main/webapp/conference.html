@@ -111,7 +111,7 @@
 
 		<div class="header clearfix">
 			<div class="row">
-				<h3 class="col text-muted">WebRTC Conference</h3>
+				<h3 class="col text-muted">WebRTC Multitrack Conference</h3>
 				<nav class="col align-self-center">
 					<ul class="nav float-right">
 						<li><a href="http://antmedia.io">Contact</a></li>
@@ -125,6 +125,10 @@
 				WebRTC Conference is an enterprise edition feature. <br />
 				<a href="https://antmedia.io">Try Enterprise Edition for free at antmedia.io</a>
 			</div>
+			<div class="alert alert-primary text-center" role="alert" style="margin-top:-2em">
+				This is the optimized multitrack conferencing. If you want to use older one, <a href="conference-deprecated.html">visit here</a>
+			 <br/>
+		</div>
 			<div id="players" class="row">
 				<div class="col-sm-3">
 					<video id="localVideo" autoplay muted controls playsinline></video>
@@ -688,8 +692,6 @@
 					join_publish_button.disabled = true;
 					stop_publish_button.disabled = false;
 					startAnimation();
-
-					enableAudioLevel();
 				}
 				else if (info == "publish_finished") {
 					//stream is being finished
