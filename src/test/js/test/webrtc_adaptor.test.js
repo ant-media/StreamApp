@@ -60,7 +60,7 @@ describe("WebRTCAdaptor", function() {
 		});
 
 		var webSocketAdaptor = sinon.mock(adaptor.webSocketAdaptor);
-		var closePeerConnection = sinon.replace(adaptor, "closePeerConnection", sinon.fake());
+		var stopCall = sinon.replace(adaptor, "stop", sinon.fake());
 
 		var sendExpectation = webSocketAdaptor.expects("send");
 		//sendExpectation first one is direct, second one through tryAgain
@@ -75,15 +75,18 @@ describe("WebRTCAdaptor", function() {
 		expect(adaptor.remotePeerConnection[streamId]).to.not.be.undefined;
 
 		clock.tick(4000);
-		expect(closePeerConnection.called).to.be.false;
+		expect(stopCall.called).to.be.false;
 		clock.tick(1000);
-		expect(closePeerConnection.called).to.be.true;
+		expect(stopCall.called).to.be.true;
 
-		expect(closePeerConnection.calledWithMatch("stream123")).to.be.true;
+		expect(stopCall.calledWithMatch("stream123")).to.be.true;
 
 		adaptor.stop(streamId);
 
 		expect(adaptor.remotePeerConnection[streamId]).to.not.be.undefined;
+
+		//Add extra delay because play is called a few seconds later then the stop in tryAgain
+		clock.tick(1500);
 
 		sendExpectation.verify();
 
@@ -97,7 +100,7 @@ describe("WebRTCAdaptor", function() {
 		});
 
 		var webSocketAdaptor = sinon.mock(adaptor.webSocketAdaptor);
-		var closeWebsocketConnection = sinon.replace(adaptor, "closePeerConnection", sinon.fake());
+		var stopCall = sinon.replace(adaptor, "stop", sinon.fake());
 
 		var sendExpectation = webSocketAdaptor.expects("send");
 		//sendExpectation first one is direct, second one through tryAgain
@@ -112,11 +115,11 @@ describe("WebRTCAdaptor", function() {
 		expect(adaptor.remotePeerConnection[streamId]).to.not.be.undefined;
 
 		clock.tick(4000);
-		expect(closeWebsocketConnection.called).to.be.false;
+		expect(stopCall.called).to.be.false;
 		clock.tick(1000);
-		expect(closeWebsocketConnection.called).to.be.true;
+		expect(stopCall.called).to.be.true;
 
-		expect(closeWebsocketConnection.calledWithMatch(streamId)).to.be.true;
+		expect(stopCall.calledWithMatch(streamId)).to.be.true;
 
 		adaptor.enableStats(streamId);
 		expect(adaptor.remotePeerConnectionStats[streamId]).to.not.be.undefined
@@ -131,6 +134,9 @@ describe("WebRTCAdaptor", function() {
 		adaptor.stop(streamId);
 
 		expect(adaptor.remotePeerConnection[streamId]).to.not.be.undefined;
+		//Add extra delay because publish is called a few seconds later the stop in tryAgain method
+		
+		clock.tick(1500);
 
 		sendExpectation.verify();
 
@@ -252,7 +258,9 @@ describe("WebRTCAdaptor", function() {
 		clock.tick(3000);
 		console.log("---------");
 		adaptor.tryAgain();
+		//Add extra delay because publish is called a few seconds later the stop in tryAgain method
 
+		clock.tick(1500);
 		assert(fakeSend.calledOnce);
 		clock.tick(6000);
 		assert(fakeSend.calledTwice);
@@ -281,6 +289,7 @@ describe("WebRTCAdaptor", function() {
 			isPlayMode: true
 		});
 		var fakeSendPublish = sinon.replace(adaptor, "sendPublishCommand", sinon.fake());
+		var fakeStop = sinon.replace(adaptor, "stop", sinon.fake());
 
 		const streamId = "test"+Math.floor(Math.random() * 100);
 		adaptor.publishStreamId = streamId;
@@ -301,7 +310,11 @@ describe("WebRTCAdaptor", function() {
 		console.log("---------");
 		adaptor.tryAgain();
 
+		//Add extra delay because publish is called a few seconds later the stop in tryAgain method
+		clock.tick(1500);
 		assert(fakeSendPublish.calledOnce);
+		assert(fakeStop.calledOnce);
+		
 		clock.tick(6000);
 		assert(fakeSendPublish.calledTwice);
 
