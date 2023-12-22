@@ -583,28 +583,18 @@ describe("WebRTCAdaptor", function() {
 			});
 		  });
 		  
-		  var speakingButMuted = getUserMediaFailed.then(() => {
-			return new Promise(function (resolve, reject) {
-			  navigator.mediaDevices.getUserMedia = async () => {
-				return Promise.resolve(new MediaStream([mediaStreamTrack]));
-			  };
-		  
-			  adaptor.initialize().then(async () => {
-				adaptor.mediaManager.callback = (info) => {
-				  console.log("callback ", info);
-				  if (info == "speaking_but_muted") {
-					console.log("speaking_but_muted1");
-					resolve();
-				  }
-				};
-				await adaptor.enableAudioLevelWhenMuted();
-			  });
+		  var soundMeteraddModuleFailed = speakingButMuted.then(() => {
+			adaptor.mediaManager.mutedSoundMeter.context.audioWorklet.addModule = async () => {
+				return Promise.reject("error");
+			};
+			return new Promise(async function (resolve, reject) {
+			adaptor.enableAudioLevelWhenMuted().catch((e)=>{resolve()})
 			});
-		  });
+	  });
 		  
 
 
-	return speakingButMuted;
+	return soundMeteraddModuleFailed;
 
     });
 
