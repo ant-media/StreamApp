@@ -642,13 +642,12 @@ export class WebRTCAdaptor {
             this.notifyEventListeners("reconnection_attempt_for_publisher", this.publishStreamId);
 
             this.stop(this.publishStreamId);
-            Logger.log("It will try to publish again for stream: " + this.publishStreamId + " because it is not stopped on purpose")
 	        setTimeout(() => {
                 //publish about some time later because server may not drop the connection yet 
                 //it may trigger already publishing error 
                 Logger.log("Trying publish again for stream: " + this.publishStreamId);
                 this.publish(this.publishStreamId, this.publishToken, this.publishSubscriberId, this.publishSubscriberCode, this.publishStreamName, this.publishMainTrack, this.publishMetaData);
-	        }, 1000);
+	        }, 500);
         }
 
 	    //reconnect play
@@ -671,7 +670,7 @@ export class WebRTCAdaptor {
                     //it may trigger already playing error 
                     Logger.log("Trying play again for stream: " + streamId);
 	                this.play(streamId, this.playToken, this.playRoomId, this.playEnableTracks, this.playSubscriberId, this.playSubscriberCode, this.playMetaData);
-                }, 1000);
+                }, 500);
 	        }
 	    }
 	}
