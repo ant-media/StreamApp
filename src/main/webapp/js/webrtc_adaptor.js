@@ -1622,6 +1622,7 @@ export class WebRTCAdaptor {
     disableStats(streamId) {
         if (this.remotePeerConnectionStats[streamId] != null || typeof this.remotePeerConnectionStats[streamId] != 'undefined') {
             clearInterval(this.remotePeerConnectionStats[streamId].timerId);
+            delete this.remotePeerConnectionStats[streamId];
         }
     }
 

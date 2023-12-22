@@ -320,6 +320,38 @@ describe("WebRTCAdaptor", function() {
 
 
 	});
+	
+	it("EnableStats - DisableStats", async function() {
+		
+		var adaptor = new WebRTCAdaptor({
+			websocketURL: "ws://example.com",
+			isPlayMode: true
+		});
+		
+		const streamId = "test"+Math.floor(Math.random() * 100);
+		adaptor.publishStreamId = streamId;
+		var mockPC = sinon.mock(RTCPeerConnection);
+		adaptor.remotePeerConnection[streamId] = mockPC
+		
+		expect(adaptor.remotePeerConnectionStats[streamId]).to.be.undefined;
+		
+		adaptor.enableStats(streamId);
+		expect(adaptor.remotePeerConnectionStats[streamId].timerId).to.be.not.undefined;
+		
+		adaptor.disableStats(streamId);	
+		expect(adaptor.remotePeerConnectionStats[streamId]).to.be.undefined;
+		
+		
+		adaptor.enableStats(streamId);
+		expect(adaptor.remotePeerConnectionStats[streamId].timerId).to.be.not.undefined;
+		
+		
+		adaptor.disableStats(streamId);	
+		expect(adaptor.remotePeerConnectionStats[streamId]).to.be.undefined;
+
+		
+		
+	});
 
 	it("Websocket send try catch", async function()
 	{
