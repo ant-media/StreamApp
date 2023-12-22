@@ -641,10 +641,14 @@ export class WebRTCAdaptor {
             // notify that reconnection process started for publish
             this.notifyEventListeners("reconnection_attempt_for_publisher", this.publishStreamId);
 
-	        this.closePeerConnection(this.publishStreamId);
-            Logger.log("It will try to publish again because it is not stopped on purpose")
-	        this.publish(this.publishStreamId, this.publishToken, this.publishSubscriberId, this.publishSubscriberCode, this.publishStreamName, this.publishMainTrack, this.publishMetaData);
-	    }
+            this.stop(this.publishStreamId);
+	        setTimeout(() => {
+                //publish about some time later because server may not drop the connection yet 
+                //it may trigger already publishing error 
+                Logger.log("Trying publish again for stream: " + this.publishStreamId);
+                this.publish(this.publishStreamId, this.publishToken, this.publishSubscriberId, this.publishSubscriberCode, this.publishStreamName, this.publishMainTrack, this.publishMetaData);
+	        }, 500);
+        }
 
 	    //reconnect play
 	    for (var index in this.playStreamId)
@@ -659,9 +663,14 @@ export class WebRTCAdaptor {
               // notify that reconnection process started for play
               this.notifyEventListeners("reconnection_attempt_for_player", streamId);
 
-	            Logger.log("It will try to play again because it is not stopped on purpose")
-	            this.closePeerConnection(streamId);
-	            this.play(streamId, this.playToken, this.playRoomId, this.playEnableTracks, this.playSubscriberId, this.playSubscriberCode, this.playMetaData);
+	            Logger.log("It will try to play again for stream: " +  this.publishStreamId  + " because it is not stopped on purpose")
+                this.stop(streamId);
+                setTimeout(() => {
+                    //play about some time later because server may not drop the connection yet 
+                    //it may trigger already playing error 
+                    Logger.log("Trying play again for stream: " + streamId);
+	                this.play(streamId, this.playToken, this.playRoomId, this.playEnableTracks, this.playSubscriberId, this.playSubscriberCode, this.playMetaData);
+                }, 500);
 	        }
 	    }
 	}
@@ -1612,6 +1621,7 @@ export class WebRTCAdaptor {
     disableStats(streamId) {
         if (this.remotePeerConnectionStats[streamId] != null || typeof this.remotePeerConnectionStats[streamId] != 'undefined') {
             clearInterval(this.remotePeerConnectionStats[streamId].timerId);
+            delete this.remotePeerConnectionStats[streamId];
         }
     }
 
