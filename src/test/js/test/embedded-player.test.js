@@ -528,44 +528,70 @@ describe("EmbeddedPlayer", function() {
 	
 	
 	it("handleWebRTCInfoMessages", async function() {
+
 		var videoContainer = document.createElement("video_container");
-		  
+
 		var placeHolder = document.createElement("place_holder");
-		  			
-		var locationComponent =  { href : 'http://example.com?id=stream123.mp4', search: "?id=stream123.mp4" };
-		var windowComponent = {  location : locationComponent,
-		  						  document:  document,
-		  						  addEventListener: window.addEventListener};
-		  						  		 	      
-	    var player = new EmbeddedPlayer(windowComponent, videoContainer, placeHolder);
-	    var tryNextTech = sinon.replace(player, "tryNextTech", sinon.fake.returns(Promise.resolve("")));
-	    var infos = {
+
+		var locationComponent = { href: 'http://example.com?id=stream123.mp4', search: "?id=stream123.mp4", pathname: "/"  };
+		var windowComponent = {
+			location: locationComponent,
+			document: document,
+			addEventListener: window.addEventListener
+		};
+
+		var player = new EmbeddedPlayer(windowComponent, videoContainer, placeHolder);
+		var tryNextTech = sinon.replace(player, "tryNextTech", sinon.fake.returns(Promise.resolve("")));
+		var infos = {
 			info: "ice_connection_state_changed",
-			obj: { 
+			obj: {
 				state: "completed"
-				}
+			}
 		}
 		expect(player.iceConnected).to.be.false;
-	    player.handleWebRTCInfoMessages(infos);
-	    expect(player.iceConnected).to.be.true;
-	    
-	    infos = {
+		player.handleWebRTCInfoMessages(infos);
+		expect(player.iceConnected).to.be.true;
+
+		infos = {
 			info: "ice_connection_state_changed",
-			obj: { 
+			obj: {
 				state: "failed"
-				}
+			}
 		}
-		 player.handleWebRTCInfoMessages(infos);
-		 
-		 expect(tryNextTech.calledOnce).to.be.true;
-		 
-		  infos = {
+		player.handleWebRTCInfoMessages(infos);
+
+		expect(tryNextTech.calledOnce).to.be.true;
+
+		infos = {
 			info: "closed",
-			
+
 		}
-		 player.handleWebRTCInfoMessages(infos);
-		 
-		 expect(tryNextTech.calledTwice).to.be.true;
+		player.handleWebRTCInfoMessages(infos);
+
+		expect(tryNextTech.calledTwice).to.be.true;
+		
+		await player.playIfExists("webrtc");
+
+		expect(player.videojsPlayer).to.not.be.null;
+		
+		var pauseMethod = sinon.replace(player.videojsPlayer, "pause", sinon.fake());
+		var playMethod = sinon.replace(player.videojsPlayer, "play", sinon.fake());
+		
+		infos = {
+			info: "resolutionChangeInfo",
+		}
+		
+		player.handleWebRTCInfoMessages(infos);
+		
+		expect(pauseMethod.calledOnce).to.be.true;
+		expect(playMethod.calledOnce).to.be.false;
+		
+		
+		clock.tick(1500);
+		
+		expect(pauseMethod.calledOnce).to.be.true;
+		expect(playMethod.calledOnce).to.be.true;
+		
 
 	});
 	
