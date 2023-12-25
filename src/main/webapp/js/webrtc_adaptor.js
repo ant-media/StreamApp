@@ -641,10 +641,14 @@ export class WebRTCAdaptor {
             // notify that reconnection process started for publish
             this.notifyEventListeners("reconnection_attempt_for_publisher", this.publishStreamId);
 
-	        this.closePeerConnection(this.publishStreamId);
-            Logger.log("It will try to publish again because it is not stopped on purpose")
-	        this.publish(this.publishStreamId, this.publishToken, this.publishSubscriberId, this.publishSubscriberCode, this.publishStreamName, this.publishMainTrack, this.publishMetaData);
-	    }
+            this.stop(this.publishStreamId);
+	        setTimeout(() => {
+                //publish about some time later because server may not drop the connection yet 
+                //it may trigger already publishing error 
+                Logger.log("Trying publish again for stream: " + this.publishStreamId);
+                this.publish(this.publishStreamId, this.publishToken, this.publishSubscriberId, this.publishSubscriberCode, this.publishStreamName, this.publishMainTrack, this.publishMetaData);
+	        }, 500);
+        }
 
 	    //reconnect play
 	    for (var index in this.playStreamId)
@@ -659,9 +663,14 @@ export class WebRTCAdaptor {
               // notify that reconnection process started for play
               this.notifyEventListeners("reconnection_attempt_for_player", streamId);
 
-	            Logger.log("It will try to play again because it is not stopped on purpose")
-	            this.closePeerConnection(streamId);
-	            this.play(streamId, this.playToken, this.playRoomId, this.playEnableTracks, this.playSubscriberId, this.playSubscriberCode, this.playMetaData);
+	            Logger.log("It will try to play again for stream: " +  this.publishStreamId  + " because it is not stopped on purpose")
+                this.stop(streamId);
+                setTimeout(() => {
+                    //play about some time later because server may not drop the connection yet 
+                    //it may trigger already playing error 
+                    Logger.log("Trying play again for stream: " + streamId);
+	                this.play(streamId, this.playToken, this.playRoomId, this.playEnableTracks, this.playSubscriberId, this.playSubscriberCode, this.playMetaData);
+                }, 500);
 	        }
 	    }
 	}
@@ -1446,6 +1455,25 @@ export class WebRTCAdaptor {
                     fractionLost += value.fractionLost;
                     currentTime = value.timestamp;
 
+                    if (typeof value.frameWidth != "undefined") {
+                        frameWidth = value.frameWidth;
+                    }
+                    if (typeof value.frameHeight != "undefined") {
+                        frameHeight = value.frameHeight;
+                    }
+
+                    if (typeof value.framesDecoded != "undefined") {
+                        framesDecoded = value.framesDecoded;
+                    }
+
+                    if (typeof value.framesDropped != "undefined") {
+                        framesDropped = value.framesDropped;
+                    }
+
+                    if (typeof value.framesReceived != "undefined") {
+                        framesReceived = value.framesReceived;
+                    }
+
 
                 } else if (value.type == "outbound-rtp") {//TODO: SPLIT AUDIO AND VIDEO BITRATES
                     if (value.kind == "audio") {
@@ -1490,7 +1518,10 @@ export class WebRTCAdaptor {
                     if (typeof value.jitterBufferDelay != "undefined" && typeof value.jitterBufferEmittedCount != "undefined") {
                         videoJitterAverageDelay = value.jitterBufferDelay / value.jitterBufferEmittedCount;
                     }
-                } else if (value.type == "remote-inbound-rtp" && typeof value.kind != "undefined") {
+                } 
+               
+                else if (value.type == "remote-inbound-rtp" && typeof value.kind != "undefined") {
+                    //this is coming when webrtc publishing
 
                     if (typeof value.packetsLost != "undefined") {
                         if (value.kind == "video") {
@@ -1570,14 +1601,15 @@ export class WebRTCAdaptor {
      * Called to start a periodic timer to get statistics periodically (5 seconds) for a specific stream.
      *
      * @param {string} streamId : unique id for the stream
+     * @param {number} periodMs : period in milliseconds. Default value is 5000 ms.
      */
-    enableStats(streamId) {
+    enableStats(streamId, periodMs = 5000) {
         if (this.remotePeerConnectionStats[streamId] == null) {
             this.remotePeerConnectionStats[streamId] = new PeerStats(streamId);
             this.remotePeerConnectionStats[streamId].timerId = setInterval(() => {
                 this.getStats(streamId);
 
-            }, 5000);
+            }, periodMs);
         }
     }
 
@@ -1589,6 +1621,7 @@ export class WebRTCAdaptor {
     disableStats(streamId) {
         if (this.remotePeerConnectionStats[streamId] != null || typeof this.remotePeerConnectionStats[streamId] != 'undefined') {
             clearInterval(this.remotePeerConnectionStats[streamId].timerId);
+            delete this.remotePeerConnectionStats[streamId];
         }
     }
 

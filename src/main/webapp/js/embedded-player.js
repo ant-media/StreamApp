@@ -390,6 +390,14 @@ export class EmbeddedPlayer {
 			Logger.debug("Websocket is closed. tryNextTech to replay");
 			this.tryNextTech();
 		}
+        else if (infos["info"] == "resolutionChangeInfo") 
+        {
+            Logger.info("Resolution is changing");
+            this.videojsPlayer.pause();
+            setTimeout(() => {
+                this.videojsPlayer.play();
+            }, 1000);
+        }
 	}
 
     /**
