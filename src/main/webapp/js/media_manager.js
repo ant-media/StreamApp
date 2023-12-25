@@ -728,30 +728,33 @@ export class MediaManager {
      * Please don't forget to disable this function with disableAudioLevelWhenMuted if you use it.
      */
     enableAudioLevelWhenMuted() {
-        navigator.mediaDevices.getUserMedia({video: false, audio: true})
-            .then((stream) => {
-                this.mutedAudioStream = stream;
-                this.mutedSoundMeter = new SoundMeter(this.audioContext);
-                soundMeter.connectToSource(this.mutedAudioStream, (value) => {
-                    if (value > 0.1) {
-                        this.callback("speaking_but_muted");
-                    }
-                }, (e) => {
-                    if (e) {
-                        alert(e);
-                        return;
-                    }
-                    this.meterRefresh = setInterval(() => {
-                        if (soundMeter.instant.toFixed(2) > 0.1) {
+        return new Promise((resolve, reject) => {
+            navigator.mediaDevices.getUserMedia({video: false, audio: true})
+                .then((stream) => {
+                    this.mutedAudioStream = stream;
+                    this.mutedSoundMeter = new SoundMeter(this.audioContext);
+                    this.mutedSoundMeter.connectToSource(this.mutedAudioStream, (value) => {
+                        if (value > 0.1) {
                             this.callback("speaking_but_muted");
                         }
-                    }, 200);
-                });
-
-            })
+                    }, (e) => {
+                        if (e) {
+                            reject(e);
+                        }
+                        this.meterRefresh = setInterval(() => {
+                            if (this.mutedSoundMeter .instant.toFixed(2) > 0.1) {
+                                this.callback("speaking_but_muted");
+                            }
+                        }, 200);
+                        resolve(null);
+                    });
+                })
+        
             .catch(function (err) {
                 Logger.debug("Can't get the soundlevel on mute")
+                reject(err);
             });
+        })
     }
 
     disableAudioLevelWhenMuted() {

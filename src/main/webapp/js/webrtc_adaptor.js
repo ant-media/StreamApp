@@ -2033,7 +2033,7 @@ export class WebRTCAdaptor {
     }
 
     enableAudioLevelWhenMuted() {
-        this.mediaManager.enableAudioLevelWhenMuted();
+        return this.mediaManager.enableAudioLevelWhenMuted();
     }
 
     disableAudioLevelWhenMuted() {
