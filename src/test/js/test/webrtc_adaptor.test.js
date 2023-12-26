@@ -60,7 +60,7 @@ describe("WebRTCAdaptor", function() {
 		});
 
 		var webSocketAdaptor = sinon.mock(adaptor.webSocketAdaptor);
-		var closePeerConnection = sinon.replace(adaptor, "closePeerConnection", sinon.fake());
+		var stopCall = sinon.replace(adaptor, "stop", sinon.fake());
 
 		var sendExpectation = webSocketAdaptor.expects("send");
 		//sendExpectation first one is direct, second one through tryAgain
@@ -75,15 +75,18 @@ describe("WebRTCAdaptor", function() {
 		expect(adaptor.remotePeerConnection[streamId]).to.not.be.undefined;
 
 		clock.tick(4000);
-		expect(closePeerConnection.called).to.be.false;
+		expect(stopCall.called).to.be.false;
 		clock.tick(1000);
-		expect(closePeerConnection.called).to.be.true;
+		expect(stopCall.called).to.be.true;
 
-		expect(closePeerConnection.calledWithMatch("stream123")).to.be.true;
+		expect(stopCall.calledWithMatch("stream123")).to.be.true;
 
 		adaptor.stop(streamId);
 
 		expect(adaptor.remotePeerConnection[streamId]).to.not.be.undefined;
+
+		//Add extra delay because play is called a few seconds later then the stop in tryAgain
+		clock.tick(1500);
 
 		sendExpectation.verify();
 
@@ -97,7 +100,7 @@ describe("WebRTCAdaptor", function() {
 		});
 
 		var webSocketAdaptor = sinon.mock(adaptor.webSocketAdaptor);
-		var closeWebsocketConnection = sinon.replace(adaptor, "closePeerConnection", sinon.fake());
+		var stopCall = sinon.replace(adaptor, "stop", sinon.fake());
 
 		var sendExpectation = webSocketAdaptor.expects("send");
 		//sendExpectation first one is direct, second one through tryAgain
@@ -112,11 +115,11 @@ describe("WebRTCAdaptor", function() {
 		expect(adaptor.remotePeerConnection[streamId]).to.not.be.undefined;
 
 		clock.tick(4000);
-		expect(closeWebsocketConnection.called).to.be.false;
+		expect(stopCall.called).to.be.false;
 		clock.tick(1000);
-		expect(closeWebsocketConnection.called).to.be.true;
+		expect(stopCall.called).to.be.true;
 
-		expect(closeWebsocketConnection.calledWithMatch(streamId)).to.be.true;
+		expect(stopCall.calledWithMatch(streamId)).to.be.true;
 
 		adaptor.enableStats(streamId);
 		expect(adaptor.remotePeerConnectionStats[streamId]).to.not.be.undefined
@@ -131,6 +134,9 @@ describe("WebRTCAdaptor", function() {
 		adaptor.stop(streamId);
 
 		expect(adaptor.remotePeerConnection[streamId]).to.not.be.undefined;
+		//Add extra delay because publish is called a few seconds later the stop in tryAgain method
+		
+		clock.tick(1500);
 
 		sendExpectation.verify();
 
@@ -252,7 +258,9 @@ describe("WebRTCAdaptor", function() {
 		clock.tick(3000);
 		console.log("---------");
 		adaptor.tryAgain();
+		//Add extra delay because publish is called a few seconds later the stop in tryAgain method
 
+		clock.tick(1500);
 		assert(fakeSend.calledOnce);
 		clock.tick(6000);
 		assert(fakeSend.calledTwice);
@@ -281,6 +289,7 @@ describe("WebRTCAdaptor", function() {
 			isPlayMode: true
 		});
 		var fakeSendPublish = sinon.replace(adaptor, "sendPublishCommand", sinon.fake());
+		var fakeStop = sinon.replace(adaptor, "stop", sinon.fake());
 
 		const streamId = "test"+Math.floor(Math.random() * 100);
 		adaptor.publishStreamId = streamId;
@@ -301,11 +310,47 @@ describe("WebRTCAdaptor", function() {
 		console.log("---------");
 		adaptor.tryAgain();
 
+		//Add extra delay because publish is called a few seconds later the stop in tryAgain method
+		clock.tick(1500);
 		assert(fakeSendPublish.calledOnce);
+		assert(fakeStop.calledOnce);
+		
 		clock.tick(6000);
 		assert(fakeSendPublish.calledTwice);
 
 
+	});
+	
+	it("EnableStats - DisableStats", async function() {
+		
+		var adaptor = new WebRTCAdaptor({
+			websocketURL: "ws://example.com",
+			isPlayMode: true
+		});
+		
+		const streamId = "test"+Math.floor(Math.random() * 100);
+		adaptor.publishStreamId = streamId;
+		var mockPC = sinon.mock(RTCPeerConnection);
+		adaptor.remotePeerConnection[streamId] = mockPC
+		
+		expect(adaptor.remotePeerConnectionStats[streamId]).to.be.undefined;
+		
+		adaptor.enableStats(streamId);
+		expect(adaptor.remotePeerConnectionStats[streamId].timerId).to.be.not.undefined;
+		
+		adaptor.disableStats(streamId);	
+		expect(adaptor.remotePeerConnectionStats[streamId]).to.be.undefined;
+		
+		
+		adaptor.enableStats(streamId);
+		expect(adaptor.remotePeerConnectionStats[streamId].timerId).to.be.not.undefined;
+		
+		
+		adaptor.disableStats(streamId);	
+		expect(adaptor.remotePeerConnectionStats[streamId]).to.be.undefined;
+
+		
+		
 	});
 
 	it("Websocket send try catch", async function()
@@ -463,10 +508,8 @@ describe("WebRTCAdaptor", function() {
 		await adaptor.updateAudioTrack(stream, null, null);
 	});
 
-	it("testSoundMeter",  function(done) {
+	it("testSoundMeter", function (done) {
 		this.timeout(5000);
-
-
 		console.log("Starting testSoundMeter");
 
 		var adaptor = new WebRTCAdaptor({
@@ -481,7 +524,17 @@ describe("WebRTCAdaptor", function() {
 		//fake stream in te browser is a period audio and silence, so getting sound level more than 0 requires
 
 		adaptor.initialize().then(() => {
+			var audioContext = new (window.AudioContext || window.webkitAudioContext)();
+			var oscillator = audioContext.createOscillator();
+			oscillator.type = "sine";
+			oscillator.frequency.value = 800;
+			var mediaStreamSource = audioContext.createMediaStreamDestination();
+			oscillator.connect(mediaStreamSource);
+			var mediaStreamTrack = mediaStreamSource.stream.getAudioTracks()[0];
+			oscillator.start();
 
+			adaptor.mediaManager.localStream = new MediaStream([mediaStreamTrack])
+			adaptor.mediaManager.audioContext = audioContext;
 			adaptor.enableAudioLevelForLocalStream((level) => {
 				console.log("sound level -> " + level);
 				if (level > 0) {
@@ -492,6 +545,7 @@ describe("WebRTCAdaptor", function() {
 			expect(adaptor.mediaManager.localStreamSoundMeter).to.not.be.null;
 		})
 	})
+
 
 	it("takeConfiguration", async function() {
 		var adaptor = new WebRTCAdaptor({
@@ -535,6 +589,76 @@ describe("WebRTCAdaptor", function() {
 		expect(adaptor.iceCandidateList["stream1"].length).to.be.equal(1);
 
 	});
+	it("mutedButSpeaking", async () => {
+        this.timeout(10000);
+		var adaptor = new WebRTCAdaptor({
+			websocketURL: "ws://localhost",
+			mediaConstraints: {
+				video: true,
+				audio: true
+			},
+			initializeComponents: false
+		});
 
+		var audioContext = new (window.AudioContext || window.webkitAudioContext)();
+		var oscillator = audioContext.createOscillator();
+		oscillator.type = "sine";
+		oscillator.frequency.value = 800;
+		var mediaStreamSource = audioContext.createMediaStreamDestination();
+		oscillator.connect(mediaStreamSource);
+		var mediaStreamTrack = mediaStreamSource.stream.getAudioTracks()[0];
+		oscillator.start();
+
+	
+		adaptor.mediaManager.mutedAudioStream = new MediaStream([mediaStreamTrack])
+		adaptor.mediaManager.localStream = new MediaStream([mediaStreamTrack])
+		adaptor.mediaManager.audioContext = audioContext;
+
+		var getUserMediaFailed = new Promise(function (resolve, reject) {
+			navigator.mediaDevices.getUserMedia = async () => {
+			  return Promise.reject();
+			};
+			adaptor.initialize().then(async () => {
+			  try {
+				await adaptor.enableAudioLevelWhenMuted();
+			  } catch (e) {
+				console.log("get user media failed test")
+				resolve();
+			  }
+			});
+		  });
+		  var speakingButMuted = getUserMediaFailed.then(() => {
+			return new Promise(function (resolve, reject) {
+			  navigator.mediaDevices.getUserMedia = async () => {
+				return Promise.resolve(new MediaStream([mediaStreamTrack]));
+			  };
+		  
+			  adaptor.initialize().then(async () => {
+				adaptor.mediaManager.callback = (info) => {
+				  console.log("callback ", info);
+				  if (info == "speaking_but_muted") {
+					console.log("speaking_but_muted1");
+					resolve();
+				  }
+				};
+				await adaptor.enableAudioLevelWhenMuted();
+			  });
+			});
+		  });
+		  
+		  var soundMeteraddModuleFailed = speakingButMuted.then(() => {
+			adaptor.mediaManager.mutedSoundMeter.context.audioWorklet.addModule = async () => {
+				return Promise.reject("error");
+			};
+			return new Promise(async function (resolve, reject) {
+			adaptor.enableAudioLevelWhenMuted().catch((e)=>{resolve()})
+			});
+	  });
+		  
+
+
+	return soundMeteraddModuleFailed;
+
+    });
 
 });
