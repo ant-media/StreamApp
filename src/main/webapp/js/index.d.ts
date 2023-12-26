@@ -454,7 +454,7 @@ export declare class EmbeddedPlayer {
          * It will keep track if the user is trying to speak without sending any data to server
          * Please don't forget to disable this function with disableAudioLevelWhenMuted if you use it.
          */
-        enableAudioLevelWhenMuted(): void;
+        enableAudioLevelWhenMuted(): Promise<any>;
         mutedSoundMeter: SoundMeter | null | undefined;
         disableAudioLevelWhenMuted(): void;
         /**
@@ -1287,8 +1287,9 @@ export declare class EmbeddedPlayer {
          * Called to start a periodic timer to get statistics periodically (5 seconds) for a specific stream.
          *
          * @param {string} streamId : unique id for the stream
+         * @param {number} periodMs : period in milliseconds. Default value is 5000 ms.
          */
-        enableStats(streamId: string): void;
+        enableStats(streamId: string, periodMs?: number): void;
         /**
          * Called to stop the periodic timer which is set by @enableStats
          *
@@ -1493,7 +1494,7 @@ export declare class EmbeddedPlayer {
          * @param {string} streamId
          */
         changeBandwidth(bandwidth: number, streamId: string): void;
-        enableAudioLevelWhenMuted(): void;
+        enableAudioLevelWhenMuted(): Promise<any>;
         disableAudioLevelWhenMuted(): void;
         /**
          *

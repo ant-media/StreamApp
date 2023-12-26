@@ -1091,7 +1091,7 @@ export class MediaManager {
             ;
             //If no matching device found don't adjust the media constraints let it be true instead of a device ID
             Logger.debug("Given deviceId = " + deviceId + " - Media constraints video property = " + this.mediaConstraints.video);
-            return this.setVideoCameraSource(streamId, this.mediaConstraints, null, true, deviceId);
+            return this.setVideoCameraSource(streamId, this.mediaConstraints, onEndedCallback, true, deviceId);
         })
 
     }
