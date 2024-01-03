@@ -135,7 +135,7 @@ describe("WebRTCAdaptor", function() {
 
 		expect(adaptor.remotePeerConnection[streamId]).to.not.be.undefined;
 		//Add extra delay because publish is called a few seconds later the stop in tryAgain method
-		
+
 		clock.tick(1500);
 
 		sendExpectation.verify();
@@ -281,7 +281,7 @@ describe("WebRTCAdaptor", function() {
 		var message = adaptor.sanitizeHTML(text)
 		assert.strictEqual(text,message)
 	})
-	
+
 	it("Reconnection for publish", async function()
 	{
 		var adaptor = new WebRTCAdaptor({
@@ -314,43 +314,43 @@ describe("WebRTCAdaptor", function() {
 		clock.tick(1500);
 		assert(fakeSendPublish.calledOnce);
 		assert(fakeStop.calledOnce);
-		
+
 		clock.tick(6000);
 		assert(fakeSendPublish.calledTwice);
 
 
 	});
-	
+
 	it("EnableStats - DisableStats", async function() {
-		
+
 		var adaptor = new WebRTCAdaptor({
 			websocketURL: "ws://example.com",
 			isPlayMode: true
 		});
-		
+
 		const streamId = "test"+Math.floor(Math.random() * 100);
 		adaptor.publishStreamId = streamId;
 		var mockPC = sinon.mock(RTCPeerConnection);
 		adaptor.remotePeerConnection[streamId] = mockPC
-		
-		expect(adaptor.remotePeerConnectionStats[streamId]).to.be.undefined;
-		
-		adaptor.enableStats(streamId);
-		expect(adaptor.remotePeerConnectionStats[streamId].timerId).to.be.not.undefined;
-		
-		adaptor.disableStats(streamId);	
-		expect(adaptor.remotePeerConnectionStats[streamId]).to.be.undefined;
-		
-		
-		adaptor.enableStats(streamId);
-		expect(adaptor.remotePeerConnectionStats[streamId].timerId).to.be.not.undefined;
-		
-		
-		adaptor.disableStats(streamId);	
+
 		expect(adaptor.remotePeerConnectionStats[streamId]).to.be.undefined;
 
-		
-		
+		adaptor.enableStats(streamId);
+		expect(adaptor.remotePeerConnectionStats[streamId].timerId).to.be.not.undefined;
+
+		adaptor.disableStats(streamId);
+		expect(adaptor.remotePeerConnectionStats[streamId]).to.be.undefined;
+
+
+		adaptor.enableStats(streamId);
+		expect(adaptor.remotePeerConnectionStats[streamId].timerId).to.be.not.undefined;
+
+
+		adaptor.disableStats(streamId);
+		expect(adaptor.remotePeerConnectionStats[streamId]).to.be.undefined;
+
+
+
 	});
 
 	it("Websocket send try catch", async function()
@@ -609,7 +609,7 @@ describe("WebRTCAdaptor", function() {
 		var mediaStreamTrack = mediaStreamSource.stream.getAudioTracks()[0];
 		oscillator.start();
 
-	
+
 		adaptor.mediaManager.mutedAudioStream = new MediaStream([mediaStreamTrack])
 		adaptor.mediaManager.localStream = new MediaStream([mediaStreamTrack])
 		adaptor.mediaManager.audioContext = audioContext;
@@ -632,7 +632,7 @@ describe("WebRTCAdaptor", function() {
 			  navigator.mediaDevices.getUserMedia = async () => {
 				return Promise.resolve(new MediaStream([mediaStreamTrack]));
 			  };
-		  
+
 			  adaptor.initialize().then(async () => {
 				adaptor.mediaManager.callback = (info) => {
 				  console.log("callback ", info);
@@ -645,7 +645,7 @@ describe("WebRTCAdaptor", function() {
 			  });
 			});
 		  });
-		  
+
 		  var soundMeteraddModuleFailed = speakingButMuted.then(() => {
 			adaptor.mediaManager.mutedSoundMeter.context.audioWorklet.addModule = async () => {
 				return Promise.reject("error");
@@ -654,11 +654,52 @@ describe("WebRTCAdaptor", function() {
 			adaptor.enableAudioLevelWhenMuted().catch((e)=>{resolve()})
 			});
 	  });
-		  
+
 
 
 	return soundMeteraddModuleFailed;
 
     });
+
+	describe("turnOffLocalCamera", () => {
+		function turnOffLocalCamera(streamId) {
+			//
+		}
+
+		let mockMediaManager = {
+			turnOffLocalCamera: sinon.mock([turnOffLocalCamera]),
+		};
+
+		var localAdaptor = new WebRTCAdaptor({
+			websocketURL: "ws://localhost",
+			mediaConstraints: {
+				video: true,
+				audio: true
+			},
+			mediaManager: mockMediaManager,
+			initializeComponents: false
+		});
+
+		it("should call turnOffLocalCamera on mediaManager with correct streamId", () => {
+			const streamId = "testStreamId";
+			localAdaptor.turnOffLocalCamera(streamId);
+			sinon.assert.calledWith(mockMediaManager.turnOffLocalCamera, streamId);
+		});
+
+		it("should handle undefined streamId", () => {
+			localAdaptor.turnOffLocalCamera(undefined);
+			sinon.assert.calledWith(mockMediaManager.turnOffLocalCamera, undefined);
+		});
+
+		it("should handle null streamId", () => {
+			localAdaptor.turnOffLocalCamera(null);
+			sinon.assert.calledWith(mockMediaManager.turnOffLocalCamera, undefined);
+		});
+
+		it("should handle empty string streamId", () => {
+			localAdaptor.turnOffLocalCamera("");
+			sinon.assert.calledWith(mockMediaManager.turnOffLocalCamera, "");
+		});
+	});
 
 });
