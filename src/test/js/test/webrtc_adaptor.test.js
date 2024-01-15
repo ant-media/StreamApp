@@ -508,10 +508,8 @@ describe("WebRTCAdaptor", function() {
 		await adaptor.updateAudioTrack(stream, null, null);
 	});
 
-	it("testSoundMeter",  function(done) {
+	it("testSoundMeter", function (done) {
 		this.timeout(5000);
-
-
 		console.log("Starting testSoundMeter");
 
 		var adaptor = new WebRTCAdaptor({
@@ -526,7 +524,17 @@ describe("WebRTCAdaptor", function() {
 		//fake stream in te browser is a period audio and silence, so getting sound level more than 0 requires
 
 		adaptor.initialize().then(() => {
+			var audioContext = new (window.AudioContext || window.webkitAudioContext)();
+			var oscillator = audioContext.createOscillator();
+			oscillator.type = "sine";
+			oscillator.frequency.value = 800;
+			var mediaStreamSource = audioContext.createMediaStreamDestination();
+			oscillator.connect(mediaStreamSource);
+			var mediaStreamTrack = mediaStreamSource.stream.getAudioTracks()[0];
+			oscillator.start();
 
+			adaptor.mediaManager.localStream = new MediaStream([mediaStreamTrack])
+			adaptor.mediaManager.audioContext = audioContext;
 			adaptor.enableAudioLevelForLocalStream((level) => {
 				console.log("sound level -> " + level);
 				if (level > 0) {
@@ -537,6 +545,7 @@ describe("WebRTCAdaptor", function() {
 			expect(adaptor.mediaManager.localStreamSoundMeter).to.not.be.null;
 		})
 	})
+
 
 	it("takeConfiguration", async function() {
 		var adaptor = new WebRTCAdaptor({
@@ -580,6 +589,76 @@ describe("WebRTCAdaptor", function() {
 		expect(adaptor.iceCandidateList["stream1"].length).to.be.equal(1);
 
 	});
+	it("mutedButSpeaking", async () => {
+        this.timeout(10000);
+		var adaptor = new WebRTCAdaptor({
+			websocketURL: "ws://localhost",
+			mediaConstraints: {
+				video: true,
+				audio: true
+			},
+			initializeComponents: false
+		});
 
+		var audioContext = new (window.AudioContext || window.webkitAudioContext)();
+		var oscillator = audioContext.createOscillator();
+		oscillator.type = "sine";
+		oscillator.frequency.value = 800;
+		var mediaStreamSource = audioContext.createMediaStreamDestination();
+		oscillator.connect(mediaStreamSource);
+		var mediaStreamTrack = mediaStreamSource.stream.getAudioTracks()[0];
+		oscillator.start();
+
+	
+		adaptor.mediaManager.mutedAudioStream = new MediaStream([mediaStreamTrack])
+		adaptor.mediaManager.localStream = new MediaStream([mediaStreamTrack])
+		adaptor.mediaManager.audioContext = audioContext;
+
+		var getUserMediaFailed = new Promise(function (resolve, reject) {
+			navigator.mediaDevices.getUserMedia = async () => {
+			  return Promise.reject();
+			};
+			adaptor.initialize().then(async () => {
+			  try {
+				await adaptor.enableAudioLevelWhenMuted();
+			  } catch (e) {
+				console.log("get user media failed test")
+				resolve();
+			  }
+			});
+		  });
+		  var speakingButMuted = getUserMediaFailed.then(() => {
+			return new Promise(function (resolve, reject) {
+			  navigator.mediaDevices.getUserMedia = async () => {
+				return Promise.resolve(new MediaStream([mediaStreamTrack]));
+			  };
+		  
+			  adaptor.initialize().then(async () => {
+				adaptor.mediaManager.callback = (info) => {
+				  console.log("callback ", info);
+				  if (info == "speaking_but_muted") {
+					console.log("speaking_but_muted1");
+					resolve();
+				  }
+				};
+				await adaptor.enableAudioLevelWhenMuted();
+			  });
+			});
+		  });
+		  
+		  var soundMeteraddModuleFailed = speakingButMuted.then(() => {
+			adaptor.mediaManager.mutedSoundMeter.context.audioWorklet.addModule = async () => {
+				return Promise.reject("error");
+			};
+			return new Promise(async function (resolve, reject) {
+			adaptor.enableAudioLevelWhenMuted().catch((e)=>{resolve()})
+			});
+	  });
+		  
+
+
+	return soundMeteraddModuleFailed;
+
+    });
 
 });
