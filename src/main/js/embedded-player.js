@@ -7,6 +7,9 @@ const Logger = window.log;
 
 const STATIC_VIDEO_HTML =  "<video id='video-player' class='video-js vjs-default-skin vjs-big-play-centered' controls playsinline></video>";
 
+//global variables
+window.videojs;
+
 
 export class EmbeddedPlayer {
 
@@ -206,41 +209,28 @@ export class EmbeddedPlayer {
         this.setPlayerVisible(false);
     }
 
-    initialize() {
-        return this.loadVideoJSComponents().then(() => { 
-
-            return this.loadDashScript().then(() => 
-            {
-                if (this.is360) {
-                    return import('aframe/dist/aframe.min').then((aframe) => {
-                        Logger.info("aframe.min.js is loaded");
-                    }).catch((e) => {
-                        Logger.error("aframe.min.js is failed to load");
-                        throw e;
-                    });
-                }
-                return Promise.resolve();
-            }).catch((e) => {
-                Logger.error("dash.all.min.js is failed to load");  
-                throw e;
-            });
-
-        }).catch((e) => {
+    initialize() 
+    {
+        return this.loadVideoJSComponents()
+        .then(() => { return this.loadDashScript(); })
+        .then(() => {
+			if (this.is360) {
+				return import('aframe');
+			}
+		})
+		.catch((e) => {
             Logger.error("Scripts are not loaded. The error is " + e);
             throw e;
         });
-
-
     };
 
     loadDashScript() {
         if (this.playOrder.includes("dash")) {
-           return import('dashjs/dist/dash.all.min').then((dashjs) => 
+           return import('dashjs').then((dashjs) => 
             {
+				window.dashjs = dashjs;
                 console.log("dash.all.min.js is loaded");
-            }).catch((e) => {
-                console.error("dash.all.min.js is failed to load");
-            });
+            })
         }
         else {
             return Promise.resolve();
@@ -335,111 +325,54 @@ export class EmbeddedPlayer {
         if (this.playOrder.includes("hls") || this.playOrder.includes("vod") || this.playOrder.includes("webrtc")) {
             //it means we're going to use videojs
             //load videojs css
-    
-            return import('video.js/dist/video-js.min.css').then((css) => 
-            {
-                // Your code after CSS is loaded
-                Logger.info("video-js.css is loaded");
-                const styleElement = this.dom.createElement('style');
-			    styleElement.textContent = css.default.toString(); // Assuming css module exports a string
-			    this.dom.head.appendChild(styleElement);
-    
-                return import("video.js")
-            }).then((videojsLocal) => {
-                window.videojs = videojsLocal.default;
-                Logger.info("video.js is loaded");
-                return import('videojs-contrib-quality-levels')
-            }).then((videojsContribQualityLevels) => {
-                Logger.info("videojs-contrib-quality-levels is loaded");
-                return import('videojs-hls-quality-selector');
-            }).then((videojsHlsQualitySelector) =>{
-                Logger.info("videojs-hls-quality-selector is loaded");
-
-                if (this.playOrder.includes("webrtc")) 
-                {
-                    return import('@antmedia/videojs-webrtc-plugin/dist/videojs-webrtc-plugin.css').then((css) =>
-                    {   
-                        Logger.info("videojs-webrtc-plugin.css is loaded");
-                        return import('@antmedia/videojs-webrtc-plugin').then((videojsWebrtcPluginLocal) => 
-                        {
-							window.VIDEOJS_WEBRTC_PLUGIN = videojsWebrtcPluginLocal;
-							Logger.info("videojs-webrtc-plugin is loaded");
-						});
-                    });
-                }
-                else {
-                    return Promise.resolve();
-                }
-            });
-
-            /*
-            var videoJsExternalCss = this.dom.createElement("link");
-            videoJsExternalCss.setAttribute("rel", "stylesheet");
-            videoJsExternalCss.setAttribute("type", "text/css");
-            videoJsExternalCss.setAttribute("href", "css/external/video-js.css");
-            this.dom.head.appendChild(videoJsExternalCss);
-
-            //include videojs -> js
-            var videoJsExternalJs = this.dom.createElement("script");
-            videoJsExternalJs.type = "text/javascript";
-            videoJsExternalJs.src = "js/external/video.js";
-            videoJsExternalJs.async = false;
-            this.dom.head.appendChild(videoJsExternalJs);
-            */
-
-            // These files should call after videojs file loaded completely
-            /*
-            videoJsExternalJs.onload = () => {
-
-                var videoJsQualityLevel = this.dom.createElement("script");
-                videoJsQualityLevel.type = "text/javascript";
-                videoJsQualityLevel.src = "js/external/videojs-contrib-quality-levels.min.js";
-                this.dom.head.appendChild(videoJsQualityLevel);
-
-                var videoJsQualitySelector = this.dom.createElement("script");
-                videoJsQualitySelector.type = "text/javascript";
-                videoJsQualitySelector.src = "js/external/videojs-hls-quality-selector.min.js";
-                this.dom.head.appendChild(videoJsQualitySelector);
-
-            }
-            */
-        }
-        else {
-            return Promise.resolve();
-        }
-
-        /*
-        if (this.playOrder.includes("webrtc")) {
-            var webrtcVideoJsExternalCss = this.dom.createElement("link");
-            webrtcVideoJsExternalCss.setAttribute("rel", "stylesheet");
-            webrtcVideoJsExternalCss.setAttribute("type", "text/css");
-            webrtcVideoJsExternalCss.setAttribute("href", "css/videojs-webrtc-plugin.css");
-            this.dom.head.appendChild(webrtcVideoJsExternalCss);
-
-            var webrtcVideoJsExternalJs = this.dom.createElement("script");
-            webrtcVideoJsExternalJs.type = "text/javascript";
-            webrtcVideoJsExternalJs.src = "js/videojs-webrtc-plugin.js";
-            webrtcVideoJsExternalJs.async = false;
-            this.dom.head.appendChild(webrtcVideoJsExternalJs);
-        }
-        */
-       /*
-        if (this.playOrder.includes("dash")) {
-            var js = this.dom.createElement("script");
-            js.type = "text/javascript";
-            js.src = "js/external/dash.all.min.js";
-            this.dom.head.appendChild(js);
-        }
-        */
-        /*
-        if (this.is360) {
-            var aframeJS = this.dom.createElement("script");
-            aframeJS.type = "text/javascript";
-            aframeJS.src = "js/external/aframe.min.js";
-
-            this.dom.head.appendChild(aframeJS);
-        }
-        */
+			if (!window.videojs) 
+			{
+				return import('video.js/dist/video-js.min.css').then((css) => {
+	                const styleElement = this.dom.createElement('style');
+				    styleElement.textContent = css.default.toString(); // Assuming css module exports a string
+				    this.dom.head.appendChild(styleElement);
+				})
+				.then(() => { return import("video.js") })
+				.then((videojs) => 
+				{
+					window.videojs = videojs.default;
+					//var videoJsExternalJs = this.dom.createElement("script");
+			        //videoJsExternalJs.type = "text/javascript";
+			        //videoJsExternalJs.textContent = videojsLocal.default.toString();
+			        //this.dom.head.appendChild(videoJsExternalJs);
+					 
+				})
+				.then(() => { return import('videojs-contrib-quality-levels') } )
+				.then(() => { return import('videojs-hls-quality-selector') } )
+				
+				.then(() => {
+					
+					if (this.playOrder.includes("webrtc")) 
+	                {
+	                    return import('@antmedia/videojs-webrtc-plugin/dist/videojs-webrtc-plugin.css').then((css) =>
+	                    {   
+	                        Logger.info("videojs-webrtc-plugin.css is loaded");
+	                         const styleElement = this.dom.createElement('style');
+						     styleElement.textContent = css.default.toString(); // Assuming css module exports a string
+						     this.dom.head.appendChild(styleElement);
+				    
+	                        return import('@antmedia/videojs-webrtc-plugin').then((videojsWebrtcPluginLocal) => 
+	                        {
+								Logger.info("videojs-webrtc-plugin is loaded");
+							});
+	                    });
+	                }
+				});
+				
+			}
+			else {
+				return Promise.resolve();
+			}
+			
+	    }
+	    else {
+	        return Promise.resolve();
+	    }
     }
 
     /**
@@ -778,7 +711,7 @@ export class EmbeddedPlayer {
                     });
                 } else {
                     //adaptive not exists, try mpd or m3u8 exists.
-                    streamPath = this.httpBaseURL + "/" + streamsfolder + "/" + streamId + "." + extension;
+                    streamPath = this.httpBaseURL + streamsfolder + "/" + streamId + "." + extension;
                     streamPath = this.addSecurityParams(streamPath);
 
                     return fetch(streamPath, { method: 'HEAD' })

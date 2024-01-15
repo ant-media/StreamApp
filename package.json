@@ -75,10 +75,10 @@
     "@antmedia/videojs-webrtc-plugin": "^1.2.0",
     "@mediapipe/selfie_segmentation": "^0.1.1675465747",
     "aframe": "1.2.0",
-    "dash": "^3.25.21",
+    "dashjs": "^4.5.2",
     "url": "^0.11.1",
     "video.js": "^7.18.0",
-    "videojs-contrib-quality-levels": "^4.0.0",
+    "videojs-contrib-quality-levels": "^2.2.1",
     "videojs-hls-quality-selector": "^1.1.4"
   },
   "_comment": "url polyfill is added as compatibility with webpack > 5 because webpack > 5 does not include url polyfill by default. webrtc_adaptor uses url as import.meta.url"

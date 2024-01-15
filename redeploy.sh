@@ -1,6 +1,10 @@
 #!/bin/sh
 AMS_DIR=~/softwares/ant-media-server
 npm run compile
+if [ $OUT -ne 0 ]; then
+    exit $OUT
+fi
+
 mvn clean install -DskipTests -Dgpg.skip=true
 OUT=$?
 
