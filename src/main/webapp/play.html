@@ -53,7 +53,7 @@
 
 		var embeddedPlayer = new EmbeddedPlayer(window, document.getElementById("video_container"), document.getElementById("video_info"));
 
-		window.addEventListener("load", () => {
+		embeddedPlayer.initialize().then(() => {
 			embeddedPlayer.play();
         });
 

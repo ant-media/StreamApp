@@ -235,6 +235,13 @@ export class WebRTCAdaptor {
 		this.initializeComponents = true;
 
         /**
+         * Degradation Preference
+         * 
+         * maintain-framerate, maintain-resolution, or balanced
+         */
+        this.degradationPreference = "maintain-resolution";
+
+        /**
          * PAY ATTENTION: The values of the above fields are provided as this constructor parameter.
          * TODO: Also some other hidden parameters may be passed here
          */
@@ -480,8 +487,8 @@ export class WebRTCAdaptor {
         //If it started with playOnly mode and wants to publish now
         else if (this.mediaManager.localStream == null) {
             this.mediaManager.initLocalStream().then(() => {
-                var videoEnabled = false;
-                var audioEnabled = false;
+                let videoEnabled = false;
+                let audioEnabled = false;
                 if (this.mediaManager.localStream != null) {
                     videoEnabled = this.mediaManager.localStream.getVideoTracks().length > 0;
                     audioEnabled = this.mediaManager.localStream.getAudioTracks().length > 0;
@@ -493,8 +500,8 @@ export class WebRTCAdaptor {
                 throw error;
             });
         } else {
-            var videoEnabled = this.mediaManager.localStream.getVideoTracks().length > 0;
-            var audioEnabled = this.mediaManager.localStream.getAudioTracks().length > 0;
+            let videoEnabled = this.mediaManager.localStream.getVideoTracks().length > 0;
+            let audioEnabled = this.mediaManager.localStream.getAudioTracks().length > 0;
             this.sendPublishCommand(streamId, token, subscriberId, subscriberCode, streamName, mainTrack, metaData, videoEnabled, audioEnabled);
         }
         //init peer connection for reconnectIfRequired
@@ -511,7 +518,7 @@ export class WebRTCAdaptor {
     }
 
     sendPublishCommand(streamId, token, subscriberId, subscriberCode, streamName, mainTrack, metaData, videoEnabled, audioEnabled) {
-        var jsCmd = {
+        let jsCmd = {
             command: "publish",
             streamId: streamId,
             token: token,
@@ -538,7 +545,7 @@ export class WebRTCAdaptor {
     joinRoom(roomName, streamId, mode) {
         this.roomName = roomName;
 
-        var jsCmd = {
+        let jsCmd = {
             command: "joinRoom",
             room: roomName,
             streamId: streamId,
@@ -568,7 +575,7 @@ export class WebRTCAdaptor {
         this.playSubscriberCode = subscriberCode;
         this.playMetaData = metaData;
 
-        var jsCmd =
+        let jsCmd =
             {
                 command: "play",
                 streamId: streamId,
@@ -653,7 +660,7 @@ export class WebRTCAdaptor {
 	    //reconnect play
 	    for (var index in this.playStreamId)
 	    {
-            var streamId = this.playStreamId[index];
+            let streamId = this.playStreamId[index];
             if (this.remotePeerConnection[streamId] != "null" &&
                 //check connection status to not stop streaming an active stream
                 this.iceConnectionState(streamId) != "checking" &&
@@ -685,7 +692,7 @@ export class WebRTCAdaptor {
         this.closePeerConnection(streamId);
 
         if (this.webSocketAdaptor != null && this.webSocketAdaptor.isConnected()) {
-            var jsCmd = {
+            let jsCmd = {
                 command: "stop",
                 streamId: streamId,
             };
@@ -700,7 +707,7 @@ export class WebRTCAdaptor {
      * @param {string} streamId : unique id for the peer-to-peer session
      */
     join(streamId) {
-        var jsCmd = {
+        let jsCmd = {
             command: "join",
             streamId: streamId,
             multiPeer: this.isMultiPeer && this.multiPeerStreamId == null,
@@ -910,7 +917,7 @@ export class WebRTCAdaptor {
 
             if (protocolSupported) {
 
-                var jsCmd = {
+                let jsCmd = {
                     command: "takeCandidate",
                     streamId: streamId,
                     label: event.candidate.sdpMLineIndex,
@@ -954,7 +961,7 @@ export class WebRTCAdaptor {
     initDataChannel(streamId, dataChannel) {
         dataChannel.onerror = (error) => {
             Logger.debug("Data Channel Error:", error);
-            var obj = {
+            let obj = {
                 streamId: streamId,
                 error: error
             };
@@ -965,7 +972,7 @@ export class WebRTCAdaptor {
         };
 
         dataChannel.onmessage = (event) => {
-            var obj = {
+            let obj = {
                 streamId: streamId,
                 data: event.data,
             };
@@ -1029,15 +1036,29 @@ export class WebRTCAdaptor {
 		//null === undefined -> it's false
 
         if (this.remotePeerConnection[streamId] == null) {
-            var closedStreamId = streamId;
+            let closedStreamId = streamId;
             Logger.debug("stream id in init peer connection: " + streamId + " close stream id: " + closedStreamId);
             this.remotePeerConnection[streamId] = new RTCPeerConnection(this.peerconnection_config);
             this.remoteDescriptionSet[streamId] = false;
             this.iceCandidateList[streamId] = new Array();
             if (!this.playStreamId.includes(streamId)) {
                 if (this.mediaManager.localStream != null) {
-                    //AddStream is deprecated thus updated to the addTrack after version 2.4.2.1
-                    this.mediaManager.localStream.getTracks().forEach(track => this.remotePeerConnection[streamId].addTrack(track, this.mediaManager.localStream));
+                    this.mediaManager.localStream.getTracks().forEach(track => { 
+                    	
+						let rtpSender = this.remotePeerConnection[streamId].addTrack(track, this.mediaManager.localStream);
+                    	if (track.kind == 'video') 
+                    	{
+							let parameters = rtpSender.getParameters();
+							parameters.degradationPreference = this.degradationPreference;
+							rtpSender.setParameters(parameters).then(() => {
+                                Logger.info("Degradation Preference is set to " + this.degradationPreference);
+                            }).catch((err) => {
+                                Logger.warn("Degradation Preference cannot be set to " + this.degradationPreference)
+                            });
+						}
+						//
+                    	//parameters.degradationPreference
+                    });
                 }
             }
             this.remotePeerConnection[streamId].onicecandidate = event => {
@@ -1351,7 +1372,7 @@ export class WebRTCAdaptor {
      * @param {string} idOfStream : unique id for the stream
      */
     startPublishing(idOfStream) {
-        var streamId = idOfStream;
+        let streamId = idOfStream;
 
         this.initPeerConnection(streamId, "publish");
 
@@ -1362,7 +1383,7 @@ export class WebRTCAdaptor {
             .catch((error) => {
                 Logger.error("create offer error for stream id: " + streamId + " error: " + error);
             });
-    };
+    }
 
 
     /**
@@ -1374,7 +1395,7 @@ export class WebRTCAdaptor {
      * @param {boolean}  enabled : is the enable/disable video track. If it's true, server sends video track. If it's false, server does not send video
      */
     toggleVideo(streamId, trackId, enabled) {
-        var jsCmd = {
+        let jsCmd = {
             command: "toggleVideo",
             streamId: streamId,
             trackId: trackId,
@@ -1480,6 +1501,8 @@ export class WebRTCAdaptor {
                         audioPacketsSent = value.packetsSent;
                     } else if (value.kind == "video") {
                         videoPacketsSent = value.packetsSent;
+                        frameWidth = value.frameWidth;
+                        frameHeight = value.frameHeight;
                     }
                     bytesSent += value.bytesSent
                     currentTime = value.timestamp

@@ -239,7 +239,7 @@ export class MediaManager {
         else if (typeof this.mediaConstraints.audio != "undefined" && this.mediaConstraints.audio != false) 
         {
             // get only audio
-            var media_audio_constraint = {audio: this.mediaConstraints.audio};
+            let media_audio_constraint = {audio: this.mediaConstraints.audio};
             return this.navigatorUserMedia(media_audio_constraint, stream => {
                 return this.gotStream(stream);
             }, true)
@@ -247,9 +247,7 @@ export class MediaManager {
             //neither video nor audio is requested
             //just return null stream
             Logger.debug("no media requested, just return an empty stream");
-            return new Promise((resolve, reject) => {
-                resolve(null);
-            });
+            return Promise.resolve(null);
         }
 
     }
@@ -279,7 +277,7 @@ export class MediaManager {
      */
     getDevices() {
         return navigator.mediaDevices.enumerateDevices().then(devices => {
-            var deviceArray = new Array();
+            let deviceArray = new Array();
             let checkAudio = false
             let checkVideo = false
             devices.forEach(device => {

@@ -2,13 +2,15 @@
 import { getUrlParameter } from "./fetch.stream.js";
 import "./external/loglevel.min.js";
 
+
 const Logger = window.log;
 
 const STATIC_VIDEO_HTML =  "<video id='video-player' class='video-js vjs-default-skin vjs-big-play-centered' controls playsinline></video>";
 
+
 export class EmbeddedPlayer {
 
-	static DEFAULT_PLAY_ORDER = ["webrtc", "hls"];;
+	static DEFAULT_PLAY_ORDER = ["webrtc", "hls", "dash"];;
 
 	static DEFAULT_PLAY_TYPE  =  ["mp4", "webm"];
 
@@ -26,6 +28,8 @@ export class EmbeddedPlayer {
 	static VIDEO_HTML = STATIC_VIDEO_HTML;
 
 	static VIDEO_PLAYER_ID = "video-player";
+	
+	
 
 
     /**
@@ -156,7 +160,7 @@ export class EmbeddedPlayer {
      */
     tryNextTechTimer;
 
-    constructor(window, containerElement, placeHolderElement) {
+    constructor(configOrWindow, containerElement, placeHolderElement) {
 
 		EmbeddedPlayer.DEFAULT_PLAY_ORDER = ["webrtc", "hls"];;
 
@@ -176,110 +180,199 @@ export class EmbeddedPlayer {
 		EmbeddedPlayer.VIDEO_HTML = STATIC_VIDEO_HTML;
 
 		EmbeddedPlayer.VIDEO_PLAYER_ID = "video-player";
+		
+		// Initialize default values
+        this.setDefaults();
+
+		
+		  // Check if the first argument is a config object or a Window object
+        if (typeof configOrWindow === 'object' && !(configOrWindow instanceof Window)) {
+            // New config object mode
+            Object.assign(this, configOrWindow);
+        } else {
+            // Backward compatibility mode
+            this.window = configOrWindow;
+            this.containerElement = containerElement;
+            this.placeHolderElement = placeHolderElement;
+            // Use getUrlParameter for backward compatibility
+            this.initializeFromUrlParams();
+        }
+		
 
         this.dom = window.document;
-        this.window = window;
-        var localStreamId = getUrlParameter("id", this.window.location.search);
         this.containerElement = containerElement;
-        this.placeHolderElement = placeHolderElement;
-        this.errorCalled = false;
-        this.iceConnected = false;
-        this.tryNextTechTimer = -1;
+        this.placeHolderElement = placeHolderElement;  
+       
+        this.setPlayerVisible(false);
+    }
+
+    initialize() {
+        return this.loadVideoJSComponents().then(() => { 
+
+            return this.loadDashScript().then(() => 
+            {
+                if (this.is360) {
+                    return import('aframe/dist/aframe.min').then((aframe) => {
+                        Logger.info("aframe.min.js is loaded");
+                    }).catch((e) => {
+                        Logger.error("aframe.min.js is failed to load");
+                        throw e;
+                    });
+                }
+                return Promise.resolve();
+            }).catch((e) => {
+                Logger.error("dash.all.min.js is failed to load");  
+                throw e;
+            });
+
+        }).catch((e) => {
+            Logger.error("Scripts are not loaded. The error is " + e);
+            throw e;
+        });
+
+
+    };
+
+    loadDashScript() {
+        if (this.playOrder.includes("dash")) {
+           return import('dashjs/dist/dash.all.min').then((dashjs) => 
+            {
+                console.log("dash.all.min.js is loaded");
+            }).catch((e) => {
+                console.error("dash.all.min.js is failed to load");
+            });
+        }
+        else {
+            return Promise.resolve();
+        }
+    }
+    
+    setDefaults() {
+        this.playOrder = EmbeddedPlayer.DEFAULT_PLAY_ORDER;
+        this.currentPlayType = null;
+        this.is360 = false;
+        this.streamId = null;
+        this.playType = EmbeddedPlayer.DEFAULT_PLAY_TYPE;
+        this.token = null;
+        this.autoPlay = true;
+        this.mute = true;
+        this.targetLatency = 3;
+        this.subscriberId = null;
+        this.subscriberCode = null;
+        this.window = null;
+        this.containerElement = null;
+        this.placeHolderElement = null;
         this.videojsPlayer = null;
-
+        this.dashPlayer = null;
         this.iceServers = '[ { "urls": "stun:stun1.l.google.com:19302" } ]';
-
-        if (localStreamId == null) {
+        this.iceConnected = false;
+        this.errorCalled = false;
+        this.tryNextTechTimer = -1;
+        this.aScene = null;
+        this.playerListener = null;
+        this.webRTCDataListener = null;
+        this.websocketURL = null;
+        this.httpBaseURL = "";
+    }
+    
+    initializeFromUrlParams() {
+	    // Fetch parameters from URL and set to class properties
+	    this.streamId = getUrlParameter("id", this.window.location.search) || this.streamId;
+	    
+	    if (this.streamId == null) {
             //check name variable for compatibility with older versions
 
-            localStreamId = getUrlParameter("name", this.window.location.search);
-            if (localStreamId == null) {
+            this.streamId = getUrlParameter("name", this.window.location.search) || this.streamId;
+            if (this.streamId == null) {
 	 			Logger.warn("Please use id parameter instead of name parameter.");
 			}
         }
 
-        if (localStreamId == null) {
+        if (this.streamId == null) {
             var message = "Stream id is not set.Please add your stream id to the url as a query parameter such as ?id={STREAM_ID} to the url"
             Logger.error(message);
             //TODO: we may need to show this message on directly page
             alert(message);
             throw new Error(message);
         }
-        this.streamId = localStreamId;
-
-        var localIs360 = getUrlParameter("is360", this.window.location.search);
-        if (localIs360 != null) {
-            this.is360 = localIs360.toLocaleLowerCase() == "true";
-        }
-
-        var localPlayType = getUrlParameter("playType", this.window.location.search);
-        if (localPlayType != null) {
-            this.playType = localPlayType.split(',');
-        }
-        else {
-
-            this.playType = EmbeddedPlayer.DEFAULT_PLAY_TYPE;
-        }
-
-        this.token = getUrlParameter("token", this.window.location.search);
-        if (this.token === undefined) {
-			this.token = null;
-		}
-
-    
-        var localAutoPlay = getUrlParameter("autoplay", this.window.location.search);
-        if (localAutoPlay != null) {
-            this.autoPlay = localAutoPlay.toLocaleLowerCase() == "true";
-        }
         
+	    this.is360 = (getUrlParameter("is360", this.window.location.search) === "true") || this.is360;
+	    this.playType = getUrlParameter("playType", this.window.location.search)?.split(',') || this.playType;
+	    this.token = getUrlParameter("token", this.window.location.search) || this.token;
+	    this.autoPlay = (getUrlParameter("autoplay", this.window.location.search) === "true") || this.autoPlay;
+	    this.mute = (getUrlParameter("mute", this.window.location.search) === "true") || this.mute;
+		
+		let localTargetLatency = getUrlParameter("targetLatency", this.window.location.search);
+	    if (localTargetLatency != null) {
+	        let latencyInNumber = Number(localTargetLatency);
+	        if (!isNaN(latencyInNumber)) {
+	            this.targetLatency = latencyInNumber;
+	        } else {
+	            Logger.warn("targetLatency parameter is not a number. It will be ignored.");
+	            this.targetLatency = this.targetLatency || 3; // Default value or existing value
+	        }
+	    }
+	    this.subscriberId = getUrlParameter("subscriberId", this.window.location.search) || this.subscriberId;
+	    this.subscriberCode = getUrlParameter("subscriberCode", this.window.location.search) || this.subscriberCode;
+	    let playOrder = getUrlParameter("playOrder", this.window.location.search);
+	    this.playOrder = playOrder ? playOrder.split(',') : this.playOrder;
+	    
+	    var appName = this.window.location.pathname.substring(0, this.window.location.pathname.lastIndexOf("/") + 1);
+		var path = this.window.location.hostname + ":" + this.window.location.port + appName + this.streamId + ".webrtc";
+	    this.websocketURL = "ws://" + path;
+	
+	    if (location.protocol.startsWith("https")) {
+	        this.websocketURL = "wss://" + path;
+	    }
 
-        var localMute = getUrlParameter("mute",this.window.location.search);
-        if (localMute != null) {
-            this.mute = localMute.toLocaleLowerCase() == "true";
-        }
-
-        var localTargetLatency = getUrlParameter("targetLatency", this.window.location.search);
-        if (localTargetLatency != null) {
-            var latencyInNumber = Number(localTargetLatency);
-            if (!isNaN(latencyInNumber)) {
-                this.targetLatency = latencyInNumber;
-            }
-            else {
-                Logger.warn("targetLatency parameter is not a number. It will be ignored.");
-            }
-        }
-
-        this.subscriberId = getUrlParameter("subscriberId", this.window.location.search);
-        if (this.subscriberId === undefined) {
-			this.subscriberId = null;
-		}
-
-        this.subscriberCode = getUrlParameter("subscriberCode",this.window.location.search);
-        if (this.subscriberCode == null) {
-			 this.subscriberCode = null;
-		}
-
-        var playOrderParameter = getUrlParameter("playOrder",this.window.location.search);
-        if (playOrderParameter != null) {
-            this.playOrder = playOrderParameter.split(',');
-        }
-        else {
-            this.playOrder = EmbeddedPlayer.DEFAULT_PLAY_ORDER;
-        }
-        this.loadScripts();
-
-        this.setPlayerVisible(false);
-
-
-    }
+        this.httpBaseURL = location.protocol + "//" + this.window.location.hostname + ":" + this.window.location.port + appName;
+	}
 
     /**
      * load scripts dynamically
      */
-    loadScripts() {
+    loadVideoJSComponents() {
         if (this.playOrder.includes("hls") || this.playOrder.includes("vod") || this.playOrder.includes("webrtc")) {
             //it means we're going to use videojs
             //load videojs css
+    
+            return import('video.js/dist/video-js.min.css').then((css) => 
+            {
+                // Your code after CSS is loaded
+                Logger.info("video-js.css is loaded");
+                const styleElement = this.dom.createElement('style');
+			    styleElement.textContent = css.default.toString(); // Assuming css module exports a string
+			    this.dom.head.appendChild(styleElement);
+    
+                return import("video.js")
+            }).then((videojsLocal) => {
+                window.videojs = videojsLocal.default;
+                Logger.info("video.js is loaded");
+                return import('videojs-contrib-quality-levels')
+            }).then((videojsContribQualityLevels) => {
+                Logger.info("videojs-contrib-quality-levels is loaded");
+                return import('videojs-hls-quality-selector');
+            }).then((videojsHlsQualitySelector) =>{
+                Logger.info("videojs-hls-quality-selector is loaded");
+
+                if (this.playOrder.includes("webrtc")) 
+                {
+                    return import('@antmedia/videojs-webrtc-plugin/dist/videojs-webrtc-plugin.css').then((css) =>
+                    {   
+                        Logger.info("videojs-webrtc-plugin.css is loaded");
+                        return import('@antmedia/videojs-webrtc-plugin').then((videojsWebrtcPluginLocal) => 
+                        {
+							window.VIDEOJS_WEBRTC_PLUGIN = videojsWebrtcPluginLocal;
+							Logger.info("videojs-webrtc-plugin is loaded");
+						});
+                    });
+                }
+                else {
+                    return Promise.resolve();
+                }
+            });
+
+            /*
             var videoJsExternalCss = this.dom.createElement("link");
             videoJsExternalCss.setAttribute("rel", "stylesheet");
             videoJsExternalCss.setAttribute("type", "text/css");
@@ -292,8 +385,10 @@ export class EmbeddedPlayer {
             videoJsExternalJs.src = "js/external/video.js";
             videoJsExternalJs.async = false;
             this.dom.head.appendChild(videoJsExternalJs);
+            */
 
             // These files should call after videojs file loaded completely
+            /*
             videoJsExternalJs.onload = () => {
 
                 var videoJsQualityLevel = this.dom.createElement("script");
@@ -307,8 +402,13 @@ export class EmbeddedPlayer {
                 this.dom.head.appendChild(videoJsQualitySelector);
 
             }
+            */
+        }
+        else {
+            return Promise.resolve();
         }
 
+        /*
         if (this.playOrder.includes("webrtc")) {
             var webrtcVideoJsExternalCss = this.dom.createElement("link");
             webrtcVideoJsExternalCss.setAttribute("rel", "stylesheet");
@@ -322,13 +422,16 @@ export class EmbeddedPlayer {
             webrtcVideoJsExternalJs.async = false;
             this.dom.head.appendChild(webrtcVideoJsExternalJs);
         }
+        */
+       /*
         if (this.playOrder.includes("dash")) {
             var js = this.dom.createElement("script");
             js.type = "text/javascript";
             js.src = "js/external/dash.all.min.js";
             this.dom.head.appendChild(js);
         }
-
+        */
+        /*
         if (this.is360) {
             var aframeJS = this.dom.createElement("script");
             aframeJS.type = "text/javascript";
@@ -336,6 +439,7 @@ export class EmbeddedPlayer {
 
             this.dom.head.appendChild(aframeJS);
         }
+        */
     }
 
     /**
@@ -380,14 +484,14 @@ export class EmbeddedPlayer {
             }
             else if (infos["obj"].state == "failed" || infos["obj"].state == "disconnected" || infos["obj"].state == "closed") {
 				//
-				Logger.debug("Ice connection is not connected. tryNextTech to replay");
+				Logger.warn("Ice connection is not connected. tryNextTech to replay");
 				this.tryNextTech();
 			}
 
         }
         else if (infos["info"] == "closed") {
 			//this means websocket is closed and it stops the playback - tryNextTech
-			Logger.debug("Websocket is closed. tryNextTech to replay");
+			Logger.warn("Websocket is closed. tryNextTech to replay");
 			this.tryNextTech();
 		}
         else if (infos["info"] == "resolutionChangeInfo") 
@@ -495,7 +599,7 @@ export class EmbeddedPlayer {
 	                //handle high resource usage and not authroized errors && websocket disconnected
 	                //Even if webrtc adaptor has auto reconnect scenario, we dispose the videojs immediately in tryNextTech
 	                // so that reconnect scenario is managed here
-
+					
 	                this.tryNextTech();
 	            }
 	            else if (errors["error"] == "notSetRemoteDescription") {
@@ -652,7 +756,7 @@ export class EmbeddedPlayer {
      */
     checkStreamExistsViaHttp(streamsfolder, streamId, extension) {
 
-        var streamPath = "";
+        var streamPath = this.httpBaseURL;
         if (!streamId.startsWith(streamsfolder)) {
             streamPath += streamsfolder + "/";
         }
@@ -674,7 +778,7 @@ export class EmbeddedPlayer {
                     });
                 } else {
                     //adaptive not exists, try mpd or m3u8 exists.
-                    streamPath = streamsfolder + "/" + streamId + "." + extension;
+                    streamPath = this.httpBaseURL + "/" + streamsfolder + "/" + streamId + "." + extension;
                     streamPath = this.addSecurityParams(streamPath);
 
                     return fetch(streamPath, { method: 'HEAD' })
@@ -891,15 +995,9 @@ export class EmbeddedPlayer {
                 });
 
             case "webrtc":
-                var appName = this.window.location.pathname.substring(0, this.window.location.pathname.lastIndexOf("/") + 1);
-                var path = this.window.location.hostname + ":" + this.window.location.port + appName + this.streamId + ".webrtc";
-                var websocketURL = "ws://" + path;
+              
 
-                if (location.protocol.startsWith("https")) {
-                    websocketURL = "wss://" + path;
-                }
-
-                return this.playWithVideoJS(this.addSecurityParams(websocketURL), EmbeddedPlayer.WEBRTC_EXTENSION);
+                return this.playWithVideoJS(this.addSecurityParams(this.websocketURL), EmbeddedPlayer.WEBRTC_EXTENSION);
             case "vod":
                 //TODO: Test case for vod
                 //1. Play stream with mp4 for VoD

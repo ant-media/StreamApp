@@ -1,4 +1,4 @@
-import "./external/selfie-segmentation/selfie_segmentation.js";
+import "@mediapipe/selfie-segmentation";
 import {WebRTCAdaptor} from "./webrtc_adaptor.js";
 import "./external/loglevel.min.js";
 
