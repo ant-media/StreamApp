@@ -184,7 +184,9 @@ describe("EmbeddedPlayer", function() {
 		
 		var fake = sinon.replace(player, "importScript", sinon.fake.returns(Promise.resolve(mockApiSuccess())));
 		
-		window.videojs = null;
+		var videojs = window.videojs;
+		
+		
 		player.initialize().then(()=> {
 			
 		}).catch((err) => {
@@ -201,6 +203,8 @@ describe("EmbeddedPlayer", function() {
 		catch (err) {
 			//expected because there is no stream id
 		}
+		
+		window.videojs = videojs;
 	
 	
 	});
