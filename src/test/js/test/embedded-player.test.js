@@ -186,8 +186,8 @@ describe("EmbeddedPlayer", function() {
 		
 		var videojs = window.videojs;
 		
-		
-		player.initialize().then(()=> {
+		window.videojs = null;
+		await player.initialize().then(()=> {
 			
 		}).catch((err) => {
 			fail("it should fail because we load the items in karma");
