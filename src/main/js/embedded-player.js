@@ -7,13 +7,10 @@ const Logger = window.log;
 
 const STATIC_VIDEO_HTML =  "<video id='video-player' class='video-js vjs-default-skin vjs-big-play-centered' controls playsinline></video>";
 
-//global variables
-window.videojs;
-
 
 export class EmbeddedPlayer {
 
-	static DEFAULT_PLAY_ORDER = ["webrtc", "hls", "dash"];;
+	static DEFAULT_PLAY_ORDER = ["webrtc", "hls"];;
 
 	static DEFAULT_PLAY_TYPE  =  ["mp4", "webm"];
 
@@ -191,11 +188,13 @@ export class EmbeddedPlayer {
 		  // Check if the first argument is a config object or a Window object
         if (arguments.length == 1) {
             // New config object mode
-			console.log("config object mode");
+			Logger.info("config object mode");
             Object.assign(this, configOrWindow);
-        } else {
+            this.window = window;
+        }
+        else {
             // Backward compatibility mode
-			console.log("getting from url mode");
+			Logger.info("getting from url mode");
             this.window = configOrWindow;
             this.containerElement = containerElement;
             this.placeHolderElement = placeHolderElement;
@@ -203,10 +202,38 @@ export class EmbeddedPlayer {
             this.initializeFromUrlParams();
         }
 		
+		if (this.streamId == null) {
+            var message = "Stream id is not set.Please add your stream id to the url as a query parameter such as ?id={STREAM_ID} to the url"
+            Logger.error(message);
+            //TODO: we may need to show this message on directly page
+            alert(message);
+            throw new Error(message);
+        }
+        
+        if (!this.httpBaseURL) 
+        {
+         	let appName = this.window.location.pathname.substring(0, this.window.location.pathname.lastIndexOf("/") + 1);
+			let path = this.window.location.hostname + ":" + this.window.location.port + appName + this.streamId + ".webrtc";
+		    this.websocketURL = "ws://" + path;
+		
+		    if (location.protocol.startsWith("https")) {
+		        this.websocketURL = "wss://" + path;
+		    }
+	
+	        this.httpBaseURL = location.protocol + "//" + this.window.location.hostname + ":" + this.window.location.port + appName;
+        }
+        else if (!this.websocketURL) 
+        {
+			this.websocketURL = this.httpBaseURL.replace("http", "ws");
+			
+			if (!this.websocketURL.endsWith("/")) {
+				this.websocketURL += "/";
+			}
+			this.websocketURL += this.streamId + ".webrtc"; 
+		}
 
         this.dom = window.document;
-        this.containerElement = containerElement;
-        this.placeHolderElement = placeHolderElement;  
+       
        
         this.setPlayerVisible(false);
     }
@@ -214,9 +241,14 @@ export class EmbeddedPlayer {
     initialize() 
     {
         return this.loadVideoJSComponents()
-        .then(() => { return this.loadDashScript(); })
         .then(() => {
-			if (this.is360) {
+			if (!window.dashjs) {
+				return this.loadDashScript(); 
+			}
+		})
+        .then(() => {
+			if (this.is360 && !window.AFRAME) {
+				
 				return import('aframe');
 			}
 		})
@@ -264,7 +296,7 @@ export class EmbeddedPlayer {
         this.playerListener = null;
         this.webRTCDataListener = null;
         this.websocketURL = null;
-        this.httpBaseURL = "";
+        this.httpBaseURL = null;
     }
     
     initializeFromUrlParams() {
@@ -279,15 +311,7 @@ export class EmbeddedPlayer {
 	 			Logger.warn("Please use id parameter instead of name parameter.");
 			}
         }
-
-        if (this.streamId == null) {
-            var message = "Stream id is not set.Please add your stream id to the url as a query parameter such as ?id={STREAM_ID} to the url"
-            Logger.error(message);
-            //TODO: we may need to show this message on directly page
-            alert(message);
-            throw new Error(message);
-        }
-        
+    
 	    this.is360 = (getUrlParameter("is360", this.window.location.search) === "true") || this.is360;
 	    
 	    this.playType = getUrlParameter("playType", this.window.location.search)?.split(',') || this.playType;
@@ -323,15 +347,7 @@ export class EmbeddedPlayer {
 	    let playOrder = getUrlParameter("playOrder", this.window.location.search);
 	    this.playOrder = playOrder ? playOrder.split(',') : this.playOrder;
 	    
-	    let appName = this.window.location.pathname.substring(0, this.window.location.pathname.lastIndexOf("/") + 1);
-		let path = this.window.location.hostname + ":" + this.window.location.port + appName + this.streamId + ".webrtc";
-	    this.websocketURL = "ws://" + path;
-	
-	    if (location.protocol.startsWith("https")) {
-	        this.websocketURL = "wss://" + path;
-	    }
-
-        this.httpBaseURL = location.protocol + "//" + this.window.location.hostname + ":" + this.window.location.port + appName;
+	   
 	}
 
     /**
@@ -407,7 +423,9 @@ export class EmbeddedPlayer {
      */
     setPlayerVisible(visible) {
         this.containerElement.style.display = visible ? "block" : "none";
-        this.placeHolderElement.style.display = visible ? "none" : "block";
+        if (this.placeHolderElement) {
+        	this.placeHolderElement.style.display = visible ? "none" : "block";
+        }
 
         if (this.is360) {
             if (visible) {
@@ -572,7 +590,7 @@ export class EmbeddedPlayer {
 		if (extension == "m3u8") {
 	        videojs.Vhs.xhr.beforeRequest = (options) => {
 
-                var securityParams = this.getSecurityQueryParams();
+                let securityParams = this.getSecurityQueryParams();
                 if (!options.uri.includes(securityParams))
                 {
                     if (!options.uri.endsWith("?"))

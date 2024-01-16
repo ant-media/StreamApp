@@ -6,6 +6,7 @@ module.exports = function(config) {
 		
 			{ pattern: "node_modules/video.js/dist/video.js", included: true },
 			{ pattern: "node_modules/dashjs/dist/dash.all.min.js", included: true },
+			{ pattern: "node_modules/aframe/dist/aframe.min.js", included: true },
 			{ pattern: "src/main/js/*.js", included: false },
 			{ pattern: "src/main/js/external/*.js", included: false },
 			

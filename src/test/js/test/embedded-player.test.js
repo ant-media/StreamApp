@@ -103,6 +103,98 @@ describe("EmbeddedPlayer", function() {
     
     });
     
+    it("CheckConfigParameters", async function(){
+	        
+        var videoContainer = document.createElement("video_container");
+		  
+	
+        
+		var player = new EmbeddedPlayer({
+			streamId:"streamConfig",
+			containerElement: videoContainer,
+		});
+		
+		expect(player.streamId).to.be.equal("streamConfig");
+		expect(player.containerElement).to.equal(videoContainer);
+	    expect(player.placeHolderElement).to.be.null;
+		expect(player.playOrder).to.eql(["webrtc","hls"]);
+	 	expect(player.token).to.be.null;
+	 	expect(player.is360).to.be.false;
+		expect(player.playType).to.eql(['mp4','webm']);
+		  
+		  
+		  //the following is a test autoPlay is still true in mobile. We just try to play the stream if mobile browser can play or not
+		  //in autoPlay mode 
+		expect(player.autoPlay).to.true;
+		expect(player.mute).to.true;
+		expect(player.isMuted()).to.be.true;
+		expect(player.targetLatency).to.equal(3);
+		expect(player.subscriberId).to.be.null;
+		expect(player.subscriberCode).to.be.null;
+		expect(player.iceConnected).to.false;
+		expect(player.errorCalled).to.false;
+		
+		
+		var placeHolder = document.createElement("place_holder");
+		var player = new EmbeddedPlayer({
+			streamId:"streamConfig123",
+			containerElement: videoContainer,
+			placeHolderElement: placeHolder,
+			playOrder: ["webrtc","hls","dash"],
+			token: "token",
+			is360: true,
+			playType: ["webm"],
+			autoPlay: false,
+			mute: false,
+			targetLatency: 5,
+			subscriberId: "subscriberId",
+			subscriberCode: "subscriberCode",
+			httpBaseURL: "http://example.antmedia.io:5080/WebRTCAppEE",
+		});
+		
+		
+		expect(player.streamId).to.be.equal("streamConfig123");
+		expect(player.containerElement).to.be.equal(videoContainer);
+	    expect(player.placeHolderElement).to.be.equal(placeHolder);
+		expect(player.playOrder).to.eql(["webrtc","hls","dash"]);
+	 	expect(player.token).to.be.equal("token");
+	 	expect(player.is360).to.be.true;
+		expect(player.playType).to.eql(['webm']);
+		  
+		  
+		  //the following is a test autoPlay is still true in mobile. We just try to play the stream if mobile browser can play or not
+		  //in autoPlay mode 
+		expect(player.autoPlay).to.false;
+		expect(player.mute).to.false;
+		expect(player.isMuted()).to.be.false;
+		expect(player.targetLatency).to.equal(5);
+		expect(player.subscriberId).to.be.equal('subscriberId');
+		expect(player.subscriberCode).to.be.equal('subscriberCode');
+		
+		expect(player.httpBaseURL).to.be.equal('http://example.antmedia.io:5080/WebRTCAppEE');
+		
+		expect(player.websocketURL).to.be.equal('ws://example.antmedia.io:5080/WebRTCAppEE/streamConfig123.webrtc');
+		
+		player.initialize().then(()=> {
+			
+		}).catch((err) => {
+			fail("it should fail because we load the items in karma");
+		});
+		
+		try {
+			var player = new EmbeddedPlayer({
+			
+			});
+			//it should throw error
+			expect.fail("it should throw exception");
+		}
+		catch (err) {
+			//expected because there is no stream id
+		}
+	
+	
+	});
+    
      it("Check if not stream id", async function() {
 	  	var videoContainer = document.createElement("video_container");
 		  
