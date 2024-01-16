@@ -242,14 +242,12 @@ export class EmbeddedPlayer {
     {
         return this.loadVideoJSComponents()
         .then(() => {
-			if (!window.dashjs) {
-				return this.loadDashScript(); 
-			}
+			return this.loadDashScript(); 
 		})
         .then(() => {
 			if (this.is360 && !window.AFRAME) {
 				
-				return import('aframe');
+				return this.importScript('aframe');
 			}
 		})
 		.catch((e) => {
@@ -259,8 +257,9 @@ export class EmbeddedPlayer {
     };
 
     loadDashScript() {
-        if (this.playOrder.includes("dash")) {
-           return import('dashjs').then((dashjs) => 
+        if (this.playOrder.includes("dash") && !window.dashjs) {
+		
+           return this.importScript('dashjs').then((dashjs) => 
             {
 				window.dashjs = dashjs;
                 console.log("dash.all.min.js is loaded");
@@ -349,6 +348,10 @@ export class EmbeddedPlayer {
 	    
 	   
 	}
+	
+	importScript(file) {
+		return import(file);
+	}
 
     /**
      * load scripts dynamically
@@ -359,36 +362,31 @@ export class EmbeddedPlayer {
             //load videojs css
 			if (!window.videojs) 
 			{
-				return import('video.js/dist/video-js.min.css').then((css) => {
+				return this.importScript('video.js/dist/video-js.min.css').then((css) => {
 	                const styleElement = this.dom.createElement('style');
 				    styleElement.textContent = css.default.toString(); // Assuming css module exports a string
 				    this.dom.head.appendChild(styleElement);
 				})
-				.then(() => { return import("video.js") })
+				.then(() => { return this.importScript("video.js") })
 				.then((videojs) => 
 				{
-					window.videojs = videojs.default;
-					//var videoJsExternalJs = this.dom.createElement("script");
-			        //videoJsExternalJs.type = "text/javascript";
-			        //videoJsExternalJs.textContent = videojsLocal.default.toString();
-			        //this.dom.head.appendChild(videoJsExternalJs);
-					 
+					window.videojs = videojs.default;			 
 				})
-				.then(() => { return import('videojs-contrib-quality-levels') } )
-				.then(() => { return import('videojs-hls-quality-selector') } )
+				.then(() => { return this.importScript('videojs-contrib-quality-levels') } )
+				.then(() => { return this.importScript('videojs-hls-quality-selector') } )
 				
 				.then(() => {
 					
 					if (this.playOrder.includes("webrtc")) 
 	                {
-	                    return import('@antmedia/videojs-webrtc-plugin/dist/videojs-webrtc-plugin.css').then((css) =>
+	                    return this.importScript('@antmedia/videojs-webrtc-plugin/dist/videojs-webrtc-plugin.css').then((css) =>
 	                    {   
 	                        Logger.info("videojs-webrtc-plugin.css is loaded");
 	                         const styleElement = this.dom.createElement('style');
 						     styleElement.textContent = css.default.toString(); // Assuming css module exports a string
 						     this.dom.head.appendChild(styleElement);
 				    
-	                        return import('@antmedia/videojs-webrtc-plugin').then((videojsWebrtcPluginLocal) => 
+	                        return this.importScript('@antmedia/videojs-webrtc-plugin').then((videojsWebrtcPluginLocal) => 
 	                        {
 								Logger.info("videojs-webrtc-plugin is loaded");
 							});

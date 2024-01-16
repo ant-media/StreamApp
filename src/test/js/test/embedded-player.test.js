@@ -175,6 +175,16 @@ describe("EmbeddedPlayer", function() {
 		
 		expect(player.websocketURL).to.be.equal('ws://example.antmedia.io:5080/WebRTCAppEE/streamConfig123.webrtc');
 		
+		function mockApiSuccess() {
+		    return  {
+		       status: 200,
+		       default: { 'Content-type': 'application/json' }
+		    };
+		}
+		
+		var fake = sinon.replace(player, "importScript", sinon.fake.returns(Promise.resolve(mockApiSuccess())));
+		
+		window.videojs = null;
 		player.initialize().then(()=> {
 			
 		}).catch((err) => {
