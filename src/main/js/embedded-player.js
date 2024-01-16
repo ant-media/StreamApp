@@ -825,7 +825,7 @@ export class EmbeddedPlayer {
                     liveDelay: this.targetLatency
                 },
                 liveCatchup: {
-                    maxDrift: 0.05,
+                    maxDrift: 0.5,
                     playbackRate: 0.5,
                     latencyThreshold: 60
                 }
