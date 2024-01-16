@@ -189,11 +189,13 @@ export class EmbeddedPlayer {
 
 		
 		  // Check if the first argument is a config object or a Window object
-        if (typeof configOrWindow === 'object' && !(configOrWindow instanceof Window)) {
+        if (arguments.length == 1) {
             // New config object mode
+			console.log("config object mode");
             Object.assign(this, configOrWindow);
         } else {
             // Backward compatibility mode
+			console.log("getting from url mode");
             this.window = configOrWindow;
             this.containerElement = containerElement;
             this.placeHolderElement = placeHolderElement;
@@ -287,10 +289,24 @@ export class EmbeddedPlayer {
         }
         
 	    this.is360 = (getUrlParameter("is360", this.window.location.search) === "true") || this.is360;
+	    
 	    this.playType = getUrlParameter("playType", this.window.location.search)?.split(',') || this.playType;
 	    this.token = getUrlParameter("token", this.window.location.search) || this.token;
-	    this.autoPlay = (getUrlParameter("autoplay", this.window.location.search) === "true") || this.autoPlay;
-	    this.mute = (getUrlParameter("mute", this.window.location.search) === "true") || this.mute;
+	    let autoPlayLocal = getUrlParameter("autoplay", this.window.location.search);
+	    if (autoPlayLocal === "false") {
+			this.autoPlay = false;
+		}
+		else  {
+			this.autoPlay = true;
+		}
+		
+	    let muteLocal = getUrlParameter("mute", this.window.location.search);
+		if (muteLocal === "false") {
+			this.mute = false;
+		}
+		else {
+			this.mute = true;
+		}
 		
 		let localTargetLatency = getUrlParameter("targetLatency", this.window.location.search);
 	    if (localTargetLatency != null) {
@@ -307,8 +323,8 @@ export class EmbeddedPlayer {
 	    let playOrder = getUrlParameter("playOrder", this.window.location.search);
 	    this.playOrder = playOrder ? playOrder.split(',') : this.playOrder;
 	    
-	    var appName = this.window.location.pathname.substring(0, this.window.location.pathname.lastIndexOf("/") + 1);
-		var path = this.window.location.hostname + ":" + this.window.location.port + appName + this.streamId + ".webrtc";
+	    let appName = this.window.location.pathname.substring(0, this.window.location.pathname.lastIndexOf("/") + 1);
+		let path = this.window.location.hostname + ":" + this.window.location.port + appName + this.streamId + ".webrtc";
 	    this.websocketURL = "ws://" + path;
 	
 	    if (location.protocol.startsWith("https")) {

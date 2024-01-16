@@ -1,7 +1,7 @@
 
-import { EmbeddedPlayer } from '../../../main/webapp/js/embedded-player.js';
+import { EmbeddedPlayer } from '../../../main/js/embedded-player.js';
 
-import { isMobile } from "../../../main/webapp/js/fetch.stream.js";
+//import { isMobile } from "../../../main/js/fetch.stream.js";
 
 describe("EmbeddedPlayer", function() {
 		
@@ -24,11 +24,12 @@ describe("EmbeddedPlayer", function() {
 	
 	 it("Check default parameters", async function() {
 		
+		
 		  var videoContainer = document.createElement("video_container");
 		  
 		  var placeHolder = document.createElement("place_holder");
 		  			
-		  var locationComponent =  { href : 'http://example.com?id=stream123', search: "?id=stream123" };
+		  var locationComponent =  { href : 'http://example.com?id=stream123', search: "?id=stream123", pathname:"/" };
 		  var windowComponent = { location : locationComponent,
 		  						  document:  document};
 		 	      
@@ -70,7 +71,9 @@ describe("EmbeddedPlayer", function() {
 		  var token = "this_is_the_token";
 		  var subscriberId = "this_is_subscriber_id";
 		  var subscriberCode = "this_is_subscriber_id_subscriberCode"
-		  var locationComponent =  { href : 'http://example.com?id=stream123', search: "?id=stream123&playOrder=webrtc,hls,dash&token="+token+"&is360=true"+
+		  var locationComponent =  { href : 'http://example.com?id=stream123', 
+		  							 pathname:"/", 
+		  							 search: "?id=stream123&playOrder=webrtc,hls,dash&token="+token+"&is360=true"+
 		  								"&playType=webm&mute=false&targetLatency=6&subscriberId="+subscriberId+ "&subscriberCode="+subscriberCode+"&autoplay=false"
 		  								
 		  								
@@ -105,7 +108,7 @@ describe("EmbeddedPlayer", function() {
 		  
 		var placeHolder = document.createElement("place_holder");
 		  
-		var locationComponent =  { href : 'http://example.com', search: "" };
+		var locationComponent =  { href : 'http://example.com', search: "", pathname:"/" };
 		var windowComponent = { location : locationComponent,
 		  						  document:  document};
 		try {
@@ -117,7 +120,7 @@ describe("EmbeddedPlayer", function() {
 			//expected because there is no stream id
 		}
 		
-		var locationComponent =  { href : 'http://example.com?name=stream123', search: "?name=stream123" };
+		var locationComponent =  { href : 'http://example.com?name=stream123', search: "?name=stream123", pathname:"/" };
 		var windowComponent = { location : locationComponent,
 		  						  document:  document};
 		  						  
@@ -134,7 +137,7 @@ describe("EmbeddedPlayer", function() {
 		  
 		var placeHolder = document.createElement("place_holder");
 		  			
-		var locationComponent =  { href : 'http://example.com?id=stream123', search: "?id=stream123" };
+		var locationComponent =  { href : 'http://example.com?id=stream123', search: "?id=stream123" , pathname:"/", hostname:"example.antmedia.io", port:"5080"};
 		var windowComponent = { location : locationComponent,
 		  						  document:  document};
 		 	      
@@ -156,16 +159,16 @@ describe("EmbeddedPlayer", function() {
 	    var streamId = "stream123";
 	    var extension = "m3u8";
 	    await  player.checkStreamExistsViaHttp(testFolder, streamId, extension).then((streamPath) => {
-			expect(streamPath).to.be.equal( testFolder + "/" + streamId + "_adaptive" + "." + extension);
+			expect(streamPath).to.be.equal("http://example.antmedia.io:5080" + "/" + testFolder + "/" + streamId + "_adaptive" + "." + extension);
 		}).catch((err) => {
-			expect.fail("it should not throw exception");
+			expect.fail("it should not throw exception. error:" +  err);
 		});
 		
 		testFolder = "testFolder";
 		streamId = "stream123";
 		await  player.checkStreamExistsViaHttp(testFolder, testFolder + "/" + streamId, extension).then((streamPath) => {
 			console.log("stream path: " + streamPath);
-			expect(streamPath).to.be.equal( testFolder + "/" + streamId + "_adaptive" + "." + extension);
+			expect(streamPath).to.be.equal("http://example.antmedia.io:5080" + "/" + testFolder + "/" + streamId + "_adaptive" + "." + extension);
 		}).catch((err) => {
 			expect.fail("it should not throw exception");
 		});
@@ -177,7 +180,7 @@ describe("EmbeddedPlayer", function() {
 		player.token = token;
 		await  player.checkStreamExistsViaHttp(testFolder, streamId, extension).then((streamPath) => {
 			console.log("stream path: " + streamPath);
-			expect(streamPath).to.be.equal( testFolder + "/" + streamId + "_adaptive" + "." + extension + "?&token=" + token);
+			expect(streamPath).to.be.equal("http://example.antmedia.io:5080" + "/" + testFolder + "/" + streamId + "_adaptive" + "." + extension + "?&token=" + token);
 		}).catch((err) => {
 			expect.fail("it should not throw exception");
 		});
@@ -191,7 +194,7 @@ describe("EmbeddedPlayer", function() {
 		  
 		var placeHolder = document.createElement("place_holder");
 		  			
-		var locationComponent =  { href : 'http://example.com?id=stream123', search: "?id=stream123" };
+		var locationComponent =  { href : 'http://example.com?id=stream123', search: "?id=stream123", pathname:"/" };
 		var windowComponent = { location : locationComponent,
 		  						  document:  document};
 		 	      
@@ -233,7 +236,7 @@ describe("EmbeddedPlayer", function() {
 		  
 		var placeHolder = document.createElement("place_holder");
 		  			
-		var locationComponent =  { href : 'http://example.com?id=stream123', search: "?id=stream123" };
+		var locationComponent =  { href : 'http://example.com?id=stream123', search: "?id=stream123", pathname:"/" };
 		var windowComponent = { location : locationComponent,
 		  						  document:  document};
 		 	      
@@ -280,7 +283,7 @@ describe("EmbeddedPlayer", function() {
 		  
 		var placeHolder = document.createElement("place_holder");
 		  			
-		var locationComponent =  { href : 'http://example.com?id=stream123', search: "?id=stream123" };
+		var locationComponent =  { href : 'http://example.com?id=stream123', search: "?id=stream123", pathname:"/" };
 		var windowComponent = {  location : locationComponent,
 		  						  document:  document,
 		  						  addEventListener: window.addEventListener};
@@ -299,7 +302,7 @@ describe("EmbeddedPlayer", function() {
 	    expect(playIfExists.callCount).to.be.equal(1);
 	    sinon.restore();
 	    
-	    var locationComponent =  { href : 'http://example.com?id=streams/stream123.mp4', search: "?id=streams/stream123.mp4" };
+	    var locationComponent =  { href : 'http://example.com?id=streams/stream123.mp4', search: "?id=streams/stream123.mp4", pathname:"/" };
 		var windowComponent = {  location : locationComponent,
 		  						  document:  document,
 		  						  addEventListener: window.addEventListener};
@@ -323,7 +326,7 @@ describe("EmbeddedPlayer", function() {
 		
 		sinon.restore();
 		
-		var locationComponent =  { href : 'http://example.com?id=streams/stream123/stream123.mpd', search: "?id=streams/stream123/stream123.mpd" };
+		var locationComponent =  { href : 'http://example.com?id=streams/stream123/stream123.mpd', search: "?id=streams/stream123/stream123.mpd", pathname:"/" };
 		var windowComponent = {  location : locationComponent,
 		  						  document:  document,
 		  						  addEventListener: window.addEventListener};
@@ -338,7 +341,7 @@ describe("EmbeddedPlayer", function() {
 	
 	it("makeVideoJSVisibleWhenInitialized", async function() 
 	{
-		var locationComponent =  { href : 'http://example.com?id=stream123', search: "?id=stream123" };
+		var locationComponent =  { href : 'http://example.com?id=stream123', search: "?id=stream123", pathname:"/" };
 		var windowComponent = {  location : locationComponent,
 		  						  document:  document,
 		  						  addEventListener: window.addEventListener};
@@ -372,7 +375,7 @@ describe("EmbeddedPlayer", function() {
 	
 	it("makeDashPlayerVisibleWhenInitialized", async function() 
 	{
-		var locationComponent =  { href : 'http://example.com?id=streams/stream123/stream123.mpd', search: "?id=streams/stream123/stream123.mpd" };
+		var locationComponent =  { href : 'http://example.com?id=streams/stream123/stream123.mpd', search: "?id=streams/stream123/stream123.mpd", pathname:"/" };
 		var windowComponent = {  location : locationComponent,
 		  						  document:  document,
 		  						  addEventListener: window.addEventListener};
@@ -494,7 +497,7 @@ describe("EmbeddedPlayer", function() {
 		  
 		var placeHolder = document.createElement("place_holder");
 		  			
-		var locationComponent =  { href : 'http://example.com?id=stream123.mp4', search: "?id=stream123.mp4" };
+		var locationComponent =  { href : 'http://example.com?id=stream123.mp4', search: "?id=stream123.mp4" , pathname:"/"};
 		var windowComponent = {  location : locationComponent,
 		  						  document:  document,
 		  						  addEventListener: window.addEventListener};
@@ -511,7 +514,7 @@ describe("EmbeddedPlayer", function() {
 	    
 	    sinon.restore();
 	    
-	    locationComponent =  { href : 'http://example.com?id=stream123', search: "?id=stream123" };
+	    locationComponent =  { href : 'http://example.com?id=stream123', search: "?id=stream123",  pathname:"/" };
 	    windowComponent = {  location : locationComponent,
 		  						  document:  document,
 		  						  addEventListener: window.addEventListener};

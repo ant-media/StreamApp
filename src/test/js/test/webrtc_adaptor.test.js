@@ -1,5 +1,5 @@
 
-import { WebRTCAdaptor } from '../../../main/webapp/js/webrtc_adaptor.js';
+import { WebRTCAdaptor } from '../../../main/js/webrtc_adaptor.js';
 
 
 describe("WebRTCAdaptor", function() {

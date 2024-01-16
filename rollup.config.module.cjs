@@ -15,7 +15,8 @@ const builds = {
 			 'src/main/js/soundmeter.js',
 			 'src/main/js/volume-meter-processor.js',
 			 'src/main/js/external/loglevel.min.js',
-			 'src/main/js/utility.js',],
+			 'src/main/js/utility.js',
+			 'src/main/js/media_manager.js'],
 	output: [{
 		dir: 'dist',
 		format: 'cjs'

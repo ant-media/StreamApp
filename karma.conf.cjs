@@ -4,9 +4,10 @@ module.exports = function(config) {
     files: [
 			{ pattern: "src/test/**/*.js", type: "module" },
 		
-			{ pattern: "src/main/webapp/js/external/video.js", included: true },
-			{ pattern: "src/main/webapp/js/external/dash.all.min.js", included: true },
-			{ pattern: "src/main/webapp/**/*.js", included: false },
+			{ pattern: "node_modules/video.js/dist/video.js", included: true },
+			{ pattern: "node_modules/dashjs/dist/dash.all.min.js", included: true },
+			{ pattern: "src/main/js/*.js", included: false },
+			{ pattern: "src/main/js/external/*.js", included: false },
 			
 	],
     
@@ -15,7 +16,7 @@ module.exports = function(config) {
 
     
     preprocessors: {
-    	'src/main/webapp/js/*.js': ['coverage'],
+    	'src/main/js/*.js': ['coverage'],
   	},
   
 	coverageReporter: {
@@ -42,7 +43,6 @@ module.exports = function(config) {
 	    base: 'Chrome',
 	    flags: ['--headless',
 	    		'--disable-gpu', 
-	     		"--disable-gpu", 
 				"--headless=new",
 				"--no-sandbox",
 				"--disable-dev-shm-usage",
@@ -52,12 +52,12 @@ module.exports = function(config) {
 				"--use-fake-device-for-media-stream",
 				]
 	  },
+	  
 	  ChromeMobileUserAgent: {
 	    base: 'Chrome',
 	    flags: [
 				'--headless',
 	    		'--disable-gpu', 
-	     		"--disable-gpu", 
 				"--headless=new",
 				"--no-sandbox",
 				"--disable-dev-shm-usage",
@@ -68,6 +68,7 @@ module.exports = function(config) {
 				'--user-agent="Mozilla/5.0 (iPhone; CPU iPhone OS 10_3 like Mac OS X) AppleWebKit/602.1.50 (KHTML, like Gecko) CriOS/56.0.2924.75 Mobile/14E5239e Safari/602.1"'
 				]
 	  },
+	  
 	},
 	    
     autoWatch: true,

@@ -1,4 +1,4 @@
-import {SoundMeter} from '../../../main/webapp/js/soundmeter.js';
+import {SoundMeter} from '../../../main/js/soundmeter.js';
 
 
 describe("SoundMeter", function() {
