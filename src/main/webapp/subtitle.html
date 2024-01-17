@@ -1,0 +1,48 @@
+<!-- iframe.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body, html {
+            height: 100%;
+            margin: 0;
+            overflow: hidden;
+            background-color : transparent;
+        }
+        #caption {
+            background: rgba(255, 255, 255, 0.7);
+            padding: 10px;
+            font-size: 23px; 
+            position: absolute;
+        }
+
+
+    </style>
+</head>
+<body>
+    <div id="caption">
+        <div id="streamId" style="display: inline-block;"></div> : 
+        <div id="captionText" style="display: inline-block;"> </div>
+    </div>
+
+    <script>
+    var streamId = document.getElementById("streamId");
+    var captionText = document.getElementById("captionText");
+
+    window.addEventListener('message', ({ data }) => {
+        if(data["tech"] == "vosk"){
+            let caption = JSON.parse(data.text);
+            streamId.innerHTML = data.streamId;
+            if(caption.hasOwnProperty("partial"))
+            captionText.innerHTML = caption.partial;
+            if(caption.hasOwnProperty("text"))
+            captionText.innerHTML = caption.text;
+            console.warn(caption)
+        }
+    });
+
+    </script>
+</body>
+</html>

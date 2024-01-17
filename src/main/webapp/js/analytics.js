@@ -199,7 +199,7 @@ class Analytics {
             newFormatedData["customData" + i] = this.customData_fields[data];
             i++;
         })
-        console.warn(newFormatedData);
+     //   console.warn(newFormatedData);
         return newFormatedData;
     }
     stop() {

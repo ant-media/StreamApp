@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body, html {
+            height: 100%;
+            margin: 0;
+            overflow: hidden;
+        }
+        #iframeContainer {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border: 1px solid #ccc;
+            overflow: hidden;
+            background: black;
+            resize: both; /* Enable resizing */
+            z-index: 1; /* Ensure the resizing handle is on top */
+        }
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+
+	<div id="captionContainer" style="position: absolute; background-color: transparent; top: 50%; left: 50%; transform: translate(-50%, -50%); border: 1px solid #ccc; overflow: hidden; resize: both; z-index: 1000;">
+        <iframe id="iframe" src="subtitle.html" frameborder="0" allowfullscreen style="width: 100%; height: 100%; background-color: transparent;"></iframe>
+    </div>
+
+    <script>
+        var iframeContainer = document.getElementById("captionContainer");
+        var isResizing = false;
+        var offsetX, offsetY;
+
+        iframeContainer.addEventListener("mousedown", function(e) {
+            if (e.target === iframeContainer) {
+                isResizing = true;
+                offsetX = e.clientX - iframeContainer.getBoundingClientRect().left;
+                offsetY = e.clientY - iframeContainer.getBoundingClientRect().top;
+            }
+        });
+
+        document.addEventListener("mousemove", function(e) {
+            if (isResizing) {
+                iframeContainer.style.width = (e.clientX - offsetX) + "px";
+                iframeContainer.style.height = (e.clientY - offsetY) + "px";
+            }
+        });
+
+        document.addEventListener("mouseup", function() {
+            isResizing = false;
+        });
+
+        // Listen for messages from the iframe
+        window.addEventListener("message", function(event) {
+         
+                // Process the received data
+                var receivedData = event.data;
+                console.log("Received data from iframe:", receivedData);
+         
+        });
+
+        window.onload = function() {
+            // Send a message to the iframe
+            iframe.contentWindow.postMessage("{df:df}");
+        };
+    </script>
+</body>
+</html>

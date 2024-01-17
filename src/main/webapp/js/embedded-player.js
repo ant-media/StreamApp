@@ -393,6 +393,13 @@ export class EmbeddedPlayer {
 			Logger.debug("Websocket is closed. tryNextTech to replay");
 			this.tryNextTech();
 		}
+        else if(infos["info"] == "data_received"){
+          //  console.log(infos)
+            let message = JSON.parse(infos["obj"].data)
+            if(message["eventType"] == "caption")
+                iframe.contentWindow.postMessage(message);
+            
+        }
         if(this.analytics != null){
             if(infos["obj"] && Analytics.webrtInfoList.includes(infos["obj"]["definition"])){
                 this.analytics.setStats(infos["obj"]);

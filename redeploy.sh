@@ -1,5 +1,5 @@
 #!/bin/sh
-AMS_DIR=/usr/local/antmedia
+AMS_DIR=/home/usama/Music/antmedia
 mvn clean install -DskipTests -Dgpg.skip=true
 OUT=$?
 
