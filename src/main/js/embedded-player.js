@@ -5,7 +5,7 @@ import "./external/loglevel.min.js";
 
 const Logger = window.log;
 
-const STATIC_VIDEO_HTML =  "<video id='video-player' class='video-js vjs-default-skin vjs-big-play-centered' controls playsinline></video>";
+export const STATIC_VIDEO_HTML =  "<video id='video-player' class='video-js vjs-default-skin vjs-big-play-centered' controls playsinline></video>";
 
 
 export class EmbeddedPlayer {
@@ -25,13 +25,17 @@ export class EmbeddedPlayer {
 	*/
 	static STREAMS_FOLDER = "streams";
 
-	static VIDEO_HTML = STATIC_VIDEO_HTML;
+    
+    /**
+     * Video HTML content. It's by default STATIC_VIDEO_HTML
+     */
+	videoHTMLContent;
 
-	static VIDEO_PLAYER_ID = "video-player";
+    /**
+     * video player Id. It's by default "video-player"
+     */
+	videoPlayerId;
 	
-	
-
-
     /**
     *  "playOrder": the order which technologies is used in playing. Optional. Default value is "webrtc,hls".
     *	possible values are "hls,webrtc","webrtc","hls","vod","dash"
@@ -177,8 +181,6 @@ export class EmbeddedPlayer {
 		*/
 		EmbeddedPlayer.STREAMS_FOLDER = "streams";
 
-		EmbeddedPlayer.VIDEO_HTML = STATIC_VIDEO_HTML;
-
 		EmbeddedPlayer.VIDEO_PLAYER_ID = "video-player";
 		
 		// Initialize default values
@@ -186,7 +188,7 @@ export class EmbeddedPlayer {
 
 		
 		  // Check if the first argument is a config object or a Window object
-        if (arguments.length == 1) {
+        if (!this.isWindow(configOrWindow)) {
             // New config object mode
 			Logger.info("config object mode");
             Object.assign(this, configOrWindow);
@@ -196,11 +198,13 @@ export class EmbeddedPlayer {
             // Backward compatibility mode
 			Logger.info("getting from url mode");
             this.window = configOrWindow;
-            this.containerElement = containerElement;
-            this.placeHolderElement = placeHolderElement;
+        
             // Use getUrlParameter for backward compatibility
             this.initializeFromUrlParams();
         }
+        
+        this.containerElement = containerElement;
+        this.placeHolderElement = placeHolderElement;
 		
 		if (this.streamId == null) {
             var message = "Stream id is not set.Please add your stream id to the url as a query parameter such as ?id={STREAM_ID} to the url"
@@ -229,13 +233,21 @@ export class EmbeddedPlayer {
 			if (!this.websocketURL.endsWith("/")) {
 				this.websocketURL += "/";
 			}
+			
 			this.websocketURL += this.streamId + ".webrtc"; 
 		}
 
-        this.dom = window.document;
+        this.dom = this.window.document;
        
-       
+        this.containerElement.innerHTML = this.videoHTMLContent;
+
         this.setPlayerVisible(false);
+    }
+
+    isWindow(configOrWindow) {
+        //accept that it's a window if it's a Window instance or it has location.href
+        //location.href is used in test environment
+        return configOrWindow instanceof Window || (configOrWindow.location && configOrWindow.location.href);
     }
 
     initialize() 
@@ -247,7 +259,7 @@ export class EmbeddedPlayer {
         .then(() => {
 			if (this.is360 && !window.AFRAME) {
 				
-				return this.importScript('aframe');
+				return import('aframe');
 			}
 		})
 		.catch((e) => {
@@ -259,7 +271,7 @@ export class EmbeddedPlayer {
     loadDashScript() {
         if (this.playOrder.includes("dash") && !window.dashjs) {
 		
-           return this.importScript('dashjs').then((dashjs) => 
+           return import('dashjs').then((dashjs) => 
             {
 				window.dashjs = dashjs;
                 console.log("dash.all.min.js is loaded");
@@ -296,6 +308,8 @@ export class EmbeddedPlayer {
         this.webRTCDataListener = null;
         this.websocketURL = null;
         this.httpBaseURL = null;
+        this.videoHTMLContent = STATIC_VIDEO_HTML;
+        this.videoPlayerId = "video-player";
     }
     
     initializeFromUrlParams() {
@@ -348,11 +362,29 @@ export class EmbeddedPlayer {
 	    
 	   
 	}
-	
-	importScript(file) {
-		return import(file);
-	}
 
+    loadWebRTCComponents() {
+        if (this.playOrder.includes("webrtc")) 
+        {
+            return import('@antmedia/videojs-webrtc-plugin/dist/videojs-webrtc-plugin.css').then((css) =>
+            {   
+                Logger.info("videojs-webrtc-plugin.css is loaded");
+                    const styleElement = this.dom.createElement('style');
+                    styleElement.textContent = css.default.toString(); // Assuming css module exports a string
+                    this.dom.head.appendChild(styleElement);
+        
+                    return import('@antmedia/videojs-webrtc-plugin').then((videojsWebrtcPluginLocal) => 
+                    {
+                        Logger.info("videojs-webrtc-plugin is loaded");
+
+                    });
+            });
+        }
+        else {
+
+            return Promise.resolve();
+        }
+    }
     /**
      * load scripts dynamically
      */
@@ -362,38 +394,19 @@ export class EmbeddedPlayer {
             //load videojs css
 			if (!window.videojs) 
 			{
-				return this.importScript('video.js/dist/video-js.min.css').then((css) => {
+				return import('video.js/dist/video-js.min.css').then((css) => {
 	                const styleElement = this.dom.createElement('style');
 				    styleElement.textContent = css.default.toString(); // Assuming css module exports a string
 				    this.dom.head.appendChild(styleElement);
 				})
-				.then(() => { return this.importScript("video.js") })
+				.then(() => { return import("video.js") })
 				.then((videojs) => 
 				{
 					window.videojs = videojs.default;			 
 				})
-				.then(() => { return this.importScript('videojs-contrib-quality-levels') } )
-				.then(() => { return this.importScript('videojs-hls-quality-selector') } )
-				
-				.then(() => {
-					
-					if (this.playOrder.includes("webrtc")) 
-	                {
-	                    return this.importScript('@antmedia/videojs-webrtc-plugin/dist/videojs-webrtc-plugin.css').then((css) =>
-	                    {   
-	                        Logger.info("videojs-webrtc-plugin.css is loaded");
-	                         const styleElement = this.dom.createElement('style');
-						     styleElement.textContent = css.default.toString(); // Assuming css module exports a string
-						     this.dom.head.appendChild(styleElement);
-				    
-	                        return this.importScript('@antmedia/videojs-webrtc-plugin').then((videojsWebrtcPluginLocal) => 
-	                        {
-								Logger.info("videojs-webrtc-plugin is loaded");
-							});
-	                    });
-	                }
-				});
-				
+				.then(() => { return import('videojs-contrib-quality-levels') } )
+				.then(() => { return import('videojs-hls-quality-selector') } )
+				.then(() => { return this.loadWebRTCComponents(); });
 			}
 			else {
 				return Promise.resolve();
@@ -511,7 +524,7 @@ export class EmbeddedPlayer {
         }
 
         //same videojs is being use for hls, vod and webrtc streams
-        this.videojsPlayer = videojs(EmbeddedPlayer.VIDEO_PLAYER_ID, {
+        this.videojsPlayer = videojs(this.videoPlayerId, {
             poster: "previews/" + preview + ".png",
             liveui: extension == "m3u8" ? true : false,
             liveTracker: {
@@ -923,6 +936,14 @@ export class EmbeddedPlayer {
     }
 
     /**
+     * Destory the player
+     */
+    destroy() {
+        this.destroyVideoJSPlayer();
+        this.destroyDashPlayer();
+    }
+
+    /**
      * play the stream with the given tech
      * @param {string} tech
      */
@@ -932,7 +953,7 @@ export class EmbeddedPlayer {
         this.destroyDashPlayer();
         this.setPlayerVisible(false);
 
-        this.containerElement.innerHTML = EmbeddedPlayer.VIDEO_HTML;
+        this.containerElement.innerHTML = this.videoHTMLContent;
 
         Logger.warn("Try to play the stream " + this.streamId + " with " + this.currentPlayType);
         switch (this.currentPlayType) {
@@ -1032,13 +1053,17 @@ export class EmbeddedPlayer {
 
             this.playOrder= ["vod"];
 
+            if (!this.httpBaseURL.endsWith("/")) {
+                this.httpBaseURL += "/";
+            }
+            this.containerElement.innerHTML = this.videoHTMLContent;
 
             if (extension == EmbeddedPlayer.DASH_EXTENSION)
             {
-				this.playViaDash(this.addSecurityParams(this.streamId), extension);
+				this.playViaDash(this.httpBaseURL + this.addSecurityParams(this.streamId), extension);
 			}
 			else  {
-				this.playWithVideoJS(this.addSecurityParams(this.streamId), extension);
+				this.playWithVideoJS(this.httpBaseURL + this.addSecurityParams(this.streamId), extension);
 			}
         }
         else {

@@ -1,5 +1,5 @@
 
-import { EmbeddedPlayer } from '../../../main/js/embedded-player.js';
+import { STATIC_VIDEO_HTML, EmbeddedPlayer } from '../../../main/js/embedded-player.js';
 
 //import { isMobile } from "../../../main/js/fetch.stream.js";
 
@@ -64,6 +64,8 @@ describe("EmbeddedPlayer", function() {
     
     it("Check url parameters", async function() {
 		
+		
+
 		  var videoContainer = document.createElement("video_container");
 		  
 		  var placeHolder = document.createElement("place_holder");
@@ -111,8 +113,7 @@ describe("EmbeddedPlayer", function() {
         
 		var player = new EmbeddedPlayer({
 			streamId:"streamConfig",
-			containerElement: videoContainer,
-		});
+		}, videoContainer, null);
 		
 		expect(player.streamId).to.be.equal("streamConfig");
 		expect(player.containerElement).to.equal(videoContainer);
@@ -138,8 +139,6 @@ describe("EmbeddedPlayer", function() {
 		var placeHolder = document.createElement("place_holder");
 		var player = new EmbeddedPlayer({
 			streamId:"streamConfig123",
-			containerElement: videoContainer,
-			placeHolderElement: placeHolder,
 			playOrder: ["webrtc","hls","dash"],
 			token: "token",
 			is360: true,
@@ -150,7 +149,7 @@ describe("EmbeddedPlayer", function() {
 			subscriberId: "subscriberId",
 			subscriberCode: "subscriberCode",
 			httpBaseURL: "http://example.antmedia.io:5080/WebRTCAppEE",
-		});
+		}, videoContainer, placeHolder);
 		
 		
 		expect(player.streamId).to.be.equal("streamConfig123");
@@ -175,22 +174,14 @@ describe("EmbeddedPlayer", function() {
 		
 		expect(player.websocketURL).to.be.equal('ws://example.antmedia.io:5080/WebRTCAppEE/streamConfig123.webrtc');
 		
-		function mockApiSuccess() {
-		    return  {
-		       status: 200,
-		       default: { 'Content-type': 'application/json' }
-		    };
-		}
-		
-		var fake = sinon.replace(player, "importScript", sinon.fake.returns(Promise.resolve(mockApiSuccess())));
 		
 		var videojs = window.videojs;
 		
 		window.videojs = null;
 		await player.initialize().then(()=> {
-			
+			expect.fail("it should fail because it's not expected to be loaded here");
 		}).catch((err) => {
-			fail("it should fail because we load the items in karma");
+			
 		});
 		
 		try {
@@ -205,7 +196,25 @@ describe("EmbeddedPlayer", function() {
 		}
 		
 		window.videojs = videojs;
-	
+
+		{
+			player.playOrder = ["hls","dash"];
+
+			await player.loadWebRTCComponents().then(() => {
+				//it will just return promise
+			}).catch((err) => {
+				expect.fail("it should not reject");
+			});
+
+
+			player.playOrder = ["webrtc", "dash"];
+
+			await player.loadWebRTCComponents().then(() => {
+				expect.fail("it should reject because it's not loadable here");
+			}).catch((err) => {
+
+			});
+		}
 	
 	});
     
@@ -395,7 +404,7 @@ describe("EmbeddedPlayer", function() {
 		  						  addEventListener: window.addEventListener};
 		  						  
 		const fixture = document.createElement('div');
-		fixture.innerHTML = EmbeddedPlayer.VIDEO_HTML;
+		fixture.innerHTML = STATIC_VIDEO_HTML;
 		
 		// Append the fixture element to the document body
 		document.body.appendChild(fixture);
@@ -408,30 +417,29 @@ describe("EmbeddedPlayer", function() {
 	    expect(playIfExists.callCount).to.be.equal(1);
 	    sinon.restore();
 	    
-	    var locationComponent =  { href : 'http://example.com?id=streams/stream123.mp4', search: "?id=streams/stream123.mp4", pathname:"/" };
+	    var locationComponent =  { href : 'http://example.com?id=streams/stream123.mp4', search: "?id=streams/stream123.mp4", pathname:"/", hostname:"example.antmedia.io", port:"5080" };
 		var windowComponent = {  location : locationComponent,
 		  						  document:  document,
 		  						  addEventListener: window.addEventListener};
-		  						  
+		  					
+		
 		player = new EmbeddedPlayer(windowComponent, videoContainer, placeHolder);	
 		
 		var playWithVideoJS = sinon.replace(player, "playWithVideoJS", sinon.fake());
-		
+
 		player.play();
 		
-		expect(playWithVideoJS.calledWithMatch("streams/stream123.mp4", "mp4")).to.be.true;
-		
+		expect(playWithVideoJS.calledWithExactly("http://example.antmedia.io:5080/streams/stream123.mp4", "mp4")).to.be.true;
+
 		sinon.restore();
 		
 		var makeVideoJSVisibleWhenReady = sinon.replace(player, "makeVideoJSVisibleWhenReady", sinon.fake());
-		
+
 		player.play();
-		
 		expect(makeVideoJSVisibleWhenReady.calledOnce).to.be.true;
 		
 		
 		sinon.restore();
-		
 		var locationComponent =  { href : 'http://example.com?id=streams/stream123/stream123.mpd', search: "?id=streams/stream123/stream123.mpd", pathname:"/" };
 		var windowComponent = {  location : locationComponent,
 		  						  document:  document,
@@ -458,7 +466,7 @@ describe("EmbeddedPlayer", function() {
 		  
 		var placeHolder = document.createElement("place_holder");		  						  
 		  						  
-		videoContainer.innerHTML = EmbeddedPlayer.VIDEO_HTML;
+		videoContainer.innerHTML = STATIC_VIDEO_HTML;
 		
 		// Append the fixture element to the document body
 		document.body.appendChild(videoContainer);		  						  
@@ -490,7 +498,7 @@ describe("EmbeddedPlayer", function() {
 		  
 		var placeHolder = document.createElement("place_holder");		  						  
 		  						  
-		videoContainer.innerHTML = EmbeddedPlayer.VIDEO_HTML;
+		videoContainer.innerHTML = STATIC_VIDEO_HTML;
 		
 		// Append the fixture element to the document body
 		document.body.appendChild(videoContainer);		  						  
