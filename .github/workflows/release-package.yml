@@ -1,4 +1,4 @@
-name: publish Node.js Package
+name: publish sdk release to npmjs
 
 on:
   push:

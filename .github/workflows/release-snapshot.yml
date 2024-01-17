@@ -1,4 +1,4 @@
-name: publish Node.js Package
+name: publish sdk snapshot  to npmjs
 on:
   push:
     branches:
