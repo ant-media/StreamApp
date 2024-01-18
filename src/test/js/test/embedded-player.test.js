@@ -174,28 +174,61 @@ describe("EmbeddedPlayer", function() {
 		
 		expect(player.websocketURL).to.be.equal('ws://example.antmedia.io:5080/WebRTCAppEE/streamConfig123.webrtc');
 		
-		
-		var videojs = window.videojs;
-		
-		window.videojs = null;
-		await player.initialize().then(()=> {
-			expect.fail("it should fail because it's not expected to be loaded here");
-		}).catch((err) => {
+	});
+	
+	it("loadComponents", async function(){
 			
-		});
+		var videoContainer = document.createElement("video_container");
+		  
+	
+ 
+		var player = new EmbeddedPlayer({
+			streamId:"streamConfig",
+		}, videoContainer, null);
 		
-		try {
-			var player = new EmbeddedPlayer({
-			
+		
+		{
+			await player.initialize().then(()=> {
+				
+			}).catch((err) => {
+				expect.fail("it should not fail because it's already loaded");
 			});
-			//it should throw error
-			expect.fail("it should throw exception");
-		}
-		catch (err) {
-			//expected because there is no stream id
+			
 		}
 		
-		window.videojs = videojs;
+		{
+			player.playOrder = ["dash"];
+			await player.initialize().then(()=> {
+				
+			}).catch((err) => {
+				expect.fail("it should not fail because we skip videojs and dash is already loaded");
+			});
+		}
+			
+		
+		{
+			var videojs = window.videojs;
+			
+			window.videojs = null;
+			await player.initialize().then(()=> {
+				expect.fail("it should fail because it's not expected to be loaded here");
+			}).catch((err) => {
+				
+			});
+			
+			try {
+				var player = new EmbeddedPlayer({
+				
+				});
+				//it should throw error
+				expect.fail("it should throw exception");
+			}
+			catch (err) {
+				//expected because there is no stream id
+			}
+			
+			window.videojs = videojs;
+		}
 
 		{
 			player.playOrder = ["hls","dash"];
@@ -215,7 +248,8 @@ describe("EmbeddedPlayer", function() {
 
 			});
 		}
-	
+		
+		
 	});
     
      it("Check if not stream id", async function() {
@@ -343,6 +377,29 @@ describe("EmbeddedPlayer", function() {
 		}).catch((err) => {			
 			expect(err).to.be.equal("resource_is_not_available");
 		});
+		
+	});
+	
+	
+	it("destroy", async function() {
+		var videoContainer = document.createElement("video_container");
+		  
+		var placeHolder = document.createElement("place_holder");
+		  			
+		var locationComponent =  { href : 'http://example.com?id=stream123', search: "?id=stream123", pathname:"/" };
+		var windowComponent = { location : locationComponent,
+		  						  document:  document};
+		 	      
+	    var player = new EmbeddedPlayer(windowComponent, videoContainer, placeHolder);
+	    
+	    var destroyDashPlayer = sinon.replace(player, "destroyDashPlayer", sinon.fake());
+	    var destroyVideoJSPlayer = sinon.replace(player, "destroyVideoJSPlayer", sinon.fake());
+	    
+	    
+	    player.destroy();
+	    
+	    expect(destroyDashPlayer.calledOnce).to.be.true;
+	    expect(destroyVideoJSPlayer.calledOnce).to.be.true;
 		
 	});
 	
