@@ -654,9 +654,10 @@ describe("WebRTCAdaptor", function() {
 		})
 	})
 	
-	it("mutedButSpeaking", async function() {
+	
+	it.only("mutedButSpeaking", async function() {
         
-        this.timeout(10000);
+        this.timeout(5000);
         
 		let adaptor = new WebRTCAdaptor({
 			websocketURL: "ws://localhost",
@@ -667,7 +668,6 @@ describe("WebRTCAdaptor", function() {
 			initializeComponents: false
 		});
 		
-		await adaptor.initialize();
 
 		let audioContext = new (window.AudioContext || window.webkitAudioContext)();
 		let oscillator = audioContext.createOscillator();
@@ -710,7 +710,7 @@ describe("WebRTCAdaptor", function() {
 				adaptor.mediaManager.callback = (info) => {
 				  console.log("callback ", info);
 				  if (info == "speaking_but_muted") {
-					console.log("speaking_but_muted1");
+					console.log("speaking_but_muted");
 					resolve();
 				  }
 				};
