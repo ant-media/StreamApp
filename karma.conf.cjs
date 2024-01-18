@@ -42,8 +42,7 @@ module.exports = function(config) {
 	customLaunchers: {
 	  CustomChrome: {
 	    base: 'Chrome',
-	    flags: [
-				'--headless',
+	    flags: ['--headless',
 	    		'--disable-gpu', 
 				"--headless=new",
 				"--no-sandbox",
@@ -52,7 +51,6 @@ module.exports = function(config) {
 				"--remote-allow-origins=*",
 				"--use-fake-ui-for-media-stream",
 				"--use-fake-device-for-media-stream",
-				"--autoplay-policy=no-user-gesture-required",
 				]
 	  },
 	  
@@ -67,10 +65,8 @@ module.exports = function(config) {
 				"--log-level=1",
 				"--remote-allow-origins=*",
 				"--use-fake-ui-for-media-stream",
-
 				"--use-fake-device-for-media-stream",
-				'--user-agent="Mozilla/5.0 (iPhone; CPU iPhone OS 10_3 like Mac OS X) AppleWebKit/602.1.50 (KHTML, like Gecko) CriOS/56.0.2924.75 Mobile/14E5239e Safari/602.1"',
-				"--autoplay-policy=no-user-gesture-required",
+				'--user-agent="Mozilla/5.0 (iPhone; CPU iPhone OS 10_3 like Mac OS X) AppleWebKit/602.1.50 (KHTML, like Gecko) CriOS/56.0.2924.75 Mobile/14E5239e Safari/602.1"'
 				]
 	  },
 	  
