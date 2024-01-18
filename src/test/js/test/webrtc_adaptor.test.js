@@ -655,7 +655,7 @@ describe("WebRTCAdaptor", function() {
 	})
 	
 	
-	it.only("mutedButSpeaking", async function() {
+	it("mutedButSpeaking", async function() {
         
         this.timeout(5000);
         
