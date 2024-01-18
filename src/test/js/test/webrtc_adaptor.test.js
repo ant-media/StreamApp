@@ -719,9 +719,7 @@ describe("WebRTCAdaptor", function() {
 			});
 		  });
 		  
-		  return speakingButMuted;
-		  /*
-		  
+		 		  
 		  let soundMeteraddModuleFailed = speakingButMuted.then(() => {
 			adaptor.mediaManager.mutedSoundMeter.context.audioWorklet.addModule = async () => {
 				return Promise.reject("error");
@@ -734,7 +732,7 @@ describe("WebRTCAdaptor", function() {
 
 
 		  return soundMeteraddModuleFailed;
-			*/
+			
 
     });
 
