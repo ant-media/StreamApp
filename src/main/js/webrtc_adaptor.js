@@ -1130,6 +1130,8 @@ export class WebRTCAdaptor {
             }
 
         }
+        
+        return this.remotePeerConnection[streamId];
     }
 
     /**
@@ -1374,9 +1376,10 @@ export class WebRTCAdaptor {
     startPublishing(idOfStream) {
         let streamId = idOfStream;
 
-        this.initPeerConnection(streamId, "publish");
+        let peerConnection = this.initPeerConnection(streamId, "publish");
 
-        this.remotePeerConnection[streamId].createOffer(this.sdp_constraints)
+        //this.remotePeerConnection[streamId]
+        peerConnection.createOffer(this.sdp_constraints)
             .then(configuration => {
                 this.gotDescription(configuration, streamId);
             })

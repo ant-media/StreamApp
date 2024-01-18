@@ -686,5 +686,46 @@ describe("WebRTCAdaptor", function() {
 	return soundMeteraddModuleFailed;
 
     });
+    
+    
+    it.only("startPublishing", async function(){
+		let adaptor = new WebRTCAdaptor({
+			websocketURL: "ws://example.com",
+			isPlayMode: true
+		});
+		
+		let peerConnection = new RTCPeerConnection();
+		let initPeerConnection = sinon.replace(adaptor, "initPeerConnection", sinon.fake.returns(peerConnection));
+		
+		let createOfferFake = sinon.replace(peerConnection, "createOffer", sinon.fake.returns(Promise.reject("this is on purpose")));
+
+		adaptor.startPublishing("stream123");
+				
+		expect(initPeerConnection.calledWithExactly("stream123", "publish")).to.be.true;
+	});
+	
+	it("join", async function() {
+		
+		let adaptor = new WebRTCAdaptor({
+			websocketURL: "ws://example.com",
+			isPlayMode: true
+		});
+		
+		let streamId = "stream123";
+		let jsCmd = {
+	        command: "join",
+	        streamId: streamId,
+	        multiPeer: false,
+	        mode: "play"
+	    };
+        
+		let webSocketAdaptor = sinon.mock(adaptor.webSocketAdaptor);
+	
+        let sendExpectation = webSocketAdaptor.expects("send").once().withArgs(JSON.stringify(jsCmd));
+		
+		adaptor.join(streamId);
+		
+		sendExpectation.verify()
+ 	})
 
 });
