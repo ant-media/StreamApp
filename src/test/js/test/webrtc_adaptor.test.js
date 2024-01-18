@@ -688,7 +688,7 @@ describe("WebRTCAdaptor", function() {
     });
     
     
-    it.only("startPublishing", async function(){
+    it("startPublishing", async function(){
 		let adaptor = new WebRTCAdaptor({
 			websocketURL: "ws://example.com",
 			isPlayMode: true
