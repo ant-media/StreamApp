@@ -141,6 +141,32 @@ describe("WebRTCAdaptor", function() {
 		sendExpectation.verify();
 
 	});
+	
+	it("toggleVideo", async function() {
+		let adaptor = new WebRTCAdaptor({
+			websocketURL: "ws://example.com",
+			isPlayMode: true
+		});
+		
+		let webSocketAdaptor = sinon.mock(adaptor.webSocketAdaptor);
+		let streamId = "stream1";
+		let trackId = "trackId";
+		let enabled = true;
+		
+		let jsCmd = {
+            command: "toggleVideo",
+            streamId: streamId,
+            trackId: trackId,
+            enabled: enabled,
+        };
+        
+		let sendExpectation = webSocketAdaptor.expects("send").once().withArgs(JSON.stringify(jsCmd));
+		
+
+		adaptor.toggleVideo(streamId, trackId, enabled);
+		
+		sendExpectation.verify()
+	})
 
 
 	it("Close websocket", async function()
@@ -149,12 +175,12 @@ describe("WebRTCAdaptor", function() {
 			websocketURL: "ws://example.com",
 			isPlayMode: true
 		});
-		var webSocketAdaptor = sinon.mock(adaptor.webSocketAdaptor);
-		var closeExpectation = webSocketAdaptor.expects("close");
+		let webSocketAdaptor = sinon.mock(adaptor.webSocketAdaptor);
+		let closeExpectation = webSocketAdaptor.expects("close");
 
-		var closePeerConnection = sinon.replace(adaptor, "closePeerConnection", sinon.fake());
+		let closePeerConnection = sinon.replace(adaptor, "closePeerConnection", sinon.fake());
 
-		var streamId = "stream123";
+		let streamId = "stream123";
 		expect(adaptor.remotePeerConnection[streamId]).to.be.undefined;
 		adaptor.initPeerConnection(streamId, "play");
 		expect(adaptor.remotePeerConnection[streamId]).to.not.be.undefined;
@@ -174,10 +200,10 @@ describe("WebRTCAdaptor", function() {
 			websocketURL: "ws://example.com",
 			isPlayMode: true
 		});
-		var webSocketAdaptor = sinon.mock(adaptor.webSocketAdaptor);
-		var closeExpectation = webSocketAdaptor.expects("close");
+		let webSocketAdaptor = sinon.mock(adaptor.webSocketAdaptor);
+		let closeExpectation = webSocketAdaptor.expects("close");
 
-		var closePeerConnection = sinon.replace(adaptor, "closePeerConnection", sinon.fake());
+		let closePeerConnection = sinon.replace(adaptor, "closePeerConnection", sinon.fake());
 
 		const now = Date.now();
 		adaptor.tryAgain();
