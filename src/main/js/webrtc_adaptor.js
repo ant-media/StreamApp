@@ -1130,11 +1130,6 @@ export class WebRTCAdaptor {
             }
 
         }
-        else {
-			Logger.info("There is already peer connection with the stream id and returning directly for streamId:" + streamId)
-		}
-        
-        return this.remotePeerConnection[streamId];
     }
 
     /**
@@ -1379,9 +1374,9 @@ export class WebRTCAdaptor {
     startPublishing(idOfStream) {
         let streamId = idOfStream;
 
-        let peerConnection = this.initPeerConnection(streamId, "publish");
+        this.initPeerConnection(streamId, "publish");
 
-        peerConnection.createOffer(this.sdp_constraints)
+        this.remotePeerConnection[streamId].createOffer(this.sdp_constraints)
             .then(configuration => {
                 this.gotDescription(configuration, streamId);
             })
