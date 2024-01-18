@@ -632,13 +632,13 @@ describe("WebRTCAdaptor", function() {
 		//fake stream in te browser is a period audio and silence, so getting sound level more than 0 requires
 
 		adaptor.initialize().then(() => {
-			let audioContext = new (window.AudioContext || window.webkitAudioContext)();
-			let oscillator = audioContext.createOscillator();
+			var audioContext = new (window.AudioContext || window.webkitAudioContext)();
+			var oscillator = audioContext.createOscillator();
 			oscillator.type = "sine";
 			oscillator.frequency.value = 800;
-			let mediaStreamSource = audioContext.createMediaStreamDestination();
+			var mediaStreamSource = audioContext.createMediaStreamDestination();
 			oscillator.connect(mediaStreamSource);
-			let mediaStreamTrack = mediaStreamSource.stream.getAudioTracks()[0];
+			var mediaStreamTrack = mediaStreamSource.stream.getAudioTracks()[0];
 			oscillator.start();
 
 			adaptor.mediaManager.localStream = new MediaStream([mediaStreamTrack])
@@ -735,5 +735,6 @@ describe("WebRTCAdaptor", function() {
 			
 
     });
+
 
 });
