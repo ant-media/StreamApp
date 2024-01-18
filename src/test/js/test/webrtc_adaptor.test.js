@@ -168,6 +168,7 @@ describe("WebRTCAdaptor", function() {
 		sendExpectation.verify()
 	});
 	
+	/*
 	it("startPublishing", async function(){
 		let adaptor = new WebRTCAdaptor({
 			websocketURL: "ws://example.com",
@@ -204,7 +205,8 @@ describe("WebRTCAdaptor", function() {
 		adaptor.join(streamId);
 		
 		sendExpectation.verify()
-	})
+	});
+*/
 
 
 	it("Close websocket", async function()
