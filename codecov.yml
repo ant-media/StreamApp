@@ -3,6 +3,3 @@ coverage:
     patch:
       default:
         target: 75.0
-
-fixes:
-  - "src/main/webapp/js::src/main/js/sdk"  # move path   e.g., "before/path" => "after/path"
