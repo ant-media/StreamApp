@@ -10,7 +10,7 @@ module.exports = function(config) {
     reporters: ['progress', 'coverage'],
 
     preprocessors: {
-    	'src/*.js': ['coverage'],
+    	'dist/es/embedded-player.js': ['coverage'],
   	},
   
 	coverageReporter: {
