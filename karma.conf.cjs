@@ -2,11 +2,7 @@ module.exports = function(config) {
   config.set({
     frameworks: ['mocha', 'chai', 'sinon'],
     files: [
-			{ pattern: "src/test/js/*.js", type: "module" },
-		
-			{ pattern: "node_modules/video.js/dist/video.js", included: true },
-			{ pattern: "node_modules/dashjs/dist/dash.all.min.js", included: true },
-			{ pattern: "node_modules/aframe/dist/aframe.min.js", included: true },
+			{ pattern: "src/test/**/*.js", type: "module" },		
 			{ pattern: "src/main/js/sdk/**/*.js", included: false },
 			
 	],
