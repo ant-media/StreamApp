@@ -38,12 +38,14 @@ before_install:
 - cd ..  #up to Ant-Media-Server 
 
 - npm install
+- npm run compile
 - cd src/main/js/player
 - npm install
+- npm run compile
 - cd - 
 
 install:
-- ./redeploy.sh
+- mvn install -DskipTests=true -Dmaven.javadoc.skip=true -Dgpg.skip=true -B -V --quiet
 
 script: 
 cache:

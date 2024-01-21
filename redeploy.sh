@@ -6,7 +6,8 @@ AMS_DIR=~/softwares/ant-media-server
 npm run compile
 
 
-#Deploy latest embedded player to the src/main/webapp
+#Deploy latest embedded player to the src/main/webapp 
+#REEFACTOR: let's use workspace 
 cd src/main/js/player/
 npm run compile
 
