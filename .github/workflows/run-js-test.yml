@@ -14,11 +14,14 @@ jobs:
       - run: npm install --include=dev
       - run: npm test
       - run: npm run compile
+      - run: npm run codecov
+      - run: npm link #create link for embedded player below
       # install, compile, test and publish the embedded-player      
       - run:
         | 
           cd src/main/js/player
           npm install 
+          npm link @antmedia/webrtc_adaptor #use the link 
           npm run compile
           npm run test
           
