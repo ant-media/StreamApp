@@ -14,4 +14,12 @@ jobs:
       - run: npm install --include=dev
       - run: npm test
       - run: npm run compile
+      # install, compile, test and publish the embedded-player      
+      - run:
+        | 
+          cd src/main/js/player
+          npm install 
+          npm run compile
+          npm run test
+          
       - run: npm run codecov
