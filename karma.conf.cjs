@@ -2,7 +2,7 @@ module.exports = function(config) {
   config.set({
     frameworks: ['mocha', 'chai', 'sinon'],
     files: [
-			{ pattern: "src/test/**/*.js", type: "module" },		
+			{ pattern: "src/test/*/*.js", type: "module" },		
 			{ pattern: "src/main/js/sdk/**/*.js", included: false },
 			
 	],
@@ -12,7 +12,7 @@ module.exports = function(config) {
 
     
     preprocessors: {
-    	'src/main/js/*.js': ['coverage'],
+    	'src/main/js/sdk/**/*.js': ['coverage'],
   	},
   
 	coverageReporter: {
