@@ -1,6 +1,18 @@
 #!/bin/sh
 AMS_DIR=~/softwares/ant-media-server
+ 
+
+#Latest sdk is to be deployed to src/main/webapp 
 npm run compile
+
+
+#Deploy latest embedded player to the src/main/webapp
+cd src/main/js/player/
+npm run compile
+
+#switch back to first dir
+cd -
+
 if [ $OUT -ne 0 ]; then
     exit $OUT
 fi

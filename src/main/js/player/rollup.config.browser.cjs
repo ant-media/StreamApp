@@ -2,10 +2,10 @@
 const babel = require('@rollup/plugin-babel').default;
 
 const builds = {
-	input: [ 'src/main/js/sdk/index.js'],
+	input: [ 'src/index.js'],
 	output: [{
-		name: 'webrtc_adaptor',
-		file: 'dist/browser/webrtc_adaptor.js',
+		name: 'embedded_player',
+		file: 'dist/browser/embedded_player.js',
 		format: 'umd'
 	},
 	],

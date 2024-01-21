@@ -85,6 +85,12 @@ export class MediaManager {
 		this.callbackError = (err) => {
             Logger.error(err)
 		}
+		
+		
+		/**
+         * volume-meter-process.js file to find directly. You can locate the file to your assets 
+		 */
+		this.volumeMeterUrl = 'volume-meter-processor.js';
 
         /**
          * The values of the above fields are provided as user parameters by the constructor.
@@ -730,7 +736,7 @@ export class MediaManager {
             navigator.mediaDevices.getUserMedia({video: false, audio: true})
                 .then((stream) => {
                     this.mutedAudioStream = stream;
-                    this.mutedSoundMeter = new SoundMeter(this.audioContext);
+                    this.mutedSoundMeter = new SoundMeter(this.audioContext, this.volumeMeterUrl);
                     this.mutedSoundMeter.connectToSource(this.mutedAudioStream, (value) => {
                         if (value > 0.1) {
                             this.callback("speaking_but_muted");
@@ -1435,7 +1441,7 @@ export class MediaManager {
     enableAudioLevelForLocalStream(levelCallback) {
         this.levelCallback = levelCallback;
         this.disableAudioLevelForLocalStream();
-        this.localStreamSoundMeter = new SoundMeter(this.audioContext);
+        this.localStreamSoundMeter = new SoundMeter(this.audioContext, this.volumeMeterUrl);
         if (this.audioContext.state !== 'running') {
             return this.audioContext.resume().then(() => {
                 return this.localStreamSoundMeter.connectToSource(this.localStream, levelCallback);

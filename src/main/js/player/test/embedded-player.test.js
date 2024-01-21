@@ -1,5 +1,5 @@
 
-import { STATIC_VIDEO_HTML, EmbeddedPlayer } from '../../../main/js/embedded-player.js';
+import { STATIC_VIDEO_HTML, EmbeddedPlayer } from '../dist/es/embedded-player.js';
 
 //import { isMobile } from "../../../main/js/fetch.stream.js";
 
@@ -546,7 +546,7 @@ describe("EmbeddedPlayer", function() {
 	
 	it("makeDashPlayerVisibleWhenInitialized", async function() 
 	{
-		var locationComponent =  { href : 'http://example.com?id=streams/stream123/stream123.mpd', search: "?id=streams/stream123/stream123.mpd", pathname:"/" };
+		var locationComponent =  { href : 'http://example.com?id=streams/stream123/stream123.mpd', search: "?id=streams/stream123/stream123.mpd&playOrder=dash", pathname:"/" };
 		var windowComponent = {  location : locationComponent,
 		  						  document:  document,
 		  						  addEventListener: window.addEventListener};
@@ -563,10 +563,13 @@ describe("EmbeddedPlayer", function() {
 		
 		var player = new EmbeddedPlayer(windowComponent, videoContainer, placeHolder);	
 		var makeVisibleWhenInitialzed =  sinon.replace(player, "makeDashPlayerVisibleWhenInitialized", sinon.fake());
+
+		await player.initialize();
 		
 		player.play();
-		
-		expect(makeVisibleWhenInitialzed.calledOnce).to.be.true;	  	
+		expect(makeVisibleWhenInitialzed.calledOnce).to.be.true;
+
+
 	});
 	
 	

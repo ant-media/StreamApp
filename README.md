@@ -1,4 +1,4 @@
-# [Ant Media Server](https://antmedia.io/) WebRTC SDK
+# [Ant Media Server](https://antmedia.io/) WebRTC JS SDK
 
 WebSocket interface in publishing and playing WebRTC streams on Ant Media Server using Javascript.
 

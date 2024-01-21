@@ -9,11 +9,12 @@ export class SoundMeter {
 	 * 
 	 * @param {AudioContext} context 
 	 */
-	constructor(context) {
+	constructor(context, volumeMeterUrl) {
 		this.context = context;
     	this.instant = 0.0;
 		this.mic = null;
 		this.volumeMeterNode = null;
+		this.url  = volumeMeterUrl;
 	}
 	/**
 	 * 
@@ -23,9 +24,10 @@ export class SoundMeter {
 	 * @returns 
 	 */
 	connectToSource(stream, levelCallback, errorCallback) {
-	  return this.context.audioWorklet.addModule(new URL('./volume-meter-processor.js', import.meta.url)).then(()=> {
+	  return this.context.audioWorklet.addModule(this.url).then(()=> {
 			this.mic = this.context.createMediaStreamSource(stream);
 	        this.volumeMeterNode = new AudioWorkletNode(this.context, 'volume-meter');
+
 
 	        this.volumeMeterNode.port.onmessage = (event) => {
 				if (event.data.type == 'debug') {
@@ -38,6 +40,7 @@ export class SoundMeter {
 
 				}
 	        };
+
 	        this.mic.connect(this.volumeMeterNode);
 		})
         .catch((err) => {
@@ -45,6 +48,7 @@ export class SoundMeter {
                 errorCallback(err);
             }
 			Logger.error("Error in soundmeter: " + err);
+			Logger.error("You may need to define the url of the volume-meter-processor.js");
             throw err;
         });
 	}

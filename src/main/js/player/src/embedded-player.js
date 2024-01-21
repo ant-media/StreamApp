@@ -1,16 +1,13 @@
 
-import { getUrlParameter } from "./fetch.stream.js";
-import "./external/loglevel.min.js";
-
-
-const Logger = window.log;
+import { getUrlParameter } from "@antmedia/webrtc_adaptor/dist/fetch.stream";
+import { Logger } from "@antmedia/webrtc_adaptor/dist/loglevel.min";
 
 export const STATIC_VIDEO_HTML =  "<video id='video-player' class='video-js vjs-default-skin vjs-big-play-centered' controls playsinline></video>";
 
 
 export class EmbeddedPlayer {
 
-	static DEFAULT_PLAY_ORDER = ["webrtc", "hls"];;
+	static DEFAULT_PLAY_ORDER = ["webrtc", "hls"];
 
 	static DEFAULT_PLAY_TYPE  =  ["mp4", "webm"];
 
@@ -269,11 +266,12 @@ export class EmbeddedPlayer {
     };
 
     loadDashScript() {
-        if (this.playOrder.includes("dash") && !window.dashjs) {
+        if (this.playOrder.includes("dash") && !this.dashjsLoaded) {
 		
-           return import('dashjs').then((dashjs) => 
+           return import('dashjs/dist/dash.all.min.js').then((dashjs) => 
             {
-				window.dashjs = dashjs;
+				window.dashjs = dashjs.default;
+                this.dashjsLoaded = true;	 
                 console.log("dash.all.min.js is loaded");
             })
         }
@@ -310,6 +308,8 @@ export class EmbeddedPlayer {
         this.httpBaseURL = null;
         this.videoHTMLContent = STATIC_VIDEO_HTML;
         this.videoPlayerId = "video-player";
+        this.videojsLoaded = false;
+        this.dashjsLoaded = false;
     }
     
     initializeFromUrlParams() {
@@ -392,7 +392,7 @@ export class EmbeddedPlayer {
         if (this.playOrder.includes("hls") || this.playOrder.includes("vod") || this.playOrder.includes("webrtc")) {
             //it means we're going to use videojs
             //load videojs css
-			if (!window.videojs) 
+			if (!this.videojsLoaded) 
 			{
 				return import('video.js/dist/video-js.min.css').then((css) => {
 	                const styleElement = this.dom.createElement('style');
@@ -402,7 +402,8 @@ export class EmbeddedPlayer {
 				.then(() => { return import("video.js") })
 				.then((videojs) => 
 				{
-					window.videojs = videojs.default;			 
+                    window.videojs = videojs.default;		
+                    this.videojsLoaded = true;	 
 				})
 				.then(() => { return import('videojs-contrib-quality-levels') } )
 				.then(() => { return import('videojs-hls-quality-selector') } )

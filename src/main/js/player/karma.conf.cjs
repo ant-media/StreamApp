@@ -2,21 +2,15 @@ module.exports = function(config) {
   config.set({
     frameworks: ['mocha', 'chai', 'sinon'],
     files: [
-			{ pattern: "src/test/js/*.js", type: "module" },
-		
-			{ pattern: "node_modules/video.js/dist/video.js", included: true },
-			{ pattern: "node_modules/dashjs/dist/dash.all.min.js", included: true },
-			{ pattern: "node_modules/aframe/dist/aframe.min.js", included: true },
-			{ pattern: "src/main/js/sdk/**/*.js", included: false },
+			{ pattern: "test/*.js", type: "module" },
+			{ pattern: "dist/es/*.js", included: false },
 			
 	],
-    
-    
+        
     reporters: ['progress', 'coverage'],
 
-    
     preprocessors: {
-    	'src/main/js/*.js': ['coverage'],
+    	'src/*.js': ['coverage'],
   	},
   
 	coverageReporter: {
@@ -41,8 +35,8 @@ module.exports = function(config) {
 	customLaunchers: {
 	  CustomChrome: {
 	    base: 'Chrome',
-	    flags: ['--headless',
-	    		'--disable-gpu', 
+	    flags: [
+				'--disable-gpu', 
 				"--headless=new",
 				"--no-sandbox",
 				"--disable-dev-shm-usage",
@@ -56,7 +50,6 @@ module.exports = function(config) {
 	  ChromeMobileUserAgent: {
 	    base: 'Chrome',
 	    flags: [
-				'--headless',
 	    		'--disable-gpu', 
 				"--headless=new",
 				"--no-sandbox",

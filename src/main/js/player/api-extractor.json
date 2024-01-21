@@ -1,0 +1,38 @@
+{
+    "projectFolder": ".",
+    "mainEntryPointFilePath": "./tsbuild/index.d.ts",
+    "bundledPackages": [],
+    "compiler": {
+      "tsconfigFilePath": "tsconfig.json"
+    },
+    "dtsRollup": {
+      "enabled": true,
+      "untrimmedFilePath": "./dist/es/index.d.ts"
+    },
+    "apiReport": {
+      "enabled": false
+    },
+    "docModel": {
+      "enabled": false
+    },
+    "tsdocMetadata": {
+      "enabled": false
+    },
+    "messages": {
+      "compilerMessageReporting": {
+        "default": {
+          "logLevel": "none"
+        }
+      },
+      "extractorMessageReporting": {
+        "default": {
+          "logLevel": "none"
+        }
+      },
+      "tsdocMessageReporting": {
+        "default": {
+          "logLevel": "none"
+        }
+      }
+    }
+  }
