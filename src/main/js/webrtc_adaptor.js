@@ -788,7 +788,7 @@ export class WebRTCAdaptor {
      * @param {string} streamId : unique id for the stream that you want to get info about
      */
     getStreamInfo(streamId) {
-        var jsCmd = {
+        let jsCmd = {
             command: "getStreamInfo",
             streamId: streamId,
         };
@@ -814,7 +814,7 @@ export class WebRTCAdaptor {
      * @param {string} streamId : unique id for the stream that you want to get info about
      */
     getBroadcastObject(streamId) {
-        var jsCmd = {
+        let jsCmd = {
             command: "getBroadcastObject",
             streamId: streamId,
         };

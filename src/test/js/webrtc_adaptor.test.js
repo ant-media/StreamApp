@@ -784,5 +784,104 @@ describe("WebRTCAdaptor", function() {
 		expect(errorListenerCalled).to.be.true;
 
 	});
+	
+	it("onTrack", async function() {
+		
+		{
+			var videoElement = document.createElement("video");
+			let adaptor = new WebRTCAdaptor({
+				websocketURL: "ws://example.com",
+				isPlayMode: true,
+				remoteVideoElement: videoElement
+			});
+			
+			var mediaStream = new MediaStream();
+			var event = {
+				streams:[ mediaStream ]
+			}
+			
+			expect(videoElement.srcObject).to.be.null;
+	
+			adaptor.onTrack(event, "stream1");
+			
+			expect(videoElement.srcObject).to.not.be.null;
+		}
+		
+		
+		{
+			let adaptor = new WebRTCAdaptor({
+				websocketURL: "ws://example.com",
+				isPlayMode: true,
+			});
+			
+			var eventListenerCalled = false;
+			adaptor.addEventListener((info, obj) => {
+				if (info == "newTrackAvailable") {
+					eventListenerCalled = true;
+				}
+			})
+			
+			var mediaStream = new MediaStream();
+			var event = {
+				streams:[ mediaStream ],
+				transceiver: {
+					id: "anyid"
+				}
+			}
+			
+			adaptor.idMapping["stream1"] = "anything";
+			
+			adaptor.onTrack(event, "stream1");
+			
+			expect(eventListenerCalled).to.be.true;
+			
+		}
+
+	});
+	
+	it("getStreamInfo", async function(){
+		let adaptor = new WebRTCAdaptor({
+			websocketURL: "ws://example.com",
+			isPlayMode: true
+		});
+		
+		let streamId = "stream123";
+		let jsCmd = {
+            command: "getStreamInfo",
+            streamId: streamId,
+        };
+        
+		let webSocketAdaptor = sinon.mock(adaptor.webSocketAdaptor);
+	
+        let sendExpectation = webSocketAdaptor.expects("send").once().withArgs(JSON.stringify(jsCmd));
+		
+		adaptor.getStreamInfo(streamId);
+		
+		sendExpectation.verify()
+	});
+	
+
+	
+	it("getBroadcastObject", async function(){
+		let adaptor = new WebRTCAdaptor({
+			websocketURL: "ws://example.com",
+			isPlayMode: true
+		});
+		
+		let streamId = "stream123";
+		let jsCmd = {
+            command: "getBroadcastObject",
+            streamId: streamId,
+        };
+        
+		let webSocketAdaptor = sinon.mock(adaptor.webSocketAdaptor);
+	
+        let sendExpectation = webSocketAdaptor.expects("send").once().withArgs(JSON.stringify(jsCmd));
+		
+		adaptor.getBroadcastObject(streamId);
+		
+		sendExpectation.verify()
+	});
+	
 
 });
