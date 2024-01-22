@@ -43,9 +43,12 @@ export class MediaManager {
 
         /**
          * initial media constraints provided by the user
+	 * @type {MediaStreamConstraints}
          */
         this.mediaConstraints = {
+	    /** @type {MediaTrackConstraints} */
             video: true,
+	    /** @type {MediaTrackConstraints} */
             audio: true
         };
         ;
