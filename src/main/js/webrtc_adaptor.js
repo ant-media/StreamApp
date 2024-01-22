@@ -917,7 +917,7 @@ export class WebRTCAdaptor {
 
             if (protocolSupported) {
 
-                let jsCmd = {
+                var jsCmd = {
                     command: "takeCandidate",
                     streamId: streamId,
                     label: event.candidate.sdpMLineIndex,
@@ -961,7 +961,7 @@ export class WebRTCAdaptor {
     initDataChannel(streamId, dataChannel) {
         dataChannel.onerror = (error) => {
             Logger.debug("Data Channel Error:", error);
-            let obj = {
+            var obj = {
                 streamId: streamId,
                 error: error
             };
@@ -972,7 +972,7 @@ export class WebRTCAdaptor {
         };
 
         dataChannel.onmessage = (event) => {
-            let obj = {
+            var obj = {
                 streamId: streamId,
                 data: event.data,
             };
