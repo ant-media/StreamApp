@@ -43,6 +43,7 @@ before_install:
 - npm install 
 - npm run compile
 - npm run deploy
+- cd ..
 
 install:
 - mvn install -DskipTests=true -Dmaven.javadoc.skip=true -Dgpg.skip=true -B -V --quiet

@@ -43,7 +43,7 @@
   "author": "Ant Media",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/ant-media/StreamApp/issues"
+    "url": "https://github.com/ant-media/Ant-Media-Server/issues"
   },
   "homepage": "https://github.com/ant-media/StreamApp#readme",
   "devDependencies": {
