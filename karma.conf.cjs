@@ -27,7 +27,8 @@ module.exports = function(config) {
     
     colors: true,
     
-    logLevel: config.LOG_DEBUG,
+    //logLevel: config.LOG_DEBUG
+    logLevel: config.LOG_INFO,
     
     browsers: ['CustomChrome', "ChromeMobileUserAgent"],
     //browsers: ['Chrome'],

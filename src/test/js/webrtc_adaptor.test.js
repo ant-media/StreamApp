@@ -730,5 +730,32 @@ describe("WebRTCAdaptor", function() {
 		
 		sendExpectation.verify()
  	})
+ 	
+ 	it("joinRoom", async function() {
+	
+		let adaptor = new WebRTCAdaptor({
+			websocketURL: "ws://example.com",
+			isPlayMode: true
+		});
+		
+		let streamId = "stream123";
+		let roomId = "roomId";
+		
+	    let jsCmd = {
+            command: "joinRoom",
+            room: roomId,
+            streamId: streamId,
+            mode: "multitrack",
+        }
+        
+		let webSocketAdaptor = sinon.mock(adaptor.webSocketAdaptor);
+	
+        let sendExpectation = webSocketAdaptor.expects("send").once().withArgs(JSON.stringify(jsCmd));
+		
+		adaptor.joinRoom(roomId, streamId, "multitrack");
+		
+		sendExpectation.verify()
+	
+	});
 
 });
