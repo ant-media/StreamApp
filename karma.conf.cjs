@@ -3,7 +3,7 @@ module.exports = function(config) {
     frameworks: ['mocha', 'chai', 'sinon'],
     files: [
 			{ pattern: "src/test/js/**/*.js", type: "module" },	
-			{ pattern: "src/main/webapp/js/*.js", included: false }
+			{ pattern: "src/main/js/**/*.js", included: false }
 			
 	],
     
@@ -11,10 +11,7 @@ module.exports = function(config) {
 
     
     preprocessors: {
-    	'src/main/webapp/js/webrtc_adaptor*': ['coverage'],
-    	'src/main/webapp/js/media_manager*': ['coverage'],
-    	'src/main/webapp/js/soundmeter*': ['coverage'],
-    	'src/main/webapp/js/embedded-player*': ['coverage']
+    	'src/main/js/*.js': ['coverage'],
   	},
   
 	coverageReporter: {

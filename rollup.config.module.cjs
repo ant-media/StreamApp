@@ -7,15 +7,15 @@ const css = require("rollup-plugin-import-css");
 
 
 const builds = {
-	input: [ 'src/main/js/sdk/index.js',
-			 'src/main/js/sdk/webrtc_adaptor.js', 
-			 'src/main/js/sdk/fetch.stream.js',
-			 'src/main/js/sdk/video-effect.js',
-			 'src/main/js/sdk/soundmeter.js',
-			 'src/main/js/sdk/volume-meter-processor.js',
-			 'src/main/js/sdk/external/loglevel.min.js',
-			 'src/main/js/sdk/utility.js',
-			 'src/main/js/sdk/media_manager.js'],
+	input: [ 'src/main/js/index.js',
+			 'src/main/js/webrtc_adaptor.js', 
+			 'src/main/js/fetch.stream.js',
+			 'src/main/js/video-effect.js',
+			 'src/main/js/soundmeter.js',
+			 'src/main/js/volume-meter-processor.js',
+			 'src/main/js/external/loglevel.min.js',
+			 'src/main/js/utility.js',
+			 'src/main/js/media_manager.js'],
 	output: [{
 		dir: 'dist',
 		format: 'cjs'

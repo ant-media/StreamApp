@@ -1,6 +1,6 @@
 
-import { WebRTCAdaptor } from '../../main/webapp/js/webrtc_adaptor.js';
-import { MediaManager } from '../../main/webapp/js/media_manager.js';
+import { WebRTCAdaptor } from '../../main/js/webrtc_adaptor.js';
+import { MediaManager } from '../../main/js/media_manager.js';
 
 describe("MediaManager", function() {
 	

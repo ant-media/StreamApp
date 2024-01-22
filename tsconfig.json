@@ -1,5 +1,5 @@
 {
-  "include": ["./src/main/js/sdk/*.js"],
+  "include": ["./src/main/js/*.js"],
   "exclude": [],
   "compilerOptions": {
     "lib": [
