@@ -21,13 +21,13 @@ describe("MediaManager", function() {
             webRTCAdaptor: adaptor,
 
             callback: (info, obj) => {
-                this.notifyEventListeners(info, obj)
+                adaptor.notifyEventListeners(info, obj)
             },
             callbackError: (error, message) => {
-                this.notifyErrorEventListeners(error, message)
+                adaptor.notifyErrorEventListeners(error, message)
             },
             getSender: (streamId, type) => {
-                return this.getSender(streamId, type)
+                return adaptor.getSender(streamId, type)
             },
         });
         
@@ -56,13 +56,13 @@ describe("MediaManager", function() {
             webRTCAdaptor: adaptor,
 
             callback: (info, obj) => {
-                this.notifyEventListeners(info, obj)
+                adaptor.notifyEventListeners(info, obj)
             },
             callbackError: (error, message) => {
-                this.notifyErrorEventListeners(error, message)
+                adaptor.notifyErrorEventListeners(error, message)
             },
             getSender: (streamId, type) => {
-                return this.getSender(streamId, type)
+                return adaptor.getSender(streamId, type)
             },
         });
        

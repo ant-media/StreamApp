@@ -778,12 +778,7 @@ describe("WebRTCAdaptor", function() {
 		
 		adaptor.mediaManager.callback("info", "obj");
 		
-		adaptor.mediaManager.callbackError("info", "obj");
-		
-		//adaptor.notifyEventListeners();
-		
-		//adaptor.notifyErrorEventListeners();
-		
+		adaptor.mediaManager.callbackError("info", "obj");		
 		
 		expect(eventListenerCalled).to.be.true;
 		expect(errorListenerCalled).to.be.true;
