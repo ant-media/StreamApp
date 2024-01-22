@@ -39,10 +39,10 @@ before_install:
 
 - npm install
 - npm run compile
-- cd src/main/js/player
-- npm install
+- cd embedded-player
+- npm install 
 - npm run compile
-- cd - 
+- npm run deploy
 
 install:
 - mvn install -DskipTests=true -Dmaven.javadoc.skip=true -Dgpg.skip=true -B -V --quiet

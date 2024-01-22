@@ -7,12 +7,12 @@ npm run compile
 
 
 #Deploy latest embedded player to the src/main/webapp 
-#REEFACTOR: let's use workspace 
-cd src/main/js/player/
+cd embedded-player
 npm run compile
+npm run deploy
 
 #switch back to first dir
-cd -
+cd ..
 
 if [ $OUT -ne 0 ]; then
     exit $OUT
