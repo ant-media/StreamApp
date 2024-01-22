@@ -176,7 +176,7 @@ describe("EmbeddedPlayer", function() {
 		
 	});
 	
-	it.only("loadComponents", async function(){
+	it("loadComponents", async function(){
 			
 	    this.timeout(10000);
 		var videoContainer = document.createElement("video_container");
