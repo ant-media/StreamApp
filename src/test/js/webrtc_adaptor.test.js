@@ -1,5 +1,5 @@
 
-import { WebRTCAdaptor } from '../../main/js/sdk/webrtc_adaptor.js';
+import { WebRTCAdaptor } from '../../main/webapp/js/webrtc_adaptor.js';
 
 
 describe("WebRTCAdaptor", function() {
@@ -407,7 +407,7 @@ describe("WebRTCAdaptor", function() {
 		let adaptor = new WebRTCAdaptor({
 			websocketURL: "ws://localhost",
 			initializeComponents: false,
-			volumeMeterUrl: 'base/src/main/js/sdk/volume-meter-processor.js',
+			volumeMeterUrl: 'base/src/main/webapp/js/volume-meter-processor.js',
 		});
 
 		initialized = false;
@@ -546,7 +546,7 @@ describe("WebRTCAdaptor", function() {
 				audio: true
 			},
 			initializeComponents: false,
-			volumeMeterUrl: 'base/src/main/js/sdk/volume-meter-processor.js',
+			volumeMeterUrl: 'base/src/main/webapp/js/volume-meter-processor.js',
 		});
 
 		//fake stream in te browser is a period audio and silence, so getting sound level more than 0 requires
@@ -626,7 +626,7 @@ describe("WebRTCAdaptor", function() {
 				audio: true
 			},
 			initializeComponents: false,
-			volumeMeterUrl: 'base/src/main/js/sdk/volume-meter-processor.js',
+			volumeMeterUrl: 'base/src/main/webapp/js/volume-meter-processor.js',
 		});
 
 		var audioContext = new (window.AudioContext || window.webkitAudioContext)();

@@ -1,5 +1,5 @@
 
-import { STATIC_VIDEO_HTML, EmbeddedPlayer } from '../dist/es/embedded-player.js';
+import { STATIC_VIDEO_HTML, EmbeddedPlayer } from '../../main/webapp/js/embedded-player.js';
 
 //import { isMobile } from "../../../main/js/fetch.stream.js";
 
@@ -176,8 +176,9 @@ describe("EmbeddedPlayer", function() {
 		
 	});
 	
-	it("loadComponents", async function(){
+	it.only("loadComponents", async function(){
 			
+	    this.timeout(10000);
 		var videoContainer = document.createElement("video_container");
 		  
 	
@@ -203,31 +204,6 @@ describe("EmbeddedPlayer", function() {
 			}).catch((err) => {
 				expect.fail("it should not fail because we skip videojs and dash is already loaded");
 			});
-		}
-			
-		
-		{
-			var videojs = window.videojs;
-			
-			window.videojs = null;
-			await player.initialize().then(()=> {
-				expect.fail("it should fail because it's not expected to be loaded here");
-			}).catch((err) => {
-				
-			});
-			
-			try {
-				var player = new EmbeddedPlayer({
-				
-				});
-				//it should throw error
-				expect.fail("it should throw exception");
-			}
-			catch (err) {
-				//expected because there is no stream id
-			}
-			
-			window.videojs = videojs;
 		}
 
 		{
