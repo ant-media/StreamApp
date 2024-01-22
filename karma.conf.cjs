@@ -3,18 +3,18 @@ module.exports = function(config) {
     frameworks: ['mocha', 'chai', 'sinon'],
     files: [
 			{ pattern: "src/test/js/**/*.js", type: "module" },	
-			{ pattern: "src/main/webapp/js/**/*.js", included: false }
+			{ pattern: "src/main/webapp/js/*.js", included: false }
 			
 	],
-    
     
     reporters: ['progress', 'coverage'],
 
     
     preprocessors: {
-    	'src/main/js/sdk/**/*.js': ['coverage'],
-    	'src/main/webapp/**/*.js': ['coverage'],
-    	
+    	'src/main/webapp/js/webrtc_adaptor*': ['coverage'],
+    	'src/main/webapp/js/media_manager*': ['coverage'],
+    	'src/main/webapp/js/soundmeter*': ['coverage'],
+    	'src/main/webapp/js/embedded-player*': ['coverage']
   	},
   
 	coverageReporter: {
@@ -30,7 +30,7 @@ module.exports = function(config) {
     
     colors: true,
     
-    logLevel: config.LOG_INFO,
+    logLevel: config.LOG_DEBUG,
     
     browsers: ['CustomChrome', "ChromeMobileUserAgent"],
     //browsers: ['Chrome'],
