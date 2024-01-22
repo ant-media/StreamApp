@@ -13,13 +13,5 @@ jobs:
          registry-url: 'https://registry.npmjs.org'
       - run: npm install --include=dev
       - run: npm run compile
-      - run: npm link #create link for embedded player below
-      - run:
-        | 
-          cd src/main/js/player
-          npm install 
-          npm link @antmedia/webrtc_adaptor #use the link 
-          npm run compile
-          cd -
       - run: npm run test
       - run: npm run codecov
