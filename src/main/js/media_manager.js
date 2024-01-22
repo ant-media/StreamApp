@@ -101,6 +101,16 @@ export class MediaManager {
                 this[key] = initialValues.userParameters[key];
             }
         }
+        
+        //set the callback if it's defined
+        if (initialValues.callback) {
+			this.callback = initialValues.callback;
+		}
+
+        //set the callbackError if it's defined		
+		if (initialValues.callbackError) {
+			this.callbackError = initialValues.callbackError;
+		}
 
         /**
          * current volume value which is set by the user

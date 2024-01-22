@@ -757,5 +757,37 @@ describe("WebRTCAdaptor", function() {
 		sendExpectation.verify()
 	
 	});
+	
+	it.only("eventListeners", async function() {
+		let adaptor = new WebRTCAdaptor({
+			websocketURL: "ws://example.com",
+			isPlayMode: true
+		});
+		
+		
+		var eventListenerCalled = false;
+		adaptor.addEventListener((info, obj) => {
+			eventListenerCalled = true;
+		});
+		
+		var errorListenerCalled = false;
+		adaptor.addErrorEventListener((error, message) => {
+			errorListenerCalled = true;
+		});
+		
+		
+		adaptor.mediaManager.callback("info", "obj");
+		
+		adaptor.mediaManager.callbackError("info", "obj");
+		
+		//adaptor.notifyEventListeners();
+		
+		//adaptor.notifyErrorEventListeners();
+		
+		
+		expect(eventListenerCalled).to.be.true;
+		expect(errorListenerCalled).to.be.true;
+
+	});
 
 });
