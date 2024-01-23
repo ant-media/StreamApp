@@ -795,7 +795,7 @@ export class WebRTCAdaptor {
      */
     requestVideoTrackAssignments(streamId) {
         var jsCmd = {
-            command: "getVideoTrackAssignments",
+            command: "getVideoTrackAssignmentsCommand",
             streamId: streamId,
         };
         this.webSocketAdaptor.send(JSON.stringify(jsCmd));
