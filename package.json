@@ -31,7 +31,7 @@
     },
 	{
 	  "from": "./dist/es/loglevel.min.js",
-      "to": "./src/main/webapp/js/external/"  #for backward compatibility
+      "to": "./src/main/webapp/js/external/"  
 	}
   ],
   "copyFilesSettings": {
