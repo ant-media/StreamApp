@@ -801,8 +801,8 @@ export class WebRTCAdaptor {
      * @param {string} streamId : unique id for the stream that you want to get info about
      */
     requestVideoTrackAssignments(streamId) {
-        var jsCmd = {
-            command: "getVideoTrackAssignments",
+        let jsCmd = {
+            command: "getVideoTrackAssignmentsCommand",
             streamId: streamId,
         };
         this.webSocketAdaptor.send(JSON.stringify(jsCmd));
