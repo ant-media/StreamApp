@@ -28,7 +28,11 @@
     {
       "from": "./dist/es/*",
       "to": "./src/main/webapp/js/"
-    }
+    },
+	{
+	  "from": "./dist/es/loglevel.min.js",
+      "to": "./src/main/webapp/js/external/"  #for backward compatibility
+	}
   ],
   "copyFilesSettings": {
     "whenFileExists": "overwrite"
