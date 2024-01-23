@@ -883,7 +883,7 @@ describe("WebRTCAdaptor", function() {
 		sendExpectation.verify()
 	});
 	
-	it.only("requestVideoTrackAssignments", async function() {
+	it("requestVideoTrackAssignments", async function() {
 		
 		let adaptor = new WebRTCAdaptor({
 			websocketURL: "ws://example.com",
