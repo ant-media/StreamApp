@@ -108,7 +108,7 @@ export function updateBroadcastStatusInfo(streamId, linkUrl) {
 /**
  * @returns {boolean}
  */
-function isAndroid() {
+export function isAndroid() {
     let userAgent = navigator.userAgent || navigator.vendor || window.opera;
     return /android/i.test(userAgent);
 }
