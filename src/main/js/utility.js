@@ -3,9 +3,9 @@ import "./external/loglevel.min.js";
 
 const Logger = window.log;
 /**
- * 
- * @param {number} n 
- * @returns 
+ *
+ * @param {number} n
+ * @returns
  */
 export function generateRandomString(n) {
     let randomString = '';
@@ -17,10 +17,10 @@ export function generateRandomString(n) {
     return randomString;
 }
 /**
- * 
- * @param {Location} location 
- * @param {string} rtmpForward 
- * @returns 
+ *
+ * @param {Location} location
+ * @param {string} rtmpForward
+ * @returns
  */
 export function getWebSocketURL(location, rtmpForward) {
     var appName = location.pathname.substring(1, location.pathname.indexOf("/", 1) + 1);
@@ -36,11 +36,11 @@ export function getWebSocketURL(location, rtmpForward) {
     return websocketURL;
 }
 /**
- * 
- * @param {Location} location 
- * @param {string} id 
- * @param {number} port 
- * @returns 
+ *
+ * @param {Location} location
+ * @param {string} id
+ * @param {number} port
+ * @returns
  */
 export function getSrtURL(location, id, port) {
     var appName = location.pathname.substring(1, location.pathname.indexOf("/", 1) + 1);
@@ -48,19 +48,19 @@ export function getSrtURL(location, id, port) {
 
 }
 /**
- * 
- * @param {Location} location 
- * @param {string} id 
- * @returns 
+ *
+ * @param {Location} location
+ * @param {string} id
+ * @returns
  */
 export function getRtmpUrl(location, id) {
     var appName = location.pathname.substring(1, location.pathname.indexOf("/", 1) + 1);
     return "rtmp://" + location.hostname + "/" + appName + id;
 }
 /**
- * 
- * @param {string} paramName 
- * @returns 
+ *
+ * @param {string} paramName
+ * @returns
  */
 export function getQueryParameter(paramName) {
     var value = getUrlParameter(paramName);
@@ -72,9 +72,9 @@ export function getQueryParameter(paramName) {
 
 }
 /**
- * 
- * @param {string} streamId 
- * @param {string} linkUrl 
+ *
+ * @param {string} streamId
+ * @param {string} linkUrl
  */
 export function updateBroadcastStatusInfo(streamId, linkUrl) {
     $("#offlineInfo").hide();
@@ -104,11 +104,20 @@ export function updateBroadcastStatusInfo(streamId, linkUrl) {
     }, 200);
 
 }
+
 /**
- * 
- * @param {*} error 
- * @param {string} message 
- * @returns 
+ * @returns {boolean}
+ */
+function isAndroid() {
+    let userAgent = navigator.userAgent || navigator.vendor || window.opera;
+    return /android/i.test(userAgent);
+}
+
+/**
+ *
+ * @param {*} error
+ * @param {string} message
+ * @returns
  */
 export function errorHandler(error, message) {
     Logger.warn("error callback: " + JSON.stringify(error));
