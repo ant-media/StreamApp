@@ -20,7 +20,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@antmedia/web_player": "^2.8.0-SNAPSHOT-Jan-29-2024-2339"
+    "@antmedia/web_player": "^2.8.2"
   },
 
   "devDependencies": {
