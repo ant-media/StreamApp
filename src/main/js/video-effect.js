@@ -40,8 +40,8 @@ export class VideoEffect {
 
     #virtualBackgroundImage = null;
     /**
-     * 
-     * @param {WebRTCAdaptor} webRTCAdaptor 
+     *
+     * @param {WebRTCAdaptor} webRTCAdaptor
      */
     constructor(webRTCAdaptor) {
         this.webRTCAdaptor = webRTCAdaptor;
@@ -113,7 +113,7 @@ export class VideoEffect {
     /**
      * This method is used to create the canvas element which is used to apply the video effect.
      * @param {number} height
-     * @param {number} width 
+     * @param {number} width
      */
     createEffectCanvas(width, height) {
         let effectCanvas = document.createElement('canvas');
@@ -180,6 +180,16 @@ export class VideoEffect {
                 this.processFrame();
             }, this.videoCallbackPeriodMs);
         }
+    }
+
+    /**
+     * Set blur effect range
+     * @param {number} backgroundBlurRange
+     * @param {number} edgeBlurRange
+     */
+    setBlurEffectRange(backgroundBlurRange, edgeBlurRange) {
+        this.backgroundBlurRange = backgroundBlurRange;
+        this.edgeBlurRange = edgeBlurRange;
     }
 
     /**
@@ -396,6 +406,12 @@ export class VideoEffect {
 
 WebRTCAdaptor.register((webrtcAdaptorInstance) => {
     let videoEffect = new VideoEffect(webrtcAdaptorInstance);
+
+    Object.defineProperty(webrtcAdaptorInstance, "setBlurEffectRange", {
+        value: function (backgroundBlurRange, edgeBlurRange) {
+            videoEffect.setBlurEffectRange(backgroundBlurRange, edgeBlurRange);
+        }
+    });
 
     Object.defineProperty(webrtcAdaptorInstance, "enableEffect", {
         value: function (effectName, deepARApiKey, deepARModel) {
