@@ -1,4 +1,4 @@
-import "./external/loglevel.min.js";
+import './loglevel.min.js';
 
 const Logger = window.log;
 
