@@ -1955,17 +1955,6 @@ export class WebRTCAdaptor {
 		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
 	}
 	
-	 isJSON(text) {
-	    if (typeof text !== "string") {
-	        return false;
-	    }
-	    try {
-	        JSON.parse(text);
-	        return true;
-	    } catch (error) {
-	        return false;
-	    }
-	}
 	
 	/**
 	 * Send push notification to subscribers
@@ -1989,15 +1978,15 @@ export class WebRTCAdaptor {
 	sendPushNotification(subscriberId, authToken, pushNotificationContent, subscriberIdsToNotify) {
 		
 		//type check for pushNotificationContent if json
-		if (this.isJSON(pushNotificationContent) == false) {
+		if (typeof pushNotificationContent !== "object") {
 			Logger.error("Push Notification Content is not JSON format");
-			return;
+			throw new Error("Push Notification Content is not JSON format");
 		}
 		
 		//type check if subscriberIdsToNotify is array
 		if (!Array.isArray(subscriberIdsToNotify)) {
 			Logger.error("subscriberIdsToNotify is not an array. Please put the subscriber ids to notify in an array such as [user1], [user1, user2]");
-			return;
+			throw new Error("subscriberIdsToNotify is not an array. Please put the subscriber ids to notify in an array such as [user1], [user1, user2]");
 		}
 		
 		let jsCmd = {
@@ -2031,9 +2020,9 @@ export class WebRTCAdaptor {
 	 */
 	sendPushNotificationToTopic(subscriberId, authToken, pushNotificationContent, topic) {
 		//type check for pushNotificationContent if json
-		if (this.isJSON(pushNotificationContent) == false) {
+		if (typeof pushNotificationContent !== "object") {
 			Logger.error("Push Notification Content is not JSON format");
-			return;
+			throw new Error("Push Notification Content is not JSON format");
 		}
 		
 		let jsCmd = {
