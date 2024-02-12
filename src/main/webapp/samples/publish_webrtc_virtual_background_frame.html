@@ -31,6 +31,9 @@
                     <img src="../images/noeffect-background.png"  id="noeffect" class="backgroundImages selected" />
                 </div>
                 <div class="col-sm-2">
+                    <img src="../images/slight-blur-background.png" id="slight-blur" class="backgroundImages " />
+                </div>
+                <div class="col-sm-2">
                     <img src="../images/blur-background.png" id="blur" class="backgroundImages " />
                 </div>
                 <div class="col-sm-2">
@@ -145,7 +148,12 @@
     function enableVirtualBackground() {
         $(".backgroundImages").removeClass("selected");
         var effectName;
-        if ($(this).attr("id") == "blur") {
+        if ($(this).attr("id") == "slight-blur") {
+            webRTCAdaptor.setBlurEffectRange(3, 4);
+            effectName = VideoEffect.BLUR_BACKGROUND;
+        }
+        else if ($(this).attr("id") == "blur") {
+            webRTCAdaptor.setBlurEffectRange(6, 8);
             effectName = VideoEffect.BLUR_BACKGROUND;
         }
         else if ($(this).attr("id") == "noeffect") {
