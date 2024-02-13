@@ -1,4 +1,4 @@
-name: publish Node.js Package
+name: publish sdk release to npmjs
 
 on:
   push:
@@ -12,9 +12,9 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
         with:
-         node-version: '16.x'
+          node-version: '16.x'
            # Setup .npmrc file to publish to npm
-         registry-url: 'https://registry.npmjs.org'
+          registry-url: 'https://registry.npmjs.org'
       - uses: actions/setup-java@v3
         with:
           java-version: '11'

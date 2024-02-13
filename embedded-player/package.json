@@ -1,0 +1,34 @@
+{
+  "name": "embedded-player",
+  "version": "1.0.0",
+  "description": "",
+  "main": "embedded-player.js",
+  "scripts": {
+    "compile": "rollup -c rollup.config.module.cjs",
+    "deploy": "copy-files-from-to",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "copyFiles": [
+    {
+      "from": "./dist/es/*.js",
+      "to": "../src/main/webapp/js/"
+    }
+  ],
+  "copyFilesSettings": {
+    "whenFileExists": "overwrite"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@antmedia/web_player": "^2.8.3-SNAPSHOT-2024-Feb-12-05-20"
+  },
+
+  "devDependencies": {
+    "@rollup/plugin-babel": "^6.0.4",
+    "@rollup/plugin-commonjs": "^25.0.7",
+    "@rollup/plugin-node-resolve": "^15.2.3",
+    "@rollup/plugin-terser": "^0.4.4",
+    "rollup-plugin-import-css": "^3.4.0",
+    "rollup-plugin-replace": "^2.2.0"
+  }
+}

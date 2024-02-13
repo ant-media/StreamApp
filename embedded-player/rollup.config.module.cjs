@@ -3,23 +3,14 @@ const babel = require('@rollup/plugin-babel').default;
 const nodeResolve = require('@rollup/plugin-node-resolve').default;
 const commonjs = require('@rollup/plugin-commonjs').default;
 const css = require("rollup-plugin-import-css");
-
-
+const replace = require('rollup-plugin-replace');
+const terser = require('@rollup/plugin-terser');
 
 const builds = {
-	input: [ 'src/main/js/index.js',
-			 'src/main/js/webrtc_adaptor.js', 
-			 'src/main/js/fetch.stream.js',
-			 'src/main/js/video-effect.js',
-			 'src/main/js/soundmeter.js',
-			 'src/main/js/volume-meter-processor.js',
-			 'src/main/js/external/loglevel.min.js',
-			 'src/main/js/utility.js',
-			 'src/main/js/media_manager.js'],
-	output: [{
-		dir: 'dist',
-		format: 'cjs'
-	},
+	input: [ 
+			 'embedded-player.js'
+            ],
+	output: [
 	{
 	    dir: 'dist/es',
 		format: 'es'
@@ -29,7 +20,11 @@ const builds = {
 		babel({ babelHelpers: 'bundled' }), 
 		nodeResolve(),
 		commonjs(),
-		css()
+		css(),
+		replace({
+			ENV: JSON.stringify(process.env.NODE_ENV || 'development'),
+		  }),
+		process.env.NODE_ENV === 'production' && terser(),
 	]
 
 };

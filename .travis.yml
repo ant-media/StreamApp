@@ -1,7 +1,9 @@
-dist: focal
+dist: jammy
 language: java
 jdk:
-- openjdk11
+- openjdk17
+node_js: "16.20.2"
+
 sudo: required
 before_install:
 - openssl aes-256-cbc -K $encrypted_bbedb246563f_key -iv $encrypted_bbedb246563f_iv
@@ -35,8 +37,17 @@ before_install:
 - mvn clean install -DskipTests -Dmaven.javadoc.skip=true -Dgpg.skip=true --quiet
 - cd ..  #up to Ant-Media-Server 
 
+- npm install
+- npm run compile
+- cd embedded-player
+- npm install 
+- npm run compile
+- npm run deploy
+- cd ..
+
 install:
 - mvn install -DskipTests=true -Dmaven.javadoc.skip=true -Dgpg.skip=true -B -V --quiet
+
 script: 
 cache:
   directories:
