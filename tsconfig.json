@@ -1,6 +1,6 @@
 {
-  "include": ["./src/main/webapp/js/*.js"],
-  "exclude": ["./src/main/webapp/js/videojs-webrtc-plugin.js","./src/main/webapp/js/external/loglevel.min.js"],
+  "include": ["./src/main/js/*.js"],
+  "exclude": [],
   "compilerOptions": {
     "lib": [
       "dom",
@@ -16,6 +16,9 @@
     "moduleResolution": "node",
     "strict": true,
     "target": "ES2017",
-    "outDir": "./tsbuild"
+    "outDir": "./tsbuild",
+    "typeRoots": [
+      "node_modules/@types"
+    ],
   }
 }
