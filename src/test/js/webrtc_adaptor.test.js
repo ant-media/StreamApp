@@ -74,7 +74,7 @@ describe("WebRTCAdaptor", function() {
 
 		expect(adaptor.remotePeerConnection[streamId]).to.not.be.undefined;
 
-		clock.tick(4000);
+		clock.tick(2000);
 		expect(stopCall.called).to.be.false;
 		clock.tick(1000);
 		expect(stopCall.called).to.be.true;
@@ -114,7 +114,7 @@ describe("WebRTCAdaptor", function() {
 
 		expect(adaptor.remotePeerConnection[streamId]).to.not.be.undefined;
 
-		clock.tick(4000);
+		clock.tick(2000);
 		expect(stopCall.called).to.be.false;
 		clock.tick(1000);
 		expect(stopCall.called).to.be.true;
@@ -288,7 +288,7 @@ describe("WebRTCAdaptor", function() {
 
 		clock.tick(1500);
 		assert(fakeSend.calledOnce);
-		clock.tick(6000);
+		clock.tick(2500);
 		assert(fakeSend.calledTwice);
 
 
@@ -341,7 +341,7 @@ describe("WebRTCAdaptor", function() {
 		assert(fakeSendPublish.calledOnce);
 		assert(fakeStop.calledOnce);
 		
-		clock.tick(6000);
+		clock.tick(2500);
 		assert(fakeSendPublish.calledTwice);
 
 
