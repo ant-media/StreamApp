@@ -282,7 +282,6 @@ describe("WebRTCAdaptor", function() {
 
 
 		clock.tick(3000);
-		console.log("---------");
 		adaptor.tryAgain();
 		//Add extra delay because publish is called a few seconds later the stop in tryAgain method
 
@@ -333,7 +332,6 @@ describe("WebRTCAdaptor", function() {
 		adaptor.mediaManager.localStream.getTracks = sinon.stub().returns([]);
 
 		clock.tick(3000);
-		console.log("---------");
 		adaptor.tryAgain();
 
 		//Add extra delay because publish is called a few seconds later the stop in tryAgain method
