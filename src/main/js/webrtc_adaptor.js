@@ -236,7 +236,7 @@ export class WebRTCAdaptor {
 
         /**
          * Degradation Preference
-         * 
+         *
          * maintain-framerate, maintain-resolution, or balanced
          */
         this.degradationPreference = "maintain-resolution";
@@ -650,8 +650,8 @@ export class WebRTCAdaptor {
 
             this.stop(this.publishStreamId);
 	        setTimeout(() => {
-                //publish about some time later because server may not drop the connection yet 
-                //it may trigger already publishing error 
+                //publish about some time later because server may not drop the connection yet
+                //it may trigger already publishing error
                 Logger.log("Trying publish again for stream: " + this.publishStreamId);
                 this.publish(this.publishStreamId, this.publishToken, this.publishSubscriberId, this.publishSubscriberCode, this.publishStreamName, this.publishMainTrack, this.publishMetaData);
 	        }, 500);
@@ -673,8 +673,8 @@ export class WebRTCAdaptor {
 	            Logger.log("It will try to play again for stream: " +  streamId  + " because it is not stopped on purpose")
                 this.stop(streamId);
                 setTimeout(() => {
-                    //play about some time later because server may not drop the connection yet 
-                    //it may trigger already playing error 
+                    //play about some time later because server may not drop the connection yet
+                    //it may trigger already playing error
                     Logger.log("Trying play again for stream: " + streamId);
 	                this.play(streamId, this.playToken, this.playRoomId, this.playEnableTracks, this.playSubscriberId, this.playSubscriberCode, this.playMetaData);
                 }, 500);
@@ -948,7 +948,7 @@ export class WebRTCAdaptor {
      */
     sanitizeHTML(text) {
         if(text.includes("script"))
-            return text.replace(/</g, "&lt;").replace(/>/g, "&gt;"); 
+            return text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
         return text
         }
 
@@ -1043,10 +1043,10 @@ export class WebRTCAdaptor {
             this.iceCandidateList[streamId] = new Array();
             if (!this.playStreamId.includes(streamId)) {
                 if (this.mediaManager.localStream != null) {
-                    this.mediaManager.localStream.getTracks().forEach(track => { 
-                    	
+                    this.mediaManager.localStream.getTracks().forEach(track => {
+
 						let rtpSender = this.remotePeerConnection[streamId].addTrack(track, this.mediaManager.localStream);
-                    	if (track.kind == 'video') 
+                    	if (track.kind == 'video')
                     	{
 							let parameters = rtpSender.getParameters();
 							parameters.degradationPreference = this.degradationPreference;
@@ -1130,7 +1130,7 @@ export class WebRTCAdaptor {
             }
 
         }
-        
+
         return this.remotePeerConnection[streamId];
     }
 
@@ -1236,6 +1236,14 @@ export class WebRTCAdaptor {
         var conf = configuration;
         var isTypeOffer = (type == "offer");
 
+        // When we enable adaptive bitrate or just watching a stream using hls
+        // iOS devices send a=extmap:13 urn:3gpp:video-orientation and a=extmap:4 urn:3gpp:video-orientation
+        // in the sdp. This causes the video rotated wrongly. We need to remove these lines from the sdp.
+        // Note: This is a workaround solution for now. It's also added in Android SDK, Flutter SDK and React Native SDK.
+        // If the issue is fixed in the future, we can remove this code from all these SDK's.
+        // Mustafa BOLEKEN 03.03.2024
+        conf = conf.replace('a=extmap:13 urn:3gpp:video-orientation\r\n','');
+
         var dataChannelMode = "publish";
         if (isTypeOffer) {
             dataChannelMode = "play";
@@ -1274,6 +1282,7 @@ export class WebRTCAdaptor {
                     .then(configuration => {
                         Logger.debug("created answer for stream id: " + streamId);
                         //support for stereo
+                        configuration.sdp = configuration.sdp.replace("useinbandfec=1", "useinbandfec=1; stereo=1");
                         configuration.sdp = configuration.sdp.replace("useinbandfec=1", "useinbandfec=1; stereo=1");
                         this.gotDescription(configuration, streamId);
                     })
@@ -1544,8 +1553,8 @@ export class WebRTCAdaptor {
                     if (typeof value.jitterBufferDelay != "undefined" && typeof value.jitterBufferEmittedCount != "undefined") {
                         videoJitterAverageDelay = value.jitterBufferDelay / value.jitterBufferEmittedCount;
                     }
-                } 
-               
+                }
+
                 else if (value.type == "remote-inbound-rtp" && typeof value.kind != "undefined") {
                     //this is coming when webrtc publishing
 
@@ -1922,27 +1931,27 @@ export class WebRTCAdaptor {
 
         this.webSocketAdaptor.send(JSON.stringify(jsCmd));
     }
-    
+
     /**
 	 * Register user push notification token to Ant Media Server according to subscriberId and authToken
 	 * @param {string} subscriberId: subscriber id it can be anything that defines the user
-	 * @param {string} authToken: JWT token with the issuer field is the subscriberId and secret is the application's subscriberAuthenticationKey, 
+	 * @param {string} authToken: JWT token with the issuer field is the subscriberId and secret is the application's subscriberAuthenticationKey,
 	 * 							  It's used to authenticate the user - token should be obtained from Ant Media Server Push Notification REST Service
 	 * 							  or can be generated with JWT by using the secret and issuer fields
-	 * 
+	 *
 	 * @param {string} pushNotificationToken: Push Notification Token that is obtained from the Firebase or APN
 	 * @param {string} tokenType: It can be "fcm" or "apn" for Firebase Cloud Messaging or Apple Push Notification
-	 * 
+	 *
 	 * @returns Server responds this message with a result.
-	 * Result message is something like 
+	 * Result message is something like
 	 * {
 	 * 	  "command":"notification",
 	 *    "success":true or false
 	 *    "definition":"If success is false, it gives the error message",
 	 * 	  "information":"If succeess is false, it gives more information to debug if available"
-	 * 
-	 * }	 
-	 *                            
+	 *
+	 * }
+	 *
 	 */
 	registerPushNotificationToken(subscriberId, authToken, pushNotificationToken, tokenType) {
 		let jsCmd = {
@@ -1954,8 +1963,8 @@ export class WebRTCAdaptor {
 		};
 		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
 	}
-	
-	
+
+
 	/**
 	 * Send push notification to subscribers
 	 * @param {string} subscriberId: subscriber id it can be anything(email, username, id) that defines the user in your applicaiton
@@ -1964,31 +1973,31 @@ export class WebRTCAdaptor {
 	 *                              or can be generated with JWT by using the secret and issuer fields
 	 * @param {string} pushNotificationContent: JSON Format - Push Notification Content. If it's not JSON, it will not parsed
 	 * @param {Array} subscriberIdsToNotify: Array of subscriber ids to notify
-	 * 
+	 *
 	 * @returns Server responds this message with a result.
-	 * Result message is something like 
+	 * Result message is something like
 	 * {
 	 * 	  "command":"notification",
 	 *    "success":true or false
 	 *    "definition":"If success is false, it gives the error message",
 	 * 	  "information":"If succeess is false, it gives more information to debug if available"
-	 * 
-	 * }	 
+	 *
+	 * }
 	 */
 	sendPushNotification(subscriberId, authToken, pushNotificationContent, subscriberIdsToNotify) {
-		
+
 		//type check for pushNotificationContent if json
 		if (typeof pushNotificationContent !== "object") {
 			Logger.error("Push Notification Content is not JSON format");
 			throw new Error("Push Notification Content is not JSON format");
 		}
-		
+
 		//type check if subscriberIdsToNotify is array
 		if (!Array.isArray(subscriberIdsToNotify)) {
 			Logger.error("subscriberIdsToNotify is not an array. Please put the subscriber ids to notify in an array such as [user1], [user1, user2]");
 			throw new Error("subscriberIdsToNotify is not an array. Please put the subscriber ids to notify in an array such as [user1], [user1, user2]");
 		}
-		
+
 		let jsCmd = {
 			command: "sendPushNotification",
 			subscriberId: subscriberId,
@@ -1998,16 +2007,16 @@ export class WebRTCAdaptor {
 		};
 		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
 	}
-	
+
 	/**
 	 * Send push notification to topic
 	 * @param {string} subscriberId: subscriber id it can be anything(email, username, id) that defines the user in your applicaiton
-	 * @param {string} authToken: JWT token with the issuer field is the subscriberId and secret is the application's subscriberAuthenticationKey,	
+	 * @param {string} authToken: JWT token with the issuer field is the subscriberId and secret is the application's subscriberAuthenticationKey,
 	 *                              It's used to authenticate the user - token should be obtained from Ant Media Server Push Notification REST Service
 	 *                             or can be generated with JWT by using the secret and issuer fields
 	 * @param {string} pushNotificationContent:JSON Format - Push Notification Content. If it's not JSON, it will not parsed
 	 * @param {string} topic: Topic to send push notification
-	 * 
+	 *
 	 * @returns Server responds this message with a result.
 	 * Result message is something like
 	 * {
@@ -2016,7 +2025,7 @@ export class WebRTCAdaptor {
 	 *     "definition":"If success is false, it gives the error message",
 	 *     "information":"If succeess is false, it gives more information to debug if available"
 	 * }
-	 * 
+	 *
 	 */
 	sendPushNotificationToTopic(subscriberId, authToken, pushNotificationContent, topic) {
 		//type check for pushNotificationContent if json
@@ -2024,7 +2033,7 @@ export class WebRTCAdaptor {
 			Logger.error("Push Notification Content is not JSON format");
 			throw new Error("Push Notification Content is not JSON format");
 		}
-		
+
 		let jsCmd = {
 			command: "sendPushNotification",
 			subscriberId: subscriberId,
