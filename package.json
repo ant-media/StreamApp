@@ -1,6 +1,6 @@
 {
   "name": "@antmedia/webrtc_adaptor",
-  "version": "2.6.2",
+  "version": "2.8.0-SNAPSHOT",
   "description": "WebRTC Adaptor for implementing a front end using Ant Media Server.",
   "main": "dist/index.js",
   "module": "dist/es/index.js",
@@ -9,7 +9,7 @@
     "doc": "doc"
   },
   "scripts": {
-    "compile": "npm run cleanup:tsbuild; npm run compile:js && npm run compile:ts ; copy-files-from-to ; npm run cleanup:tsbuild",
+    "compile": "npm run cleanup:tsbuild && npm run compile:js && npm run compile:ts && copy-files-from-to && npm run cleanup:tsbuild",
     "compile:js": "rollup -c rollup.config.module.cjs && rollup -c rollup.config.browser.cjs ",
     "compile:ts": "tsc -p ./tsconfig.json && api-extractor run",
     "cleanup:tsbuild": "rimraf ./tsbuild",
@@ -24,6 +24,10 @@
     {
       "from": "./dist/es/index.d.ts",
       "to": "./src/main/webapp/js/index.d.ts"
+    },
+    {
+      "from": "./dist/es/*",
+      "to": "./src/main/webapp/js/"
     }
   ],
   "copyFilesSettings": {
@@ -36,18 +40,22 @@
     "type": "git",
     "url": "git+https://github.com/ant-media/StreamApp.git"
   },
-  "author": "",
+  "author": "Ant Media",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/ant-media/StreamApp/issues"
+    "url": "https://github.com/ant-media/Ant-Media-Server/issues"
   },
   "homepage": "https://github.com/ant-media/StreamApp#readme",
   "devDependencies": {
     "@babel/core": "^7.21.5",
     "@babel/preset-env": "^7.21.5",
+    "@microsoft/api-extractor": "^7.36.1",
     "@rollup/plugin-babel": "^6.0.3",
+    "@rollup/plugin-commonjs": "^25.0.7",
+    "@rollup/plugin-node-resolve": "^15.2.3",
     "chai": "^4.3.7",
     "codecov": "^3.8.3",
+    "copy-files-from-to": "^3.9.0",
     "eslint": "^8.9.0",
     "jsdoc": "^3.6.10",
     "karma": "^6.4.2",
@@ -59,12 +67,12 @@
     "mocha": "^10.2.0",
     "rimraf": "^3.0.2",
     "rollup": "^3.21.2",
+    "rollup-plugin-import-css": "^3.4.0",
     "sinon": "^15.0.4",
-    "copy-files-from-to": "^3.9.0",
-    "typescript": "^5.1.3",
-    "@microsoft/api-extractor": "^7.36.1"
+    "typescript": "^5.1.3"
   },
   "dependencies": {
+    "@mediapipe/selfie_segmentation": "^0.1.1675465747",
     "url": "^0.11.1"
   },
   "_comment": "url polyfill is added as compatibility with webpack > 5 because webpack > 5 does not include url polyfill by default. webrtc_adaptor uses url as import.meta.url"

@@ -3,12 +3,7 @@
     "mainEntryPointFilePath": "./tsbuild/index.d.ts",
     "bundledPackages": [],
     "compiler": {
-      "tsconfigFilePath": "tsconfig.json",
-      "overrideTsconfig": {
-        "compilerOptions": {
-          "outDir": "tsbuild"
-        }
-      }
+      "tsconfigFilePath": "tsconfig.json"
     },
     "dtsRollup": {
       "enabled": true,
