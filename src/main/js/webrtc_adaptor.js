@@ -513,7 +513,7 @@ export class WebRTCAdaptor {
                 //if it is not connected, try to reconnect
                 this.reconnectIfRequired(0);
             }
-        }, 5000);
+        }, 3000);
 
     }
 
@@ -602,7 +602,7 @@ export class WebRTCAdaptor {
                 //if it is not connected, try to reconnect
                 this.reconnectIfRequired(0);
             }
-        }, 5000);
+        }, 3000);
     }
 
     /**
@@ -670,7 +670,7 @@ export class WebRTCAdaptor {
               // notify that reconnection process started for play
               this.notifyEventListeners("reconnection_attempt_for_player", streamId);
 
-	            Logger.log("It will try to play again for stream: " +  this.publishStreamId  + " because it is not stopped on purpose")
+	            Logger.log("It will try to play again for stream: " +  streamId  + " because it is not stopped on purpose")
                 this.stop(streamId);
                 setTimeout(() => {
                     //play about some time later because server may not drop the connection yet 
@@ -1922,7 +1922,118 @@ export class WebRTCAdaptor {
 
         this.webSocketAdaptor.send(JSON.stringify(jsCmd));
     }
-
+    
+    /**
+	 * Register user push notification token to Ant Media Server according to subscriberId and authToken
+	 * @param {string} subscriberId: subscriber id it can be anything that defines the user
+	 * @param {string} authToken: JWT token with the issuer field is the subscriberId and secret is the application's subscriberAuthenticationKey, 
+	 * 							  It's used to authenticate the user - token should be obtained from Ant Media Server Push Notification REST Service
+	 * 							  or can be generated with JWT by using the secret and issuer fields
+	 * 
+	 * @param {string} pushNotificationToken: Push Notification Token that is obtained from the Firebase or APN
+	 * @param {string} tokenType: It can be "fcm" or "apn" for Firebase Cloud Messaging or Apple Push Notification
+	 * 
+	 * @returns Server responds this message with a result.
+	 * Result message is something like 
+	 * {
+	 * 	  "command":"notification",
+	 *    "success":true or false
+	 *    "definition":"If success is false, it gives the error message",
+	 * 	  "information":"If succeess is false, it gives more information to debug if available"
+	 * 
+	 * }	 
+	 *                            
+	 */
+	registerPushNotificationToken(subscriberId, authToken, pushNotificationToken, tokenType) {
+		let jsCmd = {
+			command: "registerPushNotificationToken",
+			subscriberId: subscriberId,
+			token: authToken,
+			pnsRegistrationToken: pushNotificationToken,
+			pnsType: tokenType
+		};
+		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
+	}
+	
+	
+	/**
+	 * Send push notification to subscribers
+	 * @param {string} subscriberId: subscriber id it can be anything(email, username, id) that defines the user in your applicaiton
+	 * @param {string} authToken: JWT token with the issuer field is the subscriberId and secret is the application's subscriberAuthenticationKey,
+	 *                               It's used to authenticate the user - token should be obtained from Ant Media Server Push Notification REST Service
+	 *                              or can be generated with JWT by using the secret and issuer fields
+	 * @param {string} pushNotificationContent: JSON Format - Push Notification Content. If it's not JSON, it will not parsed
+	 * @param {Array} subscriberIdsToNotify: Array of subscriber ids to notify
+	 * 
+	 * @returns Server responds this message with a result.
+	 * Result message is something like 
+	 * {
+	 * 	  "command":"notification",
+	 *    "success":true or false
+	 *    "definition":"If success is false, it gives the error message",
+	 * 	  "information":"If succeess is false, it gives more information to debug if available"
+	 * 
+	 * }	 
+	 */
+	sendPushNotification(subscriberId, authToken, pushNotificationContent, subscriberIdsToNotify) {
+		
+		//type check for pushNotificationContent if json
+		if (typeof pushNotificationContent !== "object") {
+			Logger.error("Push Notification Content is not JSON format");
+			throw new Error("Push Notification Content is not JSON format");
+		}
+		
+		//type check if subscriberIdsToNotify is array
+		if (!Array.isArray(subscriberIdsToNotify)) {
+			Logger.error("subscriberIdsToNotify is not an array. Please put the subscriber ids to notify in an array such as [user1], [user1, user2]");
+			throw new Error("subscriberIdsToNotify is not an array. Please put the subscriber ids to notify in an array such as [user1], [user1, user2]");
+		}
+		
+		let jsCmd = {
+			command: "sendPushNotification",
+			subscriberId: subscriberId,
+			token: authToken,
+			pushNotificationContent: pushNotificationContent,
+			subscriberIdsToNotify: subscriberIdsToNotify
+		};
+		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
+	}
+	
+	/**
+	 * Send push notification to topic
+	 * @param {string} subscriberId: subscriber id it can be anything(email, username, id) that defines the user in your applicaiton
+	 * @param {string} authToken: JWT token with the issuer field is the subscriberId and secret is the application's subscriberAuthenticationKey,	
+	 *                              It's used to authenticate the user - token should be obtained from Ant Media Server Push Notification REST Service
+	 *                             or can be generated with JWT by using the secret and issuer fields
+	 * @param {string} pushNotificationContent:JSON Format - Push Notification Content. If it's not JSON, it will not parsed
+	 * @param {string} topic: Topic to send push notification
+	 * 
+	 * @returns Server responds this message with a result.
+	 * Result message is something like
+	 * {
+	 *     "command":"notification",
+	 *     "success":true or false
+	 *     "definition":"If success is false, it gives the error message",
+	 *     "information":"If succeess is false, it gives more information to debug if available"
+	 * }
+	 * 
+	 */
+	sendPushNotificationToTopic(subscriberId, authToken, pushNotificationContent, topic) {
+		//type check for pushNotificationContent if json
+		if (typeof pushNotificationContent !== "object") {
+			Logger.error("Push Notification Content is not JSON format");
+			throw new Error("Push Notification Content is not JSON format");
+		}
+		
+		let jsCmd = {
+			command: "sendPushNotification",
+			subscriberId: subscriberId,
+			token: authToken,
+			pushNotificationContent: pushNotificationContent,
+			topic: topic
+		};
+		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
+	}
 
     /**
      * The following messages are forwarded to MediaManager. They are also kept here because of backward compatibility.

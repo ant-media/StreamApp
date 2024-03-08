@@ -74,7 +74,7 @@ describe("WebRTCAdaptor", function() {
 
 		expect(adaptor.remotePeerConnection[streamId]).to.not.be.undefined;
 
-		clock.tick(4000);
+		clock.tick(2000);
 		expect(stopCall.called).to.be.false;
 		clock.tick(1000);
 		expect(stopCall.called).to.be.true;
@@ -114,7 +114,7 @@ describe("WebRTCAdaptor", function() {
 
 		expect(adaptor.remotePeerConnection[streamId]).to.not.be.undefined;
 
-		clock.tick(4000);
+		clock.tick(2000);
 		expect(stopCall.called).to.be.false;
 		clock.tick(1000);
 		expect(stopCall.called).to.be.true;
@@ -282,13 +282,12 @@ describe("WebRTCAdaptor", function() {
 
 
 		clock.tick(3000);
-		console.log("---------");
 		adaptor.tryAgain();
 		//Add extra delay because publish is called a few seconds later the stop in tryAgain method
 
 		clock.tick(1500);
 		assert(fakeSend.calledOnce);
-		clock.tick(6000);
+		clock.tick(2500);
 		assert(fakeSend.calledTwice);
 
 
@@ -333,7 +332,6 @@ describe("WebRTCAdaptor", function() {
 		adaptor.mediaManager.localStream.getTracks = sinon.stub().returns([]);
 
 		clock.tick(3000);
-		console.log("---------");
 		adaptor.tryAgain();
 
 		//Add extra delay because publish is called a few seconds later the stop in tryAgain method
@@ -341,7 +339,7 @@ describe("WebRTCAdaptor", function() {
 		assert(fakeSendPublish.calledOnce);
 		assert(fakeStop.calledOnce);
 		
-		clock.tick(6000);
+		clock.tick(2500);
 		assert(fakeSendPublish.calledTwice);
 
 
@@ -906,6 +904,148 @@ describe("WebRTCAdaptor", function() {
 		sendExpectation.verify()
 		
 	})
+	
+	
+	it("registerPushNotificationToken",async function() {
+		let adaptor = new WebRTCAdaptor({
+			websocketURL: "ws://example.com",
+			isPlayMode: true
+		});
+		
+		let subscriberId = "subscriberId";
+		let authToken = "autotokenkdnkf";
+		let pnsRegistrationToken = "pnsRegistrationTokenpnsRegistrationTokenpnsRegistrationTokenpnsRegistrationToken";
+		let pnstype = "fcm";
+        
+        let jsCmd = {
+			command: "registerPushNotificationToken",
+			subscriberId: subscriberId,
+			token: authToken,
+			pnsRegistrationToken: pnsRegistrationToken,
+			pnsType: pnstype
+		};
+        
+		let webSocketAdaptor = sinon.mock(adaptor.webSocketAdaptor);
+		
+		let sendExpectation = webSocketAdaptor.expects("send").once().withArgs(JSON.stringify(jsCmd));
+		
+		adaptor.registerPushNotificationToken(subscriberId, authToken, pnsRegistrationToken, pnstype);
+		
+		sendExpectation.verify()
+		
+	});
+	
+	
+	it("sendPushNotification",async function() {
+		let adaptor = new WebRTCAdaptor({
+			websocketURL: "ws://example.com",
+			isPlayMode: true
+		});
+		
+		let subscriberId = "subscriberId";
+		let authToken = "autotokenkdnkf";
+		let pushNotificationContent = "pnsRegistrationTokenpnsRegistrationTokenpnsRegistrationTokenpnsRegistrationToken";
+		let subscriberIdsToNotify = "string1";
+        
+        
+		
+		try {
+			adaptor.sendPushNotification(subscriberId, authToken, pushNotificationContent, subscriberIdsToNotify);
+			assert.fail("It should throw exception because pushNotificationContent is not json");
+		} catch (e) {
+			//pass
+		}
+		
+		
+		pushNotificationContent = {title:"title", body:"body"};
+		let jsCmd = {
+				command: "sendPushNotification",
+				subscriberId: subscriberId,
+				token: authToken,
+				pushNotificationContent: pushNotificationContent,
+				subscriberIdsToNotify: subscriberIdsToNotify
+			};
+					
+		try {
+			adaptor.sendPushNotification(subscriberId, authToken, pushNotificationContent, subscriberIdsToNotify);
+			assert.fail("It should throw exception because subscriberIdsToNotify is not array");
+		} catch (e) {
+			//pass
+		}
+		
+		 jsCmd = {
+				command: "sendPushNotification",
+				subscriberId: subscriberId,
+				token: authToken,
+				pushNotificationContent: pushNotificationContent,
+				subscriberIdsToNotify: subscriberIdsToNotify
+			};
+			
+		subscriberIdsToNotify = ["string1"];
+		
+		jsCmd = {
+				command: "sendPushNotification",
+				subscriberId: subscriberId,
+				token: authToken,
+				pushNotificationContent: pushNotificationContent,
+				subscriberIdsToNotify: subscriberIdsToNotify
+			};
+		let webSocketAdaptor = sinon.mock(adaptor.webSocketAdaptor);
+		
+		let sendExpectation = webSocketAdaptor.expects("send").once().withArgs(JSON.stringify(jsCmd));
+			
+		adaptor.sendPushNotification(subscriberId, authToken, pushNotificationContent, subscriberIdsToNotify);	
+		
+		sendExpectation.verify()
+		
+	});
+	
+	
+	it("sendPushNotificationToTopic", async function(){
+		
+		let adaptor = new WebRTCAdaptor({
+			websocketURL: "ws://example.com",
+			isPlayMode: true
+		});
+		
+		let subscriberId = "subscriberId";
+		let authToken = "autotokenkdnkf";
+		let pushNotificationContent = "text";
+		let topic = "topic";
+		
+		let jsCmd = {
+			command: "sendPushNotification",
+			subscriberId: subscriberId,
+			token: authToken,
+			pushNotificationContent: pushNotificationContent,
+			topic: topic
+		};
+		
+		try {
+			adaptor.sendPushNotificationToTopic(subscriberId, authToken, pushNotificationContent, topic);
+			assert.fail("It should throw exception because pushNotificationContent is not json");
+		} catch (error) {
+			//pass
+		}
+		
+		pushNotificationContent = {title:"title", body:"body"};
+		jsCmd = {
+			command: "sendPushNotification",
+			subscriberId: subscriberId,
+			token: authToken,
+			pushNotificationContent: pushNotificationContent,
+			topic: topic
+		};
+		
+		let webSocketAdaptor = sinon.mock(adaptor.webSocketAdaptor);
+		
+		let sendExpectation = webSocketAdaptor.expects("send").once().withArgs(JSON.stringify(jsCmd));
+		
+		adaptor.sendPushNotificationToTopic(subscriberId, authToken, pushNotificationContent, topic);
+		
+		sendExpectation.verify()
+		
+	});
 	
 
 });
