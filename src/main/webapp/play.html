@@ -6,49 +6,156 @@
 	<link href="css/player.css" rel="stylesheet">
 
 </head>
-
 <body>
+<style>
+	.ptz-camera-container{
+      display:none;
+      position: fixed;
+      flex-direction:row;
+      align-items:center;
+      top: 70%;
+      right: 5%;
+         }
+    .direction-arrow-container{
+      display:flex;
+      width:200px;
+      height:200px;
+      position: relative;
 
-	<div id="video_info">
-		Your live stream will play automatically as soon as it's available. <br />Get ready to be part of the action!
-		<!--
-		<div>
-			<img id="logo" src="images/logo.png" />
+
+    }
+     .zoom-container {
+      position: relative;
+      margin-left:20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-direction:row;
+    }
+    .zoom-text {
+      font-size: 20px;
+      color: #ffff;
+    }
+</style>
+<div id="video_info">
+	Your live stream will play automatically as soon as it's available. <br />Get ready to be part of the action!
+	<!--
+    <div>
+        <img id="logo" src="images/logo.png" />
+    </div>
+    -->
+</div>
+<button id="show-ptz-button" style="position: fixed; right: 10px; bottom: 10px; font-size: 20px; display:none;">Show PTZ</button>
+<div id="ptz-camera-container" class="ptz-camera-container">
+
+	<div style="display:flex;flex-direction:column;">
+		<div style="display:flex; flex-direction:row; justify-content:space-between; align-items:center;" >
+		<span style="
+		font-size:20px;
+		color:#ffff;
+
+">PTZ Controls</span>
+
+
 		</div>
-		-->
+
+		<div style="display:flex; flex-direction:row;">
+			<div id="direction-arrow-container" class="direction-arrow-container">
+				<img id="up-button" style="position: absolute;
+              top: 20px;
+              width: 50px;
+              cursor:pointer;
+              height: 50px;
+              left: 50%;
+              transform: translateX(-50%);" src="images/icons/up-arrow.png"/>
+				<img id="left-button" style="position: absolute;
+              left: 20px;
+              width: 50px;
+              height: 50px;
+              cursor:pointer;
+
+              top: 50%;
+              transform: translateY(-50%) rotate(-90deg);" src="images/icons/up-arrow.png"/>
+				<img id="right-button" style="position: absolute;
+              top: 50%;
+              right: 20px;
+              width: 50px;
+              cursor:pointer;
+
+              height: 50px;
+              transform: translateY(-50%) rotate(90deg);" src="images/icons/up-arrow.png"/>
+				<img id="down-button" style="position: absolute;
+              bottom: 20px;
+              left: 50%;
+              width: 50px;
+              cursor:pointer;
+
+              height: 50px;
+              transform: translateX(-50%) rotate(180deg)" src="images/icons/up-arrow.png"/>
+			</div>
+
+			<div class="zoom-container">
+		<span id="zoom-out-button" style="
+      color: #0096ff; /* Text color for demonstration purposes */
+      font-size: 50px;
+      font-weight: bold;
+      user-select: none;
+      cursor: pointer;
+      margin-right:20px;
+
+		">-</span>
+				<div class="zoom-text">Zoom</div>
+				<span id="zoom-in-button" style="
+      color: #0096ff; /* Text color for demonstration purposes */
+      font-size: 50px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-left:20px;
+      user-select: none;
+
+		">+</span>
+			</div>
+
+		</div>
+
 	</div>
 
-	<div id="video_container">
-		<video id='video-player' class='video-js vjs-default-skin vjs-big-play-centered' controls playsinline></video>
-	</div>
 
-	<div id="networkWarning">Your connection isn't fast enough to play this stream!</div>
-	<img id="play_button" src="images/play.png" onclick="playWebRTCVideo()"
-	style="position: absolute; top: 30px; left: 30px; display: none;" />
+</div>
+
+<div id="video_container">
+	<video id='video-player' class='video-js vjs-default-skin vjs-big-play-centered' controls playsinline></video>
+</div>
+
+<div id="networkWarning">Your connection isn't fast enough to play this stream!</div>
+<img id="play_button" src="images/play.png" onclick="playWebRTCVideo()"
+	 style="position: absolute; top: 30px; left: 30px; display: none;" />
 
 
-	<!-- Mute/Unmute Video Button for 360 playback -->
-	<button id="unmuteButton" title="Mute/Unmute Video">
-		Unmute
-	</button>
-	<script type="module" src="./js/embedded-player.js">
-		/**
-		* This page accepts following arguments through http query parameters
-		* 1. "id": the stream id to play.It is mandatory
-		* 2. "token": the token to play stream. It's mandatory if token security is enabled on server side.
-		* 3. "autoplay": To start playing automatically if streams is available. Optional. Default value is true
-		* 4. "mute": To start playing with mute if streams is available. Optional. Default value is true
-		* 5. "playOrder": the order which technologies is used in playing. Optional. Default value is "webrtc,hls".
-		*     possible values are "hls,webrtc","webrtc","hls","vod","dash"
-		* 6. "playType": the order which play type is used in playing. Optional. Default value is "mp4,webm".
-		*     possible values are "webm,mp4"","mp4","webm","mov"
-		* 7. "targetLatency": To define target latency for the DASH player. Optional. Default value is 3.
-		* 8. "is360": To play the stream in 360. Default value is false.
+<!-- Mute/Unmute Video Button for 360 playback -->
+<button id="unmuteButton" title="Mute/Unmute Video">
+	Unmute
+</button>
+<script type="module" src="./js/cameraControl.js"></script>
 
-		* It support vod playback directly from name of the file. Just give the stream id having a prefix with streams folder
-		* streams/test.mp4
-		*/
-	</script>
+<script type="module" src="./js/embedded-player.js">
+	/**
+    * This page accepts following arguments through http query parameters
+    * 1. "id": the stream id to play.It is mandatory
+    * 2. "token": the token to play stream. It's mandatory if token security is enabled on server side.
+    * 3. "autoplay": To start playing automatically if streams is available. Optional. Default value is true
+    * 4. "mute": To start playing with mute if streams is available. Optional. Default value is true
+    * 5. "playOrder": the order which technologies is used in playing. Optional. Default value is "webrtc,hls".
+    *     possible values are "hls,webrtc","webrtc","hls","vod","dash"
+    * 6. "playType": the order which play type is used in playing. Optional. Default value is "mp4,webm".
+    *     possible values are "webm,mp4"","mp4","webm","mov"
+    * 7. "targetLatency": To define target latency for the DASH player. Optional. Default value is 3.
+    * 8. "is360": To play the stream in 360. Default value is false.
+
+    * It support vod playback directly from name of the file. Just give the stream id having a prefix with streams folder
+    * streams/test.mp4
+    */
+</script>
 </body>
 
 </html>

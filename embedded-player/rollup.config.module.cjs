@@ -8,7 +8,8 @@ const terser = require('@rollup/plugin-terser');
 
 const builds = {
 	input: [ 
-			 'embedded-player.js'
+			 'embedded-player.js',
+			 'cameraControl.js'
             ],
 	output: [
 	{
