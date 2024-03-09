@@ -1034,9 +1034,9 @@ export class MediaManager {
     switchAudioInputSource(streamId, deviceId) {
         //stop the track because in some android devices need to close the current camera stream
         var audioTrack = this.localStream.getAudioTracks()[0];
-        if (audioTrack) {
+        if (audioTrack && isAndroid()) {
             audioTrack.stop();
-        } else {
+        } else if(isAndroid()) {
             Logger.warn("There is no audio track in local stream");
         }
 
@@ -1148,10 +1148,10 @@ export class MediaManager {
      */
     switchVideoCameraFacingMode(streamId, facingMode) {
         //stop the track because in some android devices need to close the current camera stream
-        if (this.localStream && this.localStream.getVideoTracks().length > 0) {
+        if (this.localStream && this.localStream.getVideoTracks().length > 0 && isAndroid()) {
             var videoTrack = this.localStream.getVideoTracks()[0];
             videoTrack.stop();
-        } else {
+        } else if (isAndroid()) {
             Logger.warn("There is no video track in local stream");
         }
 
