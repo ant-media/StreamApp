@@ -74,7 +74,7 @@ describe("WebRTCAdaptor", function() {
 
 		expect(adaptor.remotePeerConnection[streamId]).to.not.be.undefined;
 
-		clock.tick(4000);
+		clock.tick(2000);
 		expect(stopCall.called).to.be.false;
 		clock.tick(1000);
 		expect(stopCall.called).to.be.true;
@@ -114,7 +114,7 @@ describe("WebRTCAdaptor", function() {
 
 		expect(adaptor.remotePeerConnection[streamId]).to.not.be.undefined;
 
-		clock.tick(4000);
+		clock.tick(2000);
 		expect(stopCall.called).to.be.false;
 		clock.tick(1000);
 		expect(stopCall.called).to.be.true;
@@ -282,13 +282,12 @@ describe("WebRTCAdaptor", function() {
 
 
 		clock.tick(3000);
-		console.log("---------");
 		adaptor.tryAgain();
 		//Add extra delay because publish is called a few seconds later the stop in tryAgain method
 
 		clock.tick(1500);
 		assert(fakeSend.calledOnce);
-		clock.tick(6000);
+		clock.tick(2500);
 		assert(fakeSend.calledTwice);
 
 
@@ -333,15 +332,14 @@ describe("WebRTCAdaptor", function() {
 		adaptor.mediaManager.localStream.getTracks = sinon.stub().returns([]);
 
 		clock.tick(3000);
-		console.log("---------");
 		adaptor.tryAgain();
 
 		//Add extra delay because publish is called a few seconds later the stop in tryAgain method
 		clock.tick(1500);
 		assert(fakeSendPublish.calledOnce);
 		assert(fakeStop.calledOnce);
-
-		clock.tick(6000);
+		
+		clock.tick(2500);
 		assert(fakeSendPublish.calledTwice);
 
 

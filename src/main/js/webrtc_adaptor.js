@@ -513,7 +513,7 @@ export class WebRTCAdaptor {
                 //if it is not connected, try to reconnect
                 this.reconnectIfRequired(0);
             }
-        }, 5000);
+        }, 3000);
 
     }
 
@@ -602,7 +602,7 @@ export class WebRTCAdaptor {
                 //if it is not connected, try to reconnect
                 this.reconnectIfRequired(0);
             }
-        }, 5000);
+        }, 3000);
     }
 
     /**
@@ -670,7 +670,7 @@ export class WebRTCAdaptor {
               // notify that reconnection process started for play
               this.notifyEventListeners("reconnection_attempt_for_player", streamId);
 
-	            Logger.log("It will try to play again for stream: " +  this.publishStreamId  + " because it is not stopped on purpose")
+	            Logger.log("It will try to play again for stream: " +  streamId  + " because it is not stopped on purpose")
                 this.stop(streamId);
                 setTimeout(() => {
                     //play about some time later because server may not drop the connection yet 
