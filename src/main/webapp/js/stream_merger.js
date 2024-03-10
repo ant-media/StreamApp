@@ -1,5 +1,4 @@
 import './loglevel.min.js';
-
 const Logger = window.log;
 
 export class StreamMerger {
