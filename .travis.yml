@@ -44,6 +44,10 @@ before_install:
 - npm install 
 - npm run compile
 - npm run deploy
+# run unit tests
+- npm install codecov --save-dev
+- npm test
+- npm run upload-coverage
 - cd ..
 
 install:
