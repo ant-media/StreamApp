@@ -1036,7 +1036,9 @@ export class MediaManager {
         var audioTrack = this.localStream.getAudioTracks()[0];
         if (audioTrack && isAndroid()) {
             audioTrack.stop();
-        } else if(isAndroid()) {
+        }
+
+        if(typeof audioTrack == "undefined") {
             Logger.warn("There is no audio track in local stream");
         }
 
@@ -1069,6 +1071,18 @@ export class MediaManager {
         }, true);
     }
 
+    checkAndStopLocalVideoTrackOnAndroid() {
+        //stop the track because in some android devices need to close the current camera stream
+        if (this.localStream && this.localStream.getVideoTracks().length > 0 && isAndroid()) {
+            let videoTrack = this.localStream.getVideoTracks()[0];
+            videoTrack.stop();
+        }
+
+        if(this.localStream === null || this.localStream.getVideoTracks().length === 0) {
+            Logger.warn("There is no video track in local stream");
+        }
+    }
+
     /**
      * Called by User
      * to change video camera capture
@@ -1080,13 +1094,7 @@ export class MediaManager {
      * This method is used to switch to video capture.
      */
     switchVideoCameraCapture(streamId, deviceId, onEndedCallback) {
-        //stop the track because in some android devices need to close the current camera stream
-        if (this.localStream && this.localStream.getVideoTracks().length > 0 && isAndroid()) {
-            var videoTrack = this.localStream.getVideoTracks()[0];
-            videoTrack.stop();
-        } else if(isAndroid()) {
-            Logger.warn("There is no video track in local stream");
-        }
+        this.checkAndStopLocalVideoTrackOnAndroid();
 
         this.publishMode = "camera";
         return navigator.mediaDevices.enumerateDevices().then(devices => {
@@ -1147,13 +1155,7 @@ export class MediaManager {
      * This method is used to switch front and back camera.
      */
     switchVideoCameraFacingMode(streamId, facingMode) {
-        //stop the track because in some android devices need to close the current camera stream
-        if (this.localStream && this.localStream.getVideoTracks().length > 0 && isAndroid()) {
-            var videoTrack = this.localStream.getVideoTracks()[0];
-            videoTrack.stop();
-        } else if (isAndroid()) {
-            Logger.warn("There is no video track in local stream");
-        }
+        this.checkAndStopLocalVideoTrackOnAndroid();
 
         // When device id set, facing mode is not working
         // so, remove device id
