@@ -43,7 +43,7 @@ before_install:
 # run unit tests
 - npm install codecov --save-dev
 - npm test
-- npm run upload-coverage
+- npm run codecov
 - cd embedded-player
 - npm install 
 - npm run compile
