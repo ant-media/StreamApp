@@ -15,4 +15,4 @@ jobs:
       - run: npm install codecov --save-dev
       - run: npm run compile
       - run: npm run test
-      - run: npm run upload-coverage
+      - run: npm run upload-coverage -t "${{secrets.CODECOV_TOKEN}}"
