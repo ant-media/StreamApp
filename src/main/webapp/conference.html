@@ -317,6 +317,9 @@
 	var isCameraOff = false;
 	//var roomTimerId = -1;
 
+	var reconnecting = false;
+	var publishReconnected = false;
+	var playReconnected = false;
 
 	function toggleOptions() {
 		$(".options").toggle();
@@ -644,6 +647,17 @@
 
 	}
 
+	function reconnectionInProgress() {
+		allParticipants = {};
+		removeAllRemoteVideos();
+		
+		reconnecting = true;
+		publishReconnected = false;
+		playReconnected = false;
+
+		console.warn("Connection lost. Trying reconnect...");
+	}
+
 	var mediaConstraints = {
 		video: !dcOnly ? { width: { min: 176, max: 360 } } : !dcOnly,
 		audio: !dcOnly
@@ -688,14 +702,34 @@
 				}
 				else if (info == "publish_started") {
 					//stream is being published
-					console.debug("publish started to room " + roomNameBox.value);
 					join_publish_button.disabled = true;
 					stop_publish_button.disabled = false;
 					startAnimation();
+
+					if (reconnecting) {
+						webRTCAdaptor.getBroadcastObject(roomNameBox.value);
+						publishReconnected = true;
+						reconnecting = !(publishReconnected && playReconnected);
+        				return;
+					}
+
+					console.debug("publish started to room " + roomNameBox.value);
 				}
 				else if (info == "publish_finished") {
 					//stream is being finished
 					console.debug("publish finished");
+				}
+				else if (info === "session_restored") {
+					console.log("**** session_restored:" + reconnecting);
+
+					handleCameraButtons();
+					startAnimation();
+
+					if (reconnecting) {
+						publishReconnected = true;
+						reconnecting = !(publishReconnected && playReconnected);
+						return;
+					}
 				}
 				else if (info == "browser_screen_share_supported") {
 					screen_share_checkbox.disabled = false;
@@ -707,6 +741,12 @@
 				else if (info == "play_started") {
 					isPlaying = true;
 					webRTCAdaptor.getBroadcastObject(roomNameBox.value);
+
+					if (reconnecting) {
+						playReconnected = true;
+						reconnecting = !(publishReconnected && playReconnected);
+						return;
+					}
 				}
 				else if (info == "play_finished") {
 					//this event is fired when room is finished to play
@@ -725,10 +765,20 @@
 				else if (info == "data_received") {
 					handleNotificationEvent(obj);
 				}
-				else if (info == "session_restored") {
-					handleCameraButtons();
-					startAnimation();
-					console.log(info + "notification received");
+				else if (info == "ice_connection_state_changed") {
+					console.log("iceConnectionState Changed: ", JSON.stringify(obj))
+					var iceState = obj.state;
+					if (iceState === "failed" || iceState === "disconnected" || iceState === "closed") {
+
+						setTimeout(() => {
+						if (webRTCAdaptor.iceConnectionState(publishStreamId) !== "checking" &&
+							webRTCAdaptor.iceConnectionState(publishStreamId) !== "connected" &&
+							webRTCAdaptor.iceConnectionState(publishStreamId) !== "completed") {
+							reconnectionInProgress();
+						}
+						}, 5000);
+
+					}
 				}
 			},
 			callbackError: function (error, message) {
