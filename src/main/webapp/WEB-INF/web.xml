@@ -119,7 +119,31 @@
 		<filter-name>CorsFilter</filter-name>
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>
+<servlet>
+<servlet-name>OpenApi</servlet-name>
+    <servlet-class>io.swagger.v3.jaxrs2.integration.OpenApiServlet</servlet-class>
 
+    <init-param>
+      <param-name>openApi.configuration.resourcePackages</param-name>
+      <param-value>io.antmedia.enterprise.streamapp.rest</param-value>
+    </init-param>
+
+  <!-- alternatively include a file openapi.json or openapi.yaml / openapi-configuration.json or openapi-configuration.yaml in classpath -->
+
+  <!-- alternatively include a configuration file in the location specified below -->
+  <!--
+    <init-param>
+      <param-name>openApi.configuration.location</param-name>
+      <param-value>/openapi-configuration.json</param-value>
+    </init-param>
+  -->
+  </servlet>
+
+  <servlet-mapping>
+    <servlet-name>OpenApi</servlet-name>
+    <url-pattern>/openapi/*</url-pattern>
+  </servlet-mapping>
+  
 
 	<servlet>
 		<servlet-name>jersey-serlvet</servlet-name>
