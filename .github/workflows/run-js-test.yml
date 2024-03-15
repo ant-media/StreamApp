@@ -12,7 +12,6 @@ jobs:
          node-version: '16.x'
          registry-url: 'https://registry.npmjs.org'
       - run: npm install --include=dev
-      - run: npm install codecov --save-dev
       - run: npm run compile
       - run: npm run test
       - name: Upload coverage to Codecov
