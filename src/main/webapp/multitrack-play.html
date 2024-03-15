@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title></title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <style>
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+            /* Prevents scrolling */
+        }
+
+        .video-container .video {
+            padding-top: 10px;
+            /* Adjust the value as needed */
+            padding-bottom: 10px;
+            /* Adjust the value as needed */
+            width: calc(100% - 20px);
+            /* Adjust width to account for padding */
+            height: calc(100% - 20px);
+            /* Adjust height to account for padding */
+            box-sizing: border-box;
+            /* Include padding in the element's total width and height */
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container-fluid">
+        <div class="row video-container justify-content-center">
+
+        </div>
+    </div>
+   
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
+        crossorigin="anonymous"></script>
+    <script type="module">
+
+        import { WebRTCAdaptor } from "./js/webrtc_adaptor.js";
+        import { getUrlParameter } from "./js/fetch.stream.js";
+
+        var token = getUrlParameter("token");
+        var streamId = getUrlParameter("streamId");
+        var subscriberId = getUrlParameter("subscriberId");
+        var subscriberCode = getUrlParameter("subscriberCode");
+        var muted = getUrlParameter("muted");
+        if (muted == null) {
+            muted = "muted";
+        }
+        else if (muted == "true") {
+            muted = "muted";
+        }
+        else {
+            muted = "";
+        }
+        var controls = getUrlParameter("controls");
+        if (controls == null) {
+            controls = "controls";
+        }
+        else if (controls == "true") {
+            controls = "controls";
+        }
+        else {
+            controls = "";
+        }
+
+        function updateVideoLayout() {
+            const videos = document.querySelectorAll('.video-container .video');
+            const viewportHeight = window.innerHeight;
+            let videosPerRow;
+
+            const videoCount = videos.length;
+            var objectFitMode = "cover";
+            if (videoCount <= 4) {
+                videosPerRow = 2;
+                objectFitMode = "contain";
+            } else if (videoCount <= 9) {
+                videosPerRow = 3;
+                objectFitMode = "contain";
+            } else if (videoCount <= 24) {
+                videosPerRow = 4;
+            } else {
+                videosPerRow = 6;
+            }
+
+            // Calculate the height for each video row
+            const numberOfRows = Math.ceil(videoCount / videosPerRow);
+            const videoHeight = viewportHeight / numberOfRows;
+
+            videos.forEach((video, index) => {
+                // Determine the parent container of each video
+                const videoItem = video.parentElement;
+                const colCount = 12 / videosPerRow;
+
+                // Adjust classes for responsiveness
+                videoItem.className = "col-" + colCount + " video-item text-center"; // Update column class based on the number of videos per row
+                videoItem.style.height = videoHeight + "px"; // Adjust the height dynamically
+
+                // Directly adjust video styles
+                video.style.width = '100%'; // Ensure the video fills the column width
+                video.style.height = '100%'; // Adjust the video height to fill the column height
+                video.style.objectFit = objectFitMode; // Cover the area of the container without distortion
+            });
+        }
+
+
+
+        // Call this function after adding videos or on window resize
+        window.addEventListener('resize', updateVideoLayout);
+
+
+        // Make sure to call updateVideoLayout() after you add videos to the page to refresh the layout
+
+
+        function createRemoteVideo(streamId) {
+
+            var player = document.createElement("div");
+            player.className = "video-item";
+            player.innerHTML = '<video id="remoteVideo' + streamId + '" class="video" '+ controls +' '+ muted +' autoplay playsinline></video>';
+
+
+            document.querySelector('.video-container').appendChild(player);
+            updateVideoLayout();
+        }
+
+        function removeRemoteVideo(streamId) {
+            var video = document.getElementById("remoteVideo" + streamId);
+            if (video != null) {
+                video.srcObject = null;
+                document.querySelector(".video-container").removeChild(video.parentElement);
+                updateVideoLayout();
+            }
+
+        }
+
+        function playVideo(obj) {
+
+            //In multitrack conferencing the stream is same, tracks are being and remove from the stream
+            console.log("new track available with id: "
+                + obj.trackId + " and kind: " + obj.track.kind + " on the stream:" + streamId);
+
+            //trackId is ARDAMSv+STREAM_ID or  ARDAMSa+STREAM_ID
+            var incomingTrackId = obj.trackId.substring("ARDAMSx".length);
+
+            if (incomingTrackId == streamId) {
+                console.log("incoming track is the stream itself. So, ignore it. It is ", incomingTrackId);
+                return;
+            }
+
+            var video = document.getElementById("remoteVideo" + incomingTrackId);
+
+            if (video == null) {
+                console.log("video element is not exist for the incoming track id: " + incomingTrackId);
+                createRemoteVideo(incomingTrackId);
+                video = document.getElementById("remoteVideo" + incomingTrackId);
+                video.srcObject = new MediaStream();
+            }
+
+            video.srcObject.addTrack(obj.track)
+
+            obj.stream.onremovetrack = event => {
+                console.log("track is removed with id: " + event.track.id)
+                console.log(event);
+                var removedTrackId = event.track.id.substring("ARDAMSx".length);
+                removeRemoteVideo(removedTrackId);
+            }
+
+        }
+
+        function clearPlayers() {
+            let container = document.querySelector('.video-container');
+            while (container.firstChild) {
+                container.removeChild(container.firstChild);
+            }
+        }
+
+
+        function testPlayer() 
+        {
+            for (var i = 0; i < 9; i++) {
+                createRemoteVideo(i);
+                var video = document.getElementById("remoteVideo" + i);
+                video.src = "streams/test.mp4";
+            }
+        }
+
+       // testPlayer();
+
+
+
+        if (streamId == null || streamId == "") {
+            alert("Stream Id is not provided. Please give ?streamId={STREAM_ID} as query parameter in the URL");
+        }
+        else {
+            var webRTCAdaptor = new WebRTCAdaptor({
+                websocket_url: "ws://localhost:5080/WebRTCAppEE/websocket",
+                isPlayMode: true,
+                callback: function (info, obj) {
+                    if (info === "initialized") {
+                        clearPlayers();
+                        webRTCAdaptor.play(streamId, token, "", [], subscriberId, subscriberCode);
+                    }
+                    else if (info === "play_started") {
+                    }
+                    else if (info === "play_finished") {
+                        clearPlayers();
+                    }
+                    else if (info == "newTrackAvailable") {
+                        playVideo(obj);
+                    }
+                },
+                callbackError: function (error) {
+
+                    console.log("error callback: " + JSON.stringify(error));
+                }
+            });
+        }
+
+    </script>
+</body>
+
+</html>
