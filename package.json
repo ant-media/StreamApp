@@ -14,7 +14,7 @@
     "compile:ts": "tsc -p ./tsconfig.json && api-extractor run",
     "cleanup:tsbuild": "rimraf ./tsbuild",
     "test": "karma start karma.conf.cjs",
-    "upload-coverage": "codecov --disable=gcov"
+    "codecov": "codecov"
   },
   "copyFiles": [
     {
