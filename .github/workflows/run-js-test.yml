@@ -14,4 +14,5 @@ jobs:
       - run: npm install --include=dev
       - run: npm run compile
       - run: npm run test
-      - run: npm run codecov
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
