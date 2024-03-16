@@ -29,14 +29,45 @@
             box-sizing: border-box;
             /* Include padding in the element's total width and height */
         }
+        .video-container .audio {
+            display: none;
+        }
+        .mute-button {
+            width: 48px;
+            background-color: white;
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        #muteIcon {
+            width: 100%;
+        }
+        #video_info {
+            position: absolute;
+            top:30%;
+            left: 50%;
+            text-align:center;
+            font-size: 27px !important;
+            font-family: inherit !important;
+            line-height: 1.4 !important;
+            -webkit-transform: translate(-50%, -50%);
+            transform: translate(-50%, -50%);
+        }
     </style>
 </head>
 
 <body>
     <div class="container-fluid">
+        <div id="video_info">
+            Your live stream will play automatically as soon as it's available. <br />Get ready to be part of the action!
+        </div>
         <div class="row video-container justify-content-center">
 
         </div>
+        <button id="muteButton" class="mute-button">
+            <img src="images/icons/mute-icon.svg" alt="Mute/Unmute" id="muteIcon">
+        </button>
+       
     </div>
    
 
@@ -45,28 +76,42 @@
         crossorigin="anonymous"></script>
     <script type="module">
 
+		/*
+         * This is a sample code to play a stream with multitrack.	
+         * It's mainly developed by recordig the conference with media push and playing it back.
+         * It accepts the following query parameters
+         * - id: Stream id to play
+         * - token: Token to play the stream
+         * - subscriberId: Subscriber id to play the stream
+         * - subscriberCode: Subscriber code to play the stream
+         * - muted: Muted or not. Accepted values are true or false. If it's false, it does not show the mute button because it's developed for multitrack conference recording
+		 *          If it's true, it shows the mute/unmute button and it's muted by default
+         * - controls: Controls are visible or not. If it's true, it shows the controls. Accepted values are true or false. 
+		 *			If it's false, it does not show the controls. Default value is false
+		 */
+
         import { WebRTCAdaptor } from "./js/webrtc_adaptor.js";
         import { getUrlParameter } from "./js/fetch.stream.js";
 
         var token = getUrlParameter("token");
-        var streamId = getUrlParameter("streamId");
+        var streamId = getUrlParameter("id");
         var subscriberId = getUrlParameter("subscriberId");
         var subscriberCode = getUrlParameter("subscriberCode");
         var muted = getUrlParameter("muted");
-        if (muted == null) {
-            muted = "muted";
-        }
-        else if (muted == "true") {
-            muted = "muted";
-        }
-        else {
+        if (muted == "false") {
             muted = "";
         }
-        var controls = getUrlParameter("controls");
-        if (controls == null) {
-            controls = "controls";
+        else {
+            muted = "muted";
         }
-        else if (controls == "true") {
+
+        if (muted == "") {
+            //hide the mute button when it is not muted and specified by the user
+            document.getElementById("muteButton").style.display = "none";
+        }
+
+        var controls = getUrlParameter("controls");
+        if (controls == "true") {
             controls = "controls";
         }
         else {
@@ -122,14 +167,19 @@
 
 
         function createRemoteVideo(streamId) {
-
             var player = document.createElement("div");
             player.className = "video-item";
-            player.innerHTML = '<video id="remoteVideo' + streamId + '" class="video" '+ controls +' '+ muted +' autoplay playsinline></video>';
+            player.innerHTML = '<video id="remoteVideo' + streamId + '" class="video" '+ controls +' muted autoplay playsinline></video>';
 
 
             document.querySelector('.video-container').appendChild(player);
             updateVideoLayout();
+        }
+
+        function createRemoteAudio(trackId) {
+            var player = document.createElement("div");
+            player.innerHTML = '<audio id="remoteAudio' + trackId + '" class="audio" '+ controls +' '+ muted +' autoplay playsinline></audio>';
+            document.querySelector('.video-container').appendChild(player);
         }
 
         function removeRemoteVideo(streamId) {
@@ -139,7 +189,15 @@
                 document.querySelector(".video-container").removeChild(video.parentElement);
                 updateVideoLayout();
             }
+        }
 
+        function removeRemoteAudio(trackId) 
+        {
+            var audio = document.getElementById("remoteAudio" + trackId);
+            if (audio != null) {
+                audio.srcObject = null;
+                document.querySelector(".video-container").removeChild(audio.parentElement);
+            }
         }
 
         function playVideo(obj) {
@@ -156,23 +214,51 @@
                 return;
             }
 
-            var video = document.getElementById("remoteVideo" + incomingTrackId);
+            var player;
 
-            if (video == null) {
-                console.log("video element is not exist for the incoming track id: " + incomingTrackId);
-                createRemoteVideo(incomingTrackId);
-                video = document.getElementById("remoteVideo" + incomingTrackId);
-                video.srcObject = new MediaStream();
+            if (obj.track.kind === "video") 
+            {
+                player = document.getElementById("remoteVideo" + incomingTrackId);
+
+                if (player == null) {
+                    console.log("video element is not exist for the incoming track id: " + incomingTrackId);
+                    createRemoteVideo(incomingTrackId);
+                    player = document.getElementById("remoteVideo" + incomingTrackId);
+                    player.srcObject = new MediaStream();
+                }
+            }
+            else if (obj.track.kind === "audio") 
+            {
+                player = document.getElementById("remoteAudio" + incomingTrackId);
+
+                if (player == null) {
+                    console.log("audio element is not exist for the incoming track id: " + incomingTrackId);
+                    createRemoteAudio(incomingTrackId);
+                    player = document.getElementById("remoteAudio" + incomingTrackId);
+                    player.srcObject = new MediaStream();
+                }
+            }
+            else {
+                console.log("incoming track is not video or audio. So, ignore it. It is ", obj.track.kind);
+                return;
             }
 
-            video.srcObject.addTrack(obj.track)
+
+            player.srcObject.addTrack(obj.track)
 
             obj.stream.onremovetrack = event => {
                 console.log("track is removed with id: " + event.track.id)
                 console.log(event);
                 var removedTrackId = event.track.id.substring("ARDAMSx".length);
                 removeRemoteVideo(removedTrackId);
+                removeRemoteAudio(removedTrackId);
             }
+
+            player.play().then(_ => {
+                console.log("play started for track id: " + incomingTrackId + " kind: " + obj.track.kind);
+            }).catch(e => {
+                console.log("play failed with error: " + e);
+            });
 
         }
 
@@ -181,7 +267,22 @@
             while (container.firstChild) {
                 container.removeChild(container.firstChild);
             }
+            
         }
+
+        function setPlaceHolderVisibility(visible) {
+            var videoInfo = document.getElementById("video_info");
+            if (visible) {
+                videoInfo.style.display = "block";
+            }
+            else {
+                videoInfo.style.display = "none";
+            }
+        }
+
+      
+
+
 
 
         function testPlayer() 
@@ -198,7 +299,7 @@
 
 
         if (streamId == null || streamId == "") {
-            alert("Stream Id is not provided. Please give ?streamId={STREAM_ID} as query parameter in the URL");
+            alert("Stream Id is not provided. Please give ?id={STREAM_ID} as query parameter in the URL");
         }
         else {
             var webRTCAdaptor = new WebRTCAdaptor({
@@ -210,12 +311,18 @@
                         webRTCAdaptor.play(streamId, token, "", [], subscriberId, subscriberCode);
                     }
                     else if (info === "play_started") {
+                        setPlaceHolderVisibility(false);
                     }
                     else if (info === "play_finished") {
                         clearPlayers();
+                        setPlaceHolderVisibility(true);
                     }
                     else if (info == "newTrackAvailable") {
                         playVideo(obj);
+                    }
+                    else if (info === "closed") {
+                        clearPlayers();
+                        setPlaceHolderVisibility(true);
                     }
                 },
                 callbackError: function (error) {
@@ -224,6 +331,29 @@
                 }
             });
         }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            var isMuted = muted == "muted";;
+            var muteButton = document.getElementById('muteButton');
+           
+
+            muteButton.addEventListener('click', function () {
+
+                isMuted = !isMuted; // Toggle the mute state
+                var audioElements = document.querySelectorAll('audio');
+                audioElements.forEach(function (audio) {
+                    audio.muted = isMuted;
+                    audio.play().then(_ => {
+                        console.log("play started for audio");
+                    }).catch(e => {
+                        console.log("play failed with error: " + e);
+                    });
+                });
+
+                // Update the icon based on the mute state
+                document.getElementById('muteIcon').src = isMuted ? 'images/icons/mute-icon.svg' : 'images/icons/speaker-icon.svg';
+            });
+        });
 
     </script>
 </body>
