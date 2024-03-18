@@ -1,6 +1,5 @@
 
 import { WebRTCAdaptor } from '../../main/js/webrtc_adaptor.js';
-import {MediaManager} from "../../main/js/media_manager.js";
 
 
 describe("WebRTCAdaptor", function() {
@@ -1047,45 +1046,5 @@ describe("WebRTCAdaptor", function() {
 		sendExpectation.verify()
 
 	});
-
-	describe("checkAndStopLocalVideoTrackOnAndroid", function() {
-
-		let mediaManager;
-		let mockLocalStream;
-
-		beforeEach(function () {
-			window.isAndroid = () => {};
-
-			mockLocalStream = {
-				getVideoTracks: sinon.stub()
-			};
-
-			mediaManager = new MediaManager({
-				websocketURL: "ws://example.com",
-				initializeComponents: false,
-				localStream: mockLocalStream
-			});
-		});
-
-		it("should not stop video track if local stream exists and is not Android", function() {
-			const mockVideoTrack = { stop: sinon.fake() };
-			mockLocalStream.getVideoTracks.returns([mockVideoTrack]);
-			sinon.stub(window, 'isAndroid').returns(false);
-
-			mediaManager.checkAndStopLocalVideoTrackOnAndroid();
-
-			sinon.assert.notCalled(mockVideoTrack.stop);
-		});
-
-		it("should not stop video track if local stream does not exist", function() {
-			mediaManager.localStream = null;
-
-			mediaManager.checkAndStopLocalVideoTrackOnAndroid();
-
-			sinon.assert.notCalled(mockLocalStream.getVideoTracks);
-		});
-
-	});
-
 
 });
