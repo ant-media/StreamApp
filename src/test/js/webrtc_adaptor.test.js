@@ -1,5 +1,6 @@
 
 import { WebRTCAdaptor } from '../../main/js/webrtc_adaptor.js';
+import {MediaManager} from "../../main/js/media_manager.js";
 
 
 describe("WebRTCAdaptor", function() {
@@ -1044,7 +1045,7 @@ describe("WebRTCAdaptor", function() {
 		sendExpectation.verify()
 
 	});
-	
+
 	describe("checkAndStopLocalVideoTrackOnAndroid", function() {
 
 		let mediaManager;
