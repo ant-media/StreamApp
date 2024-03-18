@@ -947,8 +947,6 @@ describe("WebRTCAdaptor", function() {
 		let pushNotificationContent = "pnsRegistrationTokenpnsRegistrationTokenpnsRegistrationTokenpnsRegistrationToken";
 		let subscriberIdsToNotify = "string1";
 
-
-
 		try {
 			adaptor.sendPushNotification(subscriberId, authToken, pushNotificationContent, subscriberIdsToNotify);
 			assert.fail("It should throw exception because pushNotificationContent is not json");
@@ -1045,6 +1043,84 @@ describe("WebRTCAdaptor", function() {
 
 		sendExpectation.verify()
 
+	});
+	
+	describe("checkAndStopLocalVideoTrackOnAndroid", function() {
+
+		let mediaManager;
+		let mockLocalStream;
+
+		beforeEach(function () {
+			window.isAndroid = () => {};
+
+			mockLocalStream = {
+				getVideoTracks: sinon.stub()
+			};
+
+			mediaManager = new MediaManager({
+				websocketURL: "ws://example.com",
+				initializeComponents: false,
+				localStream: mockLocalStream
+			});
+		});
+
+		it("should not stop video track if local stream exists and is not Android", function() {
+			const mockVideoTrack = { stop: sinon.fake() };
+			mockLocalStream.getVideoTracks.returns([mockVideoTrack]);
+			sinon.stub(window, 'isAndroid').returns(false);
+
+			mediaManager.checkAndStopLocalVideoTrackOnAndroid();
+
+			sinon.assert.notCalled(mockVideoTrack.stop);
+		});
+
+		it("should not stop video track if local stream does not exist", function() {
+			mediaManager.localStream = null;
+
+			mediaManager.checkAndStopLocalVideoTrackOnAndroid();
+
+			sinon.assert.notCalled(mockLocalStream.getVideoTracks);
+		});
+
+	});
+
+	describe("turnOffLocalCamera", () => {
+		let adaptor;
+		let mockMediaManager;
+
+		beforeEach(function () {
+			mockMediaManager = {
+				turnOffLocalCamera: sinon.fake()
+			};
+
+			adaptor = new WebRTCAdaptor({
+				websocketURL: "ws://example.com",
+				isPlayMode: true,
+				mediaManager: mockMediaManager,
+				initializeComponents: false
+			});
+		});
+
+		it("should call turnOffLocalCamera on mediaManager with correct streamId", function() {
+			const streamId = "testStreamId";
+			let result = adaptor.turnOffLocalCamera(streamId);
+			assert.notEqual(result, undefined);
+		});
+
+		it("should handle undefined streamId", function() {
+			let result = adaptor.turnOffLocalCamera(undefined);
+			assert.notEqual(result, undefined);
+		});
+
+		it("should handle null streamId", function() {
+			let result = adaptor.turnOffLocalCamera(null);
+			assert.notEqual(result, undefined);
+		});
+
+		it("should handle empty string streamId", function() {
+			let result = adaptor.turnOffLocalCamera("");
+			assert.notEqual(result, undefined);
+		});
 	});
 
 });
