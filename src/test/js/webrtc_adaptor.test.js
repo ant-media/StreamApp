@@ -685,7 +685,7 @@ describe("WebRTCAdaptor", function() {
 
 
 
-	return soundMeteraddModuleFailed;
+		return await soundMeteraddModuleFailed;
 
     });
 
