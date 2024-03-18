@@ -2186,7 +2186,7 @@ export class WebRTCAdaptor {
     }
     /**
      *
-     * @param {object} mediaConstraints : media constraints to be used for opening the stream
+     * @param {MediaStreamConstraints} mediaConstraints : media constraints to be used for opening the stream
      * @param {string} streamId : id of the stream to replace tracks with
      * @returns
      */
