@@ -1124,4 +1124,36 @@ describe("WebRTCAdaptor", function() {
 		});
 	});
 
+	describe("getStats", function() {
+		let adaptor;
+		let mockPeerConnection;
+		let mockStats;
+
+		beforeEach(function () {
+			mockPeerConnection = {
+				getStats: sinon.stub()
+			};
+			mockStats = new Map();
+			adaptor = new WebRTCAdaptor({
+				websocketURL: "ws://example.com",
+				initializeComponents: false
+			});
+			adaptor.remotePeerConnection = { "stream1": mockPeerConnection };
+			adaptor.remotePeerConnectionStats = { "stream1": {} };
+		});
+
+		it("should resolve with true when getStats is successful", async function() {
+			mockPeerConnection.getStats.resolves(mockStats);
+			const result = await adaptor.getStats("stream1");
+			expect(result).to.be.true;
+		});
+
+		it("should resolve with false when getStats fails", async function() {
+			mockPeerConnection.getStats.rejects(new Error("getStats error"));
+			const result = await adaptor.getStats("stream1");
+			expect(result).to.be.false;
+		});
+
+	});
+
 });
