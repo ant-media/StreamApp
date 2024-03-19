@@ -51,15 +51,15 @@ export function tryToPlay(name, token, type, subscriberId, subscriberCode, noStr
 
 }
 /**
- * 
- * @param {*} name 
- * @param {*} playType 
- * @param {*} token 
- * @param {*} subscriberId 
- * @param {*} subscriberCode 
- * @returns 
+ *
+ * @param {*} name
+ * @param {*} playType
+ * @param {*} token
+ * @param {*} subscriberId
+ * @param {*} subscriberCode
+ * @returns
  */
-function getURL(name, playType, token, subscriberId, subscriberCode) {
+export function getURL(name, playType, token, subscriberId, subscriberCode) {
     var url = "streams/" + name;
 
     if (typeof playType != "undefined" && playType != null) {
@@ -83,14 +83,14 @@ function getURL(name, playType, token, subscriberId, subscriberCode) {
     return url;
 }
 /**
- * 
- * @param {*} name 
- * @param {*} token 
- * @param {*} subscriberId 
- * @param {*} subscriberCode 
- * @param {*} noStreamCallback 
- * @param {*} playType 
- * @returns 
+ *
+ * @param {*} name
+ * @param {*} token
+ * @param {*} subscriberId
+ * @param {*} subscriberCode
+ * @param {*} noStreamCallback
+ * @param {*} playType
+ * @returns
  */
 export function tryToVODPlay(name, token, subscriberId, subscriberCode, noStreamCallback, playType) {
 
@@ -106,7 +106,7 @@ export function tryToVODPlay(name, token, subscriberId, subscriberCode, noStream
     }
 
     //check if the direct file name is provided so the playtype parameter is free
-    
+
     fetch(getURL(name, null, token, subscriberId, subscriberCode), {method: 'HEAD'})
         .then(function (response) {
             if (response.status == 200 || response.status == 304) {
@@ -177,10 +177,10 @@ export function isMobile() {
     }
 }
 /**
- * 
- * @param {string} sParam 
+ *
+ * @param {string} sParam
  * @param {string=} search
- * @returns 
+ * @returns
  */
 export function getUrlParameter(sParam, search) {
 	if (typeof search === undefined || search == null) {
