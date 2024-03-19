@@ -1141,4 +1141,178 @@ describe("WebRTCAdaptor", function () {
 
   });
 
+  describe("changeBandwidth", function () {
+
+    let adaptor;
+
+    beforeEach(function () {
+      adaptor = new WebRTCAdaptor({
+        websocketURL: "ws://example.com",
+        initializeComponents: false,
+      });
+      adaptor.mediaManager = {
+        changeBandwidth: sinon.fake()
+      };
+    });
+
+    it("should call mediaManager's changeBandwidth with correct parameters", function () {
+      const bandwidth = 500;
+      const streamId = "stream1";
+
+      adaptor.changeBandwidth(bandwidth, streamId);
+
+      expect(adaptor.mediaManager.changeBandwidth.calledWithMatch(bandwidth, streamId)).to.be.true;
+    });
+
+    it("should handle zero bandwidth", function () {
+      const bandwidth = 0;
+      const streamId = "stream1";
+
+      adaptor.changeBandwidth(bandwidth, streamId);
+
+      expect(adaptor.mediaManager.changeBandwidth.calledWithMatch(bandwidth, streamId)).to.be.true;
+    });
+
+    it("should handle null streamId", function () {
+      const bandwidth = 500;
+      const streamId = null;
+
+      adaptor.changeBandwidth(bandwidth, streamId);
+
+      expect(adaptor.mediaManager.changeBandwidth.calledWithMatch(bandwidth, streamId)).to.be.true;
+    });
+  });
+
+  describe("enableAudioLevelWhenMuted", function () {
+
+    let adaptor;
+
+    beforeEach(function () {
+      adaptor = new WebRTCAdaptor({
+        websocketURL: "ws://example.com",
+        initializeComponents: false,
+      });
+      adaptor.mediaManager = {
+        enableAudioLevelWhenMuted: sinon.fake()
+      };
+    });
+
+    it("should call mediaManager's enableAudioLevelWhenMuted", function () {
+      adaptor.enableAudioLevelWhenMuted();
+
+      expect(adaptor.mediaManager.enableAudioLevelWhenMuted.called).to.be.true;
+    });
+
+  });
+
+  describe("disableAudioLevelWhenMuted", function () {
+
+    let adaptor;
+
+    beforeEach(function () {
+      adaptor = new WebRTCAdaptor({
+        websocketURL: "ws://example.com",
+        initializeComponents: false,
+      });
+      adaptor.mediaManager = {
+        disableAudioLevelWhenMuted: sinon.fake()
+      };
+    });
+
+    it("should call mediaManager's disableAudioLevelWhenMuted", function () {
+      adaptor.disableAudioLevelWhenMuted();
+
+      expect(adaptor.mediaManager.disableAudioLevelWhenMuted.called).to.be.true;
+    });
+
+  });
+
+  describe("getVideoSender", function () {
+
+    let adaptor;
+
+    beforeEach(function () {
+      adaptor = new WebRTCAdaptor({
+        websocketURL: "ws://example.com",
+        initializeComponents: false,
+      });
+      adaptor.mediaManager = {
+        getVideoSender: sinon.fake()
+      };
+    });
+
+    it("should call mediaManager's getVideoSender with correct parameters", function () {
+      const streamId = "stream1";
+
+      adaptor.getVideoSender(streamId);
+
+      expect(adaptor.mediaManager.getVideoSender.calledWithMatch(streamId)).to.be.true;
+    });
+
+    it("should handle null streamId", function () {
+      const streamId = null;
+
+      adaptor.getVideoSender(streamId);
+
+      expect(adaptor.mediaManager.getVideoSender.calledWithMatch(streamId)).to.be.true;
+    });
+  });
+
+  describe("openStream", function () {
+
+    let adaptor;
+
+    beforeEach(function () {
+      adaptor = new WebRTCAdaptor({
+        websocketURL: "ws://example.com",
+        initializeComponents: false,
+      });
+      adaptor.mediaManager = {
+        openStream: sinon.fake()
+      };
+    });
+
+    it("should call mediaManager's openStream with correct parameters", function () {
+      const mediaConstraints = {video: true, audio: true};
+      const streamId = "stream1";
+
+      adaptor.openStream(mediaConstraints, streamId);
+
+      expect(adaptor.mediaManager.openStream.calledWithMatch(mediaConstraints, streamId)).to.be.true;
+    });
+
+    it("should handle null streamId", function () {
+      const mediaConstraints = {video: true, audio: true};
+      const streamId = null;
+
+      adaptor.openStream(mediaConstraints, streamId);
+
+      expect(adaptor.mediaManager.openStream.calledWithMatch(mediaConstraints, streamId)).to.be.true;
+    });
+  });
+
+  describe("closeStream", function () {
+
+    let adaptor;
+
+    beforeEach(function () {
+      adaptor = new WebRTCAdaptor({
+        websocketURL: "ws://example.com",
+        initializeComponents: false,
+        ///mediaManager: mockMediaManager
+      });
+      adaptor.mediaManager = {
+        closeStream: sinon.fake()
+      };
+    });
+
+    it("should call mediaManager's closeStream", function () {
+      adaptor.closeStream();
+
+      expect(adaptor.mediaManager.closeStream.called).to.be.true;
+    });
+
+  });
+
+
 });
