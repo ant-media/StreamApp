@@ -250,4 +250,70 @@ describe("MediaManager", function () {
 
   });
 
+  describe("disableAudioLevelWhenMuted", function () {
+
+    let mediaManager;
+    let mockAudioStream;
+
+    beforeEach(function () {
+      mockAudioStream = {
+        getTracks: sinon.stub()
+      };
+
+      mediaManager = new MediaManager({
+        userParameters: {
+          mediaConstraints: {
+            video: false,
+            audio: true,
+          }
+        },
+        localStream: mockAudioStream
+      });
+    });
+
+    it("should stop audio track and clear meter refresh when disableAudioLevelWhenMuted is called", function () {
+      const mockAudioTrack = {stop: sinon.fake()};
+      mockAudioStream.getTracks.returns([mockAudioTrack]);
+      mediaManager.meterRefresh = setInterval(() => {}, 1000);
+      mediaManager.mutedSoundMeter = {stop: sinon.fake()};
+
+      mediaManager.disableAudioLevelWhenMuted();
+
+      expect(mediaManager.meterRefresh).to.be.null;
+    });
+
+    it("should not stop audio track if local stream does not exist", function () {
+      mediaManager.localStream = null;
+
+      mediaManager.disableAudioLevelWhenMuted();
+
+      sinon.assert.notCalled(mockAudioStream.getTracks);
+    });
+
+    it("should not stop audio track if audio track does not exist", function () {
+      mockAudioStream.getTracks.returns([]);
+
+      mediaManager.disableAudioLevelWhenMuted();
+
+      sinon.assert.notCalled(mockAudioStream.getTracks);
+    });
+
+    it("should not stop mutedSoundMeter if it does not exist", function () {
+      mediaManager.mutedSoundMeter = null;
+
+      mediaManager.disableAudioLevelWhenMuted();
+
+      expect(mediaManager.mutedSoundMeter).to.be.null;
+    });
+
+    it("should not clear meterRefresh if it does not exist", function () {
+      mediaManager.meterRefresh = null;
+
+      mediaManager.disableAudioLevelWhenMuted();
+
+      expect(mediaManager.meterRefresh).to.be.null;
+    });
+
+  });
+
 });
