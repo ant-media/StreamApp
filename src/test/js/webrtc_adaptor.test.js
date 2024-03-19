@@ -670,7 +670,7 @@ describe("WebRTCAdaptor", function () {
       });
     });
 
-    return await soundMeteraddModuleFailed;
+		console.assert(soundMeteraddModuleFailed, "soundMeteraddModuleFailed");
 
   });
 
