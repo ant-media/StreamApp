@@ -670,7 +670,7 @@ describe("WebRTCAdaptor", function () {
       });
     });
 
-		console.assert(soundMeteraddModuleFailed, "soundMeteraddModuleFailed");
+    console.assert(soundMeteraddModuleFailed, "soundMeteraddModuleFailed");
 
   });
 
@@ -1299,7 +1299,6 @@ describe("WebRTCAdaptor", function () {
       adaptor = new WebRTCAdaptor({
         websocketURL: "ws://example.com",
         initializeComponents: false,
-        ///mediaManager: mockMediaManager
       });
       adaptor.mediaManager = {
         closeStream: sinon.fake()
@@ -1314,5 +1313,177 @@ describe("WebRTCAdaptor", function () {
 
   });
 
+  describe("applyConstraints", function () {
+
+    let adaptor;
+
+    beforeEach(function () {
+      adaptor = new WebRTCAdaptor({
+        websocketURL: "ws://example.com",
+        initializeComponents: false,
+      });
+      adaptor.mediaManager = {
+        applyConstraints: sinon.fake()
+      };
+    });
+
+    it("should call mediaManager's applyConstraints", function () {
+      let constraints = {video: true, audio: true};
+
+      adaptor.applyConstraints(constraints);
+
+      expect(adaptor.mediaManager.applyConstraints.calledWithMatch(constraints)).to.be.true;
+    });
+
+  });
+
+  describe("switchVideoCameraFacingMode", function () {
+
+    let adaptor;
+
+    beforeEach(function () {
+      adaptor = new WebRTCAdaptor({
+        websocketURL: "ws://example.com",
+        initializeComponents: false,
+      });
+      adaptor.mediaManager = {
+        switchVideoCameraFacingMode: sinon.fake()
+      };
+    });
+
+    it("should call mediaManager's switchVideoCameraFacingMode", function () {
+      let streamId = "stream1";
+      let facingMode = "user";
+
+      adaptor.switchVideoCameraFacingMode(streamId, facingMode);
+
+      expect(adaptor.mediaManager.switchVideoCameraFacingMode.calledWithMatch(streamId, facingMode)).to.be.true;
+    });
+
+  });
+
+  describe("switchDesktopCaptureWithCamera", function () {
+
+    let adaptor;
+
+    beforeEach(function () {
+      adaptor = new WebRTCAdaptor({
+        websocketURL: "ws://example.com",
+        initializeComponents: false,
+      });
+      adaptor.mediaManager = {
+        switchDesktopCaptureWithCamera: sinon.fake()
+      };
+    });
+
+    it("should call mediaManager's switchDesktopCaptureWithCamera", function () {
+      let streamId = "stream1";
+
+      adaptor.switchDesktopCaptureWithCamera(streamId);
+
+      expect(adaptor.mediaManager.switchDesktopCaptureWithCamera.calledWithMatch(streamId)).to.be.true;
+    });
+
+  });
+
+  describe("switchAudioInputSource", function () {
+
+    let adaptor;
+
+    beforeEach(function () {
+      adaptor = new WebRTCAdaptor({
+        websocketURL: "ws://example.com",
+        initializeComponents: false,
+      });
+      adaptor.mediaManager = {
+        switchAudioInputSource: sinon.fake()
+      };
+    });
+
+    it("should call mediaManager's switchAudioInputSource", function () {
+      let streamId = "stream1";
+      let deviceId = "deviceId1";
+
+      adaptor.switchAudioInputSource(streamId, deviceId);
+
+      expect(adaptor.mediaManager.switchAudioInputSource.calledWithMatch(streamId, deviceId)).to.be.true;
+    });
+
+  });
+
+  describe("setVolumeLevel", function () {
+
+    let adaptor;
+
+    beforeEach(function () {
+      adaptor = new WebRTCAdaptor({
+        websocketURL: "ws://example.com",
+        initializeComponents: false,
+      });
+      adaptor.mediaManager = {
+        setVolumeLevel: sinon.fake()
+      };
+    });
+
+    it("should call mediaManager's setVolumeLevel", function () {
+      let volumeLevel = 50;
+
+      adaptor.setVolumeLevel(volumeLevel);
+
+      expect(adaptor.mediaManager.setVolumeLevel.calledWithMatch(volumeLevel)).to.be.true;
+    });
+
+  });
+
+  describe("switchDesktopCapture", function () {
+
+    let adaptor;
+
+    beforeEach(function () {
+      adaptor = new WebRTCAdaptor({
+        websocketURL: "ws://example.com",
+        initializeComponents: false,
+      });
+      adaptor.mediaManager = {
+        switchDesktopCapture: sinon.fake()
+      };
+    });
+
+    it("should call mediaManager's switchDesktopCapture", function () {
+      let streamId = "stream1";
+
+      adaptor.switchDesktopCapture(streamId);
+
+      expect(adaptor.mediaManager.switchDesktopCapture.calledWithMatch(streamId)).to.be.true;
+    });
+
+  });
+
+  describe("updateVideoTrack", function () {
+
+    let adaptor;
+
+    beforeEach(function () {
+      adaptor = new WebRTCAdaptor({
+        websocketURL: "ws://example.com",
+        initializeComponents: false,
+      });
+      adaptor.mediaManager = {
+        updateVideoTrack: sinon.fake()
+      };
+    });
+
+    it("should call mediaManager's updateVideoTrack", function () {
+      let stream = "stream0";
+      let streamId = "stream1";
+      let onEndedCallback = null;
+      let stopDesktop = false;
+
+      adaptor.updateVideoTrack(stream, streamId, onEndedCallback, stopDesktop);
+
+      expect(adaptor.mediaManager.updateVideoTrack.calledWithMatch(stream, streamId, onEndedCallback, stopDesktop)).to.be.true;
+    });
+
+  });
 
 });
