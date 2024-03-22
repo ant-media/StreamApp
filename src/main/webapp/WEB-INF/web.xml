@@ -51,6 +51,8 @@
 		<url-pattern>/streams/*</url-pattern>
 	</filter-mapping>
 
+
+
 	<filter>
 		<filter-name>HttpForwardFilter</filter-name>
 		<filter-class>io.antmedia.filter.HttpForwardFilter</filter-class>
@@ -58,6 +60,16 @@
 	</filter>
 	<filter-mapping>
 		<filter-name>HttpForwardFilter</filter-name>
+		<url-pattern>/streams/*</url-pattern>
+	</filter-mapping>
+
+	<filter>
+		<filter-name>HlsManifestModifierFilter</filter-name>
+		<filter-class>io.antmedia.filter.HlsManifestModifierFilter</filter-class>
+		<async-supported>true</async-supported>
+	</filter>
+	<filter-mapping>
+		<filter-name>HlsManifestModifierFilter</filter-name>
 		<url-pattern>/streams/*</url-pattern>
 	</filter-mapping>
 
