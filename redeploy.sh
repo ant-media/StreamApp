@@ -11,12 +11,14 @@ cd embedded-player
 npm run compile
 npm run deploy
 
-#switch back to first dir
-cd ..
+OUT=$?
 
 if [ $OUT -ne 0 ]; then
     exit $OUT
 fi
+
+#switch back to first dir
+cd ..
 
 mvn clean install -DskipTests -Dgpg.skip=true
 OUT=$?
