@@ -2048,9 +2048,10 @@ export class WebRTCAdaptor {
      * The following messages are forwarded to MediaManager. They are also kept here because of backward compatibility.
      * You can find the details about them in media_manager.js
      * @param {string} streamId
+     * @returns 
      */
     turnOffLocalCamera(streamId) {
-        this.mediaManager.turnOffLocalCamera(streamId);
+        return this.mediaManager.turnOffLocalCamera(streamId);
     }
     /**
      *
@@ -2195,7 +2196,7 @@ export class WebRTCAdaptor {
     }
     /**
      *
-     * @param {object} mediaConstraints : media constraints to be used for opening the stream
+     * @param {MediaStreamConstraints} mediaConstraints : media constraints to be used for opening the stream
      * @param {string} streamId : id of the stream to replace tracks with
      * @returns
      */
