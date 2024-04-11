@@ -1,6 +1,4 @@
 import { WebPlayer } from "@antmedia/web_player";
-import { getUrlParameter } from "@antmedia/webrtc_adaptor/;
-
 
 var webPlayer = new WebPlayer(window, document.getElementById("video_container"), document.getElementById("video_info"));
 
@@ -24,9 +22,11 @@ document.getElementById("unmuteButton").addEventListener("click", function() {
 	    }
 	});
 
+var httpBaseUrl = null;
+
 function getHttpBaseUrl() {
 	// Mute/Unmute Video Button for 360 playback
-	if (httpBaseUrl) {
+	if (httpBaseUrl == null) {
 		let appName = "/";
 		if (window.location.pathname && window.location.pathname.indexOf("/") != -1) {
 		    appName = window.location.pathname.substring(0, window.location.pathname.lastIndexOf("/") + 1);
@@ -54,7 +54,18 @@ function sendEventToBackend(data) {
 	if (!sendAnalytic) {
 		return;
 	}
-    fetch(getHttpBaseUrl() + "analytic/events", {
+	
+	let url = getHttpBaseUrl() + "analytic/events/";
+	if (data.event.startsWith("play")) {
+		url += "play"
+	}
+	else if (data.event.startsWith("watch")) {
+		url += "watch-time"
+	}
+	else {
+		console.warn("Not known event type");
+	}
+    fetch(url, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -66,12 +77,29 @@ function sendEventToBackend(data) {
     .catch((error) => console.error('Error sending event:', error));
 }
 
-let httpBaseUrl = getHttpBaseUrl();
 
-let sendAnalytic = true;
-if (getUrlParameter("sendAnalytic", this.window.location.search) == "false") {
-	sendAnalytic = false;
+function getUrlParameter(sParam, search) {
+  if (typeof search === undefined || search == null) {
+    search = window.location.search;
+  }
+  var sPageURL = decodeURIComponent(search.substring(1)),
+    sURLVariables = sPageURL.split('&'),
+    sParameterName,
+    i;
+  for (i = 0; i < sURLVariables.length; i++) {
+    sParameterName = sURLVariables[i].split('=');
+    if (sParameterName[0] === sParam) {
+      return sParameterName[1] === undefined ? true : sParameterName[1];
+    }
+  }
 }
+
+let sendAnalytic = false;
+if (getUrlParameter("sendAnalytic", window.location.search) == "true") {
+	sendAnalytic = true;
+}
+
+httpBaseUrl = getHttpBaseUrl();
 
 window.webPlayer = webPlayer;
 
@@ -90,11 +118,9 @@ webPlayer.addPlayerListener((status) => {
 			firstTimePlay = false;
 			sendEventToBackend({
 				subscriberId: webPlayer.subscriberId,
-				event: "newView",
-				token: webPlayer.token,
+				event: "playStartedFirstTime",
 				streamId: webPlayer.streamId,
-				playType: webPlayer.currentPlayType,
-				src: webPlayer.getSource()
+				protocol: webPlayer.currentPlayType,
 			});
 		}
 		
@@ -102,10 +128,8 @@ webPlayer.addPlayerListener((status) => {
 		sendEventToBackend({
 				subscriberId: webPlayer.subscriberId,
 				event: "playStarted",
-				token: webPlayer.token,
 				streamId: webPlayer.streamId,
-				playType: webPlayer.currentPlayType,
-				src: webPlayer.getSource()
+				protocol: webPlayer.currentPlayType,
 			});
     }
     else if (status == "ended") {
@@ -116,13 +140,10 @@ webPlayer.addPlayerListener((status) => {
 		sendEventToBackend({
 				subscriberId: webPlayer.subscriberId,
 				event: "watchTime",
-				token: webPlayer.token,
 				streamId: webPlayer.streamId,
-				playType: webPlayer.currentPlayType,
-				src: webPlayer.getSource(),
-				watchTime: timeDiff,
-				startTime: firstTimeUpdate,
-				endTime: lastTimeUpdate
+				protocol: webPlayer.currentPlayType,
+				watchTimeMs: timeDiff * 1000,
+				startTimeMs: firstTimeUpdate * 1000,
 			});
 		firstTimeUpdate = -1;
 		
@@ -131,10 +152,8 @@ webPlayer.addPlayerListener((status) => {
 		sendEventToBackend({
 				subscriberId: webPlayer.subscriberId,
 				event: "playEnded",
-				token: webPlayer.token,
 				streamId: webPlayer.streamId,
-				playType: webPlayer.currentPlayType,
-				src: webPlayer.getSource()
+				protocol: webPlayer.currentPlayType,
 			});
     }
     else if (status == "seeked") {
@@ -144,13 +163,10 @@ webPlayer.addPlayerListener((status) => {
 		sendEventToBackend({
 				subscriberId: webPlayer.subscriberId,
 				event: "watchTime",
-				token: webPlayer.token,
 				streamId: webPlayer.streamId,
-				playType: webPlayer.currentPlayType,
-				src: webPlayer.getSource(),
-				watchTime: timeDiff,
-				startTime: firstTimeUpdate,
-				endTime: lastTimeUpdate
+				protocol: webPlayer.currentPlayType,
+				watchTimeMs: timeDiff * 1000,
+				startTimeMs: firstTimeUpdate * 1000,
 			});
 		firstTimeUpdate = -1;
 
@@ -170,13 +186,10 @@ webPlayer.addPlayerListener((status) => {
 			sendEventToBackend({
 				subscriberId: webPlayer.subscriberId,
 				event: "watchTime",
-				token: webPlayer.token,
 				streamId: webPlayer.streamId,
-				playType: webPlayer.currentPlayType,
-				src: webPlayer.getSource(),
-				watchTime: timeDiff,
-				startTime: firstTimeUpdate,
-				endTime: lastTimeUpdate
+				protocol: webPlayer.currentPlayType,
+				watchTimeMs: timeDiff * 1000,
+				startTimeMs: firstTimeUpdate * 1000,
 			});
 			firstTimeUpdate = -1;
 		}
@@ -189,10 +202,8 @@ webPlayer.addPlayerListener((status) => {
 		sendEventToBackend({
 				subscriberId: webPlayer.subscriberId,
 				event: "playPaused",
-				token: webPlayer.token,
 				streamId: webPlayer.streamId,
-				playType: webPlayer.currentPlayType,
-				src: webPlayer.getSource()
+				protocol: webPlayer.currentPlayType,
 			});
 	}
     console.debug("player event: ", status);
