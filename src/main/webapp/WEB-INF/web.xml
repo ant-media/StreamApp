@@ -161,6 +161,7 @@
 			<param-value>org.glassfish.jersey.media.multipart.MultiPartFeature
 			</param-value>
 		</init-param>
+		<async-supported>true</async-supported>
 		<load-on-startup>1</load-on-startup>
 	</servlet>
 	<servlet-mapping>
@@ -182,6 +183,7 @@
 			<param-value>org.glassfish.jersey.media.multipart.MultiPartFeature
 			</param-value>
 		</init-param>
+		<async-supported>true</async-supported>
 		<load-on-startup>1</load-on-startup>
 	</servlet>
 	<servlet-mapping>
