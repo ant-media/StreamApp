@@ -51,6 +51,8 @@
 		<url-pattern>/streams/*</url-pattern>
 	</filter-mapping>
 
+
+
 	<filter>
 		<filter-name>HttpForwardFilter</filter-name>
 		<filter-class>io.antmedia.filter.HttpForwardFilter</filter-class>
@@ -58,6 +60,16 @@
 	</filter>
 	<filter-mapping>
 		<filter-name>HttpForwardFilter</filter-name>
+		<url-pattern>/streams/*</url-pattern>
+	</filter-mapping>
+
+	<filter>
+		<filter-name>HlsManifestModifierFilter</filter-name>
+		<filter-class>io.antmedia.filter.HlsManifestModifierFilter</filter-class>
+		<async-supported>true</async-supported>
+	</filter>
+	<filter-mapping>
+		<filter-name>HlsManifestModifierFilter</filter-name>
 		<url-pattern>/streams/*</url-pattern>
 	</filter-mapping>
 
@@ -119,7 +131,21 @@
 		<filter-name>CorsFilter</filter-name>
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>
+	<servlet>
+		<servlet-name>OpenApi</servlet-name>
+	    <servlet-class>io.swagger.v3.jaxrs2.integration.OpenApiServlet</servlet-class>
+	
+	    <init-param>
+	      <param-name>openApi.configuration.resourcePackages</param-name>
+	      <param-value>io.antmedia.rest</param-value>
+	    </init-param>
+	  </servlet>
 
+	  <servlet-mapping>
+	    <servlet-name>OpenApi</servlet-name>
+	    <url-pattern>/openapi/*</url-pattern>
+	  </servlet-mapping>
+  
 
 	<servlet>
 		<servlet-name>jersey-serlvet</servlet-name>
