@@ -29,7 +29,7 @@
             box-sizing: border-box;
             /* Include padding in the element's total width and height */
         }
-        .video-container .audio {
+        .video-container .audio , .audio-container {
             display: none;
         }
         .mute-button {
@@ -178,6 +178,7 @@
 
         function createRemoteAudio(trackId) {
             var player = document.createElement("div");
+            player.className = "audio-container";
             player.innerHTML = '<audio id="remoteAudio' + trackId + '" class="audio" '+ controls +' '+ muted +' autoplay playsinline></audio>';
             document.querySelector('.video-container').appendChild(player);
         }
