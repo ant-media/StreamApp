@@ -222,7 +222,7 @@
 
 	<mime-mapping>
 		<extension>m3u8</extension>
-		<mime-type>application/x-mpegURL</mime-type>
+		<mime-type>application/vnd.apple.mpegurl</mime-type>
 	</mime-mapping>
 	<mime-mapping>
 		<extension>ts</extension>
