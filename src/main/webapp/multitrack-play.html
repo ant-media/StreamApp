@@ -100,6 +100,7 @@
         var subscriberId = getUrlParameter("subscriberId");
         var subscriberCode = getUrlParameter("subscriberCode");
         var muted = getUrlParameter("muted");
+ 		var isMuted;
         if (muted == "false") {
             muted = "";
         }
@@ -260,7 +261,14 @@
             player.play().then(_ => {
                 console.log("play started for track id: " + incomingTrackId + " kind: " + obj.track.kind);
             }).catch(e => {
-                console.log("play failed with error: " + e);
+				console.warn("play failed with error: " + e);
+				
+				if (obj.track.kind == "audio") 
+				{					
+					//make the button visible because it fails not allowed error
+ 					document.getElementById("muteButton").style.display = "inline";
+					isMuted = true;
+				}
             });
 
         }
@@ -338,7 +346,8 @@
         }
 
         document.addEventListener('DOMContentLoaded', function () {
-            var isMuted = muted == "muted";;
+            isMuted = muted == "muted";;
+
             var muteButton = document.getElementById('muteButton');
            
 
@@ -351,7 +360,7 @@
                     audio.play().then(_ => {
                         console.log("play started for audio");
                     }).catch(e => {
-                        console.log("play failed with error: " + e);
+                        console.warn("play failed with error: " + e);
                     });
                 });
 
