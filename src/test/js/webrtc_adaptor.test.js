@@ -1528,4 +1528,26 @@ describe("WebRTCAdaptor", function () {
     });
   });
 
+  describe("oniceconnectionstatechange", function () {
+    let adaptor;
+    let mockPeerConnection;
+
+    beforeEach(function () {
+      adaptor = new WebRTCAdaptor({
+        websocketURL: "ws://example.com",
+        initializeComponents: false,
+      });
+      mockPeerConnection = { iceConnectionState: "", restartIce: sinon.fake(), oniceconnectionstatechange: sinon.fake()};
+      adaptor.remotePeerConnection["stream1"] = mockPeerConnection;
+    });
+
+    it("should set iceRestart to false when state is stable", function () {
+      mockPeerConnection.iceConnectionState = "stable";
+
+      adaptor.remotePeerConnection["stream1"].oniceconnectionstatechange();
+
+      expect(adaptor.iceRestart).to.be.false;
+    });
+  });
+
 });
