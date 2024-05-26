@@ -1191,10 +1191,10 @@ export class WebRTCAdaptor {
             if (peerConnection.signalingState != "closed") {
                 peerConnection.close();
             }
-            var playStreamIndex = this.playStreamId.indexOf(streamId);
-            if (playStreamIndex != -1) {
-                this.playStreamId.splice(playStreamIndex, 1);
-            }
+        }
+	var playStreamIndex = this.playStreamId.indexOf(streamId);
+        if (playStreamIndex != -1) {
+		this.playStreamId.splice(playStreamIndex, 1);
         }
         //this is for the stats
         if (this.remotePeerConnectionStats[streamId] != null) {
