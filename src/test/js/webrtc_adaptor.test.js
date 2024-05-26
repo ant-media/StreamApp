@@ -1486,4 +1486,46 @@ describe("WebRTCAdaptor", function () {
 
   });
 
+  describe("stopTracksInPeerConnection", function () {
+    let adaptor;
+
+    beforeEach(function () {
+      adaptor = new WebRTCAdaptor({
+        websocketURL: "ws://example.com",
+        initializeComponents: false,
+      });
+      adaptor.mediaManager = {
+        updateVideoTrack: sinon.fake()
+      };
+    });
+
+    it("should stop all tracks when peer connection exists", function () {
+      const mockTrack = { stop: sinon.fake() };
+      const mockSender = { track: mockTrack };
+      const mockPeerConnection = { getSenders: sinon.fake.returns([mockSender]) };
+
+      adaptor.remotePeerConnection["stream1"] = mockPeerConnection;
+
+      adaptor.stopTracksInPeerConnection("stream1");
+
+      expect(mockTrack.stop.called).to.be.true;
+    });
+
+    it("should not throw error when peer connection does not exist", function () {
+      expect(() => adaptor.stopTracksInPeerConnection("stream1")).not.to.throw();
+    });
+
+    it("should not stop track when sender's track is null", function () {
+      const mockTrack = { stop: sinon.fake() };
+      const mockSender = { track: null };
+      const mockPeerConnection = { getSenders: sinon.fake.returns([mockSender]) };
+
+      adaptor.remotePeerConnection["stream1"] = mockPeerConnection;
+
+      adaptor.stopTracksInPeerConnection("stream1");
+
+      expect(mockTrack.stop.called).to.be.false;
+    });
+  });
+
 });
