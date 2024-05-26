@@ -161,11 +161,34 @@
 			<param-value>org.glassfish.jersey.media.multipart.MultiPartFeature
 			</param-value>
 		</init-param>
+		<async-supported>true</async-supported>
 		<load-on-startup>1</load-on-startup>
 	</servlet>
 	<servlet-mapping>
 		<servlet-name>jersey-serlvet</servlet-name>
 		<url-pattern>/rest/*</url-pattern>
+	</servlet-mapping>
+	
+	<servlet>
+		<servlet-name>jersey-analytic-serlvet</servlet-name>
+		<servlet-class>
+			org.glassfish.jersey.servlet.ServletContainer
+		</servlet-class>
+		<init-param>
+			<param-name>jersey.config.server.provider.packages</param-name>
+			<param-value>io.antmedia.analytic</param-value>
+		</init-param>
+		<init-param>
+			<param-name>jersey.config.server.provider.classnames</param-name>
+			<param-value>org.glassfish.jersey.media.multipart.MultiPartFeature
+			</param-value>
+		</init-param>
+		<async-supported>true</async-supported>
+		<load-on-startup>1</load-on-startup>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>jersey-analytic-serlvet</servlet-name>
+		<url-pattern>/analytic/*</url-pattern>
 	</servlet-mapping>
 
 	<servlet>
@@ -199,7 +222,7 @@
 
 	<mime-mapping>
 		<extension>m3u8</extension>
-		<mime-type>application/x-mpegURL</mime-type>
+		<mime-type>application/vnd.apple.mpegurl</mime-type>
 	</mime-mapping>
 	<mime-mapping>
 		<extension>ts</extension>
