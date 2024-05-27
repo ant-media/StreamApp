@@ -746,7 +746,8 @@
 					camera_checkbox.checked = true;
 				}
 
-				if (error.indexOf("no_active_streams_in_room") != -1) {
+				//don't show message if there is not any stream
+				if (error.indexOf("no_active_streams_in_room") != -1 || error.indexOf("no_stream_exist") != -1) {
 
 				}
 				else {
