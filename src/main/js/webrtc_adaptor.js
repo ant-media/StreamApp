@@ -314,6 +314,11 @@ export class WebRTCAdaptor {
         this.publishMetaData = null;
 
         /**
+         * This is the role for selective subtrack playback. It's added here to use in reconnect scenario
+         */
+        this.publishRole = null;
+
+        /**
          * This is the token to play the stream. It's added here to use in reconnect scenario
          */
         this.playToken = null;
@@ -344,6 +349,10 @@ export class WebRTCAdaptor {
          */
         this.playMetaData = null;
 
+        /**
+         * This is the role for selective subtrack playback. It's added here to use in reconnect scenario
+         */
+        this.playRole = null;
 
         /**
          * This is the time info for the last reconnection attempt
@@ -470,8 +479,9 @@ export class WebRTCAdaptor {
      *                Check:https://antmedia.io/antmediaserver-webrtc-multitrack-playing-feature/
      *                !!! for multitrack conference set this value with roomName
      *  @param {string=} [metaData] : a free text information for the stream to AMS. It is provided to Rest methods by the AMS
+     *  @param {string=} [role] : role for the stream. It is used for selective forwarding of subtracks in conference mode.
      */
-    publish(streamId, token, subscriberId, subscriberCode, streamName, mainTrack, metaData) {
+    publish(streamId, token, subscriberId, subscriberCode, streamName, mainTrack, metaData, role) {
         //TODO: should refactor the repeated code
         this.publishStreamId = streamId;
         this.mediaManager.publishStreamId = streamId;
@@ -481,8 +491,9 @@ export class WebRTCAdaptor {
         this.publishStreamName = streamName;
         this.publishMainTrack = mainTrack;
         this.publishMetaData = metaData;
+        this.publishRole = role;
         if (this.onlyDataChannel) {
-            this.sendPublishCommand(streamId, token, subscriberId, subscriberCode, streamName, mainTrack, metaData, false, false);
+            this.sendPublishCommand(streamId, token, subscriberId, subscriberCode, streamName, mainTrack, metaData, role, false, false);
         }
         //If it started with playOnly mode and wants to publish now
         else if (this.mediaManager.localStream == null) {
@@ -493,7 +504,7 @@ export class WebRTCAdaptor {
                     videoEnabled = this.mediaManager.localStream.getVideoTracks().length > 0;
                     audioEnabled = this.mediaManager.localStream.getAudioTracks().length > 0;
                 }
-                this.sendPublishCommand(streamId, token, subscriberId, subscriberCode, streamName, mainTrack, metaData, videoEnabled, audioEnabled)
+                this.sendPublishCommand(streamId, token, subscriberId, subscriberCode, streamName, mainTrack, metaData, role, videoEnabled, audioEnabled)
 
             }).catch(error => {
                 Logger.warn(error);
@@ -502,7 +513,7 @@ export class WebRTCAdaptor {
         } else {
             let videoEnabled = this.mediaManager.localStream.getVideoTracks().length > 0;
             let audioEnabled = this.mediaManager.localStream.getAudioTracks().length > 0;
-            this.sendPublishCommand(streamId, token, subscriberId, subscriberCode, streamName, mainTrack, metaData, videoEnabled, audioEnabled);
+            this.sendPublishCommand(streamId, token, subscriberId, subscriberCode, streamName, mainTrack, metaData, role, videoEnabled, audioEnabled);
         }
         //init peer connection for reconnectIfRequired
         this.initPeerConnection(streamId, "publish");
@@ -517,7 +528,7 @@ export class WebRTCAdaptor {
 
     }
 
-    sendPublishCommand(streamId, token, subscriberId, subscriberCode, streamName, mainTrack, metaData, videoEnabled, audioEnabled) {
+    sendPublishCommand(streamId, token, subscriberId, subscriberCode, streamName, mainTrack, metaData, role, videoEnabled, audioEnabled) {
         let jsCmd = {
             command: "publish",
             streamId: streamId,
@@ -529,6 +540,7 @@ export class WebRTCAdaptor {
             video: videoEnabled,
             audio: audioEnabled,
             metaData: (typeof metaData !== undefined  && metaData != null) ? metaData : "",
+            role: (typeof role !== undefined  && role != null) ? role : "",
         };
         this.webSocketAdaptor.send(JSON.stringify(jsCmd));
     }
@@ -565,8 +577,9 @@ export class WebRTCAdaptor {
      *  @param {string=} subscriberId :(string) required if TOTP enabled. Check https://github.com/ant-media/Ant-Media-Server/wiki/Time-based-One-Time-Password-(TOTP)
      *  @param {string=} subscriberCode :(string) required if TOTP enabled. Check https://github.com/ant-media/Ant-Media-Server/wiki/Time-based-One-Time-Password-(TOTP)
      *  @param {string=} metaData :(string, json) a free text information for the stream to AMS. It is provided to Rest methods by the AMS
+     *  @param {string=} [role] : role for the stream. It is used for selective forwarding of subtracks in conference mode.
      */
-    play(streamId, token, roomId, enableTracks, subscriberId, subscriberCode, metaData) {
+    play(streamId, token, roomId, enableTracks, subscriberId, subscriberCode, metaData, role) {
         this.playStreamId.push(streamId);
         this.playToken = token;
         this.playRoomId = roomId;
@@ -574,6 +587,7 @@ export class WebRTCAdaptor {
         this.playSubscriberId = subscriberId;
         this.playSubscriberCode = subscriberCode;
         this.playMetaData = metaData;
+        this.playRole = role;
 
         let jsCmd =
             {
@@ -584,7 +598,8 @@ export class WebRTCAdaptor {
                 trackList: typeof enableTracks !== undefined && enableTracks != null ? enableTracks : [],
                 subscriberId: typeof subscriberId !== undefined && subscriberId != null ? subscriberId : "",
                 subscriberCode: typeof subscriberCode !== undefined && subscriberId != null ? subscriberCode : "",
-                viewerInfo: typeof metaData !== undefined && metaData != null ? metaData : ""
+                viewerInfo: typeof metaData !== undefined && metaData != null ? metaData : "",
+                role: (typeof role !== undefined  && role != null) ? role : "",
             }
 
         this.webSocketAdaptor.send(JSON.stringify(jsCmd));
@@ -653,7 +668,7 @@ export class WebRTCAdaptor {
                 //publish about some time later because server may not drop the connection yet 
                 //it may trigger already publishing error 
                 Logger.log("Trying publish again for stream: " + this.publishStreamId);
-                this.publish(this.publishStreamId, this.publishToken, this.publishSubscriberId, this.publishSubscriberCode, this.publishStreamName, this.publishMainTrack, this.publishMetaData);
+                this.publish(this.publishStreamId, this.publishToken, this.publishSubscriberId, this.publishSubscriberCode, this.publishStreamName, this.publishMainTrack, this.publishMetaData, this.publishRole);
 	        }, 500);
         }
 
@@ -676,7 +691,7 @@ export class WebRTCAdaptor {
                     //play about some time later because server may not drop the connection yet 
                     //it may trigger already playing error 
                     Logger.log("Trying play again for stream: " + streamId);
-	                this.play(streamId, this.playToken, this.playRoomId, this.playEnableTracks, this.playSubscriberId, this.playSubscriberCode, this.playMetaData);
+	                this.play(streamId, this.playToken, this.playRoomId, this.playEnableTracks, this.playSubscriberId, this.playSubscriberCode, this.playMetaData, this.playRole);
                 }, 500);
 	        }
 	    }
@@ -849,6 +864,25 @@ export class WebRTCAdaptor {
             command: "getRoomInfo",
             streamId: streamId,
             room: roomName,
+        };
+        this.webSocketAdaptor.send(JSON.stringify(jsCmd));
+    }
+
+    /**
+     * Called to get the subtracks for a specific maintrack. AMS responds with the subtrackList callback.
+     * Parameters:
+     * @param {string} streamId : main track id
+     * @param {string} role : filter the subtracks with the role
+     * @param {int} offset : offset for the subtrack list
+     * @param {int} size : size for the subtrack list
+     */
+    getSubtracks(streamId, role, offset, size) {
+        let jsCmd = {
+            command: "getSubtracks",
+            streamId: streamId,
+            role: role,
+            offset: offset,
+            size: size,
         };
         this.webSocketAdaptor.send(JSON.stringify(jsCmd));
     }
