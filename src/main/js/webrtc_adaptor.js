@@ -873,8 +873,8 @@ export class WebRTCAdaptor {
      * Parameters:
      * @param {string} streamId : main track id
      * @param {string} role : filter the subtracks with the role
-     * @param {int} offset : offset for the subtrack list
-     * @param {int} size : size for the subtrack list
+     * @param {number} offset : offset for the subtrack list
+     * @param {number} size : size for the subtrack list
      */
     getSubtracks(streamId, role, offset, size) {
         let jsCmd = {
