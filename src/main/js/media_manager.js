@@ -723,6 +723,7 @@ export class MediaManager {
         }
         this.getDevices();
         this.trackDeviceChange();
+        this.callback("local_stream_ready");
         return new Promise((resolve, reject) => {
             resolve();
         })
