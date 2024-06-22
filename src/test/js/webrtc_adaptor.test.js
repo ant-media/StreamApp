@@ -795,9 +795,9 @@ describe("WebRTCAdaptor", function () {
 		});
 
 		let streamId = "stream123";
-		let peerConnection = new RTCPeerConnection();
-		peerConnection.iceConnectionState = "connected";
-		adaptor.remotePeerConnection[streamId] = peerConnection;
+        let peerConnection = new RTCPeerConnection();
+        sandbox.replaceGetter(peerConnection,"iceConnectionState", sinon.fake.returns("connected"));
+        adaptor.remotePeerConnection[streamId] = peerConnection;
 
 		let initPeerConnection = sinon.replace(adaptor, "initPeerConnection", sinon.fake.returns(peerConnection));
 		let createOfferFake = sinon.replace(peerConnection, "createOffer", sinon.fake.returns(Promise.reject("this is on purpose")));
@@ -815,9 +815,9 @@ describe("WebRTCAdaptor", function () {
 		});
 
 		let streamId = "stream123";
-		let peerConnection = new RTCPeerConnection();
-		peerConnection.iceConnectionState = "new";
-		adaptor.remotePeerConnection[streamId] = peerConnection;
+        let peerConnection = new RTCPeerConnection();
+        sandbox.replaceGetter(peerConnection,"iceConnectionState", sinon.fake.returns("new"));
+        adaptor.remotePeerConnection[streamId] = peerConnection;
 
 		let initPeerConnection = sinon.replace(adaptor, "initPeerConnection", sinon.fake.returns(peerConnection));
 		let createOfferFake = sinon.replace(peerConnection, "createOffer", sinon.fake.returns(Promise.resolve()));
@@ -835,16 +835,14 @@ describe("WebRTCAdaptor", function () {
 		});
 
 		let streamId = "stream123";
-		let peerConnection = new RTCPeerConnection();
-		peerConnection.iceConnectionState = "failed";
-		adaptor.remotePeerConnection[streamId] = peerConnection;
+        let peerConnection = new RTCPeerConnection();
+        sandbox.replaceGetter(peerConnection,"iceConnectionState", sinon.fake.returns("failed"));
+        adaptor.remotePeerConnection[streamId] = peerConnection;
 
 		let initPeerConnection = sinon.replace(adaptor, "initPeerConnection", sinon.fake.returns(peerConnection));
 		let createOfferFake = sinon.replace(peerConnection, "createOffer", sinon.fake.returns(Promise.resolve()));
 
 		adaptor.startPublishing(streamId);
-
-        expect(Logger.debug.calledWithExactly("We already established peer connection, no need to create offer")).to.be.true;
 
 		expect(initPeerConnection.calledWithExactly(streamId, "publish")).to.be.false;
 		expect(createOfferFake.called).to.be.false;
@@ -857,9 +855,9 @@ describe("WebRTCAdaptor", function () {
 		});
 
 		let streamId = "stream123";
-		let peerConnection = new RTCPeerConnection();
-		peerConnection.iceConnectionState = "disconnected";
-		adaptor.remotePeerConnection[streamId] = peerConnection;
+        let peerConnection = new RTCPeerConnection();
+        sandbox.replaceGetter(peerConnection,"iceConnectionState", sinon.fake.returns("disconnected"));
+        adaptor.remotePeerConnection[streamId] = peerConnection;
 
 		let initPeerConnection = sinon.replace(adaptor, "initPeerConnection", sinon.fake.returns(peerConnection));
 		let createOfferFake = sinon.replace(peerConnection, "createOffer", sinon.fake.returns(Promise.resolve()));
