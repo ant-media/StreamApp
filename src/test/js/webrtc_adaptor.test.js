@@ -23,6 +23,25 @@ describe("WebRTCAdaptor", function () {
     sandbox.restore();
   });
 
+	afterEach(() => {
+	  // Restore the default sandbox here
+	  sinon.restore();
+	  clock.restore();
+	  sandbox.restore();
+		mockRTCPeerConnection.restore();
+	});
+
+	// Create a mock for the RTCPeerConnection
+	const mockRTCPeerConnection = sinon.stub(window, 'RTCPeerConnection');
+
+// Define the behavior of the mock object
+	mockRTCPeerConnection.returns({
+		createOffer: sinon.stub().returns(Promise.resolve()),
+		setLocalDescription: sinon.stub().returns(Promise.resolve()),
+		addIceCandidate: sinon.stub().returns(Promise.resolve()),
+		close: sinon.stub(),
+		// Add any other methods you want to mock
+	});
 
   it("Initialize", async function () {
 
@@ -768,6 +787,86 @@ describe("WebRTCAdaptor", function () {
     expect(errorListenerCalled).to.be.true;
 
   });
+
+	it("startPublishing with existing peer connection", async function() {
+		let adaptor = new WebRTCAdaptor({
+			websocketURL: "ws://example.com",
+			isPlayMode: true
+		});
+
+		let streamId = "stream123";
+        let peerConnection = new RTCPeerConnection();
+        sandbox.replaceGetter(peerConnection,"iceConnectionState", sinon.fake.returns("connected"));
+        adaptor.remotePeerConnection[streamId] = peerConnection;
+
+		let initPeerConnection = sinon.replace(adaptor, "initPeerConnection", sinon.fake.returns(peerConnection));
+		let createOfferFake = sinon.replace(peerConnection, "createOffer", sinon.fake.returns(Promise.reject("this is on purpose")));
+
+		adaptor.startPublishing(streamId);
+
+		expect(initPeerConnection.called).to.be.false;
+		expect(createOfferFake.called).to.be.false;
+	});
+
+	it("startPublishing with new peer connection", async function() {
+		let adaptor = new WebRTCAdaptor({
+			websocketURL: "ws://example.com",
+			isPlayMode: true
+		});
+
+		let streamId = "stream123";
+        let peerConnection = new RTCPeerConnection();
+        sandbox.replaceGetter(peerConnection,"iceConnectionState", sinon.fake.returns("new"));
+        adaptor.remotePeerConnection[streamId] = peerConnection;
+
+		let initPeerConnection = sinon.replace(adaptor, "initPeerConnection", sinon.fake.returns(peerConnection));
+		let createOfferFake = sinon.replace(peerConnection, "createOffer", sinon.fake.returns(Promise.resolve()));
+
+		adaptor.startPublishing(streamId);
+
+		expect(initPeerConnection.calledWithExactly(streamId, "publish")).to.be.false;
+		expect(createOfferFake.called).to.be.false;
+	});
+
+	it("startPublishing with failed peer connection", async function() {
+		let adaptor = new WebRTCAdaptor({
+			websocketURL: "ws://example.com",
+			isPlayMode: true
+		});
+
+		let streamId = "stream123";
+        let peerConnection = new RTCPeerConnection();
+        sandbox.replaceGetter(peerConnection,"iceConnectionState", sinon.fake.returns("failed"));
+        adaptor.remotePeerConnection[streamId] = peerConnection;
+
+		let initPeerConnection = sinon.replace(adaptor, "initPeerConnection", sinon.fake.returns(peerConnection));
+		let createOfferFake = sinon.replace(peerConnection, "createOffer", sinon.fake.returns(Promise.resolve()));
+
+		adaptor.startPublishing(streamId);
+
+		expect(initPeerConnection.calledWithExactly(streamId, "publish")).to.be.false;
+		expect(createOfferFake.called).to.be.false;
+	});
+
+	it("startPublishing with disconnected peer connection", async function() {
+		let adaptor = new WebRTCAdaptor({
+			websocketURL: "ws://example.com",
+			isPlayMode: true
+		});
+
+		let streamId = "stream123";
+        let peerConnection = new RTCPeerConnection();
+        sandbox.replaceGetter(peerConnection,"iceConnectionState", sinon.fake.returns("disconnected"));
+        adaptor.remotePeerConnection[streamId] = peerConnection;
+
+		let initPeerConnection = sinon.replace(adaptor, "initPeerConnection", sinon.fake.returns(peerConnection));
+		let createOfferFake = sinon.replace(peerConnection, "createOffer", sinon.fake.returns(Promise.resolve()));
+
+		adaptor.startPublishing(streamId);
+
+		expect(initPeerConnection.calledWithExactly(streamId, "publish")).to.be.false;
+		expect(createOfferFake.called).to.be.false;
+	});
 
   it("onTrack", async function () {
 
