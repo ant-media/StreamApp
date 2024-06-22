@@ -1061,6 +1061,10 @@ export class WebRTCAdaptor {
 
             this.remotePeerConnection[streamId].onnegotiationneeded = async (event) => {
                 Logger.debug("onnegotiationneeded");
+		//If ice restart is not true, than server will handle negotiation
+		if (!this.iceRestart) {
+			return;
+		}
 		try {
           		await this.remotePeerConnection[streamId].setLocalDescription(await this.remotePeerConnection[streamId].createOffer({iceRestart: this.iceRestart}));
           		this.webSocketAdaptor.send({desc: this.remotePeerConnection[streamId].localDescription});
