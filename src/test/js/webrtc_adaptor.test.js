@@ -844,6 +844,8 @@ describe("WebRTCAdaptor", function () {
 
 		adaptor.startPublishing(streamId);
 
+        expect(Logger.debug.calledWithExactly("We already established peer connection, no need to create offer")).to.be.true;
+
 		expect(initPeerConnection.calledWithExactly(streamId, "publish")).to.be.false;
 		expect(createOfferFake.called).to.be.false;
 	});
