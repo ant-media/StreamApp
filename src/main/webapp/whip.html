@@ -1,0 +1,147 @@
+<html>
+
+<head>
+  <title>Webcam ingest</title>
+  <style>
+    p {
+      margin: 5px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div style="text-align: center;padding:10px">
+    <video id="ingest" width="480" height="360" autoplay muted controls playsinline></video>
+
+    <div style="padding:10px">
+    
+      <p>
+        <label>Status: </label><label id="status">offline</label>
+      </p>
+
+      <a id="playLink" style="display:none;" target="_blank">Play with WebRTC</a>
+      
+    </div>
+    <div style="padding:10px">
+      <button onclick="buttonClicked()" id="button" disabled >Start</button>
+    </div>
+  </div>
+
+  <script type="module">
+
+    import { WHIPClient } from "https://esm.sh/@eyevinn/whip-web-client";
+    import {getQueryParameter, generateRandomString} from "./js/utility.js" 
+    import {getUrlParameter} from "./js/fetch.stream.js" 
+
+
+
+    var appName = location.pathname.substring(1, location.pathname.indexOf("/", 1) + 1);
+
+    var path = location.hostname + ":" + location.port + "/" + appName + "whip/";
+
+    var whipEndpoint = "http";
+    if (location.protocol.startsWith("https")) {
+      whipEndpoint += "s";
+    }
+    whipEndpoint += "://" + path;
+    
+    
+    let constantStreamId = getUrlParameter("id");
+
+    var streamId;
+    var client;
+    var mediaStream;
+
+    var button = document.getElementById("button");
+     
+    async function init() 
+    {
+      if (constantStreamId) {
+      	streamId = constantStreamId;
+      }
+      else {
+      	streamId = "stream" + generateRandomString(6);
+	  }
+      client = new WHIPClient({
+        endpoint: whipEndpoint + streamId,
+        opts: {
+          debug: true,
+          iceServers: [{ urls: "stun:stun1.l.google.com:19302" }],
+        }
+      });
+
+      const videoIngest = document.querySelector("video#ingest");
+      mediaStream = await navigator.mediaDevices.getUserMedia({
+        video: true,
+        audio: true,
+      });
+      videoIngest.srcObject = mediaStream;
+
+      button.disabled = false;
+
+    }
+
+
+    function buttonClicked() {
+      console.log("button clicked");
+
+      if (client && client.peer && client.peer.iceConnectionState != "new") {
+        stop();
+      }
+      else {
+        if (client == null) {
+          init();
+        }
+
+        document.getElementById("status").innerHTML = "starting";
+        button.innerHTML = "Stop";
+
+        client.peer.addEventListener('iceconnectionstatechange', function () {
+      
+          if (client.peer) 
+          {
+            console.log('iceconnectionstatechange', client.peer.iceConnectionState);
+            document.getElementById("status").innerHTML = client.peer.iceConnectionState;
+            if (client.peer.iceConnectionState == "connected") {
+              document.getElementById("playLink").style.display = "block";
+              document.getElementById("playLink").href = "play.html?id=" + streamId + "&playOrder=webrtc";
+            }
+            else {
+              document.getElementById("playLink").style.display = "none";
+
+            }
+          }
+          else {
+            document.getElementById("playLink").style.display = "none";
+          }
+        });
+
+
+        client.ingest(mediaStream).then(function () {
+          console.log("Ingesting");
+        })
+          .catch(function (err) {
+            console.error(err);
+          });
+      }
+    }
+
+    function stop() {
+      client.destroy();
+      document.getElementById("status").innerHTML = "offline";
+      button.innerHTML = "Start";
+      document.getElementById("playLink").style.display = "none";
+
+      client = null;
+    }
+
+    init();
+
+    window.buttonClicked = buttonClicked;
+    window.client = client;
+
+  </script>
+</body>
+
+</html>
