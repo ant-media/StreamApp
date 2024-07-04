@@ -129,7 +129,11 @@
 
             const videoCount = videos.length;
             var objectFitMode = "cover";
-            if (videoCount <= 4) {
+             if (videoCount <= 1) {
+                videosPerRow = 1;
+                objectFitMode = "contain";
+            }
+            else if (videoCount <= 4) {
                 videosPerRow = 2;
                 objectFitMode = "contain";
             } else if (videoCount <= 9) {
