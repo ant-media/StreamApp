@@ -126,13 +126,14 @@
 				<a href="https://antmedia.io">Try Enterprise Edition for free at antmedia.io</a>
 			</div>
 			<div class="alert alert-primary text-center" role="alert" style="margin-top:-2em">
-				This is the optimized multitrack conferencing. If you want to use older one, <a href="conference-deprecated.html">visit here</a>
+				Something ready to use? <br/>
+				<a href="https://antmedia.io/marketplace/circle-video-conferencing-tool/">Circle: Online Video Conferencing</a>
 			 <br/>
 		</div>
 			<div id="players" class="row">
 				<div class="col-sm-3">
 					<video id="localVideo" autoplay muted controls playsinline></video>
-					<div style="margin-top:10px;" class="col-sm-8 col-sm-offset-2">Microphone Gain: <input type=range
+					<div style="margin-top:10px;display:none" class="col-sm-8 col-sm-offset-2">Microphone Gain: <input type=range
 							id=volume_change_input min=0 max=1 value=1 step=0.01></div>
 				</div>
 			</div>
@@ -150,43 +151,9 @@
 						<button class="btn btn-primary" disabled id="stop_publish_button">Leave Room</button>
 					</div>
 
-					<div style="padding:10px">
-						<button id="turn_off_camera_button" class="btn btn-outline-primary">Turn off Camera</button>
-						<button id="turn_on_camera_button" disabled class="btn btn-outline-primary">Turn on
-							Camera</button>
+				
 
-						<button id="mute_mic_button" class="btn btn-outline-primary">Mute Local Mic</button>
-						<button id="unmute_mic_button" disabled class="btn btn-outline-primary">Unmute Local
-							Mic</button>
-					</div>
-
-					<div class="form-check form-check-inline">
-
-						<input class="form-check-input video-source" disabled name="videoSource" type="radio"
-							value="camera" id="camera_checkbox" checked>
-						<label class="form-check-label" for="camera_checkbox" style="font-weight:normal">
-							Camera
-						</label>
-					</div>
-					<div class="form-check form-check-inline">
-						<input class="form-check-input video-source" disabled name="videoSource" type="radio"
-							value="screen" id="screen_share_checkbox">
-						<label class="form-check-label" for="screen_share_checkbox" style="font-weight:normal">
-							Screen
-						</label>
-					</div>
-					<div class="form-check form-check-inline">
-						<input class="form-check-input video-source" disabled name="videoSource" type="radio"
-							value="screen+camera" id="screen_share_with_camera_checkbox">
-						<label class="form-check-label" for="screen_share_with_camera_checkbox"
-							style="font-weight:normal">
-							Screen with Camera
-						</label>
-						<div class="form-check form-check-inline"></div>
-						<a id="browser_screen_share_doesnt_support"
-							href="https://caniuse.com/#search=getDisplayMedia">Your browser doesn't support screen
-							share. You can see supported browsers in this link </a>
-					</div>
+					
 					<div class="badge badge-success" id="broadcastingInfo" style="font-size: 14px; display: none"
 						style="display: none">Publishing</div>
 
@@ -196,7 +163,46 @@
 						<button type="button" id="options" class="btn btn-outline-primary btn-sm">Options</button>
 					</div>
 					<div class="form-group col-sm-12 text-left options">
-						<div class="dropdown-divider"></div>
+						<div style="padding:10px">
+							<button id="turn_off_camera_button" class="btn btn-outline-primary">Turn off Camera</button>
+							<button id="turn_on_camera_button" disabled class="btn btn-outline-primary">Turn on
+								Camera</button>
+	
+							<button id="mute_mic_button" class="btn btn-outline-primary">Mute Local Mic</button>
+							<button id="unmute_mic_button" disabled class="btn btn-outline-primary">Unmute Local
+								Mic</button>
+						</div>
+
+						<label>Video Source</label>
+						<br>
+						<div class="form-check form-check-inline">
+
+							<input class="form-check-input video-source" disabled name="videoSource" type="radio"
+								value="camera" id="camera_checkbox" checked>
+							<label class="form-check-label" for="camera_checkbox" style="font-weight:normal">
+								Camera
+							</label>
+						</div>
+						<div class="form-check form-check-inline">
+							<input class="form-check-input video-source" disabled name="videoSource" type="radio"
+								value="screen" id="screen_share_checkbox">
+							<label class="form-check-label" for="screen_share_checkbox" style="font-weight:normal">
+								Screen
+							</label>
+						</div>
+						<div class="form-check form-check-inline">
+							<input class="form-check-input video-source" disabled name="videoSource" type="radio"
+								value="screen+camera" id="screen_share_with_camera_checkbox">
+							<label class="form-check-label" for="screen_share_with_camera_checkbox"
+								style="font-weight:normal">
+								Screen with Camera
+							</label>
+							<div class="form-check form-check-inline"></div>
+							<a id="browser_screen_share_doesnt_support"
+								href="https://caniuse.com/#search=getDisplayMedia">Your browser doesn't support screen
+								share. You can see supported browsers in this link </a>
+						</div>
+						<br>
 						<label>Data Channel Messages</label>
 						<div id="all-messages" class="message_area"></div>
 						<div class="form-row">
@@ -527,12 +533,17 @@
 		var video = document.getElementById("remoteVideo" + incomingTrackId);
 
 		if (video == null) {
-			createRemoteVideo(incomingTrackId);
+			createRemoteVideo(incomingTrackId, obj.track.kind);
 			video = document.getElementById("remoteVideo" + incomingTrackId);
 			video.srcObject = new MediaStream();
 		}
 
 		video.srcObject.addTrack(obj.track)
+
+		obj.track.onended = event => {
+			console.log("track is ended with id: " + event.target.id)
+
+		}
 
 		obj.stream.onremovetrack = event => {
 			console.log("track is removed with id: " + event.track.id)
@@ -552,11 +563,16 @@
 		}, 200);
 	};
 
-	function createRemoteVideo(streamId) {
+	function createRemoteVideo(streamId, kind) {
 		var player = document.createElement("div");
 		player.className = "col-sm-3";
 		player.id = "player" + streamId;
-		player.innerHTML = '<video id="remoteVideo' + streamId + '"controls autoplay playsinline></video>' + streamId;
+
+		if (kind == "audio") {
+			player.style.display = "none";
+		}		
+		player.innerHTML = '<video id="remoteVideo' + streamId + '"controls autoplay playsinline></video>' 
+							+ '<p style="display:none">' + streamId + '</p>';
 		document.getElementById("players").appendChild(player);
 	}
 
@@ -572,12 +588,20 @@
 	function removeAllRemoteVideos() {
 		//remove all remote video under players
 		//just don't remove the first element because it's local camera
-		var children = document.getElementById("players").children;
+		var children = document.querySelectorAll('#players > div');
 		let i = 1;
-		while (i < children.length) {
-			document.getElementById("players").removeChild(children[i]);
-			i++;
-		}
+
+		children.forEach((child, index) => {
+                // Determine the parent container of each video
+            if (index == 0) {
+				//don't do anything for local video
+				return;
+			}
+
+			document.getElementById("players").removeChild(child);
+			
+        });
+
 	}
 
 	function handleMainTrackBroadcastObject(broadcastObject) {
@@ -693,6 +717,7 @@
 					stop_publish_button.disabled = false;
 					startAnimation();
 				}
+
 				else if (info == "publish_finished") {
 					//stream is being finished
 					console.debug("publish finished");
@@ -727,6 +752,8 @@
 				}
 				else if (info == "session_restored") {
 					handleCameraButtons();
+					join_publish_button.disabled = true;
+					stop_publish_button.disabled = false;
 					startAnimation();
 					console.log(info + "notification received");
 				}
