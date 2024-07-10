@@ -1466,7 +1466,6 @@ export class WebRTCAdaptor {
             var videoJitterAverageDelay = -1;
             var availableOutgoingBitrate = Infinity;
 
-            // in the multitrack conference and multitrack playback scenarious, we need to get the stats for each track
             var inboundRtp = [];
 
             stats.forEach(value => {
