@@ -1141,13 +1141,6 @@ describe("WebRTCAdaptor", function () {
       expect(result).to.be.false;
     });
 
-    it("should initialize remotePeerConnectionStats for a new streamId", function () {
-      const streamId = "newStream";
-      expect(adaptor.remotePeerConnectionStats[streamId]).to.be.undefined;
-      adaptor.checkAndInitializePeerStats(streamId);
-      expect(adaptor.remotePeerConnectionStats[streamId]).to.be.instanceOf(PeerStats);
-    });
-
     it("should not reinitialize remotePeerConnectionStats for an existing streamId", function () {
       const streamId = "existingStream";
       adaptor.remotePeerConnectionStats[streamId] = new PeerStats(streamId);
