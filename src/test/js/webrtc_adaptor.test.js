@@ -1,5 +1,6 @@
 import {WebRTCAdaptor} from '../../main/js/webrtc_adaptor.js';
 import {MediaManager} from "../../main/js/media_manager.js";
+import {PeerStats} from "../../main/js/peer_stats.js";
 
 
 describe("WebRTCAdaptor", function () {
@@ -1121,7 +1122,8 @@ describe("WebRTCAdaptor", function () {
       mockStats = new Map();
       adaptor = new WebRTCAdaptor({
         websocketURL: "ws://example.com",
-        initializeComponents: false
+        initializeComponents: false,
+        checkAndInitializePeerStats: sinon.fake()
       });
       adaptor.remotePeerConnection = {"stream1": mockPeerConnection};
       adaptor.remotePeerConnectionStats = {"stream1": {}};
@@ -1137,6 +1139,33 @@ describe("WebRTCAdaptor", function () {
       mockPeerConnection.getStats.rejects(new Error("getStats error"));
       const result = await adaptor.getStats("stream1");
       expect(result).to.be.false;
+    });
+
+    it("should initialize remotePeerConnectionStats for a new streamId", function () {
+      const streamId = "newStream";
+      expect(adaptor.remotePeerConnectionStats[streamId]).to.be.undefined;
+      adaptor.checkAndInitializePeerStats(streamId);
+      expect(adaptor.remotePeerConnectionStats[streamId]).to.be.instanceOf(PeerStats);
+    });
+
+    it("should not reinitialize remotePeerConnectionStats for an existing streamId", function () {
+      const streamId = "existingStream";
+      adaptor.remotePeerConnectionStats[streamId] = new PeerStats(streamId);
+      const initialStats = adaptor.remotePeerConnectionStats[streamId];
+      adaptor.checkAndInitializePeerStats(streamId);
+      expect(adaptor.remotePeerConnectionStats[streamId]).to.equal(initialStats);
+    });
+
+    it("should handle null streamId gracefully", function () {
+      const streamId = null;
+      expect(() => adaptor.checkAndInitializePeerStats(streamId)).not.to.throw();
+      expect(adaptor.remotePeerConnectionStats[streamId]).to.be.undefined;
+    });
+
+    it("should handle undefined streamId gracefully", function () {
+      const streamId = undefined;
+      expect(() => adaptor.checkAndInitializePeerStats(streamId)).not.to.throw();
+      expect(adaptor.remotePeerConnectionStats[streamId]).to.be.undefined;
     });
 
   });
