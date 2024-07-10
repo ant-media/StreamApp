@@ -1466,38 +1466,62 @@ export class WebRTCAdaptor {
             var videoJitterAverageDelay = -1;
             var availableOutgoingBitrate = Infinity;
 
+            // in the multitrack conference and multitrack playback scenarious, we need to get the stats for each track
+            var inboundRtp = [];
+
             stats.forEach(value => {
                 //Logger.debug(value);
                 if (value.type == "inbound-rtp" && typeof value.kind != "undefined") {
+                    let inboundRtpObj = {};
+
+                    inboundRtpObj.trackIdentifier = value.trackIdentifier;
+
                     bytesReceived += value.bytesReceived;
                     if (value.kind == "audio") {
                         audioPacketsLost = value.packetsLost;
+                        inboundRtpObj.audioPacketsLost = value.packetsLost;
                     } else if (value.kind == "video") {
                         videoPacketsLost = value.packetsLost;
+                        inboundRtpObj.videoPacketsLost = value.packetsLost;
+                        inboundRtpObj.framesDropped = value.framesDropped;
+                        inboundRtpObj.framesDecoded = value.framesDecoded;
+                        inboundRtpObj.framesPerSecond = value.framesPerSecond;
                     }
 
+                    inboundRtpObj.bytesReceived = value.bytesReceived;
+                    inboundRtpObj.jitterBufferDelay = value.jitterBufferDelay;
+                    inboundRtpObj.lastPacketReceivedTimestamp = value.lastPacketReceivedTimestamp;
+
                     fractionLost += value.fractionLost;
+                    inboundRtpObj.fractionLost = value.fractionLost;
                     currentTime = value.timestamp;
+                    inboundRtpObj.currentTime = value.timestamp;
 
                     if (typeof value.frameWidth != "undefined") {
                         frameWidth = value.frameWidth;
+                        inboundRtpObj.frameWidth = value.frameWidth;
                     }
                     if (typeof value.frameHeight != "undefined") {
                         frameHeight = value.frameHeight;
+                        inboundRtpObj.frameHeight = value.frameHeight;
                     }
 
                     if (typeof value.framesDecoded != "undefined") {
                         framesDecoded = value.framesDecoded;
+                        inboundRtpObj.framesDecoded = value.framesDecoded;
                     }
 
                     if (typeof value.framesDropped != "undefined") {
                         framesDropped = value.framesDropped;
+                        inboundRtpObj.framesDropped = value.framesDropped;
                     }
 
                     if (typeof value.framesReceived != "undefined") {
                         framesReceived = value.framesReceived;
+                        inboundRtpObj.framesReceived = value.framesReceived;
                     }
 
+                    inboundRtp.push(inboundRtpObj);
 
                 } else if (value.type == "outbound-rtp") {//TODO: SPLIT AUDIO AND VIDEO BITRATES
                     if (value.kind == "audio") {
@@ -1586,6 +1610,10 @@ export class WebRTCAdaptor {
                 }
             });
 
+            if (typeof this.remotePeerConnectionStats[streamId] == 'undefined' || this.remotePeerConnectionStats[streamId] == null) {
+                this.remotePeerConnectionStats[streamId] = new PeerStats(streamId);
+            }
+
             this.remotePeerConnectionStats[streamId].totalBytesReceived = bytesReceived;
             this.remotePeerConnectionStats[streamId].videoPacketsLost = videoPacketsLost;
             this.remotePeerConnectionStats[streamId].audioPacketsLost = audioPacketsLost;
@@ -1614,6 +1642,7 @@ export class WebRTCAdaptor {
             this.remotePeerConnectionStats[streamId].audioJitterAverageDelay = audioJitterAverageDelay;
             this.remotePeerConnectionStats[streamId].availableOutgoingBitrate = availableOutgoingBitrate;
 
+            this.remotePeerConnectionStats[streamId].inboundRtpList = inboundRtp;
 
             this.notifyEventListeners("updated_stats", this.remotePeerConnectionStats[streamId]);
             resolve(true);
