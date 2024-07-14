@@ -1,5 +1,5 @@
 import { StreamMerger } from '../../main/js/stream_merger.js';
-/*
+
 
 describe("StreamMerger", function () {
   let clock;
@@ -34,6 +34,7 @@ describe("StreamMerger", function () {
     }
   });
 
+  /*
   it("should initialize the audio context and create audio destination", async function () {
     streamMerger.initAudioContext();
 
@@ -238,7 +239,6 @@ describe("StreamMerger", function () {
     expect(streamMerger.streams[2].y).to.equal(240);
   });
   
+  */
   
 });
-
-*/
