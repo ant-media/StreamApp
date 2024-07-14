@@ -14,29 +14,20 @@ describe("StreamMerger", function () {
       websocketURL: "ws://example.com",
     };
     streamMerger = new StreamMerger(initialValues);
+    streamMerger.initAudioContext();
+    streamMerger.start();
+
   });
 
   afterEach(() => {
     // Restore the default sandbox and timers
+    streamMerger.stop();
     sinon.restore();
     clock.restore();
     sandbox.restore();
-    streamMerger.stop();
-  });
-  
-  
-  it("should throw an error if no options are provided", async function () {
-    try {
-      expect.fail("It should throw an exception because options are mandatory");
-    } catch (err) {
-      // Assert that an error was thrown
-      expect(err).to.be.an('error');
-      // Optionally, check the error message or type
-    }
   });
 
   it("should initialize the audio context and create audio destination", async function () {
-    streamMerger.initAudioContext();
 
     expect(streamMerger.audioCtx).to.be.an.instanceOf(AudioContext);
     expect(streamMerger.audioDestination).to.be.an.instanceOf(MediaStreamAudioDestinationNode);
@@ -120,8 +111,6 @@ describe("StreamMerger", function () {
 
   
   it("should add a stream to the streams array", async function () {
-    streamMerger.initAudioContext();
-
     const audioSource = {
       connect: () => {return {connect: sinon.stub()} },
     };
@@ -145,9 +134,7 @@ describe("StreamMerger", function () {
 
 
   it("should set the correct properties for the added stream", async function () {
-    
-    streamMerger.initAudioContext();
-    streamMerger.resizeAndSortV2 = () => {};
+        streamMerger.resizeAndSortV2 = () => {};
     streamMerger.pwidth = 100;
     streamMerger.pheight = 200;
     
@@ -202,7 +189,6 @@ describe("StreamMerger", function () {
 
   
   it("should resize and sort the streams correctly", function () {
-    streamMerger.initAudioContext();
     streamMerger.width = 480;
     streamMerger.height = 360;
 
