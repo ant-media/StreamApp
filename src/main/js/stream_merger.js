@@ -475,7 +475,9 @@ export class StreamMerger {
         this.started = false
 
         this.streams = []
-        this.audioCtx.close()
+        this.audioCtx.close().then(() => {
+            console.log("debug55: Audio context closed")
+        })
         this.audioCtx = null
         this.audioDestination = null
         this.videoSyncDelayNode = null
