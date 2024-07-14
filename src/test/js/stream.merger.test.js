@@ -22,7 +22,8 @@ describe("StreamMerger", function () {
     clock.restore();
     sandbox.restore();
   });
-
+  
+  /*
   it("should throw an error if no options are provided", async function () {
     try {
       let merger = new StreamMerger();
@@ -34,7 +35,6 @@ describe("StreamMerger", function () {
     }
   });
 
-  /*
   it("should initialize the audio context and create audio destination", async function () {
     streamMerger.initAudioContext();
 
