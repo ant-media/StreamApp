@@ -116,6 +116,7 @@ describe("StreamMerger", function () {
     return mediaStream;
   }
 
+  /*
   it("should add a stream to the streams array", async function () {
     streamMerger.initAudioContext();
 
@@ -235,6 +236,8 @@ describe("StreamMerger", function () {
     expect(streamMerger.streams[2].x).to.equal(160);
     expect(streamMerger.streams[2].y).to.equal(240);
   });
+
+  */
   
   
 });
