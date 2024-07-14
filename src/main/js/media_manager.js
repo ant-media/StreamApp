@@ -1459,14 +1459,20 @@ export class MediaManager {
         this.disableAudioLevelForLocalStream();
         this.localStreamSoundMeter = new SoundMeter(this.audioContext, this.volumeMeterUrl);
         console.log("debug10 this.audioContext.state: " + this.audioContext.state);
-        if (this.audioContext.state !== 'running') {
-            return this.audioContext.resume().then(() => {
-                 console.log("debug11");
+        try {
+            if (this.audioContext.state !== 'running') {
+                return this.audioContext.resume().then(() => {
+                    console.log("debug11");
+                    return this.localStreamSoundMeter.connectToSource(this.localStream, levelCallback);
+                })
+            }
+            else {
                 return this.localStreamSoundMeter.connectToSource(this.localStream, levelCallback);
-            })
+            }
         }
-        else {
-            return this.localStreamSoundMeter.connectToSource(this.localStream, levelCallback);
+        catch (e) {
+            console.log("debug12");
+            console.log(e);
         }
     }
 
