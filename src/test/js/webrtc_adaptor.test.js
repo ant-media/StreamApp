@@ -544,6 +544,7 @@ describe("WebRTCAdaptor", function () {
       console.log("debug2");
 
       var audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      console.log("debug21 audioContext.state:" + audioContext.state);
       var oscillator = audioContext.createOscillator();
       oscillator.type = "sine";
       oscillator.frequency.value = 800;
@@ -560,7 +561,7 @@ describe("WebRTCAdaptor", function () {
 
       adaptor.mediaManager.localStream = new MediaStream([mediaStreamTrack])
       adaptor.mediaManager.audioContext = audioContext;
-      console.log("debug6");
+      console.log("debug6 audioContext.state:" + audioContext.state);
 
       adaptor.enableAudioLevelForLocalStream((level) => {
         console.log("sound level -> " + level);
