@@ -21,12 +21,12 @@ describe("StreamMerger", function () {
     sinon.restore();
     clock.restore();
     sandbox.restore();
+    streamMerger.stop();
   });
   
-  /*
+  
   it("should throw an error if no options are provided", async function () {
     try {
-      let merger = new StreamMerger();
       expect.fail("It should throw an exception because options are mandatory");
     } catch (err) {
       // Assert that an error was thrown
@@ -239,6 +239,5 @@ describe("StreamMerger", function () {
     expect(streamMerger.streams[2].y).to.equal(240);
   });
   
-  */
   
 });
