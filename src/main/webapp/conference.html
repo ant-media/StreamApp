@@ -489,7 +489,9 @@
 			publishStreamId = generateRandomString(12);
 		}
 
-		publish(publishStreamId, token);
+		if(!playOnly) {
+			publish(publishStreamId, token);
+		}
 		webRTCAdaptor.play(roomNameBox.value, token, roomNameBox.value, [], subscriberId, subscriberCode);
 	}
 
