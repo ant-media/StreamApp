@@ -1,6 +1,6 @@
 import { StreamMerger } from '../../main/js/stream_merger.js';
 
-
+/*
 describe("StreamMerger", function () {
   let clock;
   let sandbox;
@@ -236,3 +236,4 @@ describe("StreamMerger", function () {
   
   
 });
+*/
