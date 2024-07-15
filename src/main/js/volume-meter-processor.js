@@ -44,9 +44,12 @@ class VolumeMeter extends AudioWorkletProcessor {
   process(inputs, outputs) {
     const inputChannelData = inputs[0][0];
 
-    // Post a message to the node every 16ms.
+    console.log("currentTime: "+ currentTime + " _lastUpdate: " + this._lastUpdate + " FRAME_INTERVAL: " + FRAME_INTERVAL);
+      
+      // Post a message to the node every 16ms.
     if (currentTime - this._lastUpdate > FRAME_INTERVAL) {
       this.calculateRMS(inputChannelData);
+      console.log("Volume: " + this._volume);
       this.port.postMessage(this._volume);
       this._lastUpdate = currentTime;
     }
