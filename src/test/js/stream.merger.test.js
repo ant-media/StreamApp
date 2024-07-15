@@ -19,9 +19,9 @@ describe("StreamMerger", function () {
 
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     // Restore the default sandbox and timers
-    streamMerger.stop();
+    await streamMerger.stop();
     sinon.restore();
     clock.restore();
     sandbox.restore();

@@ -470,11 +470,11 @@ export class StreamMerger {
         }
     }
 
-    stop() {
+    async stop() {
         this.started = false
 
         this.streams = []
-        this.audioCtx.close().then(() => {
+        await this.audioCtx.close().then(() => {
             console.log("debug55: Audio context closed")
         })
         this.audioCtx = null

@@ -519,7 +519,6 @@ describe("WebRTCAdaptor", function () {
     await adaptor.updateAudioTrack(stream, null, null);
   });
 
-  /*
   it("testSoundMeter", function (done) {
     this.timeout(5000);
     console.log("Starting testSoundMeter");
@@ -575,7 +574,6 @@ describe("WebRTCAdaptor", function () {
       expect(adaptor.mediaManager.localStreamSoundMeter).to.not.be.null;
     })
   })
-*/
 
   it("takeConfiguration", async function () {
     var adaptor = new WebRTCAdaptor({
