@@ -69,8 +69,7 @@ export class StreamMerger {
     }
 
     initAudioContext() {
-        const AudioContext = window.AudioContext || window.webkitAudioContext
-        this.audioCtx = new AudioContext();
+        this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         this.audioDestination = this.audioCtx.createMediaStreamDestination()
         // delay node for video sync
         this.videoSyncDelayNode = this.audioCtx.createDelay(5.0)
