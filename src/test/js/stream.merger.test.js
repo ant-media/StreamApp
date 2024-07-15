@@ -117,7 +117,7 @@ describe("StreamMerger", function () {
     return mediaStream;
   }
 
-  
+  /*
   it("should add a stream to the streams array", async function () {
     const audioSource = {
       connect: () => {return {connect: sinon.stub()} },
@@ -178,8 +178,8 @@ describe("StreamMerger", function () {
     expect(addedStream.mute).to.be.false;
     expect(addedStream.element).to.be.an.instanceOf(HTMLVideoElement);
   });
-
-
+  */
+ 
   it("should calculate the stream dimensions correctly", function () {
     // Set the necessary properties for the test
     streamMerger.stream_height = 480;

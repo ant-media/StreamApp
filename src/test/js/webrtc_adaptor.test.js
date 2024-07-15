@@ -563,7 +563,7 @@ describe("WebRTCAdaptor", function () {
 
       var mediaStreamTrack = mediaStreamSource.stream.getAudioTracks()[0];
       oscillator.start();
-      console.log("debug5");
+      console.log("debug5:",adaptor);
 
 
       adaptor.mediaManager.localStream = new MediaStream([mediaStreamTrack])
@@ -573,6 +573,7 @@ describe("WebRTCAdaptor", function () {
       adaptor.enableAudioLevelForLocalStream((level) => {
         console.log("sound level -> " + level);
         if (level > 0) {
+          console.log((new Error()).stack);
           audioContext.close();
           done();
         }
