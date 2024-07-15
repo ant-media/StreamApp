@@ -72,6 +72,6 @@ module.exports = function(config) {
     singleRun: true, // Karma captures browsers, runs the tests and exits
     //singleRun: false,
     
-    concurrency: Infinity,
+    concurrency: 1,
   })
 }            
