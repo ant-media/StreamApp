@@ -6,8 +6,11 @@ describe("StreamMerger", function () {
   let sandbox;
   let streamMerger
 
+  var currentTest;
   
   beforeEach(function () {
+    console.log("**** starting test: ****", currentTest.title);
+
     clock = sinon.useFakeTimers();
     sandbox = sinon.createSandbox();
     const initialValues = {
@@ -20,11 +23,15 @@ describe("StreamMerger", function () {
   });
 
   afterEach(() => {
+
     // Restore the default sandbox and timers
     streamMerger.stop();
     sinon.restore();
     clock.restore();
     sandbox.restore();
+    
+    console.log("**** ending test: ****", currentTest.title);
+
   });
 
   it("should initialize the audio context and create audio destination", async function () {

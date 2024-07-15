@@ -10,17 +10,24 @@ describe("WebRTCAdaptor", function () {
 
   var initialized = false;
 
+  var currentTest;
+
   beforeEach(function () {
     clock = sinon.useFakeTimers();
     sandbox = sinon.createSandbox();
+
+    currentTest = this.currentTest;
+    console.log("**** starting test: ****", currentTest.title);
   });
 
 
   afterEach(() => {
+    console.log("**** ending test: ****", currentTest.title);
     // Restore the default sandbox here
     sinon.restore();
     clock.restore();
     sandbox.restore();
+
   });
 
 
@@ -534,7 +541,7 @@ describe("WebRTCAdaptor", function () {
     });
 
 
-    console.log("debug1");
+    console.log("debug1:");
 
 
     //fake stream in te browser is a period audio and silence, so getting sound level more than 0 requires

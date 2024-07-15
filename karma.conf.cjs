@@ -2,8 +2,8 @@ module.exports = function(config) {
   config.set({
     frameworks: ['mocha', 'chai', 'sinon'],
     files: [
-			{ pattern: "src/test/js/**/*.js", type: "module" , nocache: true},	
-			{ pattern: "src/main/js/**/*.js", included: false , nocache: true},
+			{ pattern: "src/test/js/**/*.js", type: "module" },	
+			{ pattern: "src/main/js/**/*.js", included: false },
 			
 			
 	],
@@ -31,8 +31,8 @@ module.exports = function(config) {
     //logLevel: config.LOG_DEBUG
     logLevel: config.LOG_INFO,
     
-    browsers: ['CustomChrome', "ChromeMobileUserAgent"],
-    //browsers: ['Chrome'],
+    //browsers: ['CustomChrome', "ChromeMobileUserAgent"],
+    browsers: ['CustomChrome'],
     
 
 	customLaunchers: {
