@@ -9,6 +9,8 @@ describe("StreamMerger", function () {
   var currentTest;
   
   beforeEach(function () {
+    currentTest = this.currentTest;
+
     console.log("**** starting test: ****", currentTest.title);
 
     clock = sinon.useFakeTimers();
