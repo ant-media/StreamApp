@@ -69,8 +69,8 @@ module.exports = function(config) {
 	    
     autoWatch: true,
     
-    singleRun: true, // Karma captures browsers, runs the tests and exits
-    //singleRun: false,
+    //singleRun: true, // Karma captures browsers, runs the tests and exits
+    singleRun: false,
     
     concurrency: 1,
   })
