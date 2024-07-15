@@ -2,8 +2,9 @@ module.exports = function(config) {
   config.set({
     frameworks: ['mocha', 'chai', 'sinon'],
     files: [
-			{ pattern: "src/test/js/**/*.js", type: "module" },	
-			{ pattern: "src/main/js/**/*.js", included: false }
+			{ pattern: "src/test/js/**/*.js", type: "module" , nocache: true},	
+			{ pattern: "src/main/js/**/*.js", included: false , nocache: true},
+			
 			
 	],
     
