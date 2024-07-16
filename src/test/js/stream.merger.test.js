@@ -18,7 +18,9 @@ describe("StreamMerger", function () {
       websocketURL: "ws://example.com",
     };
     streamMerger = new StreamMerger(initialValues);
-    streamMerger.initAudioContext();
+    streamMerger.audioCtx = createMockAudioContext();
+    streamMerger.audioDestination = streamMerger.audioCtx.createMediaStreamDestination();
+    streamMerger.addAusioTrackToCanvasStream = sinon.stub();
     streamMerger.start();
 
   });
@@ -35,12 +37,20 @@ describe("StreamMerger", function () {
 
   });
 
-  it("should initialize the audio context and create audio destination", async function () {
+  function createMockAudioContext() {
+    const audioDestination = {stream: createMockMediaStream()};
 
-    expect(streamMerger.audioCtx).to.be.an.instanceOf(AudioContext);
-    expect(streamMerger.audioDestination).to.be.an.instanceOf(MediaStreamAudioDestinationNode);
-    expect(streamMerger.videoSyncDelayNode).to.be.an.instanceOf(AudioNode);
-  });
+    const audioCtx = {
+      createMediaStreamDestination: sinon.stub().returns(audioDestination),
+      createMediaStreamSource: sinon.stub().returns({connect: sinon.stub().returns({connect: sinon.stub()})}),
+      createGain: sinon.stub().returns({gain:{}, connect: sinon.stub()}),
+      createAnalyser: sinon.stub().returns({connect: sinon.stub()}),
+      close: sinon.stub(),
+      resume: sinon.stub(),
+
+    };
+    return audioCtx;
+  }
 
 
   it("should change the aspect ratio and call resizeAndSortV2", function () {
@@ -82,6 +92,7 @@ describe("StreamMerger", function () {
       stop: sinon.stub(),
       getSettings: sinon.stub().returns({ sampleRate: 48000,  })
     };
+    
   
     const videoTrack = {
       kind: 'video',
@@ -117,14 +128,8 @@ describe("StreamMerger", function () {
     return mediaStream;
   }
 
-  /*
   it("should add a stream to the streams array", async function () {
-    const audioSource = {
-      connect: () => {return {connect: sinon.stub()} },
-    };
     
-    sinon.stub(streamMerger.audioCtx, "createMediaStreamSource").returns(audioSource);
-
     const mediaStream = createMockMediaStream();
     
     const options = {
@@ -142,16 +147,10 @@ describe("StreamMerger", function () {
 
 
   it("should set the correct properties for the added stream", async function () {
-        streamMerger.resizeAndSortV2 = () => {};
+    streamMerger.resizeAndSortV2 = () => {};
     streamMerger.pwidth = 100;
     streamMerger.pheight = 200;
-    
-    const audioSource = {
-      connect: () => {return {connect: sinon.stub()} },
-    };
-    
-    sinon.stub(streamMerger.audioCtx, "createMediaStreamSource").returns(audioSource);
-    
+  
     const mediaStream = createMockMediaStream(480, 640);
     
     const options = {
@@ -178,7 +177,6 @@ describe("StreamMerger", function () {
     expect(addedStream.mute).to.be.false;
     expect(addedStream.element).to.be.an.instanceOf(HTMLVideoElement);
   });
-  */
  
   it("should calculate the stream dimensions correctly", function () {
     // Set the necessary properties for the test

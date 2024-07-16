@@ -378,15 +378,20 @@ export class StreamMerger {
         // Get the result of merged stream canvas
         this.result = this.canvas.captureStream(this.fps)
 
-        // Remove "dead" audio track
-        const deadTrack = this.result.getAudioTracks()[0]
-        if (deadTrack) this.result.removeTrack(deadTrack)
-
-        // Add audio
-        const audioTracks = this.audioDestination.stream.getAudioTracks()
-        this.result.addTrack(audioTracks[0])
+        this.addAusioTrackToCanvasStream();
     }
 
+    addAusioTrackToCanvasStream() {
+        // Remove "dead" audio track
+        const deadTrack = this.result.getAudioTracks()[0];
+        if (deadTrack)
+            this.result.removeTrack(deadTrack);
+
+        // Add audio
+        const audioTracks = this.audioDestination.stream.getAudioTracks();
+        console.log("debug111: audioTracks = " + audioTracks);
+        this.result.addTrack(audioTracks[0]);
+    }
 
     draw() {
         if (!this.started) return;
@@ -474,9 +479,7 @@ export class StreamMerger {
         this.started = false
 
         this.streams = []
-        this.audioCtx.close().then(() => {
-            console.log("debug55: Audio context closed")
-        })
+        this.audioCtx.close();
         this.audioCtx = null
         this.audioDestination = null
         this.videoSyncDelayNode = null

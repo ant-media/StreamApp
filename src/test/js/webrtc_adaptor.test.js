@@ -540,41 +540,23 @@ describe("WebRTCAdaptor", function () {
       volumeMeterUrl: 'base/src/main/js/volume-meter-processor.js',
     });
 
-
-    console.log("debug1:");
-
-
     //fake stream in te browser is a period audio and silence, so getting sound level more than 0 requires
 
     adaptor.initialize().then(() => {
-
-      console.log("debug2");
-
       var audioContext = new (window.AudioContext || window.webkitAudioContext)();
-      console.log("debug21 audioContext.state:" + audioContext.state);
       var oscillator = audioContext.createOscillator();
       oscillator.type = "sine";
       oscillator.frequency.value = 800;
       var mediaStreamSource = audioContext.createMediaStreamDestination();
-      console.log("debug3");
-
       oscillator.connect(mediaStreamSource);
-      console.log("debug4");
-
       var mediaStreamTrack = mediaStreamSource.stream.getAudioTracks()[0];
       oscillator.start();
-      console.log("debug5:",adaptor);
-
 
       adaptor.mediaManager.localStream = new MediaStream([mediaStreamTrack])
       adaptor.mediaManager.audioContext = audioContext;
-      console.log("debug6 audioContext.state:" + audioContext.state);
-
       adaptor.enableAudioLevelForLocalStream((level) => {
         console.log("sound level -> " + level);
         if (level > 0) {
-          console.log((new Error()).stack);
-          audioContext.close();
           done();
         }
       });
@@ -582,6 +564,7 @@ describe("WebRTCAdaptor", function () {
       expect(adaptor.mediaManager.localStreamSoundMeter).to.not.be.null;
     })
   })
+
 
   it("takeConfiguration", async function () {
     var adaptor = new WebRTCAdaptor({

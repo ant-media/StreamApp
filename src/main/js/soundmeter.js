@@ -25,16 +25,11 @@ export class SoundMeter {
 	 */
 	connectToSource(stream, levelCallback, errorCallback) {
 	  return this.context.audioWorklet.addModule(this.url).then(()=> {
-		    console.log("debug70");
 			this.mic = this.context.createMediaStreamSource(stream);
-			console.log("debug701 mic:", this.context);
 	        this.volumeMeterNode = new AudioWorkletNode(this.context, 'volume-meter');
-			console.log("debug71");
 
 
 	        this.volumeMeterNode.port.onmessage = (event) => {
-				console.log("debug72***********");
-
 				if (event.data.type == 'debug') {
 					Logger.debug(event.data.message);
 				}
