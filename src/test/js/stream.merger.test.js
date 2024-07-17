@@ -53,39 +53,6 @@ describe("StreamMerger", function () {
     return audioCtx;
   }
 
-  it("test for test", function () {
-    expect(true).to.be.true;
-  });
-
- /*
-  it("should change the aspect ratio and call resizeAndSortV2", function () {
-    const resizeAndSortV2Spy = sinon.spy(streamMerger, "resizeAndSortV2");
-
-    const newAspectRatio = "16:9";
-    streamMerger.changeAspectRatio(newAspectRatio);
-
-    expect(streamMerger.aspectRatio).to.equal(newAspectRatio);
-    expect(resizeAndSortV2Spy.calledOnce).to.be.true;
-  });
-
-  it("should change the merged streams size", function () {
-    const resizeAndSortV2Spy = sinon.spy(streamMerger, "resizeAndSortV2");
-
-    const height = 480;
-    streamMerger.changeStreamSize(height);
-    expect(streamMerger.stream_height).to.equal(height);
-    expect(resizeAndSortV2Spy.calledOnce).to.be.true;
-
-  });
-
-  it("should update the canvas size", function () {
-    const width = 640;
-    const height = 480;
-    streamMerger.updateCanvasSize(width, height);
-    expect(streamMerger.width).to.equal(width);
-    expect(streamMerger.height).to.equal(height);
-  });
-
   function createMockMediaStream(width = 640, height = 480) {
     const mediaStream = new MediaStream();
   
@@ -132,6 +99,41 @@ describe("StreamMerger", function () {
   
     return mediaStream;
   }
+
+  it("test for test", function () {
+    expect(true).to.be.true;
+  });
+
+ /*
+  it("should change the aspect ratio and call resizeAndSortV2", function () {
+    const resizeAndSortV2Spy = sinon.spy(streamMerger, "resizeAndSortV2");
+
+    const newAspectRatio = "16:9";
+    streamMerger.changeAspectRatio(newAspectRatio);
+
+    expect(streamMerger.aspectRatio).to.equal(newAspectRatio);
+    expect(resizeAndSortV2Spy.calledOnce).to.be.true;
+  });
+
+  it("should change the merged streams size", function () {
+    const resizeAndSortV2Spy = sinon.spy(streamMerger, "resizeAndSortV2");
+
+    const height = 480;
+    streamMerger.changeStreamSize(height);
+    expect(streamMerger.stream_height).to.equal(height);
+    expect(resizeAndSortV2Spy.calledOnce).to.be.true;
+
+  });
+
+  it("should update the canvas size", function () {
+    const width = 640;
+    const height = 480;
+    streamMerger.updateCanvasSize(width, height);
+    expect(streamMerger.width).to.equal(width);
+    expect(streamMerger.height).to.equal(height);
+  });
+
+  
 
   it("should add a stream to the streams array", async function () {
     
