@@ -60,7 +60,7 @@ export class StreamMerger {
             document.getElementById("players").style.display = "none";
         }
 
-        this.initializeWebRTCAdaptors();
+        //this.initializeWebRTCAdaptors();
     }
 
     initializeWebRTCAdaptors() {
