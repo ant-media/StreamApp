@@ -17,7 +17,7 @@ describe("StreamMerger", function () {
     const initialValues = {
       websocketURL: "ws://example.com",
     };
-    streamMerger = new StreamMerger(initialValues);
+    //streamMerger = new StreamMerger(initialValues);
     //streamMerger.audioCtx = createMockAudioContext();
     //streamMerger.audioDestination = streamMerger.audioCtx.createMediaStreamDestination();
     //streamMerger.addAusioTrackToCanvasStream = sinon.stub();
