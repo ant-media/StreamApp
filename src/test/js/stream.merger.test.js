@@ -18,11 +18,11 @@ describe("StreamMerger", function () {
       websocketURL: "ws://example.com",
     };
     streamMerger = new StreamMerger(initialValues);
-    //streamMerger.audioCtx = createMockAudioContext();
-    //streamMerger.audioDestination = streamMerger.audioCtx.createMediaStreamDestination();
-    //streamMerger.addAusioTrackToCanvasStream = sinon.stub();
-    //streamMerger.initializeWebRTCAdaptors = sinon.stub();
-    //streamMerger.start();
+    streamMerger.audioCtx = createMockAudioContext();
+    streamMerger.audioDestination = streamMerger.audioCtx.createMediaStreamDestination();
+    streamMerger.addAusioTrackToCanvasStream = sinon.stub();
+    streamMerger.initializeWebRTCAdaptors = sinon.stub();
+    streamMerger.start();
 
   });
 
@@ -104,7 +104,7 @@ describe("StreamMerger", function () {
     expect(true).to.be.true;
   });
 
- /*
+ 
   it("should change the aspect ratio and call resizeAndSortV2", function () {
     const resizeAndSortV2Spy = sinon.spy(streamMerger, "resizeAndSortV2");
 
@@ -237,6 +237,6 @@ describe("StreamMerger", function () {
     expect(streamMerger.streams[2].x).to.equal(160);
     expect(streamMerger.streams[2].y).to.equal(240);
   });
-  */
+  
   
 });

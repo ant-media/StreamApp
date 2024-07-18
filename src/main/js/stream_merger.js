@@ -60,7 +60,6 @@ export class StreamMerger {
             document.getElementById("players").style.display = "none";
         }
 
-        //this.initializeWebRTCAdaptors();
     }
 
     initializeWebRTCAdaptors() {
@@ -612,6 +611,7 @@ export class StreamMerger {
 	}
 
 	startStreaming() {
+        this.initializeWebRTCAdaptors();
         this.isStopping = false;
 		this.startMerger();
 		this.webRTCAdaptorPlayer.play(this.roomName, "", "", []);
