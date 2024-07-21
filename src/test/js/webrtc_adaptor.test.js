@@ -1203,6 +1203,79 @@ describe("WebRTCAdaptor", function () {
       consoleSpy.restore();
     });
 
+    it("should correctly process inbound RTP with video kind", async function () {
+      const consoleSpy = sinon.stub(console, 'log');
+
+      let localMockStats = {
+        type: "inbound-rtp",
+        kind: "video",
+        trackIdentifier: "videoTrack2",
+        bytesReceived: 2000,
+        packetsLost: 5,
+        framesDropped: 2,
+        framesDecoded: 50,
+        framesPerSecond: 25,
+        jitterBufferDelay: 10,
+        lastPacketReceivedTimestamp: 160000,
+        fractionLost: 0.05,
+        timestamp: Date.now(),
+        frameWidth: 1920,
+        frameHeight: 1080
+      };
+      mockPeerConnection.getStats.resolves([localMockStats]);
+      const result = await adaptor.getStats("stream1");
+
+      let localMockStatsProcessed = {
+        "totalBytesReceived": 1999,
+        "videoPacketsLost": 5,
+        "audioPacketsLost": -1,
+        "fractionLost": -0.95,
+        "currentTime": 0,
+        "totalBytesSent": -1,
+        "totalVideoPacketsSent": -1,
+        "totalAudioPacketsSent": -1,
+        "audioLevel": -1,
+        "qualityLimitationReason": "",
+        "totalFramesEncoded": -1,
+        "resWidth": -1,
+        "resHeight": -1,
+        "srcFps": -1,
+        "frameWidth": 1920,
+        "frameHeight": 1080,
+        "videoRoundTripTime": -1,
+        "videoJitter": -1,
+        "audioRoundTripTime": -1,
+        "audioJitter": -1,
+        "framesDecoded": 50,
+        "framesDropped": 2,
+        "framesReceived": -1,
+        "videoJitterAverageDelay": -1,
+        "audioJitterAverageDelay": -1,
+        "availableOutgoingBitrate": null,
+        "inboundRtpList": [
+          {
+            "trackIdentifier": "videoTrack2",
+            "videoPacketsLost": 5,
+            "framesDropped": 2,
+            "framesDecoded": 50,
+            "framesPerSecond": 25,
+            "bytesReceived": 2000,
+            "jitterBufferDelay": 10,
+            "lastPacketReceivedTimestamp": 160000,
+            "fractionLost": 0.05,
+            "currentTime": 0,
+            "frameWidth": 1920,
+            "frameHeight": 1080
+          }
+        ]
+      };
+
+      assert(consoleSpy.calledWith(JSON.stringify(localMockStatsProcessed)), 'console.log was not called with the expected arguments');
+
+      expect(result).to.be.true;
+      consoleSpy.restore();
+    });
+
     it("should resolve with false when getStats fails", async function () {
       mockPeerConnection.getStats.rejects(new Error("getStats error"));
       const result = await adaptor.getStats("stream1");
