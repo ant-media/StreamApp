@@ -49,6 +49,8 @@ export class StreamMerger {
         this.currentVideoTrackAssignments = {};
         this.isStopping = false;
 
+        this.headless = false;
+
 
         for (var key in initialValues) {
             if (initialValues.hasOwnProperty(key)) {
@@ -56,10 +58,13 @@ export class StreamMerger {
             }
         }
 
-        if (this.headless) {
-            document.getElementById("players").style.display = "none";
-        }
+        //document.getElementById("players").style.display = "none";
+        document.getElementById("players").style.opacity = 0;    
 
+        if (this.headless) {
+            this.startStreaming();
+        }
+        
     }
 
     initializeWebRTCAdaptors() {
