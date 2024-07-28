@@ -215,6 +215,8 @@ video {
 		token: token,
 		websocketURL: websocketURL,
 		restURL: restURL,
+		streamStartedCallback: () => streamStarted(),
+		streamFinishedCallback: () => streamFinished(),
 	});
 
 	window.merger = merger;
@@ -285,6 +287,19 @@ video {
 			restURL = "https://" + path;
 		}
 		return restURL;
+	}
+
+	function streamStarted() {
+		$("#start_button").prop("disabled", true);
+		$("#stop_button").prop("disabled", false);
+		$("#broadcastingInfo").show();
+		startAnimation();
+	}
+
+	function streamFinished() {
+		$("#start_button").prop("disabled", false);
+		$("#stop_button").prop("disabled", true);
+		$("#broadcastingInfo").hide();
 	}
 
 	

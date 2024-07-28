@@ -51,6 +51,8 @@ export class StreamMerger {
 
         this.headless = false;
 
+        this.streamStartedCallback = function() {};
+        this.streamFinishedCallback = function() {};
 
         for (var key in initialValues) {
             if (initialValues.hasOwnProperty(key)) {
@@ -672,9 +674,13 @@ export class StreamMerger {
 					}
 				} 
 				else if (info == "publish_started") {
-					console.log("publish started");
-					//this.startAnimation();
-				} 
+                    console.log("publish started");
+                    this.streamStartedCallback();
+                } 
+                else if (info == "publish_finished") {
+                    console.log("publish finished");
+                    this.streamFinishedCallback();
+                }
 				else if (info == "data_received") {
 					console.log("data_received: " + obj.data);
 					this.processPublisherMessageAndUpdateLayout(obj.data);
