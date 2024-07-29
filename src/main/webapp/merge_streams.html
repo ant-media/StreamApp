@@ -268,8 +268,8 @@ video {
 	function startAnimation() {
 		$("#broadcastingInfo").fadeIn(800, function() {
 			$("#broadcastingInfo").fadeOut(800, function() {
-				var state = webRTCAdaptor.signallingState(streamNameBox.value);
-				var iceState = webRTCAdaptor.iceConnectionState(streamNameBox.value);
+				var state = merger.webRTCAdaptorPublisher.signallingState(streamNameBox.value);
+				var iceState = merger.webRTCAdaptorPublisher.iceConnectionState(streamNameBox.value);
 				if (state !== "closed" && iceState !== "failed" && iceState !== "disconnected") {
 					startAnimation();
 				}

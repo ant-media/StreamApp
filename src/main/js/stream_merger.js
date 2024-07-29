@@ -684,7 +684,7 @@ export class StreamMerger {
 			localVideoId: "localVideo",
 			isPlayMode: true,
 			debug: true,
-			callback: publisherAdaptorCallback.bind(this),
+			callback: this.publisherAdaptorCallback.bind(this),
 			callbackError: function (error) {
 				console.log("error callback: " + JSON.stringify(error));
 			}.bind(this)
@@ -737,7 +737,7 @@ export class StreamMerger {
 			websocketURL: this.websocketURL,
 			isPlayMode: true,
 			debug: true,
-			callback: playerAdaptorCallback.bind(this),
+			callback: this.playerAdaptorCallback.bind(this),
 			callbackError: function (error) {
 				console.log("error callback: " + JSON.stringify(error));
 				if (error == "no_stream_exist") {
