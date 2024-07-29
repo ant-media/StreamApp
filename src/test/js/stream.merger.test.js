@@ -16,6 +16,7 @@ describe("StreamMerger", function () {
     sandbox = sinon.createSandbox();
     const initialValues = {
       websocketURL: "ws://example.com",
+      headless: false,
     };
     streamMerger = new StreamMerger(initialValues);
     streamMerger.audioCtx = createMockAudioContext();
