@@ -107,127 +107,127 @@
 </head>
 
 <body>
-	<div class="container">
+<div class="container">
 
-		<div class="header clearfix">
-			<div class="row">
-				<h3 class="col text-muted">WebRTC Multitrack Conference</h3>
-				<nav class="col align-self-center">
-					<ul class="nav float-right">
-						<li><a href="http://antmedia.io">Contact</a></li>
-					</ul>
-				</nav>
+	<div class="header clearfix">
+		<div class="row">
+			<h3 class="col text-muted">WebRTC Multitrack Conference</h3>
+			<nav class="col align-self-center">
+				<ul class="nav float-right">
+					<li><a href="http://antmedia.io">Contact</a></li>
+				</ul>
+			</nav>
+		</div>
+	</div>
+
+	<div class="jumbotron">
+		<div class="alert alert-primary text-center enterprise-feature" role="alert" style="margin-top:-2em">
+			WebRTC Conference is an enterprise edition feature. <br />
+			<a href="https://antmedia.io">Try Enterprise Edition for free at antmedia.io</a>
+		</div>
+		<div class="alert alert-primary text-center" role="alert" style="margin-top:-2em">
+			Something ready to use? <br/>
+			<a href="https://antmedia.io/marketplace/circle-video-conferencing-tool/">Circle: Online Video Conferencing</a>
+			<br/>
+		</div>
+		<div id="players" class="row">
+			<div class="col-sm-3">
+				<video id="localVideo" autoplay muted controls playsinline></video>
+				<div style="margin-top:10px;display:none" class="col-sm-8 col-sm-offset-2">Microphone Gain: <input type=range
+																												   id=volume_change_input min=0 max=1 value=1 step=0.01></div>
 			</div>
 		</div>
 
-		<div class="jumbotron">
-			<div class="alert alert-primary text-center enterprise-feature" role="alert" style="margin-top:-2em">
-				WebRTC Conference is an enterprise edition feature. <br />
-				<a href="https://antmedia.io">Try Enterprise Edition for free at antmedia.io</a>
-			</div>
-			<div class="alert alert-primary text-center" role="alert" style="margin-top:-2em">
-				Something ready to use? <br/>
-				<a href="https://antmedia.io/marketplace/circle-video-conferencing-tool/">Circle: Online Video Conferencing</a>
-			 <br/>
-		</div>
-			<div id="players" class="row">
-				<div class="col-sm-3">
-					<video id="localVideo" autoplay muted controls playsinline></video>
-					<div style="margin-top:10px;display:none" class="col-sm-8 col-sm-offset-2">Microphone Gain: <input type=range
-							id=volume_change_input min=0 max=1 value=1 step=0.01></div>
+
+
+		<div class="row" style="padding: 15px;">
+			<div class="col-sm-8 offset-sm-2">
+				<div style="padding:5px" class="form-check form-check-inline col-sm-10">
+					<input type="text" class="form-control" value="room1" id="roomName"
+						   placeholder="Type room name">
+				</div>
+				<div style="padding:5px">
+					<button class="btn btn-primary" disabled id="join_publish_button">Join Room</button>
+					<button class="btn btn-primary" disabled id="stop_publish_button">Leave Room</button>
+				</div>
+
+
+
+
+				<div class="badge badge-success" id="broadcastingInfo" style="font-size: 14px; display: none"
+					 style="display: none">Publishing</div>
+
+
+
+				<div class="col-sm-12 text-right">
+					<button type="button" id="options" class="btn btn-outline-primary btn-sm">Options</button>
+				</div>
+				<div class="form-group col-sm-12 text-left options">
+					<div style="padding:10px">
+						<button id="turn_off_camera_button" class="btn btn-outline-primary">Turn off Camera</button>
+						<button id="turn_on_camera_button" disabled class="btn btn-outline-primary">Turn on
+							Camera</button>
+
+						<button id="mute_mic_button" class="btn btn-outline-primary">Mute Local Mic</button>
+						<button id="unmute_mic_button" disabled class="btn btn-outline-primary">Unmute Local
+							Mic</button>
+					</div>
+
+					<label>Video Source</label>
+					<br>
+					<div class="form-check form-check-inline">
+
+						<input class="form-check-input video-source" disabled name="videoSource" type="radio"
+							   value="camera" id="camera_checkbox" checked>
+						<label class="form-check-label" for="camera_checkbox" style="font-weight:normal">
+							Camera
+						</label>
+					</div>
+					<div class="form-check form-check-inline">
+						<input class="form-check-input video-source" disabled name="videoSource" type="radio"
+							   value="screen" id="screen_share_checkbox">
+						<label class="form-check-label" for="screen_share_checkbox" style="font-weight:normal">
+							Screen
+						</label>
+					</div>
+					<div class="form-check form-check-inline">
+						<input class="form-check-input video-source" disabled name="videoSource" type="radio"
+							   value="screen+camera" id="screen_share_with_camera_checkbox">
+						<label class="form-check-label" for="screen_share_with_camera_checkbox"
+							   style="font-weight:normal">
+							Screen with Camera
+						</label>
+						<div class="form-check form-check-inline"></div>
+						<a id="browser_screen_share_doesnt_support"
+						   href="https://caniuse.com/#search=getDisplayMedia">Your browser doesn't support screen
+							share. You can see supported browsers in this link </a>
+					</div>
+					<br>
+					<label>Data Channel Messages</label>
+					<div id="all-messages" class="message_area"></div>
+					<div class="form-row">
+						<div class="form-group col-sm-10">
+							<input type="text" class="form-control" id="dataTextbox"
+								   placeholder="Write your message to send publisher/players">
+						</div>
+						<div class="form-group col-sm-2">
+							<button type="button" id="send" class="btn btn-outline-primary btn-block">Send</button>
+						</div>
+					</div>
 				</div>
 			</div>
-
-
-
-			<div class="row" style="padding: 15px;">
-				<div class="col-sm-8 offset-sm-2">
-					<div style="padding:5px" class="form-check form-check-inline col-sm-10">
-						<input type="text" class="form-control" value="room1" id="roomName"
-							placeholder="Type room name">
-					</div>
-					<div style="padding:5px">
-						<button class="btn btn-primary" disabled id="join_publish_button">Join Room</button>
-						<button class="btn btn-primary" disabled id="stop_publish_button">Leave Room</button>
-					</div>
-
-				
-
-					
-					<div class="badge badge-success" id="broadcastingInfo" style="font-size: 14px; display: none"
-						style="display: none">Publishing</div>
-
-
-
-					<div class="col-sm-12 text-right">
-						<button type="button" id="options" class="btn btn-outline-primary btn-sm">Options</button>
-					</div>
-					<div class="form-group col-sm-12 text-left options">
-						<div style="padding:10px">
-							<button id="turn_off_camera_button" class="btn btn-outline-primary">Turn off Camera</button>
-							<button id="turn_on_camera_button" disabled class="btn btn-outline-primary">Turn on
-								Camera</button>
-	
-							<button id="mute_mic_button" class="btn btn-outline-primary">Mute Local Mic</button>
-							<button id="unmute_mic_button" disabled class="btn btn-outline-primary">Unmute Local
-								Mic</button>
-						</div>
-
-						<label>Video Source</label>
-						<br>
-						<div class="form-check form-check-inline">
-
-							<input class="form-check-input video-source" disabled name="videoSource" type="radio"
-								value="camera" id="camera_checkbox" checked>
-							<label class="form-check-label" for="camera_checkbox" style="font-weight:normal">
-								Camera
-							</label>
-						</div>
-						<div class="form-check form-check-inline">
-							<input class="form-check-input video-source" disabled name="videoSource" type="radio"
-								value="screen" id="screen_share_checkbox">
-							<label class="form-check-label" for="screen_share_checkbox" style="font-weight:normal">
-								Screen
-							</label>
-						</div>
-						<div class="form-check form-check-inline">
-							<input class="form-check-input video-source" disabled name="videoSource" type="radio"
-								value="screen+camera" id="screen_share_with_camera_checkbox">
-							<label class="form-check-label" for="screen_share_with_camera_checkbox"
-								style="font-weight:normal">
-								Screen with Camera
-							</label>
-							<div class="form-check form-check-inline"></div>
-							<a id="browser_screen_share_doesnt_support"
-								href="https://caniuse.com/#search=getDisplayMedia">Your browser doesn't support screen
-								share. You can see supported browsers in this link </a>
-						</div>
-						<br>
-						<label>Data Channel Messages</label>
-						<div id="all-messages" class="message_area"></div>
-						<div class="form-row">
-							<div class="form-group col-sm-10">
-								<input type="text" class="form-control" id="dataTextbox"
-									placeholder="Write your message to send publisher/players">
-							</div>
-							<div class="form-group col-sm-2">
-								<button type="button" id="send" class="btn btn-outline-primary btn-block">Send</button>
-							</div>
-						</div>
-					</div>
-				</div>
-			</div>
-
-
 		</div>
-		<footer class="footer">
-			<p>
-				<a href="http://antmedia.io">Ant Media Server Enterprise
-					Edition</a>
-			</p>
-		</footer>
+
 
 	</div>
+	<footer class="footer">
+		<p>
+			<a href="http://antmedia.io">Ant Media Server Enterprise
+				Edition</a>
+		</p>
+	</footer>
+
+</div>
 </body>
 <script src="./js/external/notify.min.js" crossorigin="anonymous"></script>
 <script type="module">
@@ -237,11 +237,11 @@
 	import { generateRandomString, getWebSocketURL, errorHandler, updateBroadcastStatusInfo } from "./js/utility.js"
 
 	/**
-	* This page accepts 3 arguments through url parameter
-	* 1. "streamId": the stream id to publish stream. It's optional. ?streamId=stream1
-	* 2. "playOnly": If it's true, user does not publish stream. It only play streams in the room.
-	* 3. "token": It's experimental.
-	*/
+	 * This page accepts 3 arguments through url parameter
+	 * 1. "streamId": the stream id to publish stream. It's optional. ?streamId=stream1
+	 * 2. "playOnly": If it's true, user does not publish stream. It only play streams in the room.
+	 * 3. "token": It's experimental.
+	 */
 
 	var token = getUrlParameter("token");
 	var publishStreamId = getUrlParameter("streamId");
@@ -269,8 +269,8 @@
 
 	function changeVolume() {
 		/**
-			  * Change the gain levels on the input selector.
-			  */
+		 * Change the gain levels on the input selector.
+		 */
 		if (document.getElementById('volume_change_input') != null) {
 			webRTCAdaptor.currentVolume = this.value;
 			if (webRTCAdaptor.soundOriginGainNode != null) {
@@ -322,6 +322,12 @@
 	var isMicMuted = false;
 	var isCameraOff = false;
 	//var roomTimerId = -1;
+
+	var isReconnectionInProgress = false;
+	var reconnecting = false;
+	var publishReconnected = false;
+	var playReconnected = false;
+	var isNoSreamExist = false;
 
 
 	function toggleOptions() {
@@ -521,7 +527,7 @@
 
 		var roomId = roomNameBox.value;
 		console.log("new track available with id: "
-			+ obj.trackId + " and kind: " + obj.track.kind + " on the room:" + roomId);
+				+ obj.trackId + " and kind: " + obj.track.kind + " on the room:" + roomId);
 
 		//trackId is ARDAMSv+STREAM_ID or  ARDAMSa+STREAM_ID
 		var incomingTrackId = obj.trackId.substring("ARDAMSx".length);
@@ -558,7 +564,7 @@
 		//TODO: Disable this one if user stops publishing
 		webRTCAdaptor.enableAudioLevelForLocalStream((value) => {
 
-			//PAY ATTENTION: No need to send audio level any more because server side can get it from the RTP header in AMS v2.7+ 
+			//PAY ATTENTION: No need to send audio level any more because server side can get it from the RTP header in AMS v2.7+
 			//webRTCAdaptor.updateAudioLevel(publishStreamId,  Math.floor(value*100));
 		}, 200);
 	};
@@ -570,9 +576,9 @@
 
 		if (kind == "audio") {
 			player.style.display = "none";
-		}		
-		player.innerHTML = '<video id="remoteVideo' + streamId + '"controls autoplay playsinline></video>' 
-							+ '<p style="display:none">' + streamId + '</p>';
+		}
+		player.innerHTML = '<video id="remoteVideo' + streamId + '"controls autoplay playsinline></video>'
+				+ '<p style="display:none">' + streamId + '</p>';
 		document.getElementById("players").appendChild(player);
 	}
 
@@ -592,15 +598,15 @@
 		let i = 1;
 
 		children.forEach((child, index) => {
-                // Determine the parent container of each video
-            if (index == 0) {
+			// Determine the parent container of each video
+			if (index == 0) {
 				//don't do anything for local video
 				return;
 			}
 
 			document.getElementById("players").removeChild(child);
-			
-        });
+
+		});
 
 	}
 
@@ -644,28 +650,38 @@
 	function startAnimation() {
 
 		$("#broadcastingInfo")
-			.fadeIn(
-				800,
-				function () {
-					$("#broadcastingInfo")
-						.fadeOut(
-							800,
-							function () {
-								var state = webRTCAdaptor
-									.signallingState(publishStreamId);
-								if (state != null
-									&& state != "closed") {
-									var iceState = webRTCAdaptor
-										.iceConnectionState(publishStreamId);
-									if (iceState != null
-										&& iceState != "failed"
-										&& iceState != "disconnected") {
-										startAnimation();
-									}
-								}
-							});
-				});
+				.fadeIn(
+						800,
+						function () {
+							$("#broadcastingInfo")
+									.fadeOut(
+											800,
+											function () {
+												var state = webRTCAdaptor
+														.signallingState(publishStreamId);
+												if (state != null
+														&& state != "closed") {
+													var iceState = webRTCAdaptor
+															.iceConnectionState(publishStreamId);
+													if (iceState != null
+															&& iceState != "failed"
+															&& iceState != "disconnected") {
+														startAnimation();
+													}
+												}
+											});
+						});
 
+	}
+
+	function reconnectionInProgress() {
+		allParticipants = {};
+		removeAllRemoteVideos();
+
+		isReconnectionInProgress = true;
+		reconnecting = true;
+
+		console.warn("Connection lost. Trying reconnect...");
 	}
 
 	var mediaConstraints = {
@@ -677,117 +693,156 @@
 
 	var isPlaying = false;
 	var webRTCAdaptor = new WebRTCAdaptor(
-		{
-			websocket_url: websocketURL,
-			mediaConstraints: mediaConstraints,
-			localVideoId: "localVideo",
-			isPlayMode: playOnly,
-			onlyDataChannel: dcOnly,
-			debug: true,
-			callback: (info, obj) => {
-				if (info == "initialized") {
-					console.log("initialized");
-					join_publish_button.disabled = false;
-					stop_publish_button.disabled = true;
-					if (playOnly) {
-						isCameraOff = true;
+			{
+				websocket_url: websocketURL,
+				mediaConstraints: mediaConstraints,
+				localVideoId: "localVideo",
+				isPlayMode: playOnly,
+				onlyDataChannel: dcOnly,
+				debug: true,
+				callback: (info, obj) => {
+					if (info == "initialized") {
+						console.log("initialized");
+						join_publish_button.disabled = false;
+						stop_publish_button.disabled = true;
+						if (playOnly) {
+							isCameraOff = true;
+							handleCameraButtons();
+						}
+					}
+					else if (info === "broadcastObject") {
+						if (obj.broadcast === undefined) { return; }
+
+						let broadcastObject = JSON.parse(obj.broadcast);
+
+						if (obj.streamId === roomNameBox.value) { //maintrack object
+							handleMainTrackBroadcastObject(broadcastObject);
+						} else { //subtrack object
+							handleSubtrackBroadcastObject(broadcastObject);
+						}
+
+						console.log(obj.broadcast);
+					}
+					else if (info == "newTrackAvailable") {
+						playVideo(obj);
+					}
+					else if (info == "publish_started") {
+						//stream is being published
+						join_publish_button.disabled = true;
+						stop_publish_button.disabled = false;
+						startAnimation();
+
+						if (reconnecting) {
+							webRTCAdaptor.getBroadcastObject(roomNameBox.value);
+							publishReconnected = true;
+							reconnecting = !(publishReconnected && playReconnected);
+						}
+						console.debug("publish started to room " + roomNameBox.value);
+					}
+
+					else if (info == "publish_finished") {
+						//stream is being finished
+						console.debug("publish finished");
+					}
+					else if (info == "browser_screen_share_supported") {
+						screen_share_checkbox.disabled = false;
+						camera_checkbox.disabled = false;
+						screen_share_with_camera_checkbox.disabled = false;
+						console.log("browser screen share supported");
+						browser_screen_share_doesnt_support.style.display = "none";
+					}
+					else if (info == "play_started") {
+						isPlaying = true;
+						isNoSreamExist = false;
+						webRTCAdaptor.getBroadcastObject(roomNameBox.value);
+						if (reconnecting) {
+							playReconnected = true;
+							reconnecting = !(publishReconnected && playReconnected);
+						}
+					}
+					else if (info == "play_finished") {
+						//this event is fired when room is finished to play
+						console.log("play_finished for stream:" + obj.streamId);
+						removeAllRemoteVideos();
+						isPlaying = false;
+					}
+					else if (info == "data_channel_opened") {
+						console.log("Data Channel open for stream id", obj);
+						isDataChannelOpen = true;
+					}
+					else if (info == "data_channel_closed") {
+						console.log("Data Channel closed for stream id", obj);
+						isDataChannelOpen = false;
+					}
+					else if (info == "data_received") {
+						handleNotificationEvent(obj);
+					}
+					else if (info == "session_restored") {
 						handleCameraButtons();
+						join_publish_button.disabled = true;
+						stop_publish_button.disabled = false;
+						startAnimation();
+						console.log(info + "notification received");
+						if (reconnecting) {
+							publishReconnected = true;
+							reconnecting = !(publishReconnected && playReconnected);
+						}
 					}
-				}
-				else if (info === "broadcastObject") {
-					if (obj.broadcast === undefined) { return; }
+					else if (info == "reconnection_attempt_for_player") {
+						console.log("Reconnection attempt for player")
+						if (playOnly && isNoSreamExist) {
+							console.log("Reconnection attempt for player with no stream existmfor play only mode.")
+						} else {
+							playReconnected = false;
+							if (!reconnecting) {
+								reconnectionInProgress();
+							}
+						}
+					}
+					else if (info == "reconnection_attempt_for_publisher") {
+						console.log("Reconnection attempt for publisher")
+						publishReconnected = isPlayOnly;
+						if (!reconnecting) {
+							reconnectionInProgress();
+						}
+					}
+				},
+				callbackError: function (error, message) {
+					//some of the possible errors, NotFoundError, SecurityError,PermissionDeniedError
 
-					let broadcastObject = JSON.parse(obj.broadcast);
-
-					if (obj.streamId === roomNameBox.value) { //maintrack object
-						handleMainTrackBroadcastObject(broadcastObject);
-					} else { //subtrack object
-						handleSubtrackBroadcastObject(broadcastObject);
+					var errorMessage = '';
+					if (error.indexOf("NotAllowedError") != -1
+							|| error.indexOf("PermissionDeniedError") != -1) {
+						errorMessage = "You are not allowed to access camera and mic.";
+						screen_share_checkbox.checked = false;
+						camera_checkbox.checked = false;
+					} else if (error.indexOf("ScreenSharePermissionDenied") != -1) {
+						errorMessage = "You are not allowed to access screen share";
+						screen_share_checkbox.checked = false;
+						camera_checkbox.checked = true;
+					} else if (error.indexOf("no_stream_exist") != -1) {
+						isNoSreamExist = true;
+					} else if (error.indexOf("license_suspended_please_renew_license") != -1) {
+						isReconnectionInProgress = true;
+					} else if (error.indexOf("notSetRemoteDescription") != -1) {
+						isReconnectionInProgress = true;
 					}
 
-					console.log(obj.broadcast);
-				}
-				else if (info == "newTrackAvailable") {
-					playVideo(obj);
-				}
-				else if (info == "publish_started") {
-					//stream is being published
-					console.debug("publish started to room " + roomNameBox.value);
-					join_publish_button.disabled = true;
-					stop_publish_button.disabled = false;
-					startAnimation();
-				}
+					//don't show message if there is not any stream
+					if (error.indexOf("no_active_streams_in_room") != -1 || error.indexOf("no_stream_exist") != -1) {
 
-				else if (info == "publish_finished") {
-					//stream is being finished
-					console.debug("publish finished");
-				}
-				else if (info == "browser_screen_share_supported") {
-					screen_share_checkbox.disabled = false;
-					camera_checkbox.disabled = false;
-					screen_share_with_camera_checkbox.disabled = false;
-					console.log("browser screen share supported");
-					browser_screen_share_doesnt_support.style.display = "none";
-				}
-				else if (info == "play_started") {
-					isPlaying = true;
-					webRTCAdaptor.getBroadcastObject(roomNameBox.value);
-				}
-				else if (info == "play_finished") {
-					//this event is fired when room is finished to play
-					console.log("play_finished for stream:" + obj.streamId);
-					removeAllRemoteVideos();
-					isPlaying = false;
-				}
-				else if (info == "data_channel_opened") {
-					console.log("Data Channel open for stream id", obj);
-					isDataChannelOpen = true;
-				}
-				else if (info == "data_channel_closed") {
-					console.log("Data Channel closed for stream id", obj);
-					isDataChannelOpen = false;
-				}
-				else if (info == "data_received") {
-					handleNotificationEvent(obj);
-				}
-				else if (info == "session_restored") {
-					handleCameraButtons();
-					join_publish_button.disabled = true;
-					stop_publish_button.disabled = false;
-					startAnimation();
-					console.log(info + "notification received");
-				}
-			},
-			callbackError: function (error, message) {
-				//some of the possible errors, NotFoundError, SecurityError,PermissionDeniedError
-
-				var errorMessage = '';
-				if (error.indexOf("NotAllowedError") != -1
-					|| error.indexOf("PermissionDeniedError") != -1) {
-					errorMessage = "You are not allowed to access camera and mic.";
-					screen_share_checkbox.checked = false;
-					camera_checkbox.checked = false;
-				} else if (error.indexOf("ScreenSharePermissionDenied") != -1) {
-					errorMessage = "You are not allowed to access screen share";
-					screen_share_checkbox.checked = false;
-					camera_checkbox.checked = true;
-				}
-
-				//don't show message if there is not any stream
-				if (error.indexOf("no_active_streams_in_room") != -1 || error.indexOf("no_stream_exist") != -1) {
+					}
+					else {
+						//errorHandler(error, message);
+						$('video').notify("Warning: " + errorHandler(error, message), {
+							autoHideDelay: 5000,
+							className: 'error',
+							position: 'top right'
+						});
+					}
 
 				}
-				else {
-					//errorHandler(error, message);
-					$('video').notify("Warning: " + errorHandler(error, message), {
-						autoHideDelay: 5000,
-						className: 'error',
-						position: 'top right'
-					});
-				}
-
-			}
-		});
+			});
 
 	window.webRTCAdaptor = webRTCAdaptor;
 </script>
