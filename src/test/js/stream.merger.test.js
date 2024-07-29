@@ -22,7 +22,7 @@ describe("StreamMerger", function () {
     streamMerger = new StreamMerger(initialValues);
     streamMerger.audioCtx = createMockAudioContext();
     streamMerger.audioDestination = streamMerger.audioCtx.createMediaStreamDestination();
-    streamMerger.addAusioTrackToCanvasStream = sinon.stub();
+    streamMerger.addAudioTrackToCanvasStream = sinon.stub();
     streamMerger.initializeWebRTCAdaptors = sinon.stub();
     streamMerger.setPlayersInvisible = sinon.stub();
     streamMerger.start();
@@ -102,10 +102,6 @@ describe("StreamMerger", function () {
   
     return mediaStream;
   }
-
-  it("test for test", function () {
-    expect(true).to.be.true;
-  });
 
  
   it("should change the aspect ratio and call resizeAndSortV2", function () {
@@ -575,8 +571,6 @@ it("should stop the stream merger and clean up resources", function () {
   
   streamMerger.addStream(mediaStream1, options1);
 
-  const initialStreamsLength = streamMerger.streams.length;
-
   streamMerger.stop();
 
   expect(streamMerger.started).to.be.false;
@@ -586,6 +580,37 @@ it("should stop the stream merger and clean up resources", function () {
   expect(streamMerger.videoSyncDelayNode).to.be.null;
   expect(streamMerger.result).to.be.null;
 });
+
+it("should start streaming", function () {
+  streamMerger.setPlayersInvisible = sinon.stub();
+  streamMerger.initializeWebRTCAdaptors = sinon.stub();
+  streamMerger.startMerger = sinon.stub();
+  streamMerger.webRTCAdaptorPlayer = {
+    play: sinon.stub()
+  };
+
+  streamMerger.startStreaming();
+
+  expect(streamMerger.setPlayersInvisible.calledOnce).to.be.true;
+  expect(streamMerger.initializeWebRTCAdaptors.calledOnce).to.be.true;
+  expect(streamMerger.startMerger.calledOnce).to.be.true;
+  expect(streamMerger.webRTCAdaptorPlayer.play.calledOnce).to.be.true;
+});
+
+it("should stop streaming", function () {
+  const stopSpy = sinon.stub(); 
+  const stopPlayerSpy = sinon.stub();
+  streamMerger.webRTCAdaptorPublisher = {stop: stopSpy};
+  streamMerger.webRTCAdaptorPlayer = {stop: stopPlayerSpy};
+
+  streamMerger.stopStreaming();
+
+  expect(stopSpy.calledOnceWith(streamMerger.publishStreamId)).to.be.true;
+  expect(stopPlayerSpy.calledOnceWith(streamMerger.roomName)).to.be.true;
+  expect(streamMerger.isStopping).to.be.true;
+});
+
+
   
   
   

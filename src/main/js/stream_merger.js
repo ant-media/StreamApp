@@ -380,10 +380,10 @@ export class StreamMerger {
         // Get the result of merged stream canvas
         this.result = this.canvas.captureStream(this.fps)
 
-        this.addAusioTrackToCanvasStream();
+        this.addAudioTrackToCanvasStream();
     }
 
-    addAusioTrackToCanvasStream() {
+    addAudioTrackToCanvasStream() {
         // Remove "dead" audio track
         const deadTrack = this.result.getAudioTracks()[0];
         if (deadTrack)
