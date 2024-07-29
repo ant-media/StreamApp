@@ -18,7 +18,7 @@ describe("StreamMerger", function () {
       websocketURL: "ws://example.com",
       headless: false,
     };
-    
+
     streamMerger = new StreamMerger(initialValues);
     streamMerger.audioCtx = createMockAudioContext();
     streamMerger.audioDestination = streamMerger.audioCtx.createMediaStreamDestination();
@@ -239,6 +239,114 @@ describe("StreamMerger", function () {
     expect(streamMerger.streams[2].height).to.equal(240);
     expect(streamMerger.streams[2].x).to.equal(160);
     expect(streamMerger.streams[2].y).to.equal(240);
+  });
+
+  it("should update the layout based on the received message", function () {
+    const layoutData = {
+      layoutOptions: {
+        canvas: {
+          width: 640,
+          height: 480
+        },
+        layout: [
+          {
+            streamId: "stream1",
+            region: {
+              xPos: 0,
+              yPos: 0,
+              width: 320,
+              height: 240
+            },
+            placeholderImageUrl: "https://example.com/image1.jpg"
+          },
+          {
+            streamId: "stream2",
+            region: {
+              xPos: 320,
+              yPos: 0,
+              width: 320,
+              height: 240
+            },
+            placeholderImageUrl: "https://example.com/image2.jpg"
+          }
+        ]
+      },
+    streamId: "stream0",
+    };
+
+    const video1 = document.createElement("video");
+    video1.srcObject = createMockMediaStream();
+    const video2 = document.createElement("video");
+    video2.srcObject = createMockMediaStream();
+
+    sinon.stub(document, 'getElementById').withArgs('remoteVideostream1').returns(video1)
+    .withArgs('remoteVideostream2').returns(video2);
+
+    streamMerger.publishStreamId = "stream0";
+
+    streamMerger.processPublisherMessageAndUpdateLayout(JSON.stringify(layoutData));
+
+    expect(streamMerger.streams.length).to.equal(2);
+
+    const stream1 = streamMerger.streams[0];
+    expect(stream1.streamId).to.equal("stream1");
+    expect(stream1.x).to.equal(0);
+    expect(stream1.y).to.equal(0);
+    expect(stream1.width).to.equal(320);
+    expect(stream1.height).to.equal(240);
+    expect(stream1.element).to.equal(video1);
+
+    const stream2 = streamMerger.streams[1];
+    expect(stream2.streamId).to.equal("stream2");
+    expect(stream2.x).to.equal(320);
+    expect(stream2.y).to.equal(0);
+    expect(stream2.width).to.equal(320);
+    expect(stream2.height).to.equal(240);
+    expect(stream2.element).to.equal(video2);
+  });
+
+  it("should assign video tracks correctly", function () {
+    const data = `{
+      "streamId": "stream1",
+      "eventType": "VIDEO_TRACK_ASSIGNMENT_LIST",
+      "payload": [
+        {
+          "videoLabel": "video1",
+          "trackId": "track1"
+        },
+        {
+          "videoLabel": "video2",
+          "trackId": "track2"
+        }
+      ]
+    }`;
+
+    streamMerger.processPlayerNotificationEvent(data);
+
+    expect(streamMerger.trackAMSStreamMap["video1"]).to.equal("track1");
+    expect(streamMerger.trackAMSStreamMap["video2"]).to.equal("track2");
+  });
+
+  it("should assign audio tracks correctly", function () {
+    const data = `{
+      "streamId": "stream1",
+      "eventType": "AUDIO_TRACK_ASSIGNMENT",
+      "payload": [
+        {
+          "audioLabel": "audio1",
+          "trackId": "track1"
+        },
+        {
+          "audioLabel": "audio2",
+          "trackId": "track2"
+        }
+      ]
+    }`;
+
+    streamMerger.processPlayerNotificationEvent(data);
+
+    expect(streamMerger.trackAMSStreamMap["audio1"]).to.equal("track1");
+    expect(streamMerger.trackAMSStreamMap["audio2"]).to.equal("track2");
   });
   
   
