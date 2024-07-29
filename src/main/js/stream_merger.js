@@ -657,32 +657,34 @@ export class StreamMerger {
 		}
 	}
 
+    publisherAdaptorCallback(info, obj) {
+        if (info == "initialized") {
+            console.log("initialized");
+            if(this.headless) {
+                this.startMerger();
+            }
+        } 
+        else if (info == "publish_started") {
+            console.log("publish started");
+            this.streamStartedCallback();
+        } 
+        else if (info == "publish_finished") {
+            console.log("publish finished");
+            this.streamFinishedCallback();
+        }
+        else if (info == "data_received") {
+            console.log("data_received: " + obj.data);
+            this.processPublisherMessageAndUpdateLayout(obj.data);
+        }
+    }
+
 	createPublisherAdaptor() {
 		return new WebRTCAdaptor({
 			websocketURL: this.websocketURL,
 			localVideoId: "localVideo",
 			isPlayMode: true,
 			debug: true,
-			callback: function (info, obj) {
-				if (info == "initialized") {
-					console.log("initialized");
-					if(this.headless) {
-						this.startMerger();
-					}
-				} 
-				else if (info == "publish_started") {
-                    console.log("publish started");
-                    this.streamStartedCallback();
-                } 
-                else if (info == "publish_finished") {
-                    console.log("publish finished");
-                    this.streamFinishedCallback();
-                }
-				else if (info == "data_received") {
-					console.log("data_received: " + obj.data);
-					this.processPublisherMessageAndUpdateLayout(obj.data);
-				}
-			}.bind(this),
+			callback: publisherAdaptorCallback.bind(this),
 			callbackError: function (error) {
 				console.log("error callback: " + JSON.stringify(error));
 			}.bind(this)
@@ -714,26 +716,28 @@ export class StreamMerger {
 		}
 	}
 
+    playerAdaptorCallback(info, obj) {
+        if (info == "initialized") {
+            console.log("initialized");
+            if(this.headless) {
+                this.webRTCAdaptorPlayer.play(this.roomName);
+            }
+        } 
+        else if (info == "newStreamAvailable") {
+            this.webRTCAdaptorPlayer.requestVideoTrackAssignments(this.roomName);
+            this.playVideo(obj);
+        } 
+        else if (info == "data_received") {
+            this.processPlayerNotificationEvent(obj.data);
+        } 
+    }
+
 	createPlayerAdaptor() {
 		return new WebRTCAdaptor({
 			websocketURL: this.websocketURL,
 			isPlayMode: true,
 			debug: true,
-			callback: function (info, obj) {
-				if (info == "initialized") {
-					console.log("initialized");
-					if(this.headless) {
-						this.webRTCAdaptorPlayer.play(this.roomName);
-					}
-				} 
-				else if (info == "newStreamAvailable") {
-					this.webRTCAdaptorPlayer.requestVideoTrackAssignments(this.roomName);
-					this.playVideo(obj);
-				} 
-				else if (info == "data_received") {
-					this.processPlayerNotificationEvent(obj.data);
-				} 
-			}.bind(this),
+			callback: playerAdaptorCallback.bind(this),
 			callbackError: function (error) {
 				console.log("error callback: " + JSON.stringify(error));
 				if (error == "no_stream_exist") {

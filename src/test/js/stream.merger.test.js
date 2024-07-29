@@ -611,7 +611,58 @@ it("should stop streaming", function () {
 });
 
 
-  
+it('should handle publisherAdaptorCallback correctly', function() {
+
+  sinon.stub(streamMerger, 'startMerger');
+  sinon.stub(streamMerger, 'streamStartedCallback');
+  sinon.stub(streamMerger, 'streamFinishedCallback');
+  sinon.stub(streamMerger, 'processPublisherMessageAndUpdateLayout');
+
+  // Test "initialized" case
+  streamMerger.headless = true;
+  streamMerger.publisherAdaptorCallback('initialized');
+  expect(streamMerger.startMerger.calledOnce).to.be.true;
+
+  // Test "publish_started" case
+  streamMerger.publisherAdaptorCallback('publish_started');
+  expect(streamMerger.streamStartedCallback.calledOnce).to.be.true;
+
+  // Test "publish_finished" case
+  streamMerger.publisherAdaptorCallback('publish_finished');
+  expect(streamMerger.streamFinishedCallback.calledOnce).to.be.true;
+
+  // Test "data_received" case
+  const dataObj = { data: 'test_data' };
+  streamMerger.publisherAdaptorCallback('data_received', dataObj);
+  expect(streamMerger.processPublisherMessageAndUpdateLayout.calledOnceWith('test_data')).to.be.true;
+});
+
+
+it('should handle playerAdaptorCallback correctly', function() {
+
+  const playSpy = sinon.spy();
+  const requestVideoTrackAssignmentsSpy = sinon.spy();
+  streamMerger.webRTCAdaptorPlayer = {play: playSpy, requestVideoTrackAssignments: requestVideoTrackAssignmentsSpy};
+  sinon.stub(streamMerger, 'playVideo');
+  sinon.stub(streamMerger, 'processPlayerNotificationEvent');
+
+  // Test "initialized" case
+  streamMerger.headless = true;
+  streamMerger.roomName = 'testRoom';
+  streamMerger.playerAdaptorCallback('initialized');
+  expect(playSpy.calledOnceWith('testRoom')).to.be.true;
+
+  // Test "newStreamAvailable" case
+  const obj = { stream: 'testStream' };
+  streamMerger.playerAdaptorCallback('newStreamAvailable', obj);
+  expect(requestVideoTrackAssignmentsSpy.calledOnceWith('testRoom')).to.be.true;
+  expect(streamMerger.playVideo.calledOnceWith(obj)).to.be.true;
+
+  // Test "data_received" case
+  const dataObj = { data: 'test_data' };
+  streamMerger.playerAdaptorCallback('data_received', dataObj);
+  expect(streamMerger.processPlayerNotificationEvent.calledOnceWith('test_data')).to.be.true;
+});
   
   
 });
