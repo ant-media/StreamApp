@@ -4,13 +4,7 @@ import {WebRTCAdaptor} from "./webrtc_adaptor.js"
 const Logger = window.log;
 
 export class StreamMerger {
-    /**
-     * 
-     * @param {number} width 
-     * @param {number} height 
-     * @param {boolean} autoMode 
-     * @param {*} aspectRatio 
-     */
+
     constructor(initialValues) {
         this.streams = [];
         this.width = 480;
@@ -60,13 +54,15 @@ export class StreamMerger {
             }
         }
 
-        //document.getElementById("players").style.display = "none";
-        document.getElementById("players").style.opacity = 0;    
-
         if (this.headless) {
             this.startStreaming();
         }
         
+    }
+
+    setPlayersInvisible() {
+        //document.getElementById("players").style.display = "none";
+        document.getElementById("players").style.opacity = 0;    
     }
 
     initializeWebRTCAdaptors() {
@@ -618,6 +614,7 @@ export class StreamMerger {
 	}
 
 	startStreaming() {
+        this.setPlayersInvisible();
         this.initializeWebRTCAdaptors();
         this.isStopping = false;
 		this.startMerger();
