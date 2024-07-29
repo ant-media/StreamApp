@@ -483,13 +483,14 @@ describe("StreamMerger", function () {
     // Create a mock MediaStream object
     let mediaStreamMock = createMockMediaStream();
 
+    const originalMediaStream = window.MediaStream;
     // Stub the MediaStream constructor to return the mock MediaStream object
     window.MediaStream = sinon.stub().returns(mediaStreamMock);
     streamMerger.playVideo({ streamId, track: trackMock});
    
     const videoElement = document.getElementById("remoteVideostream1");
 
-    console.log(document.documentElement.outerHTML);
+    //console.log(document.documentElement.outerHTML);
 
     expect(videoElement).to.not.be.null;
 
@@ -497,9 +498,94 @@ describe("StreamMerger", function () {
     streamMerger.removeRemoteVideo(streamId);
     expect(document.getElementById("remoteVideostream1")).to.be.null;
 
-    delete window.MediaStream;
+    window.MediaStream = originalMediaStream;
   });
 
+
+  
+it('should mute and unmute the stream correctly', function() {
+  const streamId = 'stream1';
+  streamMerger.streams = [
+    {
+        streamId: streamId,
+        element: true,
+        mute: false,
+        audioGainNode: { gain: { value: 1 } }
+    }
+  ];
+
+  // Mute the stream
+  streamMerger.muteStream(streamId);
+  let stream = streamMerger.streams[0];
+  expect(stream.mute).to.be.true;
+  expect(stream.audioGainNode.gain.value).to.equal(0);
+
+  // Unmute the stream
+  streamMerger.muteStream(streamId);
+  stream = streamMerger.streams[0];
+  expect(stream.mute).to.be.false;
+  expect(stream.audioGainNode.gain.value).to.equal(1);
+});
+
+it("should remove the specified stream from the streams array", function () {
+  const mediaStream1 = createMockMediaStream();
+  const options1 = { streamId: "stream1", width: 320, height: 240, Xindex: 0, Yindex: 0, mute: false };
+  
+  const mediaStream2 = createMockMediaStream();
+  const options2 = { streamId: "stream2", width: 320, height: 240, Xindex: 1, Yindex: 0, mute: false };
+  
+  const mediaStream3 = createMockMediaStream();
+  const options3 = { streamId: "stream3", width: 320, height: 240, Xindex: 0, Yindex: 1, mute: false };
+  
+  streamMerger.addStream(mediaStream1, options1);
+  streamMerger.addStream(mediaStream2, options2);
+  streamMerger.addStream(mediaStream3, options3);
+
+  const initialStreamsLength = streamMerger.streams.length;
+
+  streamMerger.removeStream("stream2");
+
+  expect(streamMerger.streams.length).to.equal(initialStreamsLength - 1);
+  expect(streamMerger.streams.find(stream => stream.streamId === "stream2")).to.be.undefined;
+});
+
+
+it("should remove all streams from the streams array", function () {
+  const mediaStream1 = createMockMediaStream();
+  const options1 = { streamId: "stream1", width: 320, height: 240, Xindex: 0, Yindex: 0, mute: false };
+  
+  const mediaStream2 = createMockMediaStream();
+  const options2 = { streamId: "stream2", width: 320, height: 240, Xindex: 1, Yindex: 0, mute: false };
+  
+  const mediaStream3 = createMockMediaStream();
+  const options3 = { streamId: "stream3", width: 320, height: 240, Xindex: 0, Yindex: 1, mute: false };
+  
+  streamMerger.addStream(mediaStream1, options1);
+  streamMerger.addStream(mediaStream2, options2);
+  streamMerger.addStream(mediaStream3, options3);
+
+  streamMerger.clearAllStreams();
+
+  expect(streamMerger.streams.length).to.equal(0);
+});
+
+it("should stop the stream merger and clean up resources", function () {
+  const mediaStream1 = createMockMediaStream();
+  const options1 = { streamId: "stream1", width: 320, height: 240, Xindex: 0, Yindex: 0, mute: false };
+  
+  streamMerger.addStream(mediaStream1, options1);
+
+  const initialStreamsLength = streamMerger.streams.length;
+
+  streamMerger.stop();
+
+  expect(streamMerger.started).to.be.false;
+  expect(streamMerger.streams.length).to.equal(0);
+  expect(streamMerger.audioCtx).to.be.null;
+  expect(streamMerger.audioDestination).to.be.null;
+  expect(streamMerger.videoSyncDelayNode).to.be.null;
+  expect(streamMerger.result).to.be.null;
+});
   
   
   
