@@ -12,7 +12,7 @@ describe("StreamMerger", function () {
 
     console.log("**** starting test: ****", currentTest.title);
 
-    //clock = sinon.useFakeTimers();
+    clock = sinon.useFakeTimers();
     sandbox = sinon.createSandbox();
     const initialValues = {
       websocketURL: "ws://example.com",
@@ -34,7 +34,7 @@ describe("StreamMerger", function () {
     // Restore the default sandbox and timers
     //streamMerger.stopStreaming();
     sinon.restore();
-    //clock.restore();
+    clock.restore();
     sandbox.restore();
     
     console.log("**** ending test: ****", currentTest.title);
