@@ -18,6 +18,7 @@ describe("StreamMerger", function () {
       websocketURL: "ws://example.com",
       headless: false,
     };
+    
     streamMerger = new StreamMerger(initialValues);
     streamMerger.audioCtx = createMockAudioContext();
     streamMerger.audioDestination = streamMerger.audioCtx.createMediaStreamDestination();
