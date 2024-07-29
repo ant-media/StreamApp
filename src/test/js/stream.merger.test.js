@@ -287,6 +287,62 @@ describe("StreamMerger", function () {
     expect(streamMerger.streams[3].y).to.equal(240);
   });
 
+  it("should resize and sort five streams correctly", function () {
+    streamMerger.width = 480;
+    streamMerger.height = 360;
+
+    const mediaStream1 = new MediaStream();
+    const options1 = { streamId: "stream1", width: 150, height: 150, Xindex: 0, Yindex: 0, mute: false };
+    
+    const mediaStream2 = new MediaStream();
+    const options2 = { streamId: "stream2", width: 150, height: 150, Xindex: 1, Yindex: 0, mute: false };
+    
+    const mediaStream3 = new MediaStream();
+    const options3 = { streamId: "stream3", width: 150, height: 150, Xindex: 0, Yindex: 1, mute: false };
+
+    const mediaStream4 = new MediaStream();
+    const options4 = { streamId: "stream4", width: 150, height: 150, Xindex: 1, Yindex: 1, mute: false };
+
+    const mediaStream5 = new MediaStream();
+    const options5 = { streamId: "stream5", width: 150, height: 150, Xindex: 1, Yindex: 1, mute: false };
+    
+    streamMerger.streams.push(mediaStream1);
+    streamMerger.streams.push(mediaStream2);
+    streamMerger.streams.push(mediaStream3);
+    streamMerger.streams.push(mediaStream4);
+    streamMerger.streams.push(mediaStream5);
+
+
+    // Call the resizeAndSortV2 method
+    streamMerger.resizeAndSortV2();
+  
+    // Assert the expected values
+    expect(streamMerger.streams[0].width).to.equal(160);
+    expect(streamMerger.streams[0].height).to.equal(120);
+    expect(streamMerger.streams[0].x).to.equal(0);
+    expect(streamMerger.streams[0].y).to.equal(0);
+  
+    expect(streamMerger.streams[1].width).to.equal(160);
+    expect(streamMerger.streams[1].height).to.equal(120);
+    expect(streamMerger.streams[1].x).to.equal(160);
+    expect(streamMerger.streams[1].y).to.equal(0);
+  
+    expect(streamMerger.streams[2].width).to.equal(160);
+    expect(streamMerger.streams[2].height).to.equal(120);
+    expect(streamMerger.streams[2].x).to.equal(320);
+    expect(streamMerger.streams[2].y).to.equal(0);
+
+    expect(streamMerger.streams[3].width).to.approximately(213.3, 0.1);
+    expect(streamMerger.streams[3].height).to.equal(160);
+    expect(streamMerger.streams[3].x).to.approximately(26.7, 0.1);
+    expect(streamMerger.streams[3].y).to.equal(120);
+
+    expect(streamMerger.streams[4].width).to.approximately(213.3, 0.1);
+    expect(streamMerger.streams[4].height).to.equal(160);
+    expect(streamMerger.streams[4].x).to.equal(240);
+    expect(streamMerger.streams[4].y).to.equal(120);
+  });
+
   it("should update the layout based on the received message", function () {
     const layoutData = {
       layoutOptions: {

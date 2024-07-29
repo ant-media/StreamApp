@@ -630,8 +630,6 @@ export class StreamMerger {
 	}
 
 	processPublisherMessageAndUpdateLayout(data) {
-        console.log("***** layout1");
-
 		var messageObject = JSON.parse(data);
 		if (messageObject == null || typeof messageObject != "object" || messageObject.streamId == null || typeof messageObject.streamId == "undefined" || messageObject.streamId !== this.publishStreamId) {
 			return;
@@ -642,11 +640,8 @@ export class StreamMerger {
 		var canvasOptions = layoutOptions.canvas;
 		this.updateCanvasSize(canvasOptions.width, canvasOptions.height);
 		var layout = layoutOptions.layout;
-        console.log("***** layout");
 		layout.forEach(function (item) {
 			let video = document.getElementById("remoteVideo" + item.streamId);
-            console.log("*****  remoteVideo" + item.streamId);
-            console.log(video+"   "+item.streamId+"   "+video.srcObject);
 			if (video != null && typeof video != "undefined" && video.srcObject != null && typeof video.srcObject != "undefined") {
 				let region = item.region;
 				this.addStream(video.srcObject, { x: region.xPos, y: region.yPos, width: region.width, height: region.height, streamId: item.streamId, placeholderImageUrl: item.placeholderImageUrl, element: video});
