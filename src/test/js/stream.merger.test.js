@@ -450,6 +450,57 @@ describe("StreamMerger", function () {
     expect(streamMerger.trackAMSStreamMap["audio1"]).to.equal("track1");
     expect(streamMerger.trackAMSStreamMap["audio2"]).to.equal("track2");
   });
+
+  it("should not create video element and add track before get assignments", function () {
+    const streamId = "stream1";
+    const trackId = "ARDAMSvtrack1";
+
+    streamMerger.playVideo({ streamId, track: { id: trackId, kind: "video" } });
+   
+    const videoElement = document.getElementById("remoteVideostream1");
+
+    expect(videoElement).to.be.null;
+  });
+
+
+  it("should create video element and add track", function () {
+    const streamId = "stream1";
+    const trackId = "ARDAMSv"+"track1";
+
+    const players = document.createElement("div");
+    players.id = "players"; 
+
+    document.body.appendChild(players);
+    expect(document.getElementById("players")).not.to.be.null;
+
+    streamMerger.trackAMSStreamMap["track1"] = streamId;
+
+    let trackMock = {
+      id: trackId,
+      kind: "video",
+    };
+
+    // Create a mock MediaStream object
+    let mediaStreamMock = createMockMediaStream();
+
+    // Stub the MediaStream constructor to return the mock MediaStream object
+    window.MediaStream = sinon.stub().returns(mediaStreamMock);
+    streamMerger.playVideo({ streamId, track: trackMock});
+   
+    const videoElement = document.getElementById("remoteVideostream1");
+
+    console.log(document.documentElement.outerHTML);
+
+    expect(videoElement).to.not.be.null;
+
+
+    streamMerger.removeRemoteVideo(streamId);
+    expect(document.getElementById("remoteVideostream1")).to.be.null;
+
+    delete window.MediaStream;
+  });
+
+  
   
   
 });
