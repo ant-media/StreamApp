@@ -22,6 +22,7 @@ describe("StreamMerger", function () {
     streamMerger.audioDestination = streamMerger.audioCtx.createMediaStreamDestination();
     streamMerger.addAusioTrackToCanvasStream = sinon.stub();
     streamMerger.initializeWebRTCAdaptors = sinon.stub();
+    streamMerger.setPlayersInvisible = sinon.stub();
     streamMerger.start();
 
   });
