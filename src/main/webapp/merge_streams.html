@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta charset="UTF-8">
 <link rel="stylesheet" href="css/external/bootstrap4/bootstrap.min.css" >
-<script src="js/external/adapter-latest.js"></script>
 <link rel="stylesheet" href="css/common.css" />
 
 <style>
@@ -66,6 +65,8 @@ video {
 </style>
 </head>
 <body>
+	<div id="players">
+    </div>
 
 	<div class="container">
 		<div class="header clearfix">
@@ -129,9 +130,9 @@ video {
 
 					<div class="form-group">
 						<button class="btn btn-primary"
-							id="join_publish_button">Start</button>
+							id="start_button">Start</button>
 						<button class="btn btn-primary"
-							id="stop_publish_button">Stop</button>
+							id="stop_button">Stop</button>
 					</div>
 				</div>
 				<span class="badge badge-warning" id="bitrateInfo" style="font-size:14px;display:none"
@@ -154,22 +155,72 @@ video {
 	<script src="js/external/notify.min.js" crossorigin="anonymous"></script>
 </body>
 <script type="module">
-	import {WebRTCAdaptor} from "./js/webrtc_adaptor.js"
     import {getUrlParameter} from "./js/fetch.stream.js"
     import {StreamMerger} from "./js/stream_merger.js"
+	import { generateRandomString, getWebSocketURL, errorHandler } from "./js/utility.js"
+
 
     /**
-    * This page accepts 3 arguments through url parameter
+    * This page accepts 6 arguments through url parameter
     * 1. "streamId": the stream id to publish stream. It's optional. ?streamId=stream1
-    * 2. "playOnly": If it's true, user does not publish stream. It only play streams in the room.
+	* 2. "roomName": the room name to join. It's optional. ?roomName=room1
     * 3. "token": It's experimental.
+	* 4. "initialWidth": The initial width for the video stream. If not provided, defaults to 320.
+	* 5. "initialHeight": The initial height for the video stream. If not provided, defaults to 240.
+	* 6. "headless": If true, the stream will start automatically. If not provided, defaults to false.
+	* 
     */
 
 	var token = getUrlParameter("token");
 	var streamId = getUrlParameter("streamId");
 	var roomName = getUrlParameter("roomName");
+	var initialWidth = getUrlParameter("width");
+	var initialHeight = getUrlParameter("height");
+	var headless = getUrlParameter("headless");
+
+	var websocketURL = getWebSocketURL(location);
+	var restURL = getRestURL(location);
+
+	var roomNameBox = document.getElementById("roomName");
+	var streamNameBox = document.getElementById("streamId");
+
+	if (initialHeight == null || initialHeight == "") {
+		initialHeight = 240;
+	}
+
+	if (initialWidth == null || initialWidth == "") {
+		initialWidth = 320;
+	}
+
+	if (headless == null || headless == "") {
+		headless = false;
+	}
+
+	if(roomName != null){
+		roomNameBox.value = roomName;
+	}
+
+	if(streamId != null){
+		streamNameBox.value = streamId;
+	}
+
     var playOnly = true;
-	var merger = new StreamMerger(320,240, true, "4:3");
+	var merger = new StreamMerger({
+		width: initialWidth,
+		height: initialHeight,
+		autoMode: !headless,
+		headless: headless,
+		publishStreamId: streamNameBox.value,
+		roomName: roomNameBox.value,
+		token: token,
+		websocketURL: websocketURL,
+		restURL: restURL,
+		streamStartedCallback: () => streamStarted(),
+		streamFinishedCallback: () => streamFinished(),
+	});
+
+	window.merger = merger;
+
 
 	var narrow = document.getElementById("narrow");
 	narrow.addEventListener("click", toggleRatio, false);
@@ -180,14 +231,11 @@ video {
 	var sb = document.querySelector('#framework');
 	sb.addEventListener("click" , toggleResolution, false);
 
-	var join_publish_button = document.getElementById("join_publish_button");
-	join_publish_button.addEventListener("click", joinRoom, false);
-	var stop_publish_button = document.getElementById("stop_publish_button");
-	stop_publish_button.addEventListener("click", leaveRoom, false);
-	var roomNameBox = document.getElementById("roomName");
-	var streamNameBox = document.getElementById("streamId");
+	var start_button = document.getElementById("start_button");
+	start_button.addEventListener("click", start, false);
+	var stop_button = document.getElementById("stop_button");
+	stop_button.addEventListener("click", stop, false);
 
-	//Handles radio buttons for screen share feature
 	if (document.querySelector('input[name="videoSource"]')) {
   		document.querySelectorAll('input[name="videoSource"]').forEach((elem) => {
     		elem.addEventListener("change", function(event) {
@@ -197,22 +245,6 @@ video {
   		});
 	}
 
-	var roomOfStream = new Array();
-	var streamsList = new Array();
-
-	var publishStreamId;
-	var isDataChannelOpen = false;
-    var roomTimerId = -1;
-	var streamCount = 0;
-	var noStream = false;
-
-	if(roomName != null){
-			roomNameBox.value = roomName;
-	}
-
-	if(streamId != null){
-		streamNameBox.value = streamId;
-	}
 	function toggleResolution(event){
 		merger.changeStreamSize(sb.value);
 	}
@@ -223,346 +255,54 @@ video {
 		else{
 			merger.changeAspectRatio("16:9");
 		}
-
 	}
 
-	function sendNotificationEvent(eventType) {
-		if(isDataChannelOpen) {
-			var notEvent = { streamId: publishStreamId, eventType:eventType };
-
-			webRTCAdaptor.sendData(publishStreamId, JSON.stringify(notEvent));
-		}	else {
-			console.log("Could not send the notification because data channel is not open.");
-		}
+	function start() {
+		merger.startStreaming();
 	}
 
-	function handleNotificationEvent(obj) {
-		console.log("Received data : ", obj.data);
-		var notificationEvent = JSON.parse(obj.data);
-		if(notificationEvent != null && typeof(notificationEvent) == "object") {
-		  var eventStreamId = notificationEvent.streamId;
-		  var eventTyp = notificationEvent.eventType;
-
-			if(eventTyp == "CAM_TURNED_OFF") {
-					console.log("Camera turned off for : ", eventStreamId);
-			} else if (eventTyp == "CAM_TURNED_ON"){
-					console.log("Camera turned on for : ", eventStreamId);
-			} else if (eventTyp == "MIC_MUTED"){
-					console.log("Microphone muted for : ", eventStreamId);
-			} else if (eventTyp == "MIC_UNMUTED"){
-					console.log("Microphone unmuted for : ", eventStreamId);
-			}
-	  }
+	function stop() {
+		merger.stopStreaming();
 	}
-
-	function mergeStreams(){
-		var delayInMilliseconds = 1500;
-
-		setTimeout(function() {
-			merger.start();
-			var result = merger.getResult();
-			webRTCAdaptor.mediaManager.gotStream(result);
-			console.log("streamslist = " + streamsList);
-			if(streamsList.length > 0){
-				publish(publishStreamId);
-				noStream = false;
-			}
-			else{
-				$.notify("There is no stream available in the room", {
-					autoHideDelay:5000,
-					className:'error',
-					position:'top center'
-				});
-				noStream = true;
-			}
-		}, delayInMilliseconds);
-	}
-
-	function joinRoom() {
-		webRTCAdaptor.joinRoom(roomNameBox.value, streamId);
-	}
-
-	function leaveRoom() {
-		webRTCAdaptor.leaveFromRoom(roomNameBox.value);
-		merger.stop();
-	}
-
-	function publish(streamName, token) {
-		streamName = streamNameBox.value;
-		publishStreamId = streamName;
-		webRTCAdaptor.publish(streamName, token);
-	}
-
-	function streamInformation(obj) {
-		webRTCAdaptor.play(obj.streamId, token,	roomNameBox.value);
-	}
-
-	function playVideo(stream, streamId) {
-		var room = roomOfStream[streamId];
-		console.debug("new stream available with id: "
-				+ streamId + "on the room:" + room);
-
-		var video = document.getElementById("remoteVideo"+streamId);
-
-		if (video == null) {
-			createRemoteVideo(streamId);
-			video = document.getElementById("remoteVideo"+streamId);
-		}
-
-		video.srcObject = stream;
-	}
-
-	function createRemoteVideo(streamId) {
-		var player = document.createElement("div");
-		player.className = "col-sm-3";
-		player.id = "player"+streamId;
-		player.innerHTML = '<video id="remoteVideo'+streamId+'"controls autoplay playsinline></video>';
-		document.getElementById("players").appendChild(player);
-    }
-    function createCanvas(){
-        var canvas = document.createElement("canvas");
-		var canvasContext = canvas.getContext("2d");
-    }
-
-	function removeRemoteVideo(streamId) {
-		var video = document.getElementById("remoteVideo"+streamId);
-		if (video != null) {
-			var player = document.getElementById("player" + streamId);
-			video.srcObject = null;
-			document.getElementById("players").removeChild(player);
-		}
-    }
 
 	function startAnimation() {
-
-		$("#broadcastingInfo")
-				.fadeIn(
-						800,
-						function() {
-							$("#broadcastingInfo")
-									.fadeOut(
-											800,
-											function() {
-												var state = webRTCAdaptor
-														.signallingState(publishStreamId);
-												if (state != null
-														&& state != "closed") {
-													var iceState = webRTCAdaptor
-															.iceConnectionState(publishStreamId);
-													if (iceState != null
-															&& iceState != "failed"
-															&& iceState != "disconnected") {
-														startAnimation();
-													}
-												}
-											});
-						});
-
-	}
-	var pc_config = {
-			'iceServers' : [ {
-				'urls' : 'stun:stun1.l.google.com:19302'
-			} ]
-		};
-
-
-	var sdpConstraints = {
-		OfferToReceiveAudio : false,
-		OfferToReceiveVideo : false
-
-	};
-
-	var mediaConstraints = {
-		video : true,
-		audio : true
-	};
-    var oldId = null;
-	var appName = location.pathname.substring(0, location.pathname
-			.lastIndexOf("/") + 1);
-	var path = location.hostname + ":" + location.port + appName + "websocket";
-	var websocketURL = "ws://" + path;
-
-	if (location.protocol.startsWith("https")) {
-		websocketURL = "wss://" + path;
-	}
-	var xindex = 0;
-	var yindex = 0;
-
-	var webRTCAdaptor = new WebRTCAdaptor(
-			{
-				websocket_url : websocketURL,
-				mediaConstraints : mediaConstraints,
-				peerconnection_config : pc_config,
-				sdp_constraints : sdpConstraints,
-				localVideoId : "localVideo",
-				isPlayMode : true,
-				debug : false,
-				callback : (info, obj) => {
-					if (info == "initialized") {
-						console.log("initialized");
-						join_publish_button.disabled = false;
-						stop_publish_button.disabled = true;
-					}
-					else if (info == "joinedTheRoom") {
-						mergeStreams();
-						var room = obj.ATTR_ROOM_NAME;
-						roomOfStream[obj.streamId] = room;
-						console.log("joined the room: "
-								+ roomOfStream[obj.streamId]);
-						console.log(obj)
-						publishStreamId = obj.streamId
-						join_publish_button.disabled = true;
-						stop_publish_button.disabled = false;
-
-						if (obj.streams != null) {
-							obj.streams.forEach(function(item) {
-								console.log("Stream joined with ID: "+item);
-								webRTCAdaptor.play(item, token,
-										roomNameBox.value);
-							});
-							streamsList = obj.streams;
-						}
-						roomTimerId = setInterval(() => {
-							webRTCAdaptor.getRoomInfo(roomNameBox.value, publishStreamId);
-						}, 5000);
-					}
-					else if (info == "newStreamAvailable") {
-						if( noStream){
-							mergeStreams();
-						}
-						noStream = false;
-                        if (oldId != obj.streamId){
-							merger.addStream(obj.stream,{ Xindex : xindex, Yindex : yindex, streamId : obj.streamId});
-							if(xindex == 3){
-								yindex ++;
-								xindex = 0;
-							}
-							xindex ++;
-							console.debug("adding stream id = " + obj.streamId);
-                        }
-						oldId = obj.streamId;
-
-					}
-					else if (info == "publish_started") {
-						//stream is being published
-						console.debug("publish started to room: "
-                                + roomOfStream[obj.streamId]);
-						startAnimation();
-					}
-					else if (info == "publish_finished") {
-						//stream is being finished
-                        console.debug("publish finished");
-                        join_publish_button.disabled = false;
-						stop_publish_button.disabled = true;
-
-						if (streamsList != null) {
-							streamsList.forEach(function(item) {
-								removeRemoteVideo(item);
-							});
-						}
-						// we need to reset streams list
-						streamsList = new Array();
-					}
-					else if (info == "screen_share_stopped") {
-						console.log("screen share stopped");
-					}
-					else if (info == "leavedFromRoom") {
-						var room = obj.ATTR_ROOM_NAME;
-						console.debug("leaved from the room:" + room);
-						if (roomTimerId != null)
-						{
-							clearInterval(roomTimerId);
-						}
-					}
-					else if (info == "closed") {
-						//console.log("Connection closed");
-						if (typeof obj != "undefined") {
-							console.log("Connecton closed: "
-									+ JSON.stringify(obj));
-						}
-					}
-					else if (info == "play_finished") {
-						console.log("play_finished");
-						var video = document.getElementById("remoteVideo"
-								+ obj.streamId);
-						if (video != null) {
-							video.srcObject = null;
-						}
-						merger.removeStream(obj.streamId);
-					}
-					else if (info == "streamInformation") {
-						streamInformation(obj);
-					}
-					else if (info == "roomInformation") {
-						var tempRoomStreamList = Array();
-						// Check stream is in room
-						// PS: Old room list mean streams doesn't have own stream ID
-						if (streamsList != null) {
-							for (var i = 0; i < streamsList.length; i++) {
-								var oldStreamListItem = streamsList[i];
-
-								var oldRoomItemIndex = streamsList.indexOf(oldStreamListItem);
-								var newRoomItemIndex = obj.streams.indexOf(oldStreamListItem);
-
-								// If streams item is in obj.streams, it's
-								if(obj.streams.includes(oldStreamListItem)){
-									if (newRoomItemIndex > -1) {
-  										obj.streams.splice(newRoomItemIndex, 1);
-									}
-									tempRoomStreamList.push(oldStreamListItem);
-								}
-								else{
-									removeRemoteVideo(oldStreamListItem);
-								}
-							}
-						}
-
-						//Play new streams in list
-						if (obj.streams != null) {
-							obj.streams.forEach(function(item) {
-								tempRoomStreamList.push(item);
-								console.log("Stream joined with ID: "+item);
-								webRTCAdaptor.play(item, token,
-										roomNameBox.value);
-							});
-						}
-						streamsList = tempRoomStreamList;
-					}
-					else if(info == "data_received") {
-						handleNotificationEvent(obj);
-					}
-				},
-				callbackError : function(error, message) {
-					//some of the possible errors, NotFoundError, SecurityError,PermissionDeniedError
-
-					if(error.indexOf("publishTimeoutError") != -1 && roomTimerId != null){
-						clearInterval(roomTimerId);
-					}
-
-					console.log("error callback: " + JSON.stringify(error));
-					var errorMessage = JSON.stringify(error);
-					if (typeof message != "undefined") {
-						errorMessage = message;
-					}
-					var errorMessage = JSON.stringify(error);
-                    if (error.indexOf("TypeError") != -1) {
-						errorMessage = "Video/Audio is required.";
-					} else if (error.indexOf("UnsecureContext") != -1) {
-						errorMessage = "Fatal Error: Browser cannot access camera and mic because of unsecure context. Please install SSL and access via https";
-					} else if (error.indexOf("WebSocketNotSupported") != -1) {
-						errorMessage = "Fatal Error: WebSocket not supported in this browser";
-					} else if (error.indexOf("no_stream_exist") != -1) {
-						//TODO: removeRemoteVideo(error.streamId);
-					}
-					$.notify(errorMessage, {
-						autoHideDelay:5000,
-						className:'error',
-						position:'top center'
-					});
+		$("#broadcastingInfo").fadeIn(800, function() {
+			$("#broadcastingInfo").fadeOut(800, function() {
+				var state = merger.webRTCAdaptorPublisher.signallingState(streamNameBox.value);
+				var iceState = merger.webRTCAdaptorPublisher.iceConnectionState(streamNameBox.value);
+				if (state !== "closed" && iceState !== "failed" && iceState !== "disconnected") {
+					startAnimation();
 				}
 			});
+		});
+	}
 
+	function getRestURL(location) {
+		var appName = location.pathname.substring(1, location.pathname.indexOf("/", 1) + 1);
+		var path = location.hostname + ":" + location.port + "/" + appName + "rest/v2";
 
+		var restURL = "http://" + path;
+
+		if (location.protocol.startsWith("https")) {
+			restURL = "https://" + path;
+		}
+		return restURL;
+	}
+
+	function streamStarted() {
+		$("#start_button").prop("disabled", true);
+		$("#stop_button").prop("disabled", false);
+		$("#broadcastingInfo").show();
+		startAnimation();
+	}
+
+	function streamFinished() {
+		$("#start_button").prop("disabled", false);
+		$("#stop_button").prop("disabled", true);
+		$("#broadcastingInfo").hide();
+	}
+
+	
 </script>
 </html>
 

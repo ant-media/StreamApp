@@ -11,17 +11,24 @@ describe("WebRTCAdaptor", function () {
 
   var initialized = false;
 
+  var currentTest;
+
   beforeEach(function () {
     clock = sinon.useFakeTimers();
     sandbox = sinon.createSandbox();
+
+    currentTest = this.currentTest;
+    console.log("**** starting test: ****", currentTest.title);
   });
 
 
   afterEach(() => {
+    console.log("**** ending test: ****", currentTest.title);
     // Restore the default sandbox here
     sinon.restore();
     clock.restore();
     sandbox.restore();
+
   });
 
 
