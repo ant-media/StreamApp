@@ -5,8 +5,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title></title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"
-        integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"  crossorigin="anonymous">
     <style>
         html,
         body {
@@ -71,9 +70,7 @@
     </div>
    
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
-        integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
-        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script type="module">
 
 		/*
@@ -90,9 +87,13 @@
 		 *			If it's false, it does not show the controls. Default value is false
 		 */
 
-        import { WebRTCAdaptor } from "./js/webrtc_adaptor.js";
-        import { getUrlParameter } from "./js/fetch.stream.js";
-        import { getWebSocketURL } from "./js/utility.js"
+		/* The following 3 lines will be edited by automation in deploying to web panel. It means that when there is a change here
+		CI in enterprise will fail in building stage 
+		*/
+		
+		import { WebRTCAdaptor } from "./js/webrtc_adaptor.js";
+		import { getUrlParameter } from "./js/fetch.stream.js";
+		//import { WebRTCAdaptor, getUrlParameter } from "https://cdn.jsdelivr.net/npm/@antmedia/webrtc_adaptor/dist/es/index.js";
 
 
         var token = getUrlParameter("token");
@@ -128,7 +129,11 @@
 
             const videoCount = videos.length;
             var objectFitMode = "cover";
-            if (videoCount <= 4) {
+             if (videoCount <= 1) {
+                videosPerRow = 1;
+                objectFitMode = "contain";
+            }
+            else if (videoCount <= 4) {
                 videosPerRow = 2;
                 objectFitMode = "contain";
             } else if (videoCount <= 9) {
@@ -291,10 +296,6 @@
             }
         }
 
-      
-
-
-
 
         function testPlayer() 
         {
@@ -308,7 +309,22 @@
        // testPlayer();
 
 
-		var websocketURL = getWebSocketURL(location, false);
+		
+		var appName = getUrlParameter("app");
+	    if (!appName) {
+			appName = location.pathname.substring(1, location.pathname.indexOf("/", 1) + 1);
+		}
+		
+		if (!appName.endsWith("/")) {
+				appName += "/";
+		}
+		
+		var path = location.hostname + ":" + location.port + "/" + appName + "websocket";
+		  
+		  var websocketURL = "ws://" + path;
+		  if (location.protocol.startsWith("https")) {
+		    websocketURL = "wss://" + path;
+		  }
 
 
         if (streamId == null || streamId == "") {
