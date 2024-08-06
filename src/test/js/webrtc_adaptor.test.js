@@ -723,6 +723,35 @@ describe("WebRTCAdaptor", function () {
     sendExpectation.verify()
   })
 
+
+  it("getSubtracks", async function () {
+
+      let adaptor = new WebRTCAdaptor({
+        websocketURL: "ws://example.com",
+        isPlayMode: true
+      });
+
+      let streamId = "test" + Math.floor(Math.random() * 100);
+      let offset = Math.floor(Math.random() * 100);
+      let size = Math.floor(Math.random() * 100);
+      let role = "role1";
+      let jsCmd = {
+        command: "getSubtracks",
+        streamId: streamId,
+        role: role,
+        offset: offset,
+        size: size,
+      };
+
+      let webSocketAdaptor = sinon.mock(adaptor.webSocketAdaptor);
+
+      let sendExpectation = webSocketAdaptor.expects("send").once().withArgs(JSON.stringify(jsCmd));
+
+      adaptor.getSubtracks(streamId, role, offset, size);
+
+      sendExpectation.verify()
+    })
+
   it("joinRoom", async function () {
 
     let adaptor = new WebRTCAdaptor({
@@ -1653,6 +1682,7 @@ describe("WebRTCAdaptor", function () {
 
       expect(adaptor.mediaManager.updateVideoTrack.calledWithMatch(stream, streamId, onEndedCallback, stopDesktop)).to.be.true;
     });
+
 
   });
 
