@@ -209,6 +209,13 @@ export class PeerStats {
          */
         this.videoJitterAverageDelay = 0;
         this.availableOutgoingBitrate = Infinity;
+
+        /**
+         * The list of inbound RTP list.
+         * It can be used to view the inbound RTP statistics per track in the multi-track conference or the multi-track playback scenarios.
+         * @type {*[]}
+         */
+        this.inboundRtpList = [];
     }
     //kbits/sec
     get averageOutgoingBitrate() {

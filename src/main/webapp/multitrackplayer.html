@@ -211,6 +211,7 @@ body {
 				console.log("play started");
 				start_play_button.disabled = true;
 				stop_play_button.disabled = false;
+				webRTCAdaptor.enableStats(streamNameBox.value);
 
 			} else if (info == "play_finished") {
 				//leaved the stream
@@ -227,15 +228,13 @@ body {
 				playVideo(obj);
 			}
 			else if (info == "updated_stats") {
-				//obj is the PeerStats which has fields
-				 //averageIncomingBitrate - kbits/sec
-				//currentIncomingBitrate - kbits/sec
-				//packetsLost - total number of packet lost
-				//fractionLost - fraction of packet lost
 				console.log("Average incoming kbits/sec: " + obj.averageIncomingBitrate
-						+ " Current incoming kbits/sec: " + obj.currentIncomingBitrate
-						+ " packetLost: " + obj.packetsLost
-						+ " fractionLost: " + obj.fractionLost);
+						+ " Current incoming kbits/sec: " + obj.currentIncomingBitrate);
+
+				for (let i = 0; i < obj.inboundRtpList.length; i++) {
+					const inboundRTP = obj.inboundRtpList[i];
+					console.log("Track: " + inboundRTP.trackIdentifier+ inboundRTP.bytesReceived);
+				}
 
 			}
 			else if (info == "trackList") {
