@@ -16,6 +16,16 @@
 	<!--- S3 Recording info -->
 	<bean id="app.storageClient" class="io.antmedia.storage.AmazonS3StorageClient">
 	</bean>
+
+	<!-- For Keycloak Integration -->
+	<!--
+	<bean id="openid.config" class="io.antmedia.SecurityConfiguration">
+		<property name="realmUrl" value="http://keycloak.antmedia.cloud:8080/realms/antmedia" />
+		<property name="appName" value="demo" />
+		<property name="clientId" value="stream-application" />
+		<property name="role" value="user" />
+	</bean>
+	-->
 	
 	<bean id="app.settings" class="io.antmedia.AppSettings" />
 
