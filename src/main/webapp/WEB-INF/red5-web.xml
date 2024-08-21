@@ -82,4 +82,7 @@
 	
     <bean id="webrtc.adaptor"  
     	class="#{ T(io.antmedia.rest.RestServiceBase).isEnterprise() ? 'io.antmedia.enterprise.webrtc.WebRTCAdaptor' : 'io.antmedia.webrtc.MockWebRTCAdaptor' }"/>
+    	
+    <!-- For Core Developers. If you need to add something, think about backward compatibility and you may prefer to add to sub configuration file which is in Ant-Media-Server/src/main/resources/WEB-INF/application.xml -->
+
 </beans>
