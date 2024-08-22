@@ -162,6 +162,12 @@ export class WebRTCAdaptor {
          */
         this.debug = false;
 
+	/**
+     	* This is the flag to indicate if the stream is published or not after the connection fails
+     	* @type {boolean}
+     	*/
+    	this.iceRestart = false;
+
         /**
          * This is the Stream Id for the publisher. One @WebRCTCAdaptor supports only one publishing
          * session for now (23.02.2022).
@@ -643,6 +649,7 @@ export class WebRTCAdaptor {
     }
 
     tryAgain() {
+	Logger.debug("tryAgain is called");
 
         const now = Date.now();
         //to prevent too many trial from different paths
@@ -662,6 +669,7 @@ export class WebRTCAdaptor {
 	    {
             // notify that reconnection process started for publish
             this.notifyEventListeners("reconnection_attempt_for_publisher", this.publishStreamId);
+	    Logger.log("It will try to publish again for stream: " + this.publishStreamId + " because it is not stopped on purpose")
 
             this.stop(this.publishStreamId);
 	        setTimeout(() => {
@@ -1076,24 +1084,7 @@ export class WebRTCAdaptor {
             this.remoteDescriptionSet[streamId] = false;
             this.iceCandidateList[streamId] = new Array();
             if (!this.playStreamId.includes(streamId)) {
-                if (this.mediaManager.localStream != null) {
-                    this.mediaManager.localStream.getTracks().forEach(track => { 
-                    	
-						let rtpSender = this.remotePeerConnection[streamId].addTrack(track, this.mediaManager.localStream);
-                    	if (track.kind == 'video') 
-                    	{
-							let parameters = rtpSender.getParameters();
-							parameters.degradationPreference = this.degradationPreference;
-							rtpSender.setParameters(parameters).then(() => {
-                                Logger.info("Degradation Preference is set to " + this.degradationPreference);
-                            }).catch((err) => {
-                                Logger.warn("Degradation Preference cannot be set to " + this.degradationPreference)
-                            });
-						}
-						//
-                    	//parameters.degradationPreference
-                    });
-                }
+                this.addTracksIntoPeerConnection(streamId);
             }
             this.remotePeerConnection[streamId].onicecandidate = event => {
                 this.iceCandidateReceived(event, closedStreamId);
@@ -1102,8 +1093,18 @@ export class WebRTCAdaptor {
                 this.onTrack(event, closedStreamId);
             }
 
-            this.remotePeerConnection[streamId].onnegotiationneeded = event => {
+            this.remotePeerConnection[streamId].onnegotiationneeded = async (event) => {
                 Logger.debug("onnegotiationneeded");
+		//If ice restart is not true, than server will handle negotiation
+		if (!this.iceRestart) {
+			return;
+		}
+		try {
+          		await this.remotePeerConnection[streamId].setLocalDescription(await this.remotePeerConnection[streamId].createOffer({iceRestart: this.iceRestart}));
+          		this.webSocketAdaptor.send({desc: this.remotePeerConnection[streamId].localDescription});
+        	} catch (error) {
+          		Logger.error('Error during negotiation', error);
+        	}
             }
 
             if (this.dataChannelEnabled) {
@@ -1146,7 +1147,14 @@ export class WebRTCAdaptor {
 
             this.remotePeerConnection[streamId].oniceconnectionstatechange = event => {
                 var obj = {state: this.remotePeerConnection[streamId].iceConnectionState, streamId: streamId};
-                if (obj.state == "failed" || obj.state == "disconnected" || obj.state == "closed") {
+                if (obj.state === "stable") {
+          		this.iceRestart = false;
+        	}
+        	if (obj.state === "failed") {
+          		this.iceRestart = true;
+          		this.remotePeerConnection[streamId].restartIce();
+        	}
+        	if (obj.state === "disconnected" || obj.state === "closed") {
                     this.reconnectIfRequired(3000);
                 }
                 this.notifyEventListeners("ice_connection_state_changed", obj);
@@ -1168,6 +1176,44 @@ export class WebRTCAdaptor {
         return this.remotePeerConnection[streamId];
     }
 
+   /**
+   * Called internally to stop tracks in PeerConnection.
+   * @param {string} streamId : unique id for the stream
+   */
+  stopTracksInPeerConnection(streamId) {
+    if (this.remotePeerConnection[streamId] != null) {
+      this.remotePeerConnection[streamId].getSenders().forEach(sender => {
+        if (sender.track != null) {
+          sender.track.stop();
+        }
+      });
+    }
+  }
+
+  /**
+   * Called internally to add tracks into PeerConnection.
+   * @param {string} streamId : unique id for the stream
+   */
+  addTracksIntoPeerConnection(streamId) {
+    if (this.mediaManager.localStream != null) {
+      this.mediaManager.localStream.getTracks().forEach(track => {
+
+        let rtpSender = this.remotePeerConnection[streamId].addTrack(track, this.mediaManager.localStream);
+        if (track.kind === 'video') {
+          let parameters = rtpSender.getParameters();
+          parameters.degradationPreference = this.degradationPreference;
+          rtpSender.setParameters(parameters).then(() => {
+            Logger.info("Degradation Preference is set to " + this.degradationPreference);
+          }).catch((err) => {
+            Logger.warn("Degradation Preference cannot be set to " + this.degradationPreference)
+          });
+        }
+        //
+        //parameters.degradationPreference
+      });
+    }
+  }
+
     /**
      * Called internally to close PeerConnection.
      * @param {string} streamId : unique id for the stream
@@ -1183,10 +1229,10 @@ export class WebRTCAdaptor {
             if (peerConnection.signalingState != "closed") {
                 peerConnection.close();
             }
-            var playStreamIndex = this.playStreamId.indexOf(streamId);
-            if (playStreamIndex != -1) {
-                this.playStreamId.splice(playStreamIndex, 1);
-            }
+        }
+	var playStreamIndex = this.playStreamId.indexOf(streamId);
+        if (playStreamIndex != -1) {
+		this.playStreamId.splice(playStreamIndex, 1);
         }
         //this is for the stats
         if (this.remotePeerConnectionStats[streamId] != null) {

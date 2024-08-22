@@ -1686,4 +1686,113 @@ describe("WebRTCAdaptor", function () {
 
   });
 
+  describe("stopTracksInPeerConnection", function () {
+    let adaptor;
+
+    beforeEach(function () {
+      adaptor = new WebRTCAdaptor({
+        websocketURL: "ws://example.com",
+        initializeComponents: false,
+      });
+      adaptor.mediaManager = {
+        updateVideoTrack: sinon.fake()
+      };
+    });
+
+    it("should stop all tracks when peer connection exists", function () {
+      const mockTrack = { stop: sinon.fake() };
+      const mockSender = { track: mockTrack };
+      const mockPeerConnection = { getSenders: sinon.fake.returns([mockSender]) };
+
+      adaptor.remotePeerConnection["stream1"] = mockPeerConnection;
+
+      adaptor.stopTracksInPeerConnection("stream1");
+
+      expect(mockTrack.stop.called).to.be.true;
+    });
+
+    it("should not throw error when peer connection does not exist", function () {
+      expect(() => adaptor.stopTracksInPeerConnection("stream1")).not.to.throw();
+    });
+
+    it("should not stop track when sender's track is null", function () {
+      const mockTrack = { stop: sinon.fake() };
+      const mockSender = { track: null };
+      const mockPeerConnection = { getSenders: sinon.fake.returns([mockSender]) };
+
+      adaptor.remotePeerConnection["stream1"] = mockPeerConnection;
+
+      adaptor.stopTracksInPeerConnection("stream1");
+
+      expect(mockTrack.stop.called).to.be.false;
+    });
+  });
+
+  describe("oniceconnectionstatechange", function () {
+    let adaptor;
+    let mockPeerConnection;
+
+    beforeEach(function () {
+      adaptor = new WebRTCAdaptor({
+        websocketURL: "ws://example.com",
+        initializeComponents: false,
+      });
+      mockPeerConnection = { iceConnectionState: "", restartIce: sinon.fake(), oniceconnectionstatechange: sinon.fake()};
+      adaptor.remotePeerConnection["stream1"] = mockPeerConnection;
+    });
+
+    it("should set iceRestart to false when state is stable", function () {
+      mockPeerConnection.iceConnectionState = "stable";
+
+      adaptor.remotePeerConnection["stream1"].oniceconnectionstatechange();
+
+      expect(adaptor.iceRestart).to.be.false;
+    });
+  });
+
+  describe("addTracksIntoPeerConnection", function () {
+    let adaptor;
+    let mockMediaManager;
+    let mockPeerConnection;
+
+    beforeEach(function () {
+      adaptor = new WebRTCAdaptor({
+        websocketURL: "ws://example.com",
+        initializeComponents: false,
+      });
+      mockMediaManager = { localStream: null };
+      mockPeerConnection = { addTrack: sinon.fake(), getParameters: sinon.fake.returns({}), setParameters: sinon.fake.returns(Promise.resolve()) };
+      adaptor.mediaManager = mockMediaManager;
+      adaptor.remotePeerConnection = { "stream1": mockPeerConnection };
+      mockPeerConnection.addTrack = sinon.fake.returns({
+        track: { kind: "video" },
+        getParameters: sinon.fake.returns({}),
+        setParameters: sinon.fake.returns(Promise.resolve())
+      });
+    });
+
+    it("should not add tracks when local stream is null", function () {
+      adaptor.addTracksIntoPeerConnection("stream1");
+      expect(mockPeerConnection.addTrack.called).to.be.false;
+    });
+
+    it("should add tracks when local stream is not null", function () {
+      const mockTrack = { kind: "video" };
+      mockMediaManager.localStream = { getTracks: sinon.fake.returns([mockTrack]) };
+
+      adaptor.addTracksIntoPeerConnection("stream1");
+
+      expect(mockPeerConnection.addTrack.calledWithExactly(mockTrack, mockMediaManager.localStream)).to.be.true;
+    });
+
+    it("should not set degradation preference for non-video tracks", function () {
+      const mockTrack = { kind: "audio" };
+      mockMediaManager.localStream = { getTracks: sinon.fake.returns([mockTrack]) };
+
+      adaptor.addTracksIntoPeerConnection("stream1");
+
+      expect(mockPeerConnection.setParameters.called).to.be.false;
+    });
+  });
+
 });
