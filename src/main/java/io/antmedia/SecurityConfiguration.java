@@ -10,6 +10,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.authority.mapping.GrantedAuthoritiesMapper;
@@ -71,6 +72,9 @@ class SecurityConfiguration {
                 // Authenticate any other request
                 .anyRequest().authenticated()
         );
+
+        //for vod upload
+        http.csrf(AbstractHttpConfigurer::disable);
 
         // Configure the resource server to use JWT authentication
         http.oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()));
