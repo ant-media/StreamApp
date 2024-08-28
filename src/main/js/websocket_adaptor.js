@@ -19,6 +19,12 @@ export class WebSocketAdaptor {
         }
 
         this.initWebSocketConnection();
+		
+		addEventListener("offline", (event) => { 
+			this.connected = false;
+			this.connecting = false;
+			Logger.info("Network status has changed to offline. Resetting flags to reconnect faster");
+		});
 
     }
     /**
