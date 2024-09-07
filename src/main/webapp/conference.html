@@ -802,7 +802,7 @@
 					else if (info == "reconnection_attempt_for_player") {
 						console.log("Reconnection attempt for player")
 						if (playOnly && isNoSreamExist) {
-							console.log("Reconnection attempt for player with no stream existmfor play only mode.")
+							console.log("Reconnection attempt for player with no stream exist for play only mode.")
 						} else {
 							playReconnected = false;
 							if (!reconnecting) {
@@ -812,7 +812,7 @@
 					}
 					else if (info == "reconnection_attempt_for_publisher") {
 						console.log("Reconnection attempt for publisher")
-						publishReconnected = isPlayOnly;
+						publishReconnected = playOnly ? true : false;
 						if (!reconnecting) {
 							reconnectionInProgress();
 						}
