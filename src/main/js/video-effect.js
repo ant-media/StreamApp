@@ -209,6 +209,9 @@ export class VideoEffect {
             case VideoEffect.VIRTUAL_BACKGROUND:
             case VideoEffect.BLUR_BACKGROUND:
             case VideoEffect.NO_EFFECT:
+                //Stop timer
+                this.stopFpsCalculation();
+                await this.#noEffect();
                 break;
             default:
                 Logger.warn("Unknown effect name please use the constants VideoEffect.VIRTUAL_BACKGROUND,VideoEffect.BLUR_BACKGROUND or VideoEffect.NO_EFFECT ");
