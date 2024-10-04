@@ -35,7 +35,7 @@ jobs:
 
       - name: Create Pull Request
         if: env.OLD_VERSION != env.NEW_VERSION
-        uses: peter-evans/create-pull-request@v5
+        uses: peter-evans/create-pull-request@v7.0.5
         with:
           title: "Update @antmedia/web_player to ${{ env.NEW_EMBEDDED_PLAYER_VERSION }}"
           body: |
