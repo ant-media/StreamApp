@@ -25,7 +25,7 @@ jobs:
           echo "NEW_EMBEDDED_PLAYER_VERSION=$NEW_EMBEDDED_PLAYER_VERSION" >> $GITHUB_ENV
 
       - name: Commit changes if version updated
-        if: env.OLD_VERSION != env.NEW_VERSION
+        if: env.OLD_EMBEDDED_PLAYER_VERSION != env.NEW_EMBEDDED_PLAYER_VERSION
         working-directory: ./embedded-player
         run: |
           git config user.name github-actions
@@ -34,7 +34,7 @@ jobs:
           git commit -m "Update @antmedia/web_player from ${{ env.OLD_EMBEDDED_PLAYER_VERSION }} to ${{ env.NEW_EMBEDDED_PLAYER_VERSION }}"
 
       - name: Create Pull Request
-        if: env.OLD_VERSION != env.NEW_VERSION
+        if: env.OLD_EMBEDDED_PLAYER_VERSION != env.NEW_EMBEDDED_PLAYER_VERSION
         uses: peter-evans/create-pull-request@v7.0.5
         with:
           title: "Update @antmedia/web_player to ${{ env.NEW_EMBEDDED_PLAYER_VERSION }}"
