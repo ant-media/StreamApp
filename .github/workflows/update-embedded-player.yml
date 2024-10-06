@@ -18,9 +18,9 @@ jobs:
       - name: Update @antmedia/web_player
         working-directory: ./embedded-player
         run: |
-          OLD_VERSION=$(node -p "require('./package.json').dependencies['@antmedia/web_player']")
+          OLD_EMBEDDED_PLAYER_VERSION=$(node -p "require('./package.json').dependencies['@antmedia/web_player']")
           npm install --save @antmedia/web_player@latest
-          NEW_VERSION=$(node -p "require('./package.json').dependencies['@antmedia/web_player']")
+          NEW_EMBEDDED_PLAYER_VERSION=$(node -p "require('./package.json').dependencies['@antmedia/web_player']")
           echo "OLD_EMBEDDED_PLAYER_VERSION=$OLD_EMBEDDED_PLAYER_VERSION" >> $GITHUB_ENV
           echo "NEW_EMBEDDED_PLAYER_VERSION=$NEW_EMBEDDED_PLAYER_VERSION" >> $GITHUB_ENV
 
@@ -41,6 +41,6 @@ jobs:
           body: |
             This PR updates the @antmedia/web_player dependency from ${{ env.OLD_EMBEDDED_PLAYER_VERSION }} to ${{ env.NEW_EMBEDDED_PLAYER_VERSION }}.
             
-            Triggered by webhook from npm package update.
+            Triggered by publish-release.yml from web player repo.
           branch: update-antmedia-web-player-${{ env.NEW_EMBEDDED_PLAYER_VERSION }}
           delete-branch: true
