@@ -19,9 +19,9 @@ jobs:
       - name: Update @antmedia/web_player
         working-directory: ./embedded-player
         run: |
-          OLD_EMBEDDED_PLAYER_VERSION=$(node -p "require('./package.json').dependencies['@antmedia/web_player']")
+          OLD_EMBEDDED_PLAYER_VERSION=$(node -p "require('./package.json').dependencies['@antmedia/web_player'].replace(/\\^/, '')")
           npm install --save @antmedia/web_player@latest || { echo 'npm install failed' ; exit 1; }
-          NEW_EMBEDDED_PLAYER_VERSION=$(node -p "require('./package.json').dependencies['@antmedia/web_player']")
+          NEW_EMBEDDED_PLAYER_VERSION=$(node -p "require('./package.json').dependencies['@antmedia/web_player'].replace(/\\^/, '')")
           echo "OLD_EMBEDDED_PLAYER_VERSION=$OLD_EMBEDDED_PLAYER_VERSION" >> $GITHUB_ENV
           echo "NEW_EMBEDDED_PLAYER_VERSION=$NEW_EMBEDDED_PLAYER_VERSION" >> $GITHUB_ENV
 
