@@ -20,9 +20,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@antmedia/web_player": "^2.11.2"
+    "@antmedia/web_player": "^2.0.2"
   },
-
   "devDependencies": {
     "@rollup/plugin-babel": "^6.0.4",
     "@rollup/plugin-commonjs": "^25.0.7",
