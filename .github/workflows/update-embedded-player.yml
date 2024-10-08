@@ -1,6 +1,7 @@
 name: Update @antmedia/web_player Dependency
 
 on:
+  workflow_dispatch:
   repository_dispatch:
     types: [update-embedded-player]
 
