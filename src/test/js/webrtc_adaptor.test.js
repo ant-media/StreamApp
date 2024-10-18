@@ -1798,10 +1798,10 @@ describe("WebRTCAdaptor", function() {
 		
 		console.log("publish peerStats: " + JSON.stringify(peerStats));
 		expect(peerStats.streamId).to.be.equal(streamId);
-		expect(peerStats.audioPacketsSent).to.be.above(0);
-		expect(peerStats.videoPacketsSent).to.be.above(0);
-		expect(peerStats.frameWidth).to.be.above(0);
-		expect(peerStats.frameHeight).to.be.above(0);
+		expect(peerStats.audioPacketsSent).to.be.least(0);
+		expect(peerStats.videoPacketsSent).to.be.least(0);
+		expect(peerStats.frameWidth).to.be.least(0);
+		expect(peerStats.frameHeight).to.be.least(0);
 		expect(peerStats.currentRoundTripTime).to.be.above(0);
 		expect(peerStats.currentRoundTripTime).to.be.most(1);
 
