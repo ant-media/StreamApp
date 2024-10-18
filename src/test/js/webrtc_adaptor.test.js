@@ -12,6 +12,8 @@ describe("WebRTCAdaptor", function() {
 	var initialized = false;
 
 	var currentTest;
+	
+	var processStarted = false;
 
 	beforeEach(function() {
 		clock = sinon.useFakeTimers();
@@ -197,7 +199,7 @@ describe("WebRTCAdaptor", function() {
 	});
 
 
-	it.only("should set connected and connecting to false and log the correct message", function() {
+	it("should set connected and connecting to false and log the correct message", function() {
 
 		var adaptor = new WebRTCAdaptor({
 			websocketURL: "ws://example.com",
@@ -1710,6 +1712,200 @@ describe("WebRTCAdaptor", function() {
 		});
 
 
+	});
+	
+	it("WebRTCGetStats",  async function() 
+	{
+		
+		clock.restore();
+
+		this.timeout(15000);
+
+		var websocketURL = "wss://test.antmedia.io/live/websocket";
+		processStarted = false;
+		initialized = false;
+		var adaptor = new WebRTCAdaptor({
+				websocketURL: websocketURL,
+				callback: (info, obj) => {
+				     console.log("callback info: " + info);
+					 if (info == "initialized") {
+						initialized = true;
+					 }
+				     else if (info == "publish_started") {
+				        console.log("publish started");
+						processStarted = true;
+				     }
+				     else if (info == "publish_finished") {
+				        console.log("publish finished")
+				     }
+				  },
+		});
+		
+		await new Promise((resolve, reject)=>{
+					setTimeout(()=> {
+						resolve();
+					}, 3000);
+				});
+
+		expect(initialized).to.be.true;
+	
+		var streamId = "stream1desadafg23424";
+
+		adaptor.publish(streamId);
+
+		await new Promise((resolve, reject)=>{
+
+			setTimeout(()=> {
+				expect(processStarted).to.be.true;
+				resolve();
+			}, 3000);
+		});
+		
+		//getStats
+		var peerStats = await adaptor.getStats(streamId);
+		
+		console.log("publish peerStats: " + JSON.stringify(peerStats));
+		expect(peerStats.streamId).to.be.equal(streamId);
+		expect(peerStats.audioPacketsSent).to.be.above(0);
+		expect(peerStats.videoPacketsSent).to.be.above(0);
+		expect(peerStats.frameWidth).to.be.above(0);
+		expect(peerStats.frameHeight).to.be.above(0);
+		expect(peerStats.currentRoundTripTime).to.be.above(0);
+		expect(peerStats.currentRoundTripTime).to.be.most(1);
+
+		expect(peerStats.videoPacketsLost).to.be.least(0);
+		expect(peerStats.audioPacketsLost).to.be.least(0);
+		expect(peerStats.videoJitter).to.be.least(0);
+		expect(peerStats.audioJitter).to.be.least(0);
+		expect(peerStats.totalBytesSentCount).to.be.above(0);
+		expect(peerStats.lastFramesEncoded).to.be.above(0);
+		expect(peerStats.totalFramesEncodedCount).to.be.above(0);
+		expect(peerStats.frameWidth).to.be.equal(640);
+		expect(peerStats.frameHeight).to.be.equal(480);
+		expect(peerStats.qualityLimitationReason).to.be.equal("none");
+		expect(peerStats.firstByteSentCount).to.be.not.equal(0);
+		expect(peerStats.srcFps).to.be.above(0);
+		expect(peerStats.videoRoundTripTime).to.be.above(0);
+		//expect(peerStats.audioRoundTripTime).to.be.above(0);
+		expect(peerStats.availableOutgoingBitrate).to.be.above(0);
+
+
+		
+		
+		expect(peerStats.totalBytesReceivedCount).to.be.equal(-1);
+		expect(peerStats.lastBytesSent).to.be.equal(0);
+		expect(peerStats.videoPacketsLost).to.be.equal(0);
+		expect(peerStats.fractionLost).to.be.equal(-1);
+		expect(peerStats.startTime).to.be.not.equal(0);
+		expect(peerStats.lastBytesReceived).to.be.equal(0);
+		expect(peerStats.currentTimestamp).to.be.not.equal(0);
+		expect(peerStats.lastTime).to.be.equal(0);
+		expect(peerStats.timerId).to.be.equal(0);
+		expect(peerStats.firstBytesReceivedCount).to.be.equal(-1);
+		expect(peerStats.audioLevel).to.be.equal(-1);
+		expect(peerStats.resWidth).to.be.equal(640);
+		expect(peerStats.resHeight).to.be.equal(480);
+		expect(peerStats.framesReceived).to.be.equal(-1);
+		expect(peerStats.framesDropped).to.be.equal(-1);
+		expect(peerStats.framesDecoded).to.be.equal(-1);
+		expect(peerStats.audioJitterAverageDelay).to.be.equal(-1);
+		expect(peerStats.videoJitterAverageDelay).to.be.equal(-1);
+		expect(peerStats.inboundRtpList).to.be.empty;
+		expect(peerStats.audioPacketsReceived).to.be.equal(-1);
+		expect(peerStats.videoPacketsReceived).to.be.equal(-1);
+
+        //getStats
+		processStarted = false;
+		initialized = false;
+		var playAdaptor = new WebRTCAdaptor({
+						websocketURL: websocketURL,
+						callback: (info, obj) => {
+						     console.log("callback info: " + info);
+							 if (info == "initialized") {
+								initialized = true;
+							 }
+						     else if (info == "play_started") {
+						        console.log("play started");
+								processStarted = true;
+						     }
+						     else if (info == "play_finished") {
+						        console.log("play finished")
+						     }
+						  },
+				});
+		await new Promise((resolve, reject)=>{
+							setTimeout(()=> {
+								resolve();
+							}, 3000);
+						});
+
+		expect(initialized).to.be.true;
+		
+		playAdaptor.play(streamId);
+		
+		await new Promise((resolve, reject)=>{
+
+					setTimeout(()=> {
+						expect(processStarted).to.be.true;
+						resolve();
+					}, 3000);
+				});
+	  
+		peerStats = await playAdaptor.getStats(streamId);
+		
+		console.log("play peerStats: " + JSON.stringify(peerStats));
+		expect(peerStats.streamId).to.be.equal(streamId);
+		expect(peerStats.frameWidth).to.be.equal(640);
+		expect(peerStats.frameHeight).to.be.equal(480);
+		expect(peerStats.currentRoundTripTime).to.be.above(0);
+		expect(peerStats.currentRoundTripTime).to.be.most(1);
+
+		expect(peerStats.videoPacketsLost).to.be.least(0);
+		expect(peerStats.audioPacketsLost).to.be.least(0);
+		expect(peerStats.videoJitter).to.be.least(0);
+		expect(peerStats.audioJitter).to.be.least(0);
+		expect(peerStats.lastFramesEncoded).to.be.equal(-1);
+		expect(peerStats.totalFramesEncodedCount).to.be.equal(-1);
+		expect(peerStats.frameWidth).to.be.equal(640);
+		expect(peerStats.frameHeight).to.be.equal(480);
+		expect(peerStats.qualityLimitationReason).to.be.equal("");
+		expect(peerStats.firstByteSentCount).to.be.not.equal(0);
+		expect(peerStats.srcFps).to.be.equal(-1);
+		expect(peerStats.videoRoundTripTime).to.be.equal(-1);
+		expect(peerStats.audioRoundTripTime).to.be.equal(-1);
+		expect(peerStats.availableOutgoingBitrate).to.be.above(-1);
+
+
+		
+		
+		expect(peerStats.totalBytesReceivedCount).to.be.above(0);
+		expect(peerStats.lastBytesSent).to.be.equal(0);
+		expect(peerStats.videoPacketsLost).to.be.equal(0);
+		//expect(peerStats.fractionLost).to.be.equal(-1);
+		expect(peerStats.startTime).to.be.not.equal(0);
+		expect(peerStats.lastBytesReceived).to.be.equal(0);
+		expect(peerStats.currentTimestamp).to.be.not.equal(0);
+		expect(peerStats.lastTime).to.be.equal(0);
+		expect(peerStats.timerId).to.be.equal(0);
+		expect(peerStats.firstBytesReceivedCount).to.be.above(0);
+		expect(peerStats.audioLevel).to.be.equal(-1);
+		expect(peerStats.resWidth).to.be.equal(-1);
+		expect(peerStats.resHeight).to.be.equal(-1);
+		expect(peerStats.framesReceived).to.be.above(0);
+		expect(peerStats.framesDropped).to.be.least(0);
+		expect(peerStats.framesDecoded).to.be.above(0);
+		expect(peerStats.audioJitterAverageDelay).to.be.equal(-1);
+		expect(peerStats.videoJitterAverageDelay).to.be.equal(-1);
+		expect(peerStats.audioPacketsReceived).to.be.above(0);
+		expect(peerStats.videoPacketsReceived).to.be.above(0);
+		
+		
+		expect(peerStats.totalBytesSentCount).to.be.equal(-1);
+		expect(peerStats.totalAudioPacketsSent).to.be.equal(-1);
+		expect(peerStats.totalVideoPacketsSent).to.be.equal(-1);
+				
+
+		
 	});
 
 
