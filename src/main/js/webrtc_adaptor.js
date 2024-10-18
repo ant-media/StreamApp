@@ -1499,12 +1499,18 @@ export class WebRTCAdaptor {
             var audioJitterAverageDelay = -1;
             var videoJitterAverageDelay = -1;
             var availableOutgoingBitrate = Infinity;
+			var currentRoundTripTime = -1;
+			
+			var audioPacketsReceived = -1;
+			var videoPacketsReceived = -1;
 
             var inboundRtp = [];
 
             stats.forEach(value => {
                 //Logger.debug(value);
                 if (value.type == "inbound-rtp" && typeof value.kind != "undefined") {
+					//this is coming when webrtc playing
+
                     let inboundRtpObj = {};
 
                     inboundRtpObj.trackIdentifier = value.trackIdentifier;
@@ -1512,6 +1518,9 @@ export class WebRTCAdaptor {
                     bytesReceived += value.bytesReceived;
                     if (value.kind == "audio") {
                         audioPacketsLost = value.packetsLost;
+						audioJitter = value.jitter;
+						audioPacketsReceived = value.packetsReceived;
+
                         inboundRtpObj.audioPacketsLost = value.packetsLost;
                     } else if (value.kind == "video") {
                         videoPacketsLost = value.packetsLost;
@@ -1519,6 +1528,8 @@ export class WebRTCAdaptor {
                         inboundRtpObj.framesDropped = value.framesDropped;
                         inboundRtpObj.framesDecoded = value.framesDecoded;
                         inboundRtpObj.framesPerSecond = value.framesPerSecond;
+						videoJitter = value.jitter;
+						videoPacketsReceived = value.packetsReceived;
                     }
 
                     inboundRtpObj.bytesReceived = value.bytesReceived;
@@ -1556,7 +1567,11 @@ export class WebRTCAdaptor {
 
                     inboundRtp.push(inboundRtpObj);
 
-                } else if (value.type == "outbound-rtp") {//TODO: SPLIT AUDIO AND VIDEO BITRATES
+                } 
+				else if (value.type == "outbound-rtp") 
+				{
+					//TODO: SPLIT AUDIO AND VIDEO BITRATES
+					//it is for the publishing
                     if (value.kind == "audio") {
                         audioPacketsSent = value.packetsSent;
                     } else if (value.kind == "video") {
@@ -1640,6 +1655,8 @@ export class WebRTCAdaptor {
                 }
                 else if(value.type == "candidate-pair" && value.state == "succeeded" && value.availableOutgoingBitrate !=undefined){
                     availableOutgoingBitrate = value.availableOutgoingBitrate/1000
+					//currentRoundTripTime
+					currentRoundTripTime = value.currentRoundTripTime;
                 }
             });
 
@@ -1655,6 +1672,9 @@ export class WebRTCAdaptor {
             this.remotePeerConnectionStats[streamId].totalBytesSent = bytesSent;
             this.remotePeerConnectionStats[streamId].totalVideoPacketsSent = videoPacketsSent;
             this.remotePeerConnectionStats[streamId].totalAudioPacketsSent = audioPacketsSent;
+			this.remotePeerConnectionStats[streamId].videoPacketsSent = videoPacketsSent;
+			this.remotePeerConnectionStats[streamId].audioPacketsSent = audioPacketsSent;
+			          
             this.remotePeerConnectionStats[streamId].audioLevel = audioLevel;
             this.remotePeerConnectionStats[streamId].qualityLimitationReason = qlr;
             this.remotePeerConnectionStats[streamId].totalFramesEncoded = framesEncoded;
@@ -1676,9 +1696,13 @@ export class WebRTCAdaptor {
             this.remotePeerConnectionStats[streamId].availableOutgoingBitrate = availableOutgoingBitrate;
 
             this.remotePeerConnectionStats[streamId].inboundRtpList = inboundRtp;
+			
+			this.remotePeerConnectionStats[streamId].currentRoundTripTime = currentRoundTripTime;
+			this.remotePeerConnectionStats[streamId].audioPacketsReceived = audioPacketsReceived;
+			this.remotePeerConnectionStats[streamId].videoPacketsReceived = videoPacketsReceived;
 
             this.notifyEventListeners("updated_stats", this.remotePeerConnectionStats[streamId]);
-            resolve(true);
+            resolve(this.remotePeerConnectionStats[streamId]);
         }).catch(err=>{
             resolve(false);
         });

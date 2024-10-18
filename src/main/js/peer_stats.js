@@ -66,18 +66,44 @@ export class PeerStats {
         this.lastBytesSent = 0;
 
         /**
+		 * @deprecated use videoPacketsSent
          * The total number of video packets sent.
          * @type {number}
          */
         this.totalVideoPacketsSent = 0;
+		/**
+	     * The total number of video packets sent.
+	     * @type {number}
+         */
+		this.videoPacketsSent = 0;
+		/**
+	     * The total number of video packets received.
+	     * @type {number}
+         */
+		this.videoPacketsReceived = 0;
+
 
         /**
-         * The total number of audio packets sent.
+         * @deprecated use audioPacketsSent
+		 *  The total number of audio packets sent.
          * @type {number}
          */
         this.totalAudioPacketsSent = 0;
-
-        /**
+		
+		/**
+		 * 
+		 * The total number of audio packets sent.
+	     * @type {number}
+		 */
+		this.audioPacketsSent = 0;
+		/* 
+		 * The total number of audio packets received.
+	     * @type {number}
+		 * 			 
+		 * */
+		this.audioPacketsReceived = 0;
+        
+		/**
          * The current timestamp.
          * @type {number}
          */
@@ -216,6 +242,11 @@ export class PeerStats {
          * @type {*[]}
          */
         this.inboundRtpList = [];
+		
+		/**
+		 * The current round trip time for the candidate pair
+		 */
+		this.currentRoundTripTime = 0;
     }
     //kbits/sec
     get averageOutgoingBitrate() {
