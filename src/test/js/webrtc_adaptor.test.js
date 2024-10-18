@@ -130,7 +130,7 @@ describe("WebRTCAdaptor", function() {
 		adaptor.enableStats(streamId);
 		expect(adaptor.remotePeerConnectionStats[streamId]).to.not.be.undefined
 
-		expect(await adaptor.getStats(streamId)).to.be.true;
+		expect(await adaptor.getStats(streamId)).to.be.not.null;
 
 
 		console.log(adaptor.remotePeerConnectionStats[streamId])
@@ -586,6 +586,7 @@ describe("WebRTCAdaptor", function() {
 			adaptor.enableAudioLevelForLocalStream((level) => {
 				console.log("sound level -> " + level);
 				if (level > 0) {
+					adaptor.disableAudioLevelForLocalStream();
 					done();
 				}
 			});
@@ -1201,7 +1202,7 @@ describe("WebRTCAdaptor", function() {
 		it("should resolve with true when getStats is successful", async function() {
 			mockPeerConnection.getStats.resolves(mockStats);
 			const result = await adaptor.getStats("stream1");
-			expect(result).to.be.true;
+			expect(result).to.be.not.null;
 		});
 
 		it("should correctly process inbound RTP with audio kind", async function() {
@@ -1261,9 +1262,17 @@ describe("WebRTCAdaptor", function() {
 				]
 			};
 
-			assert(consoleSpy.calledWith(JSON.stringify(localMockStatsProcessed)), 'console.log was not called with the expected arguments');
 
-			expect(result).to.be.true;
+			expect(result).to.be.not.null;
+			expect(result.inboundRtpList[0].trackIdentifier).to.equal("audioTrack1");
+			expect(result.inboundRtpList[0].audioPacketsLost).to.equal(10);
+			expect(result.inboundRtpList[0].bytesReceived).to.equal(1000);
+			expect(result.inboundRtpList[0].jitterBufferDelay).to.equal(5);
+			expect(result.inboundRtpList[0].lastPacketReceivedTimestamp).to.equal(160000);
+			expect(result.inboundRtpList[0].fractionLost).to.equal(0.1);
+			expect(result.inboundRtpList[0].currentTime).to.equal(0);
+
+
 			consoleSpy.restore();
 		});
 
@@ -1334,9 +1343,23 @@ describe("WebRTCAdaptor", function() {
 				]
 			};
 
-			assert(consoleSpy.calledWith(JSON.stringify(localMockStatsProcessed)), 'console.log was not called with the expected arguments');
+			//assert(consoleSpy.calledWith(JSON.stringify(localMockStatsProcessed)), 'console.log was not called with the expected arguments');
 
-			expect(result).to.be.true;
+			expect(result).to.be.not.null;
+			expect(result.inboundRtpList[0].trackIdentifier).to.equal("videoTrack2");
+			expect(result.inboundRtpList[0].videoPacketsLost).to.equal(5);
+			expect(result.inboundRtpList[0].framesDropped).to.equal(2);
+			expect(result.inboundRtpList[0].framesDecoded).to.equal(50);
+			expect(result.inboundRtpList[0].framesPerSecond).to.equal(25);
+			expect(result.inboundRtpList[0].bytesReceived).to.equal(2000);
+			expect(result.inboundRtpList[0].jitterBufferDelay).to.equal(10);
+			expect(result.inboundRtpList[0].lastPacketReceivedTimestamp).to.equal(160000);
+			expect(result.inboundRtpList[0].fractionLost).to.equal(0.05);
+			expect(result.inboundRtpList[0].currentTime).to.equal(0);
+			expect(result.inboundRtpList[0].frameWidth).to.equal(1920);
+			expect(result.inboundRtpList[0].frameHeight).to.equal(1080);
+
+
 			consoleSpy.restore();
 		});
 
@@ -1717,9 +1740,18 @@ describe("WebRTCAdaptor", function() {
 	it("WebRTCGetStats",  async function() 
 	{
 		
+		const randomAlphaNumeric = length => {
+		  let s = '';
+		  Array.from({ length }).some(() => {
+		    s += Math.random().toString(36).slice(2);
+		    return s.length >= length;
+		  });
+		  return s.slice(0, length);
+		};
+		
 		clock.restore();
 
-		this.timeout(15000);
+		this.timeout(25000);
 
 		var websocketURL = "wss://test.antmedia.io/live/websocket";
 		processStarted = false;
@@ -1744,12 +1776,12 @@ describe("WebRTCAdaptor", function() {
 		await new Promise((resolve, reject)=>{
 					setTimeout(()=> {
 						resolve();
-					}, 3000);
+					}, 5000);
 				});
 
 		expect(initialized).to.be.true;
 	
-		var streamId = "stream1desadafg23424";
+		var streamId = "stream1desadafg23424" + randomAlphaNumeric(24);
 
 		adaptor.publish(streamId);
 
@@ -1758,7 +1790,7 @@ describe("WebRTCAdaptor", function() {
 			setTimeout(()=> {
 				expect(processStarted).to.be.true;
 				resolve();
-			}, 3000);
+			}, 5000);
 		});
 		
 		//getStats
@@ -1819,6 +1851,7 @@ describe("WebRTCAdaptor", function() {
 		initialized = false;
 		var playAdaptor = new WebRTCAdaptor({
 						websocketURL: websocketURL,
+						isPlayMode: true,
 						callback: (info, obj) => {
 						     console.log("callback info: " + info);
 							 if (info == "initialized") {
@@ -1836,7 +1869,7 @@ describe("WebRTCAdaptor", function() {
 		await new Promise((resolve, reject)=>{
 							setTimeout(()=> {
 								resolve();
-							}, 3000);
+							}, 5000);
 						});
 
 		expect(initialized).to.be.true;
@@ -1846,10 +1879,12 @@ describe("WebRTCAdaptor", function() {
 		await new Promise((resolve, reject)=>{
 
 					setTimeout(()=> {
-						expect(processStarted).to.be.true;
+						
 						resolve();
-					}, 3000);
+					}, 5000);
 				});
+		
+		expect(processStarted).to.be.true;
 	  
 		peerStats = await playAdaptor.getStats(streamId);
 		
@@ -1903,7 +1938,12 @@ describe("WebRTCAdaptor", function() {
 		expect(peerStats.totalBytesSentCount).to.be.equal(-1);
 		expect(peerStats.totalAudioPacketsSent).to.be.equal(-1);
 		expect(peerStats.totalVideoPacketsSent).to.be.equal(-1);
-				
+			
+		
+		adaptor.stop(streamId);	
+		
+		playAdaptor.stop(streamId);
+
 
 		
 	});
