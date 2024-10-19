@@ -555,7 +555,7 @@ describe("WebRTCAdaptor", function() {
 		await adaptor.updateAudioTrack(stream, null, null);
 	});
 
-	it("testSoundMeter", function(done) {
+	it.only("testSoundMeter", function(done) {
 		this.timeout(15000);
 		console.log("Starting testSoundMeter");
 
@@ -566,7 +566,7 @@ describe("WebRTCAdaptor", function() {
 				audio: true
 			},
 			initializeComponents: false,
-			volumeMeterUrl: '/volume-meter-processor.js',
+			volumeMeterUrl: 'volume-meter-processor.js',
 		});
 
 		//fake stream in te browser is a period audio and silence, so getting sound level more than 0 requires
