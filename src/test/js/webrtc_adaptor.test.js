@@ -555,7 +555,7 @@ describe("WebRTCAdaptor", function() {
 		await adaptor.updateAudioTrack(stream, null, null);
 	});
 
-	it.only("testSoundMeter", function(done) {
+	it("testSoundMeter", function(done) {
 		this.timeout(15000);
 		console.log("Starting testSoundMeter");
 
