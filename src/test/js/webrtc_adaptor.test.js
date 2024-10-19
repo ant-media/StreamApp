@@ -586,7 +586,6 @@ describe("WebRTCAdaptor", function() {
 			adaptor.enableAudioLevelForLocalStream((level) => {
 				console.log("sound level -> " + level);
 				if (level > 0) {
-					adaptor.disableAudioLevelForLocalStream();
 					done();
 				}
 			});
