@@ -244,15 +244,18 @@
 	var token = getUrlParameter("token");
 	var publishStreamId = getUrlParameter("streamId");
 	var playOnly = getUrlParameter("playOnly");
-	var dcOnly = getUrlParameter("dcOnly");
-
 	if (playOnly == null) {
-		playOnly = false;
+			playOnly = false;
 	}
-
+		
+	var dcOnly = getUrlParameter("dcOnly");
+	
 	if (dcOnly == null) {
 		dcOnly = false;
 	}
+	
+	var role = getUrlParameter("role");
+
 
 	var roomId = getUrlParameter("roomId");
 	var streamName = getUrlParameter("streamName");
@@ -405,21 +408,32 @@
 	function sendData() {
 		try {
 			var iceState = webRTCAdaptor.iceConnectionState(publishStreamId);
+			var msg = $("#dataTextbox").val();
+			var notEvent = { streamId: publishStreamId, eventType: "CHAT_MESSAGE", message: msg };
+							
 			if (iceState != null && iceState != "failed" && iceState != "disconnected") {
 
-				var msg = $("#dataTextbox").val();
-				var notEvent = { streamId: publishStreamId, eventType: "CHAT_MESSAGE", message: msg };
+				
 
 				webRTCAdaptor.sendData(publishStreamId, JSON.stringify(notEvent));
 				$("#all-messages").append("Sent: " + msg + "<br>");
 				$("#dataTextbox").val("");
 			}
 			else {
-				$.notify("WebRTC playing is not active. Please click Start Playing first", {
-					autoHideDelay: 5000,
-					className: 'error',
-					position: 'top center'
-				});
+				iceState = webRTCAdaptor.iceConnectionState(roomNameBox.value);
+				if (iceState != null && iceState != "failed" && iceState != "disconnected") 
+				{
+					webRTCAdaptor.sendData(roomNameBox.value, JSON.stringify(notEvent));
+					$("#all-messages").append("Sent: " + msg + "<br>");
+					$("#dataTextbox").val("");
+				}
+				else {
+					$.notify("WebRTC playing is not active. Please click Start Playing first", {
+						autoHideDelay: 5000,
+						className: 'error',
+						position: 'top center'
+					});
+				}
 			}
 		}
 		catch (exception) {
@@ -504,8 +518,10 @@
 			publishStreamId = generateRandomString(12);
 		}
 
-		publish(publishStreamId, token);
-		webRTCAdaptor.play(roomNameBox.value, token, roomNameBox.value, [], subscriberId, subscriberCode);
+		if (!playOnly) {
+			publish(publishStreamId, token);
+		}
+		webRTCAdaptor.play(roomNameBox.value, token, roomNameBox.value, [], subscriberId, subscriberCode, null, role);
 	}
 
 	function leaveRoom() {
@@ -526,7 +542,7 @@
 		if (streamName == null || streamName == 'undefined' || streamName == "") {
 			streamName = streamId;
 		}
-		webRTCAdaptor.publish(publishStreamId, token, subscriberId, subscriberCode, streamName, roomNameBox.value, JSON.stringify(metadata));
+		webRTCAdaptor.publish(publishStreamId, token, subscriberId, subscriberCode, streamName, roomNameBox.value, JSON.stringify(metadata), role);
 
 	}
 
@@ -765,6 +781,9 @@
 					else if (info == "play_started") {
 						isPlaying = true;
 						isNoSreamExist = false;
+						join_publish_button.disabled = true;
+						stop_publish_button.disabled = false;
+												
 						webRTCAdaptor.getBroadcastObject(roomNameBox.value);
 						if (reconnecting) {
 							playReconnected = true;

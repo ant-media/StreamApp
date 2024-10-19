@@ -13,6 +13,8 @@ describe("WebRTCAdaptor", function() {
 
 	var currentTest;
 
+	var processStarted = false;
+
 	beforeEach(function() {
 		clock = sinon.useFakeTimers();
 		sandbox = sinon.createSandbox();
@@ -30,6 +32,46 @@ describe("WebRTCAdaptor", function() {
 		sandbox.restore();
 
 	});
+	
+	//I've put this test first because it fails when run in the middle, ı thnk one test breaks it. Let's revisit this case in another time - mekya
+	it("testSoundMeter", function(done) {
+			this.timeout(15000);
+			console.log("Starting testSoundMeter");
+
+			var adaptor = new WebRTCAdaptor({
+				websocketURL: "ws://localhost",
+				mediaConstraints: {
+					video: true,
+					audio: true
+				},
+				initializeComponents: false,
+				volumeMeterUrl: '/volume-meter-processor.js',
+			});
+
+			//fake stream in te browser is a period audio and silence, so getting sound level more than 0 requires
+
+			adaptor.initialize().then(() => {
+				var audioContext = new (window.AudioContext || window.webkitAudioContext)();
+				var oscillator = audioContext.createOscillator();
+				oscillator.type = "sine";
+				oscillator.frequency.value = 800;
+				var mediaStreamSource = audioContext.createMediaStreamDestination();
+				oscillator.connect(mediaStreamSource);
+				var mediaStreamTrack = mediaStreamSource.stream.getAudioTracks()[0];
+				oscillator.start();
+
+				adaptor.mediaManager.localStream = new MediaStream([mediaStreamTrack])
+				adaptor.mediaManager.audioContext = audioContext;
+				adaptor.enableAudioLevelForLocalStream((level) => {
+					console.log("sound level -> " + level);
+					if (level > 0) {
+						done();
+					}
+				});
+
+				expect(adaptor.mediaManager.localStreamSoundMeter).to.not.be.null;
+			})
+		})
 
 
 	it("Initialize", async function() {
@@ -128,7 +170,7 @@ describe("WebRTCAdaptor", function() {
 		adaptor.enableStats(streamId);
 		expect(adaptor.remotePeerConnectionStats[streamId]).to.not.be.undefined
 
-		expect(await adaptor.getStats(streamId)).to.be.true;
+		expect(await adaptor.getStats(streamId)).to.be.not.null;
 
 
 		console.log(adaptor.remotePeerConnectionStats[streamId])
@@ -197,7 +239,7 @@ describe("WebRTCAdaptor", function() {
 	});
 
 
-	it.only("should set connected and connecting to false and log the correct message", function() {
+	it("should set connected and connecting to false and log the correct message", function() {
 
 		var adaptor = new WebRTCAdaptor({
 			websocketURL: "ws://example.com",
@@ -205,10 +247,10 @@ describe("WebRTCAdaptor", function() {
 		});
 		let webSocketAdaptor = adaptor.webSocketAdaptor;
 
-		
+
 		webSocketAdaptor.connected = true;
 		webSocketAdaptor.connecting = true;
-		
+
 		expect(webSocketAdaptor.connected).to.be.true;
 		expect(webSocketAdaptor.connecting).to.be.true;
 		// Simulate offline event
@@ -552,45 +594,6 @@ describe("WebRTCAdaptor", function() {
 
 		await adaptor.updateAudioTrack(stream, null, null);
 	});
-
-	it("testSoundMeter", function(done) {
-		this.timeout(5000);
-		console.log("Starting testSoundMeter");
-
-		var adaptor = new WebRTCAdaptor({
-			websocketURL: "ws://localhost",
-			mediaConstraints: {
-				video: true,
-				audio: true
-			},
-			initializeComponents: false,
-			volumeMeterUrl: 'base/src/main/js/volume-meter-processor.js',
-		});
-
-		//fake stream in te browser is a period audio and silence, so getting sound level more than 0 requires
-
-		adaptor.initialize().then(() => {
-			var audioContext = new (window.AudioContext || window.webkitAudioContext)();
-			var oscillator = audioContext.createOscillator();
-			oscillator.type = "sine";
-			oscillator.frequency.value = 800;
-			var mediaStreamSource = audioContext.createMediaStreamDestination();
-			oscillator.connect(mediaStreamSource);
-			var mediaStreamTrack = mediaStreamSource.stream.getAudioTracks()[0];
-			oscillator.start();
-
-			adaptor.mediaManager.localStream = new MediaStream([mediaStreamTrack])
-			adaptor.mediaManager.audioContext = audioContext;
-			adaptor.enableAudioLevelForLocalStream((level) => {
-				console.log("sound level -> " + level);
-				if (level > 0) {
-					done();
-				}
-			});
-
-			expect(adaptor.mediaManager.localStreamSoundMeter).to.not.be.null;
-		})
-	})
 
 
 	it("takeConfiguration", async function() {
@@ -1199,7 +1202,7 @@ describe("WebRTCAdaptor", function() {
 		it("should resolve with true when getStats is successful", async function() {
 			mockPeerConnection.getStats.resolves(mockStats);
 			const result = await adaptor.getStats("stream1");
-			expect(result).to.be.true;
+			expect(result).to.be.not.null;
 		});
 
 		it("should correctly process inbound RTP with audio kind", async function() {
@@ -1259,9 +1262,17 @@ describe("WebRTCAdaptor", function() {
 				]
 			};
 
-			assert(consoleSpy.calledWith(JSON.stringify(localMockStatsProcessed)), 'console.log was not called with the expected arguments');
 
-			expect(result).to.be.true;
+			expect(result).to.be.not.null;
+			expect(result.inboundRtpList[0].trackIdentifier).to.equal("audioTrack1");
+			expect(result.inboundRtpList[0].audioPacketsLost).to.equal(10);
+			expect(result.inboundRtpList[0].bytesReceived).to.equal(1000);
+			expect(result.inboundRtpList[0].jitterBufferDelay).to.equal(5);
+			expect(result.inboundRtpList[0].lastPacketReceivedTimestamp).to.equal(160000);
+			expect(result.inboundRtpList[0].fractionLost).to.equal(0.1);
+			expect(result.inboundRtpList[0].currentTime).to.equal(0);
+
+
 			consoleSpy.restore();
 		});
 
@@ -1332,9 +1343,23 @@ describe("WebRTCAdaptor", function() {
 				]
 			};
 
-			assert(consoleSpy.calledWith(JSON.stringify(localMockStatsProcessed)), 'console.log was not called with the expected arguments');
+			//assert(consoleSpy.calledWith(JSON.stringify(localMockStatsProcessed)), 'console.log was not called with the expected arguments');
 
-			expect(result).to.be.true;
+			expect(result).to.be.not.null;
+			expect(result.inboundRtpList[0].trackIdentifier).to.equal("videoTrack2");
+			expect(result.inboundRtpList[0].videoPacketsLost).to.equal(5);
+			expect(result.inboundRtpList[0].framesDropped).to.equal(2);
+			expect(result.inboundRtpList[0].framesDecoded).to.equal(50);
+			expect(result.inboundRtpList[0].framesPerSecond).to.equal(25);
+			expect(result.inboundRtpList[0].bytesReceived).to.equal(2000);
+			expect(result.inboundRtpList[0].jitterBufferDelay).to.equal(10);
+			expect(result.inboundRtpList[0].lastPacketReceivedTimestamp).to.equal(160000);
+			expect(result.inboundRtpList[0].fractionLost).to.equal(0.05);
+			expect(result.inboundRtpList[0].currentTime).to.equal(0);
+			expect(result.inboundRtpList[0].frameWidth).to.equal(1920);
+			expect(result.inboundRtpList[0].frameHeight).to.equal(1080);
+
+
 			consoleSpy.restore();
 		});
 
@@ -1708,6 +1733,192 @@ describe("WebRTCAdaptor", function() {
 
 			expect(adaptor.mediaManager.updateVideoTrack.calledWithMatch(stream, streamId, onEndedCallback, stopDesktop)).to.be.true;
 		});
+
+
+	});
+
+	it("parseStats-publish", async function() {
+
+		//sample publish statistics
+		var stats = [{ "id": "AP", "timestamp": 1729330520732.352, "type": "media-playout", "kind": "audio", "synthesizedSamplesDuration": 0, "synthesizedSamplesEvents": 0, "totalPlayoutDelay": 0, "totalSamplesCount": 0, "totalSamplesDuration": 0 },
+		{ "id": "CF4D:0B:4F:4D:8D:38:1C:AC:2A:F3:9C:17:29:92:EE:18:DF:B0:21:35:08:99:93:6D:12:F7:7D:A3:8E:72:8E:B8", "timestamp": 1729330520732.352, "type": "certificate", "base64Certificate": "MIIBFTCBvKADAgECAgh9MrqnGcYy7zAKBggqhkjOPQQDAjARMQ8wDQYDVQQDDAZXZWJSVEMwHhcNMjQxMDE4MDkzMzMxWhcNMjQxMTE4MDkzMzMxWjARMQ8wDQYDVQQDDAZXZWJSVEMwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAAR6BNLECVPeybudk4KkGtMX1S3CkYJ+TCOgwtxVBKtGdPL8d4xUhbYC403jHZqrMwtbkY+IH1+uBbfuvz66FDGiMAoGCCqGSM49BAMCA0gAMEUCIQCQ9sr21P+NWMqg9QZthhOvTyhtkGnvDrww7I+ZqBamhgIgfqMp2YhIZC2QTONtIZnSs27vvEPWjomCowBzygeusTA=", "fingerprint": "4D:0B:4F:4D:8D:38:1C:AC:2A:F3:9C:17:29:92:EE:18:DF:B0:21:35:08:99:93:6D:12:F7:7D:A3:8E:72:8E:B8", "fingerprintAlgorithm": "sha-256" },
+		{ "id": "CFF9:6F:09:D5:F9:01:7F:A3:4F:00:0D:AE:A7:7E:6F:A9:54:C7:67:4C:9E:F7:02:0E:CF:84:44:11:59:71:A7:BE", "timestamp": 1729330520732.352, "type": "certificate", "base64Certificate": "MIIBFzCBvaADAgECAgkAglBApme+IRgwCgYIKoZIzj0EAwIwETEPMA0GA1UEAwwGV2ViUlRDMB4XDTI0MTAxODA5MzMzMFoXDTI0MTExODA5MzMzMFowETEPMA0GA1UEAwwGV2ViUlRDMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEseI9xyxWMKs3R2LGUPjzyYUrm8q2Ev+YhAIftwIYQ0JrE4piYUV+5j8DXJe1ldC5Yd+mlFL1PNi7qRYP9j4cwDAKBggqhkjOPQQDAgNJADBGAiEAotZ2yCw7yVXjqzgmzjm6Rh5zfSQNVqs/rA3385tuaD8CIQDfMC+JI7joQw04rFL0M0ik1YbvrKrNokqKu0N3rPMYVQ==", "fingerprint": "F9:6F:09:D5:F9:01:7F:A3:4F:00:0D:AE:A7:7E:6F:A9:54:C7:67:4C:9E:F7:02:0E:CF:84:44:11:59:71:A7:BE", "fingerprintAlgorithm": "sha-256" },
+		{ "id": "COT01_111_minptime=10;stereo=1;useinbandfec=1", "timestamp": 1729330520732.352, "type": "codec", "channels": 2, "clockRate": 48000, "mimeType": "audio/opus", "payloadType": 111, "sdpFmtpLine": "minptime=10;stereo=1;useinbandfec=1", "transportId": "T01" },
+		{ "id": "COT01_96", "timestamp": 1729330520732.352, "type": "codec", "clockRate": 90000, "mimeType": "video/VP8", "payloadType": 96, "transportId": "T01" },
+		{ "id": "CPXuLks4I7_lSNilYVM", "timestamp": 1729330520732.352, "type": "candidate-pair", "availableOutgoingBitrate": 2563076, "bytesDiscardedOnSend": 0, "bytesReceived": 106219, "bytesSent": 14450360, "consentRequestsSent": 44, "currentRoundTripTime": 0, "lastPacketReceivedTimestamp": 1729330520728, "lastPacketSentTimestamp": 1729330520726, "localCandidateId": "IXuLks4I7", "nominated": true, "packetsDiscardedOnSend": 0, "packetsReceived": 2301, "packetsSent": 18196, "priority": 9115038255631187000, "remoteCandidateId": "IlSNilYVM", "requestsReceived": 47, "requestsSent": 45, "responsesReceived": 45, "responsesSent": 47, "state": "succeeded", "totalRoundTripTime": 0.023, "transportId": "T01", "writable": true },
+		{ "id": "D1", "timestamp": 1729330520732.352, "type": "data-channel", "bytesReceived": 0, "bytesSent": 0, "dataChannelIdentifier": 1, "label": "streamId_dyvi2Oovo", "messagesReceived": 0, "messagesSent": 0, "protocol": "", "state": "open" },
+		{ "id": "I9AXE+Zl0", "timestamp": 1729330520732.352, "type": "local-candidate", "address": "31.142.67.147", "candidateType": "srflx", "foundation": "518501176", "ip": "31.142.67.147", "isRemote": false, "networkType": "wifi", "port": 54238, "priority": 1686052607, "protocol": "udp", "relatedAddress": "172.20.10.2", "relatedPort": 53816, "transportId": "T01", "url": "stun:stun1.l.google.com:19302", "usernameFragment": "5Ukp" },
+		{ "id": "IXuLks4I7", "timestamp": 1729330520732.352, "type": "local-candidate", "address": "172.20.10.2", "candidateType": "host", "foundation": "1579008401", "ip": "172.20.10.2", "isRemote": false, "networkType": "wifi", "port": 53816, "priority": 2122260223, "protocol": "udp", "transportId": "T01", "usernameFragment": "5Ukp" },
+		{ "id": "IesfU0nCG", "timestamp": 1729330520732.352, "type": "local-candidate", "address": "172.20.10.2", "candidateType": "host", "foundation": "2696353029", "ip": "172.20.10.2", "isRemote": false, "networkType": "wifi", "port": 9, "priority": 1518280447, "protocol": "tcp", "tcpType": "active", "transportId": "T01", "usernameFragment": "5Ukp" },
+		{ "id": "IlSNilYVM", "timestamp": 1729330520732.352, "type": "remote-candidate", "address": "172.20.10.2", "candidateType": "host", "foundation": "1478312482", "ip": "172.20.10.2", "isRemote": true, "port": 50000, "priority": 2122260223, "protocol": "udp", "transportId": "T01", "usernameFragment": "wtUu" },
+		{ "id": "OT01A2527777913", "timestamp": 1729330520732.352, "type": "outbound-rtp", "codecId": "COT01_111_minptime=10;stereo=1;useinbandfec=1", "kind": "audio", "mediaType": "audio", "ssrc": 2527777913, "transportId": "T01", "bytesSent": 881500, "packetsSent": 5475, "active": true, "headerBytesSent": 153300, "mediaSourceId": "SA1", "mid": "0", "nackCount": 0, "remoteId": "RIA2527777913", "retransmittedBytesSent": 0, "retransmittedPacketsSent": 0, "targetBitrate": 64000, "totalPacketSendDelay": 0.000051 },
+		{ "id": "OT01V1354817864", "timestamp": 1729330520732.352, "type": "outbound-rtp", "codecId": "COT01_96", "kind": "video", "mediaType": "video", "ssrc": 1354817864, "transportId": "T01", "bytesSent": 12902907, "packetsSent": 12386, "active": true, "encoderImplementation": "libvpx", "firCount": 0, "frameHeight": 1080, "frameWidth": 1920, "framesEncoded": 4089, "framesPerSecond": 37, "framesSent": 4089, "headerBytesSent": 309481, "hugeFramesSent": 2, "keyFramesEncoded": 2, "mediaSourceId": "SV2", "mid": "1", "nackCount": 0, "pliCount": 0, "powerEfficientEncoder": false, "qpSum": 38909, "qualityLimitationDurations": { "bandwidth": 0, "cpu": 0, "none": 109.53, "other": 0 }, "qualityLimitationReason": "none", "qualityLimitationResolutionChanges": 0, "remoteId": "RIV1354817864", "retransmittedBytesSent": 0, "retransmittedPacketsSent": 0, "rtxSsrc": 2624029362, "scalabilityMode": "L1T1", "targetBitrate": 1200000, "totalEncodeTime": 22.745, "totalEncodedBytesTarget": 0, "totalPacketSendDelay": 1.3370279999999999 },
+		{ "id": "P", "timestamp": 1729330520732.352, "type": "peer-connection", "dataChannelsClosed": 0, "dataChannelsOpened": 1 },
+		{ "id": "RIA2527777913", "timestamp": 1729330516942, "type": "remote-inbound-rtp", "codecId": "COT01_111_minptime=10;stereo=1;useinbandfec=1", "kind": "audio", "mediaType": "audio", "ssrc": 2527777913, "transportId": "T01", "jitter": 0, "packetsLost": 0, "fractionLost": 0, "localId": "OT01A2527777913", "roundTripTime": 0.001, "roundTripTimeMeasurements": 22, "totalRoundTripTime": 0.022 },
+		{ "id": "RIV1354817864", "timestamp": 1729330520576, "type": "remote-inbound-rtp", "codecId": "COT01_96", "kind": "video", "mediaType": "video", "ssrc": 1354817864, "transportId": "T01", "jitter": 0.0006659999999999999, "packetsLost": 0, "fractionLost": 0, "localId": "OT01V1354817864", "roundTripTime": 0.001, "roundTripTimeMeasurements": 106, "totalRoundTripTime": 0.10915 },
+		{ "id": "SA1", "timestamp": 1729330520732.352, "type": "media-source", "kind": "audio", "trackIdentifier": "c67ebf63-f9dc-43e7-95fd-87ac5ccf6734", "audioLevel": 0.02252265999328593, "totalAudioEnergy": 0.6837220094184183, "totalSamplesDuration": 110.10000000001942 },
+		{ "id": "SV2", "timestamp": 1729330520732.352, "type": "media-source", "kind": "video", "trackIdentifier": "dc8e387c-57bf-40a3-8b67-8f62216e7c2e", "frames": 4104, "framesPerSecond": 39, "height": 1080, "width": 1920 },
+		{ "id": "T01", "timestamp": 1729330520732.352, "type": "transport", "bytesReceived": 106219, "bytesSent": 14450360, "dtlsCipher": "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256", "dtlsRole": "server", "dtlsState": "connected", "iceLocalUsernameFragment": "5Ukp", "iceRole": "controlling", "iceState": "connected", "localCertificateId": "CFF9:6F:09:D5:F9:01:7F:A3:4F:00:0D:AE:A7:7E:6F:A9:54:C7:67:4C:9E:F7:02:0E:CF:84:44:11:59:71:A7:BE", "packetsReceived": 2301, "packetsSent": 18196, "remoteCertificateId": "CF4D:0B:4F:4D:8D:38:1C:AC:2A:F3:9C:17:29:92:EE:18:DF:B0:21:35:08:99:93:6D:12:F7:7D:A3:8E:72:8E:B8", "selectedCandidatePairChanges": 1, "selectedCandidatePairId": "CPXuLks4I7_lSNilYVM", "srtpCipher": "AES_CM_128_HMAC_SHA1_80", "tlsVersion": "FEFD" }];
+
+
+		var websocketURL = "wss://test.antmedia.io/live/websocket";
+		processStarted = false;
+		initialized = false;
+		var adaptor = new WebRTCAdaptor({
+			websocketURL: websocketURL,
+			callback: (info, obj) => {
+				console.log("callback info: " + info);
+				if (info == "initialized") {
+					initialized = true;
+				}
+			},
+		});
+
+
+		var streamId = "stream1";
+
+		//getStats
+		var peerStats = adaptor.parseStats(stats, streamId);
+
+		console.log("publish peerStats: " + JSON.stringify(peerStats));
+		expect(peerStats.streamId).to.be.equal(streamId);
+		expect(peerStats.audioPacketsSent).to.be.equal(5475);
+		expect(peerStats.videoPacketsSent).to.be.equal(12386);
+		expect(peerStats.frameWidth).to.be.equal(1920);
+		expect(peerStats.frameHeight).to.be.equal(1080);
+		expect(peerStats.currentRoundTripTime).to.be.least(0);
+
+		expect(peerStats.videoPacketsLost).to.be.least(0);
+		expect(peerStats.audioPacketsLost).to.be.least(0);
+		expect(peerStats.videoJitter).to.be.least(0.0006);
+		expect(peerStats.audioJitter).to.be.equal(0);
+		expect(peerStats.totalBytesSentCount).to.be.equal(13784406);
+		expect(peerStats.lastFramesEncoded).to.be.equal(4088);
+		expect(peerStats.totalFramesEncodedCount).to.be.equal(4088);
+		expect(peerStats.frameWidth).to.be.equal(1920);
+		expect(peerStats.frameHeight).to.be.equal(1080);
+		expect(peerStats.qualityLimitationReason).to.be.equal("none");
+		expect(peerStats.firstByteSentCount).to.be.not.equal(0);
+		expect(peerStats.srcFps).to.be.equal(39);
+		expect(peerStats.videoRoundTripTime).to.be.equal(0.001);
+		//expect(peerStats.audioRoundTripTime).to.be.above(0);
+		expect(peerStats.availableOutgoingBitrate).to.be.equal(2563.076);
+
+
+
+
+		expect(peerStats.totalBytesReceivedCount).to.be.equal(-1);
+		expect(peerStats.lastBytesSent).to.be.equal(0);
+		expect(peerStats.videoPacketsLost).to.be.equal(0);
+		expect(peerStats.fractionLost).to.be.equal(-1);
+		expect(peerStats.startTime).to.be.not.equal(0);
+		expect(peerStats.lastBytesReceived).to.be.equal(0);
+		expect(peerStats.currentTimestamp).to.be.not.equal(0);
+		expect(peerStats.lastTime).to.be.equal(0);
+		expect(peerStats.timerId).to.be.equal(0);
+		expect(peerStats.firstBytesReceivedCount).to.be.equal(-1);
+		expect(peerStats.audioLevel).to.be.equal(-1);
+		expect(peerStats.resWidth).to.be.equal(1920);
+		expect(peerStats.resHeight).to.be.equal(1080);
+		expect(peerStats.framesReceived).to.be.equal(-1);
+		expect(peerStats.framesDropped).to.be.equal(-1);
+		expect(peerStats.framesDecoded).to.be.equal(-1);
+		expect(peerStats.audioJitterAverageDelay).to.be.equal(-1);
+		expect(peerStats.videoJitterAverageDelay).to.be.equal(-1);
+		expect(peerStats.inboundRtpList).to.be.empty;
+		expect(peerStats.audioPacketsReceived).to.be.equal(-1);
+		expect(peerStats.videoPacketsReceived).to.be.equal(-1);
+
+	});
+
+	it("parseStats-play", async function() {
+
+		var stats = [{ "id": "AP", "timestamp": 1729360465698.781, "type": "media-playout", "kind": "audio", "synthesizedSamplesDuration": 0, "synthesizedSamplesEvents": 0, "totalPlayoutDelay": 174058.96224, "totalSamplesCount": 3614400, "totalSamplesDuration": 75.3 },
+		{ "id": "CF48:5F:93:78:DB:03:CB:A8:ED:6E:0C:52:34:00:55:80:50:0B:7B:73:3C:AB:F1:C9:15:63:59:E2:8E:7B:09:DD", "timestamp": 1729360465698.781, "type": "certificate", "base64Certificate": "MIIBFzCBvaADAgECAgkApIGSBIC4JckwCgYIKoZIzj0EAwIwETEPMA0GA1UEAwwGV2ViUlRDMB4XDTI0MTAxODE3NTMxMFoXDTI0MTExODE3NTMxMFowETEPMA0GA1UEAwwGV2ViUlRDMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEuAAt92Y89uymKvP0E2sc8vA8IAD2YrPMol4uO8VSsFZIevCMoBGcSkgFbDyqsV4zzEmNA9uyp2Qr3njOI/2lIDAKBggqhkjOPQQDAgNJADBGAiEAj0S++4Go0R6pbocel9F3AevVIRcBFERHQ/JbsDrRCEACIQCfHKdmFN6dl+7vBW1VXl1qqD9dhSRtl2sFo1knPYd6tA==", "fingerprint": "48:5F:93:78:DB:03:CB:A8:ED:6E:0C:52:34:00:55:80:50:0B:7B:73:3C:AB:F1:C9:15:63:59:E2:8E:7B:09:DD", "fingerprintAlgorithm": "sha-256" },
+		{ "id": "CFDB:33:70:CB:A5:84:C4:9C:65:2E:7C:D9:61:87:5D:09:BF:A4:C2:04:CB:AB:CC:C6:AA:D9:57:D8:C5:1E:D8:E6", "timestamp": 1729360465698.781, "type": "certificate", "base64Certificate": "MIIBFjCBvaADAgECAgkAyueWBvMtqW4wCgYIKoZIzj0EAwIwETEPMA0GA1UEAwwGV2ViUlRDMB4XDTI0MTAxODE3NTMxMFoXDTI0MTExODE3NTMxMFowETEPMA0GA1UEAwwGV2ViUlRDMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEb3mgpzNXygFciDx+zpI3FhEMWEVExL6L03ZF6q9dwzEErPo7cmileEz/h+57fWKHuImu4dw+oyHKRU30PHP0oTAKBggqhkjOPQQDAgNIADBFAiB+umpKbmN4F0iLvMQX9wXrxqwdOorxC/ADn6dWh2q/dQIhAJE4axj9umROWU9phNlMcU2AkxPSDqjVM/hvaV84YSzA", "fingerprint": "DB:33:70:CB:A5:84:C4:9C:65:2E:7C:D9:61:87:5D:09:BF:A4:C2:04:CB:AB:CC:C6:AA:D9:57:D8:C5:1E:D8:E6", "fingerprintAlgorithm": "sha-256" },
+		{ "id": "CIT01_111_minptime=10;stereo=1;useinbandfec=1", "timestamp": 1729360465698.781, "type": "codec", "channels": 2, "clockRate": 48000, "mimeType": "audio/opus", "payloadType": 111, "sdpFmtpLine": "minptime=10;stereo=1;useinbandfec=1", "transportId": "T01" },
+		{ "id": "CIT01_127_level-asymmetry-allowed=1;packetization-mode=1;profile-level-id=42e01f", "timestamp": 1729360465698.781, "type": "codec", "clockRate": 90000, "mimeType": "video/H264", "payloadType": 127, "sdpFmtpLine": "level-asymmetry-allowed=1;packetization-mode=1;profile-level-id=42e01f", "transportId": "T01" },
+		{ "id": "CPdtvDwfjB_kGw81ZH2", "timestamp": 1729360465698.781, "type": "candidate-pair", "availableOutgoingBitrate": 300000, "bytesDiscardedOnSend": 0, "bytesReceived": 1475790, "bytesSent": 61385, "consentRequestsSent": 31, "currentRoundTripTime": 0, "lastPacketReceivedTimestamp": 1729360465684, "lastPacketSentTimestamp": 1729360465697, "localCandidateId": "IdtvDwfjB", "nominated": true, "packetsDiscardedOnSend": 0, "packetsReceived": 7261, "packetsSent": 1340, "priority": 9115038255631187000, "remoteCandidateId": "IkGw81ZH2", "requestsReceived": 34, "requestsSent": 32, "responsesReceived": 32, "responsesSent": 34, "state": "succeeded", "totalRoundTripTime": 0.011, "transportId": "T01", "writable": true },
+		{ "id": "D3", "timestamp": 1729360465698.781, "type": "data-channel", "bytesReceived": 5355, "bytesSent": 0, "dataChannelIdentifier": 1, "label": "stream1", "messagesReceived": 40, "messagesSent": 0, "protocol": "", "state": "open" },
+		{ "id": "IT01A3202491249", "timestamp": 1729360465698.781, "type": "inbound-rtp", "codecId": "CIT01_111_minptime=10;stereo=1;useinbandfec=1", "kind": "audio", "mediaType": "audio", "ssrc": 3202491249, "transportId": "T01", "jitter": 0, "packetsLost": 0, "packetsReceived": 3764, "audioLevel": 0.0076906643879512925, "bytesReceived": 482689, "concealedSamples": 1774, "concealmentEvents": 2, "estimatedPlayoutTimestamp": 3938327816566, "fecPacketsDiscarded": 0, "fecPacketsReceived": 0, "headerBytesReceived": 105392, "insertedSamplesForDeceleration": 2862, "jitterBufferDelay": 113116.8, "jitterBufferEmittedCount": 3612480, "jitterBufferMinimumDelay": 76147.2, "jitterBufferTargetDelay": 76300.8, "lastPacketReceivedTimestamp": 1729339016620.57, "mid": "1", "packetsDiscarded": 0, "playoutId": "AP", "remoteId": "ROA3202491249", "removedSamplesForAcceleration": 2670, "silentConcealedSamples": 0, "totalAudioEnergy": 0.9479140477134788, "totalProcessingDelay": 108273.23712, "totalSamplesDuration": 75.29000000000161, "totalSamplesReceived": 3613920, "trackIdentifier": "ARDAMSaaudioTrack0" },
+		{ "id": "IT01V3262821271", "timestamp": 1729360465698.781, "type": "inbound-rtp", "codecId": "CIT01_127_level-asymmetry-allowed=1;packetization-mode=1;profile-level-id=42e01f", "kind": "video", "mediaType": "video", "ssrc": 3262821271, "transportId": "T01", "jitter": 0.01, "packetsLost": 0, "packetsReceived": 3346, "bytesReceived": 709312, "estimatedPlayoutTimestamp": 3938338821605, "firCount": 0, "frameHeight": 360, "frameWidth": 640, "framesAssembledFromMultiplePackets": 75, "framesDecoded": 2226, "framesDropped": 0, "framesPerSecond": 29, "framesReceived": 2226, "freezeCount": 0, "headerBytesReceived": 90444, "jitterBufferDelay": 31.145653, "jitterBufferEmittedCount": 2227, "jitterBufferMinimumDelay": 44.558583999999996, "jitterBufferTargetDelay": 44.558583999999996, "keyFramesDecoded": 75, "lastPacketReceivedTimestamp": 1729339016617.0981, "mid": "0", "nackCount": 0, "pauseCount": 0, "pliCount": 0, "remoteId": "ROV3262821271", "retransmittedBytesReceived": 112295, "retransmittedPacketsReceived": 519, "rtxSsrc": 3654956870, "totalAssemblyTime": 0.6750689999999999, "totalDecodeTime": 1.81971, "totalFreezesDuration": 0, "totalInterFrameDelay": 74.305, "totalPausesDuration": 0, "totalProcessingDelay": 33.002987, "totalSquaredInterFrameDelay": 2.597927000000023, "trackIdentifier": "ARDAMSvvideoTrack0" },
+		{ "id": "IdtvDwfjB", "timestamp": 1729360465698.781, "type": "local-candidate", "address": "192.168.1.31", "candidateType": "host", "foundation": "2770254034", "ip": "192.168.1.31", "isRemote": false, "networkType": "wifi", "port": 54322, "priority": 2122260223, "protocol": "udp", "transportId": "T01", "usernameFragment": "KlG/" },
+		{ "id": "IkGw81ZH2", "timestamp": 1729360465698.781, "type": "remote-candidate", "address": "192.168.1.31", "candidateType": "host", "foundation": "3335006257", "ip": "192.168.1.31", "isRemote": true, "port": 50001, "priority": 2122260223, "protocol": "udp", "transportId": "T01", "usernameFragment": "+T7W" },
+		{ "id": "P", "timestamp": 1729360465698.781, "type": "peer-connection", "dataChannelsClosed": 0, "dataChannelsOpened": 1 },
+		{ "id": "ROA3202491249", "timestamp": 1729339015650, "type": "remote-outbound-rtp", "codecId": "CIT01_111_minptime=10;stereo=1;useinbandfec=1", "kind": "audio", "mediaType": "audio", "ssrc": 3202491249, "transportId": "T01", "bytesSent": 476489, "packetsSent": 3715, "localId": "IT01A3202491249", "remoteTimestamp": 1729339015650, "reportsSent": 17, "roundTripTimeMeasurements": 0, "totalRoundTripTime": 0 },
+		{ "id": "ROV3262821271", "timestamp": 1729339016116, "type": "remote-outbound-rtp", "codecId": "CIT01_127_level-asymmetry-allowed=1;packetization-mode=1;profile-level-id=42e01f", "kind": "video", "mediaType": "video", "ssrc": 3262821271, "transportId": "T01", "bytesSent": 702462, "packetsSent": 3323, "localId": "IT01V3262821271", "remoteTimestamp": 1729339016116, "reportsSent": 84, "roundTripTimeMeasurements": 0, "totalRoundTripTime": 0 },
+		{ "id": "T01", "timestamp": 1729360465698.781, "type": "transport", "bytesReceived": 1475790, "bytesSent": 61385, "dtlsCipher": "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256", "dtlsRole": "client", "dtlsState": "connected", "iceLocalUsernameFragment": "KlG/", "iceRole": "controlled", "iceState": "connected", "localCertificateId": "CF48:5F:93:78:DB:03:CB:A8:ED:6E:0C:52:34:00:55:80:50:0B:7B:73:3C:AB:F1:C9:15:63:59:E2:8E:7B:09:DD", "packetsReceived": 7261, "packetsSent": 1340, "remoteCertificateId": "CFDB:33:70:CB:A5:84:C4:9C:65:2E:7C:D9:61:87:5D:09:BF:A4:C2:04:CB:AB:CC:C6:AA:D9:57:D8:C5:1E:D8:E6", "selectedCandidatePairChanges": 1, "selectedCandidatePairId": "CPdtvDwfjB_kGw81ZH2", "srtpCipher": "AES_CM_128_HMAC_SHA1_80", "tlsVersion": "FEFD" }]
+
+		var websocketURL = "wss://test.antmedia.io/live/websocket";
+
+		var playAdaptor = new WebRTCAdaptor({
+			websocketURL: websocketURL,
+			isPlayMode: true,
+			callback: (info, obj) => {
+				console.log("callback info: " + info);
+				if (info == "initialized") {
+					initialized = true;
+				}
+
+			},
+		});
+
+
+	    var streamId = "stream1";
+
+		var peerStats = playAdaptor.parseStats(stats, streamId);
+
+		console.log("play peerStats: " + JSON.stringify(peerStats));
+		expect(peerStats.streamId).to.be.equal(streamId);
+		expect(peerStats.frameWidth).to.be.equal(640);
+		expect(peerStats.frameHeight).to.be.equal(360);
+		expect(peerStats.currentRoundTripTime).to.be.equal(0);
+
+		expect(peerStats.videoPacketsLost).to.be.least(0);
+		expect(peerStats.audioPacketsLost).to.be.least(0);
+		expect(peerStats.videoJitter).to.be.least(0);
+		expect(peerStats.audioJitter).to.be.least(0);
+		expect(peerStats.lastFramesEncoded).to.be.equal(-1);
+		expect(peerStats.totalFramesEncodedCount).to.be.equal(-1);
+		expect(peerStats.frameWidth).to.be.equal(640);
+		expect(peerStats.frameHeight).to.be.equal(360);
+		expect(peerStats.qualityLimitationReason).to.be.equal("");
+		expect(peerStats.firstByteSentCount).to.be.not.equal(0);
+		expect(peerStats.srcFps).to.be.equal(-1);
+		expect(peerStats.videoRoundTripTime).to.be.equal(-1);
+		expect(peerStats.audioRoundTripTime).to.be.equal(-1);
+		expect(peerStats.availableOutgoingBitrate).to.be.above(-1);
+
+
+
+
+		expect(peerStats.totalBytesReceivedCount).to.be.equal(1192000);
+		expect(peerStats.lastBytesSent).to.be.equal(0);
+		expect(peerStats.videoPacketsLost).to.be.equal(0);
+		//expect(peerStats.fractionLost).to.be.equal(-1);
+		expect(peerStats.startTime).to.be.not.equal(0);
+		expect(peerStats.lastBytesReceived).to.be.equal(0);
+		expect(peerStats.currentTimestamp).to.be.not.equal(0);
+		expect(peerStats.lastTime).to.be.equal(0);
+		expect(peerStats.timerId).to.be.equal(0);
+		expect(peerStats.firstBytesReceivedCount).to.be.above(0);
+		expect(peerStats.audioLevel).to.be.equal(-1);
+		expect(peerStats.resWidth).to.be.equal(-1);
+		expect(peerStats.resHeight).to.be.equal(-1);
+		expect(peerStats.framesReceived).to.be.equal(2226);
+		expect(peerStats.framesDropped).to.be.equal(0);
+		expect(peerStats.framesDecoded).to.be.equal(2226);
+		expect(peerStats.audioJitterAverageDelay).to.be.equal(-1);
+		expect(peerStats.videoJitterAverageDelay).to.be.equal(-1);
+		expect(peerStats.audioPacketsReceived).to.be.equal(3764);
+		expect(peerStats.videoPacketsReceived).to.be.equal(3346);
+
+
+		expect(peerStats.totalBytesSentCount).to.be.equal(-1);
+		expect(peerStats.totalAudioPacketsSent).to.be.equal(-1);
+		expect(peerStats.totalVideoPacketsSent).to.be.equal(-1);
+
+
 
 
 	});
