@@ -566,7 +566,7 @@ describe("WebRTCAdaptor", function() {
 				audio: true
 			},
 			initializeComponents: false,
-			volumeMeterUrl: 'base/src/main/js/volume-meter-processor.js',
+			volumeMeterUrl: '/volume-meter-processor.js',
 		});
 
 		//fake stream in te browser is a period audio and silence, so getting sound level more than 0 requires

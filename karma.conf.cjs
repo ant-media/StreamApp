@@ -6,6 +6,10 @@ module.exports = function(config) {
 			{ pattern: "src/main/js/**/*.js", included: false, served:true }
 			
 	],
+	
+	proxies: {
+	  '/volume-meter-processor.js': '/base/src/main/js/volume-meter-processor.js'
+	},
     
     reporters: ['progress', 'coverage'],
 
