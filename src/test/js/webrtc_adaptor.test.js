@@ -33,6 +33,7 @@ describe("WebRTCAdaptor", function() {
 
 	});
 	
+	//I've put this test first because it fails when run in the middle, ı thnk one test breaks it. Let's revisit this case in another time - mekya
 	it("testSoundMeter", function(done) {
 			this.timeout(15000);
 			console.log("Starting testSoundMeter");
