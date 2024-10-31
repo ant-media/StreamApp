@@ -181,6 +181,13 @@
 	  }
 	});
 
+	var signaling = getUrlParameter("signaling");
+	if (signaling == "true") {
+		signaling = true;
+	}
+	else {
+		signaling = false;
+	}
 
 	var subscriberId = getUrlParameter("subscriberId");
 	var subscriberCode = getUrlParameter("subscriberCode");
@@ -326,6 +333,11 @@
 
 	if (location.protocol.startsWith("https")) {
 		websocketURL = "wss://" + path;
+	}
+	
+	if (signaling)	{
+		//add signaling suffix to the websocket URL
+		websocketURL += "/signaling";
 	}
 
 	const ctx = document.getElementById('fpsChart').getContext('2d');
