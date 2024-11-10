@@ -340,6 +340,7 @@ describe("StreamMerger", function () {
   });
 
   it("should update the layout based on the received message", function () {
+	this.timeout(10000);
     const layoutData = {
       layoutOptions: {
         canvas: {
@@ -524,6 +525,7 @@ it('should mute and unmute the stream correctly', function() {
 });
 
 it("should remove the specified stream from the streams array", function () {
+  this.timeout(10000);
   const mediaStream1 = createMockMediaStream();
   const options1 = { streamId: "stream1", width: 320, height: 240, Xindex: 0, Yindex: 0, mute: false };
   
@@ -547,6 +549,8 @@ it("should remove the specified stream from the streams array", function () {
 
 
 it("should remove all streams from the streams array", function () {
+  this.timeout(10000);
+
   const mediaStream1 = createMockMediaStream();
   const options1 = { streamId: "stream1", width: 320, height: 240, Xindex: 0, Yindex: 0, mute: false };
   

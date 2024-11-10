@@ -1,0 +1,47 @@
+name: Update @antmedia/web_player Dependency
+
+on:
+  workflow_dispatch:
+  repository_dispatch:
+    types: [update-embedded-player]
+
+jobs:
+  update-dependency:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Use Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Update @antmedia/web_player
+        working-directory: ./embedded-player
+        run: |
+          OLD_EMBEDDED_PLAYER_VERSION=$(node -p "require('./package.json').dependencies['@antmedia/web_player'].replace(/\\^/, '')")
+          npm install --save @antmedia/web_player@latest || { echo 'npm install failed' ; exit 1; }
+          NEW_EMBEDDED_PLAYER_VERSION=$(node -p "require('./package.json').dependencies['@antmedia/web_player'].replace(/\\^/, '')")
+          echo "OLD_EMBEDDED_PLAYER_VERSION=$OLD_EMBEDDED_PLAYER_VERSION" >> $GITHUB_ENV
+          echo "NEW_EMBEDDED_PLAYER_VERSION=$NEW_EMBEDDED_PLAYER_VERSION" >> $GITHUB_ENV
+
+      - name: Commit changes if version updated
+        if: env.OLD_EMBEDDED_PLAYER_VERSION != env.NEW_EMBEDDED_PLAYER_VERSION
+        working-directory: ./embedded-player
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git add package.json package-lock.json
+          git commit -m "Update @antmedia/web_player from ${{ env.OLD_EMBEDDED_PLAYER_VERSION }} to ${{ env.NEW_EMBEDDED_PLAYER_VERSION }}"
+
+      - name: Create Pull Request
+        if: env.OLD_EMBEDDED_PLAYER_VERSION != env.NEW_EMBEDDED_PLAYER_VERSION
+        uses: peter-evans/create-pull-request@v7.0.5
+        with:
+          title: "Update @antmedia/web_player to ${{ env.NEW_EMBEDDED_PLAYER_VERSION }}"
+          body: |
+            This PR updates the @antmedia/web_player dependency from ${{ env.OLD_EMBEDDED_PLAYER_VERSION }} to ${{ env.NEW_EMBEDDED_PLAYER_VERSION }}.
+            
+            Triggered by publish-release.yml from web player repo.
+          branch: update-antmedia-web-player-${{ env.NEW_EMBEDDED_PLAYER_VERSION }}
+          delete-branch: true

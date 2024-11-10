@@ -19,6 +19,12 @@ export class WebSocketAdaptor {
         }
 
         this.initWebSocketConnection();
+		
+		addEventListener("offline", (event) => { 
+			this.connected = false;
+			this.connecting = false;
+			Logger.info("Network status has changed to offline. Resetting flags to reconnect faster");
+		});
 
     }
     /**
@@ -44,9 +50,8 @@ export class WebSocketAdaptor {
 
         this.wsConn = new WebSocket(this.websocket_url);
         this.wsConn.onopen = () => {
-            if (this.debug) {
-                Logger.debug("websocket connected");
-            }
+            Logger.debug("websocket connected");
+            
 
             this.pingTimerId = setInterval(() => {
                 this.sendPing();
@@ -176,7 +181,7 @@ export class WebSocketAdaptor {
             }
         }
         catch (error) {
-            Logger.warn("Cannot send message:" + text);
+            Logger.warn("Make sure you call methods after you receive initialized callback. Cannot send message:" + text + " Error is " + error);
         }
     }
 

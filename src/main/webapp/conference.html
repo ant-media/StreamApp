@@ -228,8 +228,6 @@
 	</footer>
 
 </div>
-</body>
-<script src="./js/external/notify.min.js" crossorigin="anonymous"></script>
 <script type="module">
 	import { WebRTCAdaptor } from "./js/webrtc_adaptor.js"
 	import { getUrlParameter } from "./js/fetch.stream.js"
@@ -246,15 +244,18 @@
 	var token = getUrlParameter("token");
 	var publishStreamId = getUrlParameter("streamId");
 	var playOnly = getUrlParameter("playOnly");
-	var dcOnly = getUrlParameter("dcOnly");
-
 	if (playOnly == null) {
-		playOnly = false;
+			playOnly = false;
 	}
-
+		
+	var dcOnly = getUrlParameter("dcOnly");
+	
 	if (dcOnly == null) {
 		dcOnly = false;
 	}
+	
+	var role = getUrlParameter("role");
+
 
 	var roomId = getUrlParameter("roomId");
 	var streamName = getUrlParameter("streamName");
@@ -407,21 +408,32 @@
 	function sendData() {
 		try {
 			var iceState = webRTCAdaptor.iceConnectionState(publishStreamId);
+			var msg = $("#dataTextbox").val();
+			var notEvent = { streamId: publishStreamId, eventType: "CHAT_MESSAGE", message: msg };
+							
 			if (iceState != null && iceState != "failed" && iceState != "disconnected") {
 
-				var msg = $("#dataTextbox").val();
-				var notEvent = { streamId: publishStreamId, eventType: "CHAT_MESSAGE", message: msg };
+				
 
 				webRTCAdaptor.sendData(publishStreamId, JSON.stringify(notEvent));
 				$("#all-messages").append("Sent: " + msg + "<br>");
 				$("#dataTextbox").val("");
 			}
 			else {
-				$.notify("WebRTC playing is not active. Please click Start Playing first", {
-					autoHideDelay: 5000,
-					className: 'error',
-					position: 'top center'
-				});
+				iceState = webRTCAdaptor.iceConnectionState(roomNameBox.value);
+				if (iceState != null && iceState != "failed" && iceState != "disconnected") 
+				{
+					webRTCAdaptor.sendData(roomNameBox.value, JSON.stringify(notEvent));
+					$("#all-messages").append("Sent: " + msg + "<br>");
+					$("#dataTextbox").val("");
+				}
+				else {
+					$.notify("WebRTC playing is not active. Please click Start Playing first", {
+						autoHideDelay: 5000,
+						className: 'error',
+						position: 'top center'
+					});
+				}
 			}
 		}
 		catch (exception) {
@@ -482,6 +494,17 @@
 				webRTCAdaptor.getBroadcastObject(roomNameBox.value);
 			} else if (eventTyp == "UPDATE_SOUND_LEVEL") {
 				//console.log("Received data : ", data.data);
+			} else if (eventTyp == "VIDEO_TRACK_ASSIGNMENT_LIST") {
+				console.log("VIDEO_TRACK_ASSIGNMENT_LIST: " + data.data);
+				const jsonObject = JSON.parse(data.data);
+
+				jsonObject.payload.forEach(item => {
+					var overlay = document.getElementById("overlay" + item.videoLabel);
+
+					if (overlay != null) {
+						overlay.innerHTML = item.videoLabel + "->" + item.trackId;
+					}
+				});
 			}
 		} else {
 			console.log("Received data : ", data.data);
@@ -495,8 +518,10 @@
 			publishStreamId = generateRandomString(12);
 		}
 
-		publish(publishStreamId, token);
-		webRTCAdaptor.play(roomNameBox.value, token, roomNameBox.value, [], subscriberId, subscriberCode);
+		if (!playOnly) {
+			publish(publishStreamId, token);
+		}
+		webRTCAdaptor.play(roomNameBox.value, token, roomNameBox.value, [], subscriberId, subscriberCode, null, role);
 	}
 
 	function leaveRoom() {
@@ -517,7 +542,7 @@
 		if (streamName == null || streamName == 'undefined' || streamName == "") {
 			streamName = streamId;
 		}
-		webRTCAdaptor.publish(publishStreamId, token, subscriberId, subscriberCode, streamName, roomNameBox.value, JSON.stringify(metadata));
+		webRTCAdaptor.publish(publishStreamId, token, subscriberId, subscriberCode, streamName, roomNameBox.value, JSON.stringify(metadata), role);
 
 	}
 
@@ -569,23 +594,25 @@
 		}, 200);
 	};
 
-	function createRemoteVideo(streamId, kind) {
+	function createRemoteVideo(trackLabel, kind) {
 		var player = document.createElement("div");
 		player.className = "col-sm-3";
-		player.id = "player" + streamId;
+		player.id = "player" + trackLabel;
 
 		if (kind == "audio") {
 			player.style.display = "none";
 		}
-		player.innerHTML = '<video id="remoteVideo' + streamId + '"controls autoplay playsinline></video>'
-				+ '<p style="display:none">' + streamId + '</p>';
+
+		player.innerHTML = '<video id="remoteVideo' + trackLabel + '" controls autoplay playsinline></video>'
+			+'<div id="overlay' + trackLabel + '" style="font-size: 10px;position: absolute; top: 5px; left: 50%; transform: translateX(-50%); color: white; background-color: rgba(0, 0, 0, 0.5); padding: 5px;">' + trackLabel + '</div>';
+
 		document.getElementById("players").appendChild(player);
 	}
 
-	function removeRemoteVideo(streamId) {
-		var video = document.getElementById("remoteVideo" + streamId);
+	function removeRemoteVideo(trackLabel) {
+		var video = document.getElementById("remoteVideo" + trackLabel);
 		if (video != null) {
-			var player = document.getElementById("player" + streamId);
+			var player = document.getElementById("player" + trackLabel);
 			video.srcObject = null;
 			document.getElementById("players").removeChild(player);
 		}
@@ -754,6 +781,9 @@
 					else if (info == "play_started") {
 						isPlaying = true;
 						isNoSreamExist = false;
+						join_publish_button.disabled = true;
+						stop_publish_button.disabled = false;
+												
 						webRTCAdaptor.getBroadcastObject(roomNameBox.value);
 						if (reconnecting) {
 							playReconnected = true;
@@ -791,7 +821,7 @@
 					else if (info == "reconnection_attempt_for_player") {
 						console.log("Reconnection attempt for player")
 						if (playOnly && isNoSreamExist) {
-							console.log("Reconnection attempt for player with no stream existmfor play only mode.")
+							console.log("Reconnection attempt for player with no stream exist for play only mode.")
 						} else {
 							playReconnected = false;
 							if (!reconnecting) {
@@ -801,7 +831,7 @@
 					}
 					else if (info == "reconnection_attempt_for_publisher") {
 						console.log("Reconnection attempt for publisher")
-						publishReconnected = isPlayOnly;
+						publishReconnected = playOnly ? true : false;
 						if (!reconnecting) {
 							reconnectionInProgress();
 						}
@@ -846,5 +876,7 @@
 
 	window.webRTCAdaptor = webRTCAdaptor;
 </script>
+</body>
+<script src="./js/external/notify.min.js" crossorigin="anonymous"></script>
 
 </html>

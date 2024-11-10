@@ -304,16 +304,21 @@
 		//	instantMeter.value = instantValueDisplay.innerText = value;
 		//}, 200);
 
-		audioLevelTimerId = setInterval(() => {
-			webRTCAdaptor.remotePeerConnection[streamId].getStats(null).then(stats => {
+		audioLevelTimerId = setInterval(() => 
+        {
+			if (webRTCAdaptor.remotePeerConnection[streamId]) {
+			
+			  webRTCAdaptor.remotePeerConnection[streamId].getStats(null).then(stats => {
 				for (const stat of stats.values()) 
 				{
-					if (stat.type === 'media-source' && stat.kind === 'audio') {
+					if (stat.type === 'media-source' && stat.kind === 'audio' && stat.audioLevel) {
 						instantMeter.value = instantValueDisplay.innerText = stat.audioLevel.toFixed(2);
 						return;
 					}
 				}
-			})
+			  });
+
+			}
 		}, 250);
 
 
