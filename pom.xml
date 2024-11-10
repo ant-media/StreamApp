@@ -244,7 +244,7 @@
 		<dependency>
 			<groupId>org.springframework.security</groupId>
 			<artifactId>spring-security-web</artifactId>
-			<version>6.2.0</version>
+			<version>6.2.7</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.security</groupId>
