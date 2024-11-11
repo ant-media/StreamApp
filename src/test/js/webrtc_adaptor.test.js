@@ -1945,6 +1945,87 @@ describe("WebRTCAdaptor", function() {
 		});
 	});
 
+	it("should handle negotiation when iceRestart is true", async function() {
+		let adaptor;
+		let mockPeerConnection;
+
+		beforeEach(function () {
+			adaptor = new WebRTCAdaptor({
+				websocketURL: "ws://example.com",
+				initializeComponents: false,
+			});
+			mockPeerConnection = {
+				setLocalDescription: sinon.fake.resolves(),
+				createOffer: sinon.fake.resolves({ sdp: "mockSdp" }),
+				localDescription: { sdp: "mockSdp" }
+			};
+			adaptor.remotePeerConnection["stream1"] = mockPeerConnection;
+		});
+
+		const streamId = "stream1";
+		adaptor.remotePeerConnection[streamId] = mockPeerConnection;
+		adaptor.iceRestart = true;
+
+		await adaptor.remotePeerConnection[streamId].onnegotiationneeded();
+
+		expect(mockPeerConnection.createOffer.calledWith({ iceRestart: true })).to.be.true;
+		expect(mockPeerConnection.setLocalDescription.calledWith({ sdp: "mockSdp" })).to.be.true;
+		expect(adaptor.webSocketAdaptor.send.calledWith({ desc: { sdp: "mockSdp" } })).to.be.true;
+	});
+
+	it("should not handle negotiation when iceRestart is false", async function() {
+		let adaptor;
+		let mockPeerConnection;
+
+		beforeEach(function () {
+			adaptor = new WebRTCAdaptor({
+				websocketURL: "ws://example.com",
+				initializeComponents: false,
+			});
+			mockPeerConnection = {
+				setLocalDescription: sinon.fake(),
+				createOffer: sinon.fake()
+			};
+			adaptor.remotePeerConnection["stream1"] = mockPeerConnection;
+		});
+
+		const streamId = "stream1";
+		adaptor.remotePeerConnection[streamId] = mockPeerConnection;
+		adaptor.iceRestart = false;
+
+		await adaptor.remotePeerConnection[streamId].onnegotiationneeded();
+
+		expect(mockPeerConnection.createOffer.called).to.be.false;
+		expect(mockPeerConnection.setLocalDescription.called).to.be.false;
+		expect(adaptor.webSocketAdaptor.send.called).to.be.false;
+	});
+
+	it("should log error during negotiation", async function() {
+		let adaptor;
+		let mockPeerConnection;
+
+		beforeEach(function () {
+			adaptor = new WebRTCAdaptor({
+				websocketURL: "ws://example.com",
+				initializeComponents: false,
+			});
+			mockPeerConnection = {
+				setLocalDescription: sinon.fake.rejects(new Error("negotiation error")),
+				createOffer: sinon.fake.resolves({ sdp: "mockSdp" })
+			};
+			adaptor.remotePeerConnection["stream1"] = mockPeerConnection;
+		});
+
+		const streamId = "stream1";
+		adaptor.remotePeerConnection[streamId] = mockPeerConnection;
+		adaptor.iceRestart = true;
+		const loggerSpy = sinon.spy(Logger, "error");
+
+		await adaptor.remotePeerConnection[streamId].onnegotiationneeded();
+
+		expect(loggerSpy.calledWith('Error during negotiation', sinon.match.instanceOf(Error))).to.be.true;
+		loggerSpy.restore();
+	});
 
 
 });
