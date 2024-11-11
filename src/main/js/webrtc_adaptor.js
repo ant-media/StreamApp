@@ -552,8 +552,11 @@ export class WebRTCAdaptor {
 	 * @param {string=} mode :    legacy for older implementation (default value)
 	 *            mcu for merging streams
 	 *            amcu: audio only conferences with mixed audio
+	 * @param {string=} streamName : name of the stream
+	 * @param {string=} role : role for the stream. It is used for selective forwarding of subtracks in conference mode.
+	 * @param {string=} metadata : a free text information for the stream to AMS.
 	 */
-	joinRoom(roomName, streamId, mode) {
+	joinRoom(roomName, streamId, mode, streamName, role, metadata) {
 		this.roomName = roomName;
 
 		let jsCmd = {
@@ -561,6 +564,9 @@ export class WebRTCAdaptor {
 			room: roomName,
 			streamId: streamId,
 			mode: mode,
+			streamName: streamName,
+			role: role,
+			metadata: metadata,
 		}
 		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
 	}
