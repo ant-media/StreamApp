@@ -763,8 +763,9 @@ export class WebRTCAdaptor {
 	 * Called to leave from a conference room. AMS responds with leavedTheRoom message.
 	 * Parameters:
 	 * @param {string} roomName : unique id for the conference room
+	 * @param {string=} streamId : unique id for the stream that is streamed by this @WebRTCAdaptor
 	 */
-	leaveFromRoom(roomName) {
+	leaveFromRoom(roomName, streamId) {
 		for (var key in this.remotePeerConnection) {
 			this.closePeerConnection(key);
 		}
@@ -772,6 +773,7 @@ export class WebRTCAdaptor {
 		var jsCmd = {
 			command: "leaveFromRoom",
 			room: roomName,
+			streamId: streamId,
 		};
 		Logger.debug("leave request is sent for " + roomName);
 
