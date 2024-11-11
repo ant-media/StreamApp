@@ -30,6 +30,8 @@
 		<listener-class>io.antmedia.filter.TokenSessionFilter</listener-class>
 	</listener>
 
+	<!-- For Keycloak Integration -->
+	<!--
 	<filter>
 		<filter-name>springSecurityFilterChain</filter-name>
 		<filter-class>org.springframework.web.filter.DelegatingFilterProxy</filter-class>
@@ -38,6 +40,8 @@
 		<filter-name>springSecurityFilterChain</filter-name>
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>
+	-->
+
 
 
 	<!--  Put RestProxyFilter to the top of the Filter list -->
