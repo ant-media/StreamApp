@@ -163,6 +163,12 @@ export class WebRTCAdaptor {
 		this.debug = false;
 
 		/**
+		 * This is the flag to indicate if the stream is published or not after the connection fails
+		 * @type {boolean}
+		 */
+		this.iceRestart = false;
+
+		/**
 		 * This is the Stream Id for the publisher. One @WebRCTCAdaptor supports only one publishing
 		 * session for now (23.02.2022).
 		 * In conference mode you can join a room with null stream id. In that case
@@ -1092,8 +1098,18 @@ export class WebRTCAdaptor {
 				this.onTrack(event, closedStreamId);
 			}
 
-			this.remotePeerConnection[streamId].onnegotiationneeded = event => {
+			this.remotePeerConnection[streamId].onnegotiationneeded = async event => {
 				Logger.debug("onnegotiationneeded");
+				//If ice restart is not true, then server will handle negotiation
+				if (!this.iceRestart) {
+					return;
+				}
+				try {
+					await this.remotePeerConnection[streamId].setLocalDescription(await this.remotePeerConnection[streamId].createOffer({iceRestart: this.iceRestart}));
+					this.webSocketAdaptor.send({desc: this.remotePeerConnection[streamId].localDescription});
+				} catch (error) {
+					Logger.error('Error during negotiation', error);
+				}
 			}
 
 			if (this.dataChannelEnabled) {
@@ -1136,7 +1152,12 @@ export class WebRTCAdaptor {
 
 			this.remotePeerConnection[streamId].oniceconnectionstatechange = event => {
 				var obj = { state: this.remotePeerConnection[streamId].iceConnectionState, streamId: streamId };
-				if (obj.state == "failed" || obj.state == "disconnected" || obj.state == "closed") {
+				if (obj.state === "stable") {
+					this.iceRestart = false;
+				} else if (obj.state === "failed") {
+					this.iceRestart = true;
+					this.remotePeerConnection[streamId].restartIce();
+				} else if (obj.state === "disconnected" || obj.state === "closed") {
 					this.reconnectIfRequired(3000);
 				}
 				this.notifyEventListeners("ice_connection_state_changed", obj);
