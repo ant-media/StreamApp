@@ -521,15 +521,8 @@ export class WebRTCAdaptor {
 		}
 		//init peer connection for reconnectIfRequired
 		this.initPeerConnection(streamId, "publish");
-		setTimeout(() => {
-			//check if it is connected or not
-			//this resolves if the server responds with some error message
-			if (this.iceConnectionState(this.publishStreamId) != "checking" && this.iceConnectionState(this.publishStreamId) != "connected" && this.iceConnectionState(this.publishStreamId) != "completed") {
-				//if it is not connected, try to reconnect
-				this.reconnectIfRequired(0);
-			}
-		}, 3000);
-
+		
+		this.reconnectIfRequired(3000, false);
 	}
 
 	sendPublishCommand(streamId, token, subscriberId, subscriberCode, streamName, mainTrack, metaData, role, videoEnabled, audioEnabled) {
@@ -610,17 +603,7 @@ export class WebRTCAdaptor {
 
 		//init peer connection for reconnectIfRequired
 		this.initPeerConnection(streamId, "play");
-
-		setTimeout(() => {
-			//check if it is connected or not
-			//this resolves if the server responds with some error message
-			if (this.iceConnectionState(streamId) != "checking" &&
-				this.iceConnectionState(streamId) != "connected" &&
-				this.iceConnectionState(streamId) != "completed") {
-				//if it is not connected, try to reconnect
-				this.reconnectIfRequired(0, false);
-			}
-		}, 3000);
+		this.reconnectIfRequired(3000, false);
 	}
 
 	/**
@@ -630,22 +613,21 @@ export class WebRTCAdaptor {
 	 */
 	reconnectIfRequired(delayMs = 3000, forceReconnect = false) {
 		if (this.reconnectIfRequiredFlag) {
-			//It's important to run the following methods after 3000 ms because the stream may be stopped by the user in the meantime
-			if (delayMs > 0) {
-				
-				//clear the previous timer if exists
+			if (delayMs <= 0) {
+				delayMs = 500;
+				//clear the timer because there is a demand to reconnect without delay
 				clearTimeout(this.pendingTryAgainTimerId);
-				
-				//set a timer to prevent too many trial from different paths
+				this.pendingTryAgainTimerId = -1;
+			}
+		
+			if (this.pendingTryAgainTimerId == -1) 
+			{	
 				this.pendingTryAgainTimerId = setTimeout(() => 
 				{
+					this.pendingTryAgainTimerId = -1;
 					this.tryAgain(forceReconnect);
 				}, 
 				delayMs);
-				
-			}
-			else {
-				this.tryAgain(forceReconnect)
 			}
 		}
 	}
@@ -654,10 +636,11 @@ export class WebRTCAdaptor {
 
 		const now = Date.now();
 		//to prevent too many trial from different paths
-		if (now - this.lastReconnectiontionTrialTime < 3000) {
-			//check again 3 seconds later if it is not stopped on purpose
-			Logger.debug("Reconnection is tried before 3 seconds. It will check/try again after 3 seconds");
-			this.reconnectIfRequired(3000, forceReconnect);
+		const timeDiff = now - this.lastReconnectiontionTrialTime;;
+		if (timeDiff < 3000 && forceReconnect == false) {
+			//check again 1 seconds later if it is not stopped on purpose
+			Logger.debug("Reconnection request received after "+ timeDiff+" ms. It should be at least 3000ms. It will try again after 1000ms");
+			this.reconnectIfRequired(1000, forceReconnect);
 			return;
 		}
 		this.lastReconnectiontionTrialTime = now;
@@ -1164,15 +1147,17 @@ export class WebRTCAdaptor {
 	
 	oniceconnectionstatechangeCallback(obj) 
 	{
+		Logger.debug("ice connection state is " +obj.state + " for streamId: " + obj.streamId);
 		if (obj.state == "failed" || obj.state == "disconnected" || obj.state == "closed") {
 			//try immediately
+			Logger.debug("ice connection state is failed, disconnected or closed for streamId: " + obj.streamId + " it will try to reconnect immediately");
 			this.reconnectIfRequired(0, false);
 		}
 		this.notifyEventListeners("ice_connection_state_changed", obj);
 
 		//
 		if (!this.isPlayMode && !this.playStreamId.includes(obj.streamId)) {
-			if (this.remotePeerConnection[streamId].iceConnectionState == "connected") {
+			if (this.remotePeerConnection[obj.streamId] != null && this.remotePeerConnection[obj.streamId].iceConnectionState == "connected") {
 
 				this.mediaManager.changeBandwidth(this.mediaManager.bandwidth, obj.streamId).then(() => {
 					Logger.debug("Bandwidth is changed to " + this.mediaManager.bandwidth);
@@ -1782,11 +1767,18 @@ export class WebRTCAdaptor {
 	}
 	
 	websocketCallback(info, obj) {
-		if (info == "closed") {
-			Logger.info("Websocket is closed. It will reconnect if required.")
+
+		if (info == "closed" || info == "server_will_stop") {	
+			Logger.info("Critical response from server:"+ info +". It will reconnect immediately if there is an active connection");
+			
+			//close websocket reconnect again
+			if (info == "server_will_stop") {
+				this.webSocketAdaptor.close();
+			}
 			//try with forcing reconnect because webrtc will be closed as well
 			this.reconnectIfRequired(0, true);
 		}
+		
 		this.notifyEventListeners(info, obj);
 	}
 
