@@ -358,7 +358,7 @@ describe("WebRTCAdaptor", function() {
 		expect(stop.calledOnce).to.be.false;
 		
 		adaptor.tryAgain(true);	
-		expect(stop.calledOnce).to.be.false;
+		expect(stop.calledOnce).to.be.true;
 
 
 	});
