@@ -262,6 +262,107 @@ describe("WebRTCAdaptor", function() {
 		expect(webSocketAdaptor.connecting).to.be.false;
 
 	});
+	
+	
+	it("reconnectIfRequired", async function() {
+		var adaptor = new WebRTCAdaptor({
+									websocketURL: "ws://example.com",
+									isPlayMode: true
+								});
+								
+	    let tryAgain = sinon.replace(adaptor, "tryAgain", sinon.fake());
+		
+
+		adaptor.reconnectIfRequired(100);
+		adaptor.reconnectIfRequired(200);
+		clock.tick(300);
+		
+		expect(tryAgain.calledOnce).to.be.true;
+		
+		
+
+	});
+	
+	it("oniceconnectionstatechangeCallback", async function() {
+		var adaptor = new WebRTCAdaptor({
+							websocketURL: "ws://example.com",
+							isPlayMode: true
+						});
+		
+		let reconnectIfRequired = sinon.replace(adaptor, "reconnectIfRequired", sinon.fake());
+		var obj = { state: "failed", streamId: "streamId" };
+
+		var stopFake = sinon.replace(adaptor, "stop", sinon.fake());
+		adaptor.oniceconnectionstatechangeCallback(obj);
+		expect(reconnectIfRequired.calledOnce).to.be.true;
+		expect(reconnectIfRequired.calledWithExactly(0, false)).to.be.true;
+		
+		obj = { state: "closed", streamId: "streamId" };
+		
+		adaptor.oniceconnectionstatechangeCallback(obj);
+		expect(reconnectIfRequired.calledTwice).to.be.true;
+		expect(reconnectIfRequired.calledWithExactly(0, false)).to.be.true;
+		
+		obj = { state: "disconnected", streamId: "streamId" };
+		adaptor.oniceconnectionstatechangeCallback(obj);
+		expect(reconnectIfRequired.callCount).to.be.equal(3);
+		
+		
+		obj = { state: "connected", streamId: "streamId" };
+		adaptor.oniceconnectionstatechangeCallback(obj);
+		expect(reconnectIfRequired.callCount).to.be.equal(3);
+		
+		
+	});
+	
+	it("websocketCallback", async function() {
+		var adaptor = new WebRTCAdaptor({
+					websocketURL: "ws://example.com",
+					isPlayMode: true
+				});
+		
+		let reconnectIfRequired = sinon.replace(adaptor, "reconnectIfRequired", sinon.fake());
+		
+		var stopFake = sinon.replace(adaptor, "stop", sinon.fake());
+		adaptor.websocketCallback("closed");
+		
+		expect(reconnectIfRequired.calledOnce).to.be.true;
+		expect(reconnectIfRequired.calledWithExactly(0, true)).to.be.true;
+
+		
+		adaptor.websocketCallback("anyOtherThing");
+		
+		//it should be still once
+		expect(reconnectIfRequired.calledOnce).to.be.true;
+
+				
+	});
+
+	it("tryAgainForceReconnect", async function() {
+		
+		var adaptor = new WebRTCAdaptor({
+							websocketURL: "ws://example.com",
+							isPlayMode: true
+						});
+		var streamId = "streamId";	
+		adaptor.publishStreamId = streamId;
+		
+		let stop = sinon.replace(adaptor, "stop", sinon.fake());
+		
+		var mockPC = sinon.mock(RTCPeerConnection);
+		adaptor.remotePeerConnection[streamId] = mockPC
+		mockPC.iceConnectionState = "connected";
+		
+		adaptor.tryAgain(false);	
+		
+		expect(stop.calledOnce).to.be.false;
+		
+		adaptor.tryAgain(true);	
+		expect(stop.calledOnce).to.be.true;
+
+
+	});
+	
 
 
 	it("Frequent try again call", async function() {
@@ -269,6 +370,8 @@ describe("WebRTCAdaptor", function() {
 			websocketURL: "ws://example.com",
 			isPlayMode: true
 		});
+		
+		expect(adaptor.pendingTryAgainTimerId).to.be.equal(-1);
 		let webSocketAdaptor = sinon.mock(adaptor.webSocketAdaptor);
 		let closeExpectation = webSocketAdaptor.expects("close");
 

@@ -687,12 +687,12 @@
 												var state = webRTCAdaptor
 														.signallingState(publishStreamId);
 												if (state != null
-														&& state != "closed") {
+														&& state != "closed") 
+												{
 													var iceState = webRTCAdaptor
 															.iceConnectionState(publishStreamId);
-													if (iceState != null
-															&& iceState != "failed"
-															&& iceState != "disconnected") {
+													if (iceState != null && iceState != "new" && iceState != "closed" && iceState != "failed" && iceState != "disconnected")
+													 {
 														startAnimation();
 													}
 												}
@@ -864,10 +864,11 @@
 					}
 					else {
 						//errorHandler(error, message);
-						$('video').notify("Warning: " + errorHandler(error, message), {
+						
+						$('#roomName').notify("Warning: " + errorHandler(error, message), {
 							autoHideDelay: 5000,
 							className: 'error',
-							position: 'top right'
+							position: 'top center'
 						});
 					}
 
