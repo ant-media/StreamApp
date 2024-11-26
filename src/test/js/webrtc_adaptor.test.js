@@ -2026,7 +2026,7 @@ describe("WebRTCAdaptor", function() {
 
 	});
 
-	it("getSubtracks", async function() {
+	it("getSubtrackCount", async function() {
 
 		let adaptor = new WebRTCAdaptor({
 			websocketURL: "ws://example.com",
@@ -2035,22 +2035,20 @@ describe("WebRTCAdaptor", function() {
 
 		let streamId = "roomId";
 		let role = "host";
-		let offset = 0;
-		let size = 10;
+		let status = "active";
 
 		let jsCmd = {
-			command: "getSubtracks",
+			command: "getSubtrackCount",
 			streamId: streamId,
 			role: role,
-			offset: offset,
-			size: size,
+			status: status,
 		};
 
 		let webSocketAdaptor = sinon.mock(adaptor.webSocketAdaptor);
 
 		let sendExpectation = webSocketAdaptor.expects("send").once().withArgs(JSON.stringify(jsCmd));
 
-		adaptor.getSubtracks(streamId, role, offset, size);
+		adaptor.getSubtrackCount(streamId, role, status);
 
 		sendExpectation.verify()
 
