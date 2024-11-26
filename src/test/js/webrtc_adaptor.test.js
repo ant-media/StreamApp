@@ -2038,7 +2038,7 @@ describe("WebRTCAdaptor", function() {
 		let status = "active";
 
 		let jsCmd = {
-			command: "getSubtrackCount",
+			command: "getSubtracksCount",
 			streamId: streamId,
 			role: role,
 			status: status,
