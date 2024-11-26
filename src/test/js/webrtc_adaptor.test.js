@@ -2026,6 +2026,36 @@ describe("WebRTCAdaptor", function() {
 
 	});
 
+	it("getSubtracks", async function() {
+
+		let adaptor = new WebRTCAdaptor({
+			websocketURL: "ws://example.com",
+			isPlayMode: true
+		});
+
+		let streamId = "roomId";
+		let role = "host";
+		let offset = 0;
+		let size = 10;
+
+		let jsCmd = {
+			command: "getSubtracks",
+			streamId: streamId,
+			role: role,
+			offset: offset,
+			size: size,
+		};
+
+		let webSocketAdaptor = sinon.mock(adaptor.webSocketAdaptor);
+
+		let sendExpectation = webSocketAdaptor.expects("send").once().withArgs(JSON.stringify(jsCmd));
+
+		adaptor.getSubtracks(streamId, role, offset, size);
+
+		sendExpectation.verify()
+
+	});
+
 
 
 });
