@@ -355,57 +355,86 @@ export class MediaManager {
     setDesktopwithCameraSource(stream, streamId, onEndedCallback) {
         this.desktopStream = stream;
 
-        return this.navigatorUserMedia({ video: true, audio: false }, (cameraStream) => {
+        return this.navigatorUserMedia({ video: true, audio: false }, cameraStream => {
             this.smallVideoTrack = cameraStream.getVideoTracks()[0];
 
-            // Create an offscreen canvas
-            const offscreenCanvas = new OffscreenCanvas(1, 1); // Initial dimensions will be updated dynamically
-            const canvasContext = offscreenCanvas.getContext("2d");
+            // Create OffscreenCanvas
+            const canvas = document.createElement("canvas");
+            const offscreenCanvas = canvas.transferControlToOffscreen();
 
-            // Create video elements for screen and camera
-            const screenVideo = document.createElement('video');
+            // Create video elements for streams
+            const screenVideo = document.createElement("video");
             screenVideo.srcObject = stream;
-            screenVideo.play();
 
-            const cameraVideo = document.createElement('video');
+            const cameraVideo = document.createElement("video");
             cameraVideo.srcObject = cameraStream;
-            cameraVideo.play();
 
-            // Capture stream from the offscreen canvas
-            const canvasStream = offscreenCanvas.captureStream(15);
+            // Start playing videos only after metadata is loaded
+            const setupVideo = video =>
+                new Promise(resolve => {
+                    video.onloadedmetadata = () => {
+                        video.play();
+                        resolve(video);
+                    };
+                });
 
-            if (onEndedCallback != null) {
-                stream.getVideoTracks()[0].onended = (event) => {
+            // Handle stream end callback
+            if (onEndedCallback) {
+                stream.getVideoTracks()[0].onended = event => {
                     onEndedCallback(event);
                 };
             }
 
+            // Create a MediaStream from the canvas
+            const canvasStream = canvas.captureStream(15); // Capture at 15 fps
+
+            // Initialize or update the local stream
             const promise = this.localStream == null
                 ? this.gotStream(canvasStream)
                 : this.updateVideoTrack(canvasStream, streamId, onEndedCallback, null);
 
             promise.then(() => {
-                // Update the offscreen canvas at a regular interval
-                this.desktopCameraCanvasDrawerTimer = setInterval(() => {
-                    // Set canvas size to match the screen video
-                    offscreenCanvas.width = screenVideo.videoWidth;
-                    offscreenCanvas.height = screenVideo.videoHeight;
+                // Initialize the worker
+                const worker = new Worker('worker.js');
 
-                    // Draw screen video to the canvas
-                    canvasContext.drawImage(screenVideo, 0, 0, offscreenCanvas.width, offscreenCanvas.height);
+                // Send the OffscreenCanvas to the worker
+                worker.postMessage({
+                    type: 'init',
+                    data: { canvas: offscreenCanvas, width: 1920, height: 1080 }, // Default size, updated later
+                }, [offscreenCanvas]);
 
-                    // Calculate camera overlay dimensions
-                    const cameraWidth = screenVideo.videoWidth * (this.camera_percent / 100);
-                    const cameraHeight = (cameraVideo.videoHeight / cameraVideo.videoWidth) * cameraWidth;
+                // Wait for both videos to load
+                Promise.all([setupVideo(screenVideo), setupVideo(cameraVideo)]).then(() => {
+                    const frameInterval = 1000 / 15; // 15 fps
 
-                    const positionX = offscreenCanvas.width - cameraWidth - this.camera_margin;
-                    const positionY = this.camera_location === "top"
-                        ? this.camera_margin
-                        : offscreenCanvas.height - cameraHeight - this.camera_margin;
+                    // Periodically send frames to the worker
+                    const sendFrames = () => {
+                        if (screenVideo.videoWidth > 0 && cameraVideo.videoWidth > 0) {
+                            createImageBitmap(screenVideo).then(screenBitmap => {
+                                createImageBitmap(cameraVideo).then(cameraBitmap => {
+                                    worker.postMessage({
+                                        type: 'frame',
+                                        data: { screenFrame: screenBitmap, cameraFrame: cameraBitmap },
+                                    }, [screenBitmap, cameraBitmap]);
+                                }).catch(err => {
+                                    console.error("Error creating camera ImageBitmap:", err);
+                                });
+                            }).catch(err => {
+                                console.error("Error creating screen ImageBitmap:", err);
+                            });
+                        } else {
+                            console.warn("Video dimensions are invalid.");
+                        }
+                    };
 
-                    // Draw camera overlay on the canvas
-                    canvasContext.drawImage(cameraVideo, positionX, positionY, cameraWidth, cameraHeight);
-                }, 66);
+                    const frameTimer = setInterval(sendFrames, frameInterval);
+
+                    // Cleanup
+                    this.desktopCameraCanvasDrawerTimer = () => {
+                        clearInterval(frameTimer);
+                        worker.terminate();
+                    };
+                });
             });
         }, true);
     }
