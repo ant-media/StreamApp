@@ -490,7 +490,7 @@
 			var state = webRTCAdaptor.signallingState(streamId);
 			if (state != null && state != "closed") {
 				var iceState = webRTCAdaptor.iceConnectionState(streamId);
-				if (iceState != null && iceState != "failed" && iceState != "disconnected") {
+				if (iceState != null && iceState != "new" && iceState != "closed" && iceState != "failed" && iceState != "disconnected") {
 					startAnimation();
 				}
 				else {
