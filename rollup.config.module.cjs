@@ -17,6 +17,7 @@ const builds = {
 			 'src/main/js/utility.js',
 			 'src/main/js/media_manager.js',
 			 'src/main/js/stream_merger.js',
+			 'src/main/js/worker.js',
 			],
 	output: [{
 		dir: 'dist',
