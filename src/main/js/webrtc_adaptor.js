@@ -879,6 +879,22 @@ export class WebRTCAdaptor {
 	}
 
 	/**
+	 * Called to get the subtrack count for a specific maintrack. AMS responds with the subtrackCount callback.
+	 * @param {string} streamId : main track id
+	 * @param {string} role : filter the subtracks with the role
+	 * @param {string} status : filter the subtracks with the status
+	 */
+	getSubtrackCount(streamId, role, status) {
+		let jsCmd = {
+			command: "getSubtracksCount",
+			streamId: streamId,
+			role: role,
+			status: status,
+		};
+		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
+	}
+
+	/**
 	 * Called to enable/disable data flow from the AMS for a specific track under a main track.
 	 * Parameters:
 	 * @param {string}  mainTrackId : unique id for the main stream
