@@ -597,6 +597,7 @@ export class WebRTCAdaptor {
 			subscriberCode: typeof subscriberCode !== undefined && subscriberId != null ? subscriberCode : "",
 			viewerInfo: typeof metaData !== undefined && metaData != null ? metaData : "",
 			role: (typeof role !== undefined && role != null) ? role : "",
+			userPublishId: typeof publishStreamId !== undefined && publishStreamId != null ? this.publishStreamId : "",
 		}
 
 		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
