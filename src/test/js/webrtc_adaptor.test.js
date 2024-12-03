@@ -2055,5 +2055,46 @@ describe("WebRTCAdaptor", function() {
 	});
 
 
+	it("Play with parameters", async function() {
+            let publishStreamId = "publish1"
+            let streamId = "stream1";
+            let token = "yourToken";
+            let roomId = "yourRoomId";
+            let enableTracks = true;
+            let subscriberId = "yourSubscriberId";
+            let subscriberCode = "yourSubscriberCode";
+            let metaData = "yourMetaData";
+            let role = "subscriber";
+
+    		var adaptor = new WebRTCAdaptor({
+    			websocketURL: "ws://example.com",
+    			isPlayMode: true,
+    			publishStreamId: publishStreamId
+    		});
+
+    		var peerConnection = new RTCPeerConnection();
+            var initPeerConnection = sinon.replace(adaptor, "initPeerConnection", sinon.fake.returns(peerConnection));
+    		var webSocketAdaptor = sinon.mock(adaptor.webSocketAdaptor);
+
+            adaptor.play(streamId, token, roomId, enableTracks, subscriberId, subscriberCode, metaData, role);
+
+            let jsCmd = {
+                command: "play",
+                streamId: streamId,
+                token: token,
+                room: roomId,
+                trackList: enableTracks,
+                subscriberId: subscriberId,
+                subscriberCode: subscriberCode,
+                viewerInfo: metaData,
+                role: role,
+                userPublishId: publishStreamId
+            };
+
+    		webSocketAdaptor.expects("send").once().withArgs(JSON.stringify(jsCmd));
+    		expect(initPeerConnection.calledWithExactly(streamId, "play")).to.be.true;
+    	});
+
+
 
 });
