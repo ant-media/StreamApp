@@ -677,6 +677,54 @@ describe("MediaManager", function () {
       navigator.mediaDevices.getUserMedia.restore();
     });
 
+    it("should play video and resolve promise when metadata is loaded", async function() {
+      const video = document.createElement("video");
+      const playStub = sinon.stub(video, "play").resolves();
+      const resolveSpy = sinon.spy();
+
+      const promise = new Promise(resolve => {
+        video.onloadedmetadata = () => {
+          video.play();
+          resolve(video);
+        };
+      });
+
+      video.onloadedmetadata();
+
+      await promise;
+
+      expect(playStub.calledOnce).to.be.true;
+      expect(resolveSpy.calledOnceWith(video)).to.be.false;
+
+      playStub.restore();
+    });
+
+    it("should handle error when video play fails", async function() {
+      const video = document.createElement("video");
+      const playStub = sinon.stub(video, "play").rejects(new Error("play error"));
+      const resolveSpy = sinon.spy();
+
+      const promise = new Promise((resolve, reject) => {
+        video.onloadedmetadata = () => {
+          video.play().catch(reject);
+          resolve(video);
+        };
+      });
+
+      video.onloadedmetadata();
+
+      try {
+        await promise;
+      } catch (error) {
+        expect(error.message).to.be.equal("play error");
+      }
+
+      expect(playStub.calledOnce).to.be.true;
+      expect(resolveSpy.calledOnceWith(video)).to.be.false;
+
+      playStub.restore();
+    });
+
   });
 
 });
