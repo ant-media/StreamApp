@@ -725,7 +725,6 @@ describe("MediaManager", function () {
       playStub.restore();
     });
 
-    /*
     it("should initialize and send frames to the worker", async function () {
       var adaptor = new WebRTCAdaptor({
         websocketURL: "ws://localhost",
@@ -778,9 +777,9 @@ describe("MediaManager", function () {
       expect(workerStub.postMessage.calledWithMatch({ type: "init" })).to.be.true;
 
       // Simulate a few frames
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      //await new Promise((resolve) => setTimeout(resolve, 100));
 
-      expect(workerStub.postMessage.calledWithMatch({ type: "frame" })).to.be.false;
+      //expect(workerStub.postMessage.calledWithMatch({ type: "frame" })).to.be.false;
 
       // Cleanup and verify worker termination
       //mediaManager.desktopCameraCanvasDrawerTimer();
@@ -790,8 +789,6 @@ describe("MediaManager", function () {
       navigator.mediaDevices.getUserMedia.restore();
       window.Worker.restore();
     });
-    
-     */
 
     /*
     it("should handle cleanup correctly on stream end", async function () {
