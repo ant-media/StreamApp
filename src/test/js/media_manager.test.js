@@ -569,6 +569,114 @@ describe("MediaManager", function () {
       expect(mediaManager.smallVideoTrack).to.equal(mockVideoTrack);
       navigator.mediaDevices.getUserMedia.restore();
     });
+
+    it("should initialize local stream with video and audio", async function () {
+      var adaptor = new WebRTCAdaptor({
+        websocketURL: "ws://example.com",
+      });
+
+      var mediaManager = new MediaManager({
+        userParameters: {
+          mediaConstraints: {
+            video: true,
+            audio: true,
+          }
+        },
+        webRTCAdaptor: adaptor,
+
+        callback: (info, obj) => {
+          adaptor.notifyEventListeners(info, obj)
+        },
+        callbackError: (error, message) => {
+          adaptor.notifyErrorEventListeners(error, message)
+        },
+        getSender: (streamId, type) => {
+          return adaptor.getSender(streamId, type)
+        },
+      });
+
+      await mediaManager.initLocalStream();
+
+      expect(mediaManager.localStream.getAudioTracks().length).to.be.equal(1);
+      expect(mediaManager.localStream.getVideoTracks().length).to.be.equal(1);
+    });
+
+    it("should handle error when initializing local stream", async function () {
+      var adaptor = new WebRTCAdaptor({
+        websocketURL: "ws://example.com",
+      });
+
+      var mediaManager = new MediaManager({
+        userParameters: {
+          mediaConstraints: {
+            video: true,
+            audio: true,
+          }
+        },
+        webRTCAdaptor: adaptor,
+
+        callback: (info, obj) => {
+          adaptor.notifyEventListeners(info, obj)
+        },
+        callbackError: (error, message) => {
+          adaptor.notifyErrorEventListeners(error, message)
+        },
+        getSender: (streamId, type) => {
+          return adaptor.getSender(streamId, type)
+        },
+      });
+
+      sinon.stub(navigator.mediaDevices, 'getUserMedia').rejects(new Error("Permission denied"));
+
+      try {
+        await mediaManager.initLocalStream();
+      } catch (error) {
+        expect(error.message).to.be.equal("Permission denied");
+      }
+
+      navigator.mediaDevices.getUserMedia.restore();
+    });
+
+    it("should switch video camera capture", async function () {
+      var adaptor = new WebRTCAdaptor({
+        websocketURL: "ws://example.com",
+        mediaConstraints: {
+          video: true,
+          audio: true
+        }
+      });
+
+      await adaptor.mediaManager.initLocalStream();
+
+      const deviceId = "testDeviceId";
+      await adaptor.mediaManager.switchVideoCameraCapture("streamId", deviceId);
+
+      expect(adaptor.mediaManager.localStream.getVideoTracks()[0].getSettings().deviceId).to.not.be.equal(deviceId);
+    });
+
+    it("should handle error when switching video camera capture", async function () {
+      var adaptor = new WebRTCAdaptor({
+        websocketURL: "ws://example.com",
+        mediaConstraints: {
+          video: true,
+          audio: true
+        }
+      });
+
+      await adaptor.mediaManager.initLocalStream();
+
+      const deviceId = "invalidDeviceId";
+      sinon.stub(navigator.mediaDevices, 'getUserMedia').rejects(new Error("Device not found"));
+
+      try {
+        await adaptor.mediaManager.switchVideoCameraCapture("streamId", deviceId);
+      } catch (error) {
+        expect(error.message).to.be.equal("Device not found");
+      }
+
+      navigator.mediaDevices.getUserMedia.restore();
+    });
+
   });
 
 });
