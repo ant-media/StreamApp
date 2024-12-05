@@ -395,7 +395,7 @@ export class MediaManager {
 
             promise.then(() => {
                 // Initialize the worker
-                const worker = new Worker('worker.js');
+                const worker = new Worker(new URL("./draw-desktop-with-camera-source-worker.js", import.meta.url));
 
                 // Send the OffscreenCanvas to the worker
                 worker.postMessage({
