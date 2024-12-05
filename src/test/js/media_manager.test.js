@@ -380,8 +380,6 @@ describe("MediaManager", function () {
       navigator.mediaDevices.getUserMedia.restore();
     });
 
-
-    /*
     it("should call onEndedCallback when desktop stream ends", async function () {
       var adaptor = new WebRTCAdaptor({
         websocketURL: "ws://localhost",
@@ -391,6 +389,28 @@ describe("MediaManager", function () {
         },
         initializeComponents: false
       });
+
+      var mediaManager = new MediaManager({
+        userParameters: {
+          mediaConstraints: {
+            video: false,
+            audio: true,
+          }
+        },
+        webRTCAdaptor: adaptor,
+
+        callback: (info, obj) => {
+          adaptor.notifyEventListeners(info, obj)
+        },
+        callbackError: (error, message) => {
+          adaptor.notifyErrorEventListeners(error, message)
+        },
+        getSender: (streamId, type) => {
+          return adaptor.getSender(streamId, type)
+        },
+      });
+
+      adaptor.mediaManager = mediaManager;
 
       await adaptor.initialize();
 
@@ -403,6 +423,10 @@ describe("MediaManager", function () {
         removeEventListener: sinon.fake(),
         onended: sinon.fake(),
       };
+
+      // Create a desktop stream
+      const stream = new MediaStream();
+      stream.getVideoTracks = () => [mockVideoTrack]; // Override `getVideoTracks`
 
       // Create a fake `MediaStream` and add the mock video track
       const cameraStream = new MediaStream();
@@ -417,8 +441,6 @@ describe("MediaManager", function () {
       expect(onEndedCallback.calledOnce).to.be.true;
       navigator.mediaDevices.getUserMedia.restore();
     });
-
-     */
 
     it("should update offscreen canvas at regular intervals", async function () {
       var adaptor = new WebRTCAdaptor({
