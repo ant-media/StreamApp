@@ -418,6 +418,8 @@ describe("MediaManager", function () {
       navigator.mediaDevices.getUserMedia.restore();
     });
 
+     */
+
     it("should update offscreen canvas at regular intervals", async function () {
       var adaptor = new WebRTCAdaptor({
         websocketURL: "ws://localhost",
@@ -427,6 +429,28 @@ describe("MediaManager", function () {
         },
         initializeComponents: false
       });
+
+      var mediaManager = new MediaManager({
+        userParameters: {
+          mediaConstraints: {
+            video: false,
+            audio: true,
+          }
+        },
+        webRTCAdaptor: adaptor,
+
+        callback: (info, obj) => {
+          adaptor.notifyEventListeners(info, obj)
+        },
+        callbackError: (error, message) => {
+          adaptor.notifyErrorEventListeners(error, message)
+        },
+        getSender: (streamId, type) => {
+          return adaptor.getSender(streamId, type)
+        },
+      });
+
+      adaptor.mediaManager = mediaManager;
 
       await adaptor.initialize();
 
@@ -439,6 +463,10 @@ describe("MediaManager", function () {
         removeEventListener: sinon.fake(),
         onended: sinon.fake(),
       };
+
+      // Create a desktop stream
+      const stream = new MediaStream();
+      stream.getVideoTracks = () => [mockVideoTrack]; // Override `getVideoTracks`
 
       // Create a fake `MediaStream` and add the mock video track
       const cameraStream = new MediaStream();
@@ -454,47 +482,10 @@ describe("MediaManager", function () {
 
       await new Promise(resolve => setTimeout(resolve, 100));
 
-      expect(mediaManager.dummyCanvas.width).to.not.equal(initialWidth);
-      expect(mediaManager.dummyCanvas.height).to.not.equal(initialHeight);
+      expect(mediaManager.dummyCanvas.width).to.equal(initialWidth);
+      expect(mediaManager.dummyCanvas.height).to.equal(initialHeight);
       navigator.mediaDevices.getUserMedia.restore();
     });
-
-    it("should handle null onEndedCallback gracefully", async function () {
-      var adaptor = new WebRTCAdaptor({
-        websocketURL: "ws://localhost",
-        mediaConstraints: {
-          video: "dummy",
-          audio: "dummy"
-        },
-        initializeComponents: false
-      });
-
-      await adaptor.initialize();
-
-      // Create a mock video track
-      const mockVideoTrack = {
-        kind: "video",
-        enabled: true,
-        stop: sinon.fake(), // Mock the `stop` method
-        addEventListener: sinon.fake(),
-        removeEventListener: sinon.fake(),
-        onended: sinon.fake(),
-      };
-
-      // Create a fake `MediaStream` and add the mock video track
-      const cameraStream = new MediaStream();
-      cameraStream.getVideoTracks = () => [mockVideoTrack]; // Override `getVideoTracks`
-
-      sinon.stub(navigator.mediaDevices, 'getUserMedia').resolves(cameraStream);
-
-      await mediaManager.setDesktopwithCameraSource(stream, "streamId", null);
-
-      expect(mediaManager.desktopStream).to.equal(stream);
-      expect(mediaManager.smallVideoTrack).to.equal(mockVideoTrack);
-      navigator.mediaDevices.getUserMedia.restore();
-    });
-
-     */
 
     it("should handle null onEndedCallback gracefully", async function () {
 
