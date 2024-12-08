@@ -400,7 +400,7 @@ export class MediaManager {
                 // Send the OffscreenCanvas to the worker
                 worker.postMessage({
                     type: 'init',
-                    data: { canvas: offscreenCanvas, width: 1920, height: 1080 }, // Default size, updated later
+                    data: { canvas: offscreenCanvas, width: screenVideo.videoWidth, height: screenVideo.videoHeight },
                 }, [offscreenCanvas]);
 
                 // Wait for both videos to load
