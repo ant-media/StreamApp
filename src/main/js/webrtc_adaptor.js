@@ -560,6 +560,7 @@ export class WebRTCAdaptor {
 		let jsCmd = {
 			command: "joinRoom",
 			room: roomName,
+			mainTrack: roomName,
 			streamId: streamId,
 			mode: mode,
 			streamName: streamName,
@@ -774,6 +775,7 @@ export class WebRTCAdaptor {
 		var jsCmd = {
 			command: "leaveFromRoom",
 			room: roomName,
+			mainTrack: roomName,
 			streamId: streamId,
 		};
 		Logger.debug("leave request is sent for " + roomName);
