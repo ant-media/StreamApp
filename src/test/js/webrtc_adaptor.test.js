@@ -884,7 +884,7 @@ describe("WebRTCAdaptor", function() {
 		sendExpectation.verify()
 	})
 
-	it.only("joinRoom", async function() {
+	it("joinRoom", async function() {
 
 		let adaptor = new WebRTCAdaptor({
 			websocketURL: "ws://example.com",
