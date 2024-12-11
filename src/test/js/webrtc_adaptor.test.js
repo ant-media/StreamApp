@@ -897,15 +897,20 @@ describe("WebRTCAdaptor", function() {
 		let jsCmd = {
 			command: "joinRoom",
 			room: roomId,
+			mainTrack: roomId,
 			streamId: streamId,
 			mode: "multitrack",
+			streamName: "streamName",
+			role: "role",
+			metadata: "metadata",
+
 		}
 
 		let webSocketAdaptor = sinon.mock(adaptor.webSocketAdaptor);
 
 		let sendExpectation = webSocketAdaptor.expects("send").once().withArgs(JSON.stringify(jsCmd));
 
-		adaptor.joinRoom(roomId, streamId, "multitrack");
+		adaptor.joinRoom(roomId, streamId, "multitrack", "streamName", "role", "metadata");
 
 		sendExpectation.verify()
 
