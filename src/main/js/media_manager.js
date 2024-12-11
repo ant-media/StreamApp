@@ -354,63 +354,89 @@ export class MediaManager {
      */
     setDesktopwithCameraSource(stream, streamId, onEndedCallback) {
         this.desktopStream = stream;
-        return this.navigatorUserMedia({video: true, audio: false}, cameraStream => {
+
+        return this.navigatorUserMedia({ video: true, audio: false }, cameraStream => {
             this.smallVideoTrack = cameraStream.getVideoTracks()[0];
 
-            //create a canvas element
-            var canvas = document.createElement("canvas");
-            var canvasContext = canvas.getContext("2d");
+            // Create OffscreenCanvas
+            const canvas = document.createElement("canvas");
+            const offscreenCanvas = canvas.transferControlToOffscreen();
 
-            //create video element for screen
-            //var screenVideo = document.getElementById('sourceVideo');
-            var screenVideo = document.createElement('video');
-
+            // Create video elements for streams
+            const screenVideo = document.createElement("video");
             screenVideo.srcObject = stream;
-            screenVideo.play();
-            //create video element for camera
-            var cameraVideo = document.createElement('video');
 
+            const cameraVideo = document.createElement("video");
             cameraVideo.srcObject = cameraStream;
-            cameraVideo.play();
-            var canvasStream = canvas.captureStream(15);
 
-            if (onEndedCallback != null) {
-                stream.getVideoTracks()[0].onended = function (event) {
+            // Start playing videos only after metadata is loaded
+            const setupVideo = video =>
+                new Promise(resolve => {
+                    video.onloadedmetadata = () => {
+                        video.play();
+                        resolve(video);
+                    };
+                });
+
+            // Handle stream end callback
+            if (onEndedCallback) {
+                stream.getVideoTracks()[0].onended = event => {
                     onEndedCallback(event);
-                }
+                };
             }
-            var promise;
-            if (this.localStream == null) {
-                promise = this.gotStream(canvasStream);
-            } else {
-                promise = this.updateVideoTrack(canvasStream, streamId, onended, null);
-            }
+
+            // Create a MediaStream from the canvas
+            const canvasStream = canvas.captureStream(15); // Capture at 15 fps
+
+            // Initialize or update the local stream
+            const promise = this.localStream == null
+                ? this.gotStream(canvasStream)
+                : this.updateVideoTrack(canvasStream, streamId, onEndedCallback, null);
 
             promise.then(() => {
+                // Initialize the worker
+                const worker = new Worker(new URL("./draw-desktop-with-camera-source-worker.js", import.meta.url));
 
-                //update the canvas
-                this.desktopCameraCanvasDrawerTimer = setInterval(() => {
-                    //draw screen to canvas
-                    canvas.width = screenVideo.videoWidth;
-                    canvas.height = screenVideo.videoHeight;
-                    canvasContext.drawImage(screenVideo, 0, 0, canvas.width, canvas.height);
+                // Send the OffscreenCanvas to the worker
+                worker.postMessage({
+                    type: 'init',
+                    data: { canvas: offscreenCanvas, width: screenVideo.videoWidth, height: screenVideo.videoHeight },
+                }, [offscreenCanvas]);
 
-                    var cameraWidth = screenVideo.videoWidth * (this.camera_percent / 100);
-                    var cameraHeight = (cameraVideo.videoHeight / cameraVideo.videoWidth) * cameraWidth
+                // Wait for both videos to load
+                Promise.all([setupVideo(screenVideo), setupVideo(cameraVideo)]).then(() => {
+                    const frameInterval = 1000 / 15; // 15 fps
 
-                    var positionX = (canvas.width - cameraWidth) - this.camera_margin;
-                    var positionY;
+                    // Periodically send frames to the worker
+                    const sendFrames = () => {
+                        if (screenVideo.videoWidth > 0 && cameraVideo.videoWidth > 0) {
+                            createImageBitmap(screenVideo).then(screenBitmap => {
+                                createImageBitmap(cameraVideo).then(cameraBitmap => {
+                                    worker.postMessage({
+                                        type: 'frame',
+                                        data: { screenFrame: screenBitmap, cameraFrame: cameraBitmap },
+                                    }, [screenBitmap, cameraBitmap]);
+                                }).catch(err => {
+                                    console.error("Error creating camera ImageBitmap:", err);
+                                });
+                            }).catch(err => {
+                                console.error("Error creating screen ImageBitmap:", err);
+                            });
+                        } else {
+                            console.warn("Video dimensions are invalid.");
+                        }
+                    };
 
-                    if (this.camera_location == "top") {
-                        positionY = this.camera_margin;
-                    } else { //if not top, make it bottom
-                        //draw camera on right bottom corner
-                        positionY = (canvas.height - cameraHeight) - this.camera_margin;
-                    }
-                    canvasContext.drawImage(cameraVideo, positionX, positionY, cameraWidth, cameraHeight);
-                }, 66);
+                    const frameTimer = setInterval(sendFrames, frameInterval);
+
+                    // Cleanup
+                    this.desktopCameraCanvasDrawerTimer = () => {
+                        clearInterval(frameTimer);
+                        worker.terminate();
+                    };
+                });
             });
-        }, true)
+        }, true);
     }
 
     /**
