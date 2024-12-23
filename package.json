@@ -1,6 +1,6 @@
 {
   "name": "@antmedia/webrtc_adaptor",
-  "version": "2.8.0-SNAPSHOT",
+  "version": "3.0.0-SNAPSHOT",
   "description": "WebRTC Adaptor for implementing a front end using Ant Media Server.",
   "main": "dist/index.js",
   "module": "dist/es/index.js",
