@@ -424,9 +424,20 @@
         const fps = frameTimestamps.length/(fpsCalculationInterval/1000);
         //console.log("FPS: " + fps);
 
-		if (updateChart) {
+		if (updateChart) 
+		{
+			
+			
+			// Check if the data length exceeds the maximum
+			if (fpsChart.data.datasets[0].data.length > maxCapacity) { //60 means last 1 minute
+			    // Remove the oldest data point because charts causes performance problems if data size is too big
+			    fpsChart.data.datasets[0].data.shift();
+				fpsChart.data.labels.shift();
+			}
+			
 			fpsChart.data.labels.push(''); // Add empty label or time
 			fpsChart.data.datasets[0].data.push(fps); // Add FPS data
+			
 			fpsChart.update();
 			$("#frame_rendered").text(fps.toPrecision(3));
 			$("#frame_rendered").show();
@@ -644,8 +655,17 @@
 							var fps = (obj.framesReceived - lastFrameReceivedCount) / timeDiff * 1000;
 							$("#frame_received").text(fps.toPrecision(3));
 							$("#frame_received_container").show();
+							
+							// Check if the data length exceeds the maximum
+							if (receivedFpsChart.data.datasets[0].data.length > maxCapacity) { //60 points means 60 seconds
+							    // Remove the oldest data point
+							    receivedFpsChart.data.datasets[0].data.shift();
+								receivedFpsChart.data.labels.shift();
+							}
+							
 							receivedFpsChart.data.labels.push(''); // Add empty label or time
 							receivedFpsChart.data.datasets[0].data.push(fps); // Add FPS data
+							
 							receivedFpsChart.update();
 						}
 						lastFrameReceivedCount = obj.framesReceived;
@@ -667,6 +687,12 @@
 							$("#frame_decoded").text(fps.toPrecision(3));
 							$("#frame_decoded_container").show();
 
+							
+							if (decodedFpsChart.data.datasets[0].data.length > maxCapacity) { //60 points means 60 seconds
+							    // Remove the oldest data point
+							    decodedFpsChart.data.datasets[0].data.shift();
+								decodedFpsChart.data.labels.shift();
+							}
 							decodedFpsChart.data.labels.push(''); // Add empty label or time
 							decodedFpsChart.data.datasets[0].data.push(fps); // Add FPS data
 							decodedFpsChart.update();
