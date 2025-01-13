@@ -28,6 +28,8 @@ public class WebSocketLocalHandler {
 
 	WebSocketCommunityHandler handler;
 	private String userAgent = "N/A";
+	private String clientIP = "N/A";
+
 
 	protected static Logger logger = LoggerFactory.getLogger(WebSocketLocalHandler.class);
 
@@ -35,6 +37,7 @@ public class WebSocketLocalHandler {
 	public void onOpen(Session session, EndpointConfig config) {
 		if(config.getUserProperties().containsKey(AMSEndpointConfigurator.USER_AGENT)) {
 			userAgent = (String) config.getUserProperties().get(AMSEndpointConfigurator.USER_AGENT);
+			clientIP = (String) config.getUserProperties().get(AMSEndpointConfigurator.CLINT_IP);
 		}
 		
 		logger.info("Web Socket opened session:{} user-agent:{}", session.getId(), userAgent);
@@ -104,6 +107,7 @@ public class WebSocketLocalHandler {
 			}
 			
 			handler.setUserAgent(userAgent);
+			handler.setClientIP(clientIP);
 		} catch (Exception e) {
 			logger.error("WebSocket handler cannot be created");
 			logger.error(ExceptionUtils.getMessage(e));
