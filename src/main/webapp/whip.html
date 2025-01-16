@@ -30,7 +30,9 @@
 
   <script type="module">
 
-    import { WHIPClient } from "https://esm.sh/@eyevinn/whip-web-client";
+	//we started to import the WHIPClient this way because module file is causing problem
+    import { WHIPClient } from "https://esm.sh/@eyevinn/whip-web-client/dist/whip-client.modern.js";
+
     import {getQueryParameter, generateRandomString} from "./js/utility.js" 
     import {getUrlParameter} from "./js/fetch.stream.js" 
 
