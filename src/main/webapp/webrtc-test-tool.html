@@ -72,15 +72,24 @@
 
 		<div class="form-group">
 
-			<span style="float:left" class="">Test WebSocket URL: </span><br>
+			<span style="float:left" class="">WebSocket URL: </span><br>
 			<div class="form-row">
 				<div class="col-6">
 					<span ><input type="text" id="test_websocket_url" class="form-control" placeholder="Please write your WebSocket URL. For example: wss://serverdomain.com:5443/LiveApp/websocket"></span>
 				</div>
-				<div style="margin-top:10px;" class="col-12">
-					<span style="float:left">WebSocket Status: </span>
-					<span id="websocket-succeed" style="float:left; margin-left:5px; display: none"> <img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/true-icon.png"></span>
-					<span id="websocket-failed" style="float:left; margin-left:5px; display: none"> <img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/false-icon.png"></span>
+				
+			</div>
+		</div>
+
+		<legend class="col-form-label video-source-legend">Video devices:</legend>
+
+		<br>
+		<br>
+
+		<div class="form-group">
+			<div class="form-row">
+				<div class="col-6">
+					<span class="">Test Duration(Secs): </span><input type="number" id="test_duration" class="form-control" value="10">
 				</div>
 			</div>
 		</div>
@@ -90,20 +99,6 @@
 			id="start-webrtc-test-button">Start WebRTC Testing</button>
 		</div>
 
-		<legend class="col-form-label video-source-legend">Test video devices:</legend>
-
-		<br>
-		<br>
-
-		<div class="form-group">
-			<div class="form-row">
-				<div class="col-6">
-					<span class="">Test duration(time): </span><input type="number" id="test_duration" class="form-control" value="10">
-				</div>
-			</div>
-		</div>
-
-
 		<div class="form-group">
 			<div id="test_result" style="display:none">Test Started</div>
 		</div>
@@ -111,10 +106,20 @@
 		<div class="form-group">
 			<div id="progress" class="progress" style="display:none">
 				<div id="progress-bar" class="progress-bar progress-bar-striped" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+			
+			</div>
+		</div>
+
+		<div class="form-group" id="websocketStatus" style="display:none">
+			<div style="margin-top:10px;">
+				<span>WebSocket Status: </span>
+				<span id="websocket-succeed" style="margin-left:5px; display: none"> <img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/true-icon.png"></span>
+				<span id="websocket-failed" style="margin-left:5px; display: none"> <img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/false-icon.png"></span>
 			</div>
 		</div>
 
 		<section id="publish_statistics" style="display:none">
+			
 			<div class="form-group">
 				<h5 class="text-muted">WebRTC Publish Statistics:</h5>
 			</div>
@@ -586,7 +591,7 @@
 					if (info == "initialized") {
 						console.log("initialized");
 
-						websocketSucceed.style.display = "block";
+						websocketSucceed.style.display = "inline";
 						websocketFailed.style.display = "none";
 
 						start_webrtc_test_button.disabled = false;
@@ -633,7 +638,7 @@
 						//console.log("Connection closed");
 						if (typeof obj != "undefined") {
 							websocketSucceed.style.display = "none";
-							websocketFailed.style.display = "block";
+							websocketFailed.style.display = "inline";
 
 							console.log("Connecton closed: " + JSON.stringify(obj));
 						}
@@ -659,16 +664,17 @@
 
 							isFinished = true;
 							publishWebRTCAdaptor.stop(streamId);
+							webRTCPlayAdaptor.stop(streamId);
 							statsTime=0;
 
-							if(publishMinBitrateValue < 250){
+							if(publishMinBitrateValue < 500){
 								publish_min_bit_rate_warn.style.display = "inline";
 							}
 							else{
 								publish_min_bit_rate_info.style.display = "inline";
 							}
 
-							if(publishAverageBitrateValue < 250){
+							if(publishAverageBitrateValue < 800){
 								publish_average_bit_rate_warn.style.display = "inline";
 							}
 							else{
@@ -676,7 +682,7 @@
 							}
 
 
-							if(publishMaxBitrateValue < 250){
+							if(publishMaxBitrateValue < 1200){
 								publish_max_bit_rate_warn.style.display = "inline";
 							}
 							else{
@@ -916,14 +922,14 @@
 
 				if(isFinished){
 
-					if(playMinBitrateValue < 250){
+					if(playMinBitrateValue < 500){
 						play_min_bit_rate_warn.style.display = "inline";
 					}
 					else{
 						play_min_bit_rate_info.style.display = "inline";
 					}
 
-					if(playAverageBitrateValue < 250){
+					if(playAverageBitrateValue < 800){
 						play_average_bit_rate_warn.style.display = "inline";
 					}
 					else{
@@ -931,7 +937,7 @@
 					}
 
 
-					if(playMaxBitrateValue < 250){
+					if(playMaxBitrateValue < 1200){
 						play_max_bit_rate_warn.style.display = "inline";
 					}
 					else{
@@ -1010,7 +1016,14 @@
 				}
 
 				var jitterAverageDelay = ((parseFloat(obj.videoJitterAverageDelay) + parseFloat(obj.audioJitterAverageDelay)) / 2).toPrecision(3);
-				$("#play_jitter_text").text(jitterAverageDelay);
+				if (jitterAverageDelay >= 0) {
+					$("#play_jitter_text").text(jitterAverageDelay);
+					$("#play_jitter_text").parent().parent().show();
+				}
+				else {
+					
+					$("#play_jitter_text").parent().parent().hide();
+				}
 
 				$("#play_audio_level").text(obj.audioLevel.toPrecision(3));
 
