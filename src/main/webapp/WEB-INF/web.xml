@@ -251,12 +251,6 @@
 		<servlet-name>hls-upload-servlet</servlet-name>
 		<url-pattern>/hls-upload/*</url-pattern>
 	</servlet-mapping>
-
-	<servlet-mapping>
-		<servlet-name>jsp</servlet-name>
-		<url-pattern>*.html</url-pattern>
-	</servlet-mapping>
-
 	<mime-mapping>
 		<extension>m3u8</extension>
 		<mime-type>application/vnd.apple.mpegurl</mime-type>
