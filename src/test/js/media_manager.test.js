@@ -64,7 +64,7 @@ describe("MediaManager", function () {
       },
     });
     var costraints = {mediaConstraints: {
-          video: false,
+          video: true,
           audio: true,
         }}
 
@@ -76,10 +76,13 @@ describe("MediaManager", function () {
     .rejects(new DOMException("Permission denied", "NotAllowedError"));
 
     var switchVideoCameraCaptureStub = sinon.stub(mediaManager, "switchVideoCameraCapture")
+     sinon.stub(mediaManager, "prepareStreamTracks")
 
     mediaManager.localStream = "test";
+    mediaManager.publishMode = "screen";
 
-    await mediaManager.navigatorDisplayMedia("stream123",costraints,callback);
+    await mediaManager.getMedia(costraints,"stream123");
+
     sinon.assert.calledWith(switchVideoCameraCaptureStub, "stream123");
    
   });
