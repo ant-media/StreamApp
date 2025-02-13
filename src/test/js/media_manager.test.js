@@ -39,6 +39,51 @@ describe("MediaManager", function () {
   });
 
 
+  it("testArgsNavigatorDisplayMedia", async function () {
+     var adaptor = new WebRTCAdaptor({
+      websocketURL: "ws://example.com",
+    });
+
+    var mediaManager = new MediaManager({
+      userParameters: {
+        mediaConstraints: {
+          video: false,
+          audio: true,
+        }
+      },
+      webRTCAdaptor: adaptor,
+
+      callback: (info, obj) => {
+        adaptor.notifyEventListeners(info, obj)
+      },
+      callbackError: (error, message) => {
+        adaptor.notifyErrorEventListeners(error, message)
+      },
+      getSender: (streamId, type) => {
+        return adaptor.getSender(streamId, type)
+      },
+    });
+    var costraints = {mediaConstraints: {
+          video: false,
+          audio: true,
+        }}
+
+    const callback = ()=>{
+      alert("tst");
+    }
+
+    var getDisplayMediaStub = sinon.stub(navigator.mediaDevices, "getDisplayMedia")
+    .rejects(new DOMException("Permission denied", "NotAllowedError"));
+
+    var switchVideoCameraCaptureStub = sinon.stub(mediaManager, "switchVideoCameraCapture")
+
+    mediaManager.localStream = "test";
+
+    await mediaManager.navigatorDisplayMedia("stream123",costraints,callback);
+    sinon.assert.calledWith(switchVideoCameraCaptureStub, "stream123");
+   
+  });
+
   it("getBlackVideoTrack", async function () {
     var adaptor = new WebRTCAdaptor({
       websocketURL: "ws://example.com",
