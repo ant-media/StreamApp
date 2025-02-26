@@ -560,11 +560,11 @@ export class MediaManager {
 
     /**
      * Called to get display media (screen share)
-     *
+     * @param {*} streamId
      * @param {*} mediaConstraints : media constaint
      * @param {*} func : callback on success. The stream which is got, is passed as parameter to this function
      */
-    navigatorDisplayMedia(mediaConstraints, func) {
+    navigatorDisplayMedia(streamId,mediaConstraints, func) {
         return navigator.mediaDevices.getDisplayMedia(mediaConstraints)
             .then((stream) => {
                 if (typeof func != "undefined") {
@@ -611,7 +611,7 @@ export class MediaManager {
 
         // Check Media Constraint video value screen or screen + camera
         if (this.publishMode == "screen+camera" || this.publishMode == "screen") {
-            return this.navigatorDisplayMedia(mediaConstraints).then(stream => {
+            return this.navigatorDisplayMedia(streamId,mediaConstraints).then(stream => {
                 if (this.smallVideoTrack)
                     this.smallVideoTrack.stop();
                 return this.prepareStreamTracks(mediaConstraints, audioConstraint, stream, streamId);
