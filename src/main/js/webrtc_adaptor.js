@@ -658,8 +658,8 @@ export class WebRTCAdaptor {
 
 		if (this.remotePeerConnection[this.publishStreamId] != null &&
 			(forceReconnect ||
-			//check connection status to not stop streaming an active stream
-				["checking", "connected", "completed"].indexOf(this.iceConnectionState(this.publishStreamId)) === -1)
+			//check connection status to not stop streaming an active stream - disconnected in the list because it may reconect again
+				["checking", "connected", "completed","disconnected"].indexOf(this.iceConnectionState(this.publishStreamId)) === -1)
 		) {
 			// notify that reconnection process started for publish
 			this.notifyEventListeners("reconnection_attempt_for_publisher", this.publishStreamId);
@@ -679,7 +679,7 @@ export class WebRTCAdaptor {
 			if (this.remotePeerConnection[streamId] != null &&
 				(forceReconnect ||
 				 //check connection status to not stop streaming an active stream
-				 ["checking", "connected", "completed"].indexOf(this.iceConnectionState(streamId)) === -1
+				 ["checking", "connected", "completed","disconnected"].indexOf(this.iceConnectionState(streamId)) === -1
 				)
 			) {
 				// notify that reconnection process started for play
