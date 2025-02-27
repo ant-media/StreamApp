@@ -659,7 +659,7 @@ export class WebRTCAdaptor {
 		if (this.remotePeerConnection[this.publishStreamId] != null &&
 			(forceReconnect ||
 			//check connection status to not stop streaming an active stream - disconnected in the list because it may reconect again
-				["checking", "connected", "completed", "disconnected"].indexOf(this.iceConnectionState(this.publishStreamId)) === -1)
+				["checking", "connected", "completed"].indexOf(this.iceConnectionState(this.publishStreamId)) === -1)
 		) {
 			// notify that reconnection process started for publish
 			this.notifyEventListeners("reconnection_attempt_for_publisher", this.publishStreamId);
@@ -679,7 +679,7 @@ export class WebRTCAdaptor {
 			if (this.remotePeerConnection[streamId] != null &&
 				(forceReconnect ||
 				 //check connection status to not stop streaming an active stream
-				 ["checking", "connected", "completed", "disconnected"].indexOf(this.iceConnectionState(streamId)) === -1
+				 ["checking", "connected", "completed"].indexOf(this.iceConnectionState(streamId)) === -1
 				)
 			) {
 				// notify that reconnection process started for play
@@ -1179,6 +1179,10 @@ export class WebRTCAdaptor {
 			//try immediately
 			Logger.debug("ice connection state is failed or closed for streamId: " + obj.streamId + " it will try to reconnect immediately");
 			this.reconnectIfRequired(0, false);
+		}
+		else if (obj.state == "disconnected") {
+			//check after 3 seconds because it may reconnect again
+			this.reconnectIfRequired(3000, false);
 		}
 		this.notifyEventListeners("ice_connection_state_changed", obj);
 

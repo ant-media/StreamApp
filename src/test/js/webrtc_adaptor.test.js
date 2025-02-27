@@ -306,13 +306,12 @@ describe("WebRTCAdaptor", function() {
 		
 		obj = { state: "disconnected", streamId: "streamId" };
 		adaptor.oniceconnectionstatechangeCallback(obj);
-		//it should not increase because we don't stop if it's disconnected
-		expect(reconnectIfRequired.callCount).to.be.equal(2);
+		expect(reconnectIfRequired.callCount).to.be.equal(3);
 		
 		
 		obj = { state: "connected", streamId: "streamId" };
 		adaptor.oniceconnectionstatechangeCallback(obj);
-		expect(reconnectIfRequired.callCount).to.be.equal(2);
+		expect(reconnectIfRequired.callCount).to.be.equal(3);
 		
 		
 	});
