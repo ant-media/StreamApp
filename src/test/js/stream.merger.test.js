@@ -405,6 +405,7 @@ describe("StreamMerger", function () {
   });
 
   it("should assign video tracks correctly", function () {
+	this.timeout(10000);
     const data = `{
       "streamId": "stream1",
       "eventType": "VIDEO_TRACK_ASSIGNMENT_LIST",

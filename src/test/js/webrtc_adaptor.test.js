@@ -302,6 +302,7 @@ describe("WebRTCAdaptor", function() {
 		adaptor.oniceconnectionstatechangeCallback(obj);
 		expect(reconnectIfRequired.calledTwice).to.be.true;
 		expect(reconnectIfRequired.calledWithExactly(0, false)).to.be.true;
+		expect(reconnectIfRequired.callCount).to.be.equal(2);
 		
 		obj = { state: "disconnected", streamId: "streamId" };
 		adaptor.oniceconnectionstatechangeCallback(obj);
@@ -395,7 +396,7 @@ describe("WebRTCAdaptor", function() {
 		expect(adaptor.lastReconnectiontionTrialTime).not.to.be.equal(lrt);
 	});
 
-	it("Test reconnection process started callback", async function() {
+	it("ReconnectionProcessStartedCallback", async function() {
 		var isReconnectionProcessStartedForPublisher = false;
 		var isReconnectionProcessStartedForPlayer = false;
 
@@ -422,11 +423,11 @@ describe("WebRTCAdaptor", function() {
 
 		adaptor.publishStreamId = "testPublisher";
 		adaptor.remotePeerConnection["testPublisher"] = sinon.mock(RTCPeerConnection);
-		adaptor.remotePeerConnection["testPublisher"].iceConnectionState = "disconnected";
+		adaptor.remotePeerConnection["testPublisher"].iceConnectionState = "failed";
 
 		adaptor.playStreamId.push("testPlayer");
 		adaptor.remotePeerConnection["testPlayer"] = sinon.mock(RTCPeerConnection);
-		adaptor.remotePeerConnection["testPlayer"].iceConnectionState = "disconnected";
+		adaptor.remotePeerConnection["testPlayer"].iceConnectionState = "failed";
 
 		adaptor.tryAgain();
 
@@ -436,7 +437,7 @@ describe("WebRTCAdaptor", function() {
 		expect(isReconnectionProcessStartedForPlayer).equal(true);
 	});
 
-	it("Reconnection for play", async function() {
+	it("ReconnectionForPlay", async function() {
 		var adaptor = new WebRTCAdaptor({
 			websocketURL: "ws://example.com",
 			isPlayMode: true
@@ -447,7 +448,7 @@ describe("WebRTCAdaptor", function() {
 		adaptor.playStreamId.push(streamId);
 		var mockPC = sinon.mock(RTCPeerConnection);
 		adaptor.remotePeerConnection[streamId] = mockPC
-		mockPC.iceConnectionState = "disconnected";
+		mockPC.iceConnectionState = "failed";
 		mockPC.close = sinon.fake();
 
 
@@ -477,7 +478,7 @@ describe("WebRTCAdaptor", function() {
 		assert.strictEqual(text, message)
 	})
 
-	it("Reconnection for publish", async function() {
+	it("ReconnectionForPublish", async function() {
 		var adaptor = new WebRTCAdaptor({
 			websocketURL: "ws://example.com",
 			isPlayMode: true
@@ -489,7 +490,7 @@ describe("WebRTCAdaptor", function() {
 		adaptor.publishStreamId = streamId;
 		var mockPC = sinon.mock(RTCPeerConnection);
 		adaptor.remotePeerConnection[streamId] = mockPC
-		mockPC.iceConnectionState = "disconnected";
+		mockPC.iceConnectionState = "failed";
 		mockPC.close = sinon.fake();
 
 
