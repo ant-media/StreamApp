@@ -658,7 +658,7 @@ export class WebRTCAdaptor {
 
 		if (this.remotePeerConnection[this.publishStreamId] != null &&
 			(forceReconnect ||
-			//check connection status to not stop streaming an active stream - disconnected in the list because it may reconect again
+			//check connection status to not stop streaming an active stream 
 				["checking", "connected", "completed"].indexOf(this.iceConnectionState(this.publishStreamId)) === -1)
 		) {
 			// notify that reconnection process started for publish
