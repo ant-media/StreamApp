@@ -658,7 +658,7 @@ export class WebRTCAdaptor {
 
 		if (this.remotePeerConnection[this.publishStreamId] != null &&
 			(forceReconnect ||
-			//check connection status to not stop streaming an active stream
+			//check connection status to not stop streaming an active stream 
 				["checking", "connected", "completed"].indexOf(this.iceConnectionState(this.publishStreamId)) === -1)
 		) {
 			// notify that reconnection process started for publish
@@ -1175,10 +1175,14 @@ export class WebRTCAdaptor {
 	oniceconnectionstatechangeCallback(obj) 
 	{
 		Logger.debug("ice connection state is " +obj.state + " for streamId: " + obj.streamId);
-		if (obj.state == "failed" || obj.state == "disconnected" || obj.state == "closed") {
+		if (obj.state == "failed" || obj.state == "closed") {
 			//try immediately
-			Logger.debug("ice connection state is failed, disconnected or closed for streamId: " + obj.streamId + " it will try to reconnect immediately");
+			Logger.debug("ice connection state is failed or closed for streamId: " + obj.streamId + " it will try to reconnect immediately");
 			this.reconnectIfRequired(0, false);
+		}
+		else if (obj.state == "disconnected") {
+			//check after 3 seconds because it may reconnect again
+			this.reconnectIfRequired(3000, false);
 		}
 		this.notifyEventListeners("ice_connection_state_changed", obj);
 
