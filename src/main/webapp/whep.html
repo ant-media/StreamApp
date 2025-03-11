@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WHEP Test</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+    <h1>WHEP Test Player</h1>
+    <video id="video" autoplay playsinline controls style="width: 640px; height: 360px;"></video>
+    
+    <div>
+        <input type="text" id="streamId" placeholder="Stream ID" value="stream1">
+        <button id="startPlaying">Start Playing</button>
+        <button id="stopPlaying">Stop Playing</button>
+    </div>
+    
+    <script type="text/javascript">
+        const video = document.getElementById('video');
+        const streamIdInput = document.getElementById('streamId');
+        let whepSession = null;
+        
+        document.getElementById('startPlaying').addEventListener('click', async () => {
+            const streamId = streamIdInput.value;
+            
+            try {
+                // Create a new RTCPeerConnection
+                const pc = new RTCPeerConnection({
+                    iceServers: [{ urls: 'stun:stun1.l.google.com:19302' }]
+                });
+                
+                // Add event listeners
+                pc.ontrack = (event) => {
+                    console.log('Received track', event);
+                    if (event.track.kind === 'video' || event.track.kind === 'audio') {
+                        video.srcObject = event.streams[0];
+                    }
+                };
+                
+                pc.onicecandidate = ({candidate}) => {
+                    if (!candidate) {
+                        // When ICE gathering is complete, send the offer to the server
+                    }
+                };
+                
+                // Add transceivers for receiving audio and video
+                pc.addTransceiver('audio', {direction: 'recvonly'});
+                pc.addTransceiver('video', {direction: 'recvonly'});
+                
+                sendWhepStart();
+                
+                async function sendWhepStart() {
+                    try {
+                        console.log("Sending Whep start");
+                        const response = await fetch(`http://localhost:5080/LiveApp/whep/${streamId}`);
+                        
+                        if (!response.ok) { 
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+
+                        console.log("Whep start is successfully sent, answer is: ", response);
+                        
+                        // Get the ETag header which contains the session ID
+                        const eTag = response.headers.get('ETag');
+                        whepSession = { pc, streamId, eTag };
+
+                        console.log("Whep start is successfully sent, eTag is: ", eTag);
+
+                        const sdp = await response.text();
+                        console.log("Whep start is successfully sent, sdp is: ", sdp);
+
+                        const remoteDesc = new RTCSessionDescription({
+                            type: 'offer',  // In WHEP, the server sends an offer
+                            sdp: sdp
+                        });
+
+                        await pc.setRemoteDescription(remoteDesc);
+
+                        const answer = await pc.createAnswer();
+
+                        await pc.setLocalDescription(answer);
+
+                        await new Promise((resolve) => {
+                        if (pc.iceGatheringState === 'complete') {
+                            resolve();
+                        } else {
+                            pc.addEventListener('icegatheringstatechange', function onStateChange() {
+                            if (pc.iceGatheringState === 'complete') {
+                                pc.removeEventListener('icegatheringstatechange', onStateChange);
+                                resolve();
+                            }
+                            });
+                        }
+                        });
+
+                        await sendWhepAnswer(pc.localDescription.sdp, eTag);
+
+                    } catch (error) {
+                        console.error('Error sending WHEP start:', error);
+                    }
+                }
+                
+                async function sendWhepAnswer(sdp, eTag) {
+                    try {
+                        const response = await fetch(`http://localhost:5080/LiveApp/whep/${streamId}/${eTag}`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/sdp',
+                            },
+                            body: sdp
+                        });
+                        
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        
+                        // Get the SDP answer
+                        const answerSDP = await response.text();
+                        
+                        // Set the remote description
+                        const answer = new RTCSessionDescription({
+                            type: 'answer',
+                            sdp: answerSDP
+                        });
+                        
+                        //await pc.setRemoteDescription(answer);
+                        console.log('WHEP connection established');
+                    } catch (error) {
+                        console.error('Error establishing WHEP connection:', error);
+                    }
+                }
+            } catch (error) {
+                console.error('Error setting up WebRTC:', error);
+            }
+        });
+        
+        document.getElementById('stopPlaying').addEventListener('click', async () => {
+            if (whepSession) {
+                try {
+                    // Send DELETE request to terminate the session
+                    await fetch(`/whep/${whepSession.streamId}/${whepSession.eTag}`, {
+                        method: 'DELETE'
+                    });
+                    
+                    // Close the peer connection
+                    whepSession.pc.close();
+                    whepSession = null;
+                    
+                    // Clear the video
+                    video.srcObject = null;
+                    
+                    console.log('WHEP session terminated');
+                } catch (error) {
+                    console.error('Error terminating WHEP session:', error);
+                }
+            }
+        });
+    </script>
+</body>
+</html>
