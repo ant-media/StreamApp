@@ -47,84 +47,68 @@
                 pc.addTransceiver('audio', {direction: 'recvonly'});
                 pc.addTransceiver('video', {direction: 'recvonly'});
                 
-                sendWhepStart();
+                // Create an offer
+                const offer = await pc.createOffer();
+                await pc.setLocalDescription(offer);
+
+                console.log("Offer created: ", offer);
+                console.log("Offer local description: ", pc.localDescription);
+                console.log("*********************12313131231313 *********************");
                 
-                async function sendWhepStart() {
+                // Wait for ICE gathering to complete
+                await new Promise((resolve) => {
+                    if (pc.iceGatheringState === 'complete') {
+                        resolve();
+                    } else {
+                        pc.addEventListener('icegatheringstatechange', function onStateChange() {
+                            if (pc.iceGatheringState === 'complete') {
+                                pc.removeEventListener('icegatheringstatechange', onStateChange);
+                                resolve();
+                            }
+                        });
+                    }
+                });
+                
+                sendWhepOffer();
+                
+                async function sendWhepOffer() {
                     try {
-                        console.log("Sending Whep start");
-                        const response = await fetch(`http://localhost:5080/LiveApp/whep/${streamId}`);
+                        console.log("Sending Whep offer");
+                        
+                        // Send the offer to the server in a single POST request
+                        const response = await fetch(`http://localhost:5080/LiveApp/whep/${streamId}`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/sdp'
+                            },
+                            body: pc.localDescription.sdp
+                        });
                         
                         if (!response.ok) { 
                             throw new Error(`HTTP error! status: ${response.status}`);
                         }
 
-                        console.log("Whep start is successfully sent, answer is: ", response);
+                        console.log("Whep offer was successfully sent");
                         
                         // Get the ETag header which contains the session ID
                         const eTag = response.headers.get('ETag');
                         whepSession = { pc, streamId, eTag };
 
-                        console.log("Whep start is successfully sent, eTag is: ", eTag);
+                        console.log("ETag received: ", eTag);
 
-                        const sdp = await response.text();
-                        console.log("Whep start is successfully sent, sdp is: ", sdp);
+                        // Get the SDP answer from the response
+                        const answerSdp = await response.text();
+                        console.log("Answer SDP received: ", answerSdp);
 
+                        // Create and set the remote description with the answer from the server
                         const remoteDesc = new RTCSessionDescription({
-                            type: 'offer',  // In WHEP, the server sends an offer
-                            sdp: sdp
+                            type: 'answer',
+                            sdp: answerSdp
                         });
 
                         await pc.setRemoteDescription(remoteDesc);
-
-                        const answer = await pc.createAnswer();
-
-                        await pc.setLocalDescription(answer);
-
-                        await new Promise((resolve) => {
-                        if (pc.iceGatheringState === 'complete') {
-                            resolve();
-                        } else {
-                            pc.addEventListener('icegatheringstatechange', function onStateChange() {
-                            if (pc.iceGatheringState === 'complete') {
-                                pc.removeEventListener('icegatheringstatechange', onStateChange);
-                                resolve();
-                            }
-                            });
-                        }
-                        });
-
-                        await sendWhepAnswer(pc.localDescription.sdp, eTag);
-
-                    } catch (error) {
-                        console.error('Error sending WHEP start:', error);
-                    }
-                }
-                
-                async function sendWhepAnswer(sdp, eTag) {
-                    try {
-                        const response = await fetch(`http://localhost:5080/LiveApp/whep/${streamId}/${eTag}`, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/sdp',
-                            },
-                            body: sdp
-                        });
-                        
-                        if (!response.ok) {
-                            throw new Error(`HTTP error! status: ${response.status}`);
-                        }
-                        
-                        // Get the SDP answer
-                        const answerSDP = await response.text();
-                        
-                        // Set the remote description
-                        const answer = new RTCSessionDescription({
-                            type: 'answer',
-                            sdp: answerSDP
-                        });
-                        
-                        //await pc.setRemoteDescription(answer);
                         console.log('WHEP connection established');
+
                     } catch (error) {
                         console.error('Error establishing WHEP connection:', error);
                     }
@@ -138,7 +122,7 @@
             if (whepSession) {
                 try {
                     // Send DELETE request to terminate the session
-                    await fetch(`/whep/${whepSession.streamId}/${whepSession.eTag}`, {
+                    await fetch(`http://localhost:5080/LiveApp/whep/${whepSession.streamId}/${whepSession.eTag}`, {
                         method: 'DELETE'
                     });
                     
