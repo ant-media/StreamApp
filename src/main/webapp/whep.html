@@ -1,20 +1,53 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="en">
 <head>
-    <title>WHEP Test</title>
+    <title>WHEP Player</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="css/external/bootstrap4/bootstrap.min.css" />
+    <script src="js/external/adapter-latest.js"></script>
+    <link rel="stylesheet" href="css/samples.css" />
+    <link rel="stylesheet" href="css/common.css" />
 </head>
 <body>
-    <h1>WHEP Test Player</h1>
-    <video id="video" autoplay playsinline controls style="width: 640px; height: 360px;"></video>
-    
-    <div>
-        <input type="text" id="streamId" placeholder="Stream ID" value="stream1">
-        <button id="startPlaying">Start Playing</button>
-        <button id="stopPlaying">Stop Playing</button>
+    <div class="container">
+        <div class="header clearfix">
+            <div class="row">
+                <h3 class="col text-muted">
+                    <a href="samples.html">WebRTC Samples</a> > WHEP Player
+                </h3>
+            </div>
+        </div>
+
+        <div class="jumbotron">
+            <div class="col-sm-12 form-group">
+                <div id='video-overlay'>
+                    <span class="loader"></span>
+                </div>
+                <video id="video" autoplay playsinline controls></video>
+            </div>
+            <div class="form-group col-sm-12 text-left">
+                <input type="text" class="form-control" id="streamId" placeholder="Stream ID" value="stream1">
+            </div>
+
+            <div class="form-group">
+                <button class="btn btn-primary" id="startPlaying">Start Playing</button>
+                <button class="btn btn-primary" id="stopPlaying">Stop Playing</button>
+            </div>
+        </div>
+
+        <footer class="footer text-center">
+            <p>
+                <a href="http://antmedia.io">antmedia.io</a>
+            </p>
+        </footer>
     </div>
-    
+
+    <script src="js/external/jquery-3.4.1.min.js" crossorigin="anonymous"></script>
+    <script src="js/external/popper.min.js" crossorigin="anonymous"></script>
+    <script src="js/external/bootstrap.min.js" crossorigin="anonymous"></script>
+    <script src="js/external/notify.min.js" crossorigin="anonymous"></script>
+
     <script type="text/javascript">
         const video = document.getElementById('video');
         const streamIdInput = document.getElementById('streamId');
@@ -53,7 +86,6 @@
 
                 console.log("Offer created: ", offer);
                 console.log("Offer local description: ", pc.localDescription);
-                console.log("*********************12313131231313 *********************");
                 
                 // Wait for ICE gathering to complete
                 await new Promise((resolve) => {
@@ -111,10 +143,20 @@
 
                     } catch (error) {
                         console.error('Error establishing WHEP connection:', error);
+                        $('video').notify("Warning: Error establishing WHEP connection: " + error.message, {
+                            autoHideDelay: 5000,
+                            className: 'error',
+                            position: 'bottom center'
+                        });
                     }
                 }
             } catch (error) {
                 console.error('Error setting up WebRTC:', error);
+                $('video').notify("Warning: Error setting up WebRTC: " + error.message, {
+                    autoHideDelay: 5000,
+                    className: 'error',
+                    position: 'bottom center'
+                });
             }
         });
         
@@ -136,6 +178,11 @@
                     console.log('WHEP session terminated');
                 } catch (error) {
                     console.error('Error terminating WHEP session:', error);
+                    $('video').notify("Warning: Error terminating WHEP session: " + error.message, {
+                        autoHideDelay: 5000,
+                        className: 'error',
+                        position: 'bottom center'
+                    });
                 }
             }
         });
