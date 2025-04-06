@@ -86,6 +86,7 @@
 		<url-pattern>/streams/*</url-pattern>
 	</filter-mapping>
 
+	<!-- 
 	<filter>
 		<filter-name>HlsStatisticsFilter</filter-name>
 		<filter-class>io.antmedia.filter.HlsStatisticsFilter</filter-class>
@@ -95,6 +96,7 @@
 		<filter-name>HlsStatisticsFilter</filter-name>
 		<url-pattern>/streams/*</url-pattern>
 	</filter-mapping>
+	
 
 	<filter>
 		<filter-name>DashStatisticsFilter</filter-name>
@@ -105,6 +107,8 @@
 		<filter-name>DashStatisticsFilter</filter-name>
 		<url-pattern>/streams/*</url-pattern>
 	</filter-mapping>
+	
+	
 	<filter>
 		<filter-name>SubscriberBlockFilter</filter-name>
 		<filter-class>io.antmedia.filter.SubscriberBlockFilter</filter-class>
@@ -114,6 +118,7 @@
 		<filter-name>SubscriberBlockFilter</filter-name>
 		<url-pattern>/streams/*</url-pattern>
 	</filter-mapping>
+	 -->
 
 	<filter>
 		<filter-name>CorsFilter</filter-name>
