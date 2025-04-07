@@ -67,10 +67,8 @@ export class VideoEffect {
         this.effectCanvasFPS = 0;
         this.videoCallbackPeriodMs = 0;
 
-        // Keep track of streams created by this class
         this.effectStreams = [];
         
-        // Flag to control processFrame execution
         this.isProcessingActive = false;
         
         this.initializeSelfieSegmentation();
@@ -99,7 +97,6 @@ export class VideoEffect {
         }
         this.canvasStream = this.effectCanvas.captureStream(this.effectCanvasFPS);
         
-        // Track this stream
         this.effectStreams.push(this.canvasStream);
 
         return new Promise((resolve, reject) => {
@@ -113,7 +110,6 @@ export class VideoEffect {
      * @returns {Promise<void>}
      */
     setRawLocalVideo(stream) {
-        // Track this stream
         if (stream && stream.active) {
             this.effectStreams.push(stream);
         }
@@ -268,7 +264,6 @@ export class VideoEffect {
                     video: this.webRTCAdaptor.mediaConstraints.video,
                     audio: true
                 }).then(localStream => {
-                        // Track this new stream
                         this.effectStreams.push(localStream);
                         
                         return this.init(localStream).then(processedStream => {
@@ -320,7 +315,6 @@ export class VideoEffect {
             this.deepAR = deepAR;
             this.deepAR.callbacks.onVideoStarted = () => {
                 this.canvasStream = canvas.captureStream(30);
-                // Track this stream
                 this.effectStreams.push(this.canvasStream);
                 
                 this.webRTCAdaptor.updateVideoTrack(this.canvasStream, this.webRTCAdaptor.publishStreamId, null, true)
@@ -334,7 +328,6 @@ export class VideoEffect {
                     video: this.webRTCAdaptor.mediaConstraints.video,
                     audio: true
                 });
-                // Track this stream
                 this.effectStreams.push(localStream);
                 
                 await this.setRawLocalVideo(localStream);
@@ -451,7 +444,6 @@ export class VideoEffect {
     turnOffCamera() {
         Logger.debug("VideoEffect: Turning off camera and stopping all effect tracks");
         
-        // First, ensure all processing stops immediately
         this.isProcessingActive = false;
         
         // Stop all tracks in all streams we've created
@@ -463,33 +455,27 @@ export class VideoEffect {
                     });
                 }
             });
-            // Clear the array
             this.effectStreams = [];
         }
         
-        // Stop canvas stream separately if it exists
         if (this.canvasStream) {
             this.canvasStream.getTracks().forEach(track => track.stop());
             this.canvasStream = null;
         }
         
-        // Stop the raw video
         if (this.rawLocalVideo && this.rawLocalVideo.srcObject) {
             const stream = this.rawLocalVideo.srcObject;
             stream.getTracks().forEach(track => track.stop());
             this.rawLocalVideo.srcObject = null;
         }
         
-        // Stop DeepAR if active
         if (this.deepAR) {
             this.deepAR.shutdown();
             this.deepAR = null;
         }
         
-        // Stop processing
         this.stopFpsCalculation();
         
-        // Reset effect name
         this.effectName = VideoEffect.NO_EFFECT;
     }
 
@@ -507,20 +493,16 @@ export class VideoEffect {
         this.turnOffCamera();
         
         try {
-            // Acquire a new camera stream with current constraints
             const localStream = await navigator.mediaDevices.getUserMedia({
                 video: this.webRTCAdaptor.mediaConstraints.video,
                 audio: this.webRTCAdaptor.mediaConstraints.audio
             });
             
-            // Track this new stream
             this.effectStreams.push(localStream);
             
-            // If there was an effect enabled before, re-enable it
             if (this.effectName !== VideoEffect.NO_EFFECT) {
                 return this.enableEffect(this.effectName);
             } else {
-                // Otherwise just publish the camera stream directly
                 return this.webRTCAdaptor.updateVideoTrack(localStream, streamId || this.webRTCAdaptor.publishStreamId, null, true);
             }
         } catch (error) {
