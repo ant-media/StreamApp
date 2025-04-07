@@ -492,6 +492,42 @@ export class VideoEffect {
         this.effectName = VideoEffect.NO_EFFECT;
     }
 
+    /**
+     * This method reinitializes the camera after it has been turned off.
+     * It acquires a new camera stream and reconnects it to the WebRTC adaptor.
+     * 
+     * @param {string} streamId - The stream ID to publish to
+     * @returns {Promise<void>} - A promise that resolves when the camera is turned on
+     */
+    async turnOnCamera(streamId) {
+        Logger.debug("VideoEffect: Turning on camera");
+        
+        // Make sure any existing resources are cleaned up first
+        this.turnOffCamera();
+        
+        try {
+            // Acquire a new camera stream with current constraints
+            const localStream = await navigator.mediaDevices.getUserMedia({
+                video: this.webRTCAdaptor.mediaConstraints.video,
+                audio: this.webRTCAdaptor.mediaConstraints.audio
+            });
+            
+            // Track this new stream
+            this.effectStreams.push(localStream);
+            
+            // If there was an effect enabled before, re-enable it
+            if (this.effectName !== VideoEffect.NO_EFFECT) {
+                return this.enableEffect(this.effectName);
+            } else {
+                // Otherwise just publish the camera stream directly
+                return this.webRTCAdaptor.updateVideoTrack(localStream, streamId || this.webRTCAdaptor.publishStreamId, null, true);
+            }
+        } catch (error) {
+            Logger.error("Error turning on camera:", error);
+            throw error;
+        }
+    }
+
 }
 
 WebRTCAdaptor.register((webrtcAdaptorInstance) => {
@@ -518,6 +554,12 @@ WebRTCAdaptor.register((webrtcAdaptorInstance) => {
     Object.defineProperty(webrtcAdaptorInstance, "turnOffEffectCamera", {
         value: function () {
             return videoEffect.turnOffCamera();
+        }
+    });
+    
+    Object.defineProperty(webrtcAdaptorInstance, "turnOnEffectCamera", {
+        value: function (streamId) {
+            return videoEffect.turnOnCamera(streamId);
         }
     });
 
