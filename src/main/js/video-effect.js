@@ -67,6 +67,12 @@ export class VideoEffect {
         this.effectCanvasFPS = 0;
         this.videoCallbackPeriodMs = 0;
 
+        // Keep track of streams created by this class
+        this.effectStreams = [];
+        
+        // Flag to control processFrame execution
+        this.isProcessingActive = false;
+        
         this.initializeSelfieSegmentation();
         this.isInitialized = true;
 
@@ -92,6 +98,9 @@ export class VideoEffect {
             this.canvasStream = null;
         }
         this.canvasStream = this.effectCanvas.captureStream(this.effectCanvasFPS);
+        
+        // Track this stream
+        this.effectStreams.push(this.canvasStream);
 
         return new Promise((resolve, reject) => {
             resolve(this.canvasStream);
@@ -104,6 +113,11 @@ export class VideoEffect {
      * @returns {Promise<void>}
      */
     setRawLocalVideo(stream) {
+        // Track this stream
+        if (stream && stream.active) {
+            this.effectStreams.push(stream);
+        }
+        
         this.rawLocalVideo.srcObject = stream;
         this.rawLocalVideo.muted = true;
         this.rawLocalVideo.autoplay = true;
@@ -171,14 +185,27 @@ export class VideoEffect {
     }
 
     async processFrame() {
+        // Check if processing is active and the video is in a valid state
+        if (!this.isProcessingActive || !this.rawLocalVideo || 
+            !this.rawLocalVideo.srcObject || 
+            !this.rawLocalVideo.videoWidth || 
+            !this.rawLocalVideo.videoHeight) {
+            return;
+        }
 
-        await this.selfieSegmentation.send({image: this.rawLocalVideo});
+        try {
+            await this.selfieSegmentation.send({image: this.rawLocalVideo});
 
-        //call if the effect name is not NO_EFFECT
-        if (this.effectName !== VideoEffect.NO_EFFECT) {
-            setTimeout(() => {
-                this.processFrame();
-            }, this.videoCallbackPeriodMs);
+            //call if the effect name is not NO_EFFECT
+            if (this.effectName !== VideoEffect.NO_EFFECT && this.isProcessingActive) {
+                setTimeout(() => {
+                    this.processFrame();
+                }, this.videoCallbackPeriodMs);
+            }
+        } catch (error) {
+            console.error("Error processing video frame:", error);
+            // If there was an error, we should stop processing
+            this.isProcessingActive = false;
         }
     }
 
@@ -211,6 +238,7 @@ export class VideoEffect {
             case VideoEffect.NO_EFFECT:
                 //Stop timer
                 this.stopFpsCalculation();
+                this.isProcessingActive = false; // Stop processing before switching effect
                 await this.#noEffect();
                 break;
             default:
@@ -240,8 +268,12 @@ export class VideoEffect {
                     video: this.webRTCAdaptor.mediaConstraints.video,
                     audio: true
                 }).then(localStream => {
+                        // Track this new stream
+                        this.effectStreams.push(localStream);
+                        
                         return this.init(localStream).then(processedStream => {
                             return this.webRTCAdaptor.updateVideoTrack(processedStream, this.webRTCAdaptor.publishStreamId, null, true).then(() => {
+                                    this.isProcessingActive = true; // Start processing when effect is enabled
                                     setTimeout(() => {
                                         this.processFrame();
                                     }, this.videoCallbackPeriodMs);
@@ -288,6 +320,9 @@ export class VideoEffect {
             this.deepAR = deepAR;
             this.deepAR.callbacks.onVideoStarted = () => {
                 this.canvasStream = canvas.captureStream(30);
+                // Track this stream
+                this.effectStreams.push(this.canvasStream);
+                
                 this.webRTCAdaptor.updateVideoTrack(this.canvasStream, this.webRTCAdaptor.publishStreamId, null, true)
                 this.deepAR.switchEffect(0, 'slot', VideoEffect.DEEP_AR_EFFECTS_URL + deepARModel + VideoEffect.DEEP_AR_EXTENSION);
             }
@@ -299,6 +334,9 @@ export class VideoEffect {
                     video: this.webRTCAdaptor.mediaConstraints.video,
                     audio: true
                 });
+                // Track this stream
+                this.effectStreams.push(localStream);
+                
                 await this.setRawLocalVideo(localStream);
             }
             return new Promise((resolve, reject) => {
@@ -405,6 +443,55 @@ export class VideoEffect {
         this.ctx.restore();
     }
 
+    /**
+     * This method stops all video/audio tracks that were created by this VideoEffect instance
+     * and cleans up resources.
+     */
+    turnOffCamera() {
+        Logger.debug("VideoEffect: Turning off camera and stopping all effect tracks");
+        
+        // First, ensure all processing stops immediately
+        this.isProcessingActive = false;
+        
+        // Stop all tracks in all streams we've created
+        if (this.effectStreams && this.effectStreams.length > 0) {
+            this.effectStreams.forEach(stream => {
+                if (stream && stream.active) {
+                    stream.getTracks().forEach(track => {
+                        track.stop();
+                    });
+                }
+            });
+            // Clear the array
+            this.effectStreams = [];
+        }
+        
+        // Stop canvas stream separately if it exists
+        if (this.canvasStream) {
+            this.canvasStream.getTracks().forEach(track => track.stop());
+            this.canvasStream = null;
+        }
+        
+        // Stop the raw video
+        if (this.rawLocalVideo && this.rawLocalVideo.srcObject) {
+            const stream = this.rawLocalVideo.srcObject;
+            stream.getTracks().forEach(track => track.stop());
+            this.rawLocalVideo.srcObject = null;
+        }
+        
+        // Stop DeepAR if active
+        if (this.deepAR) {
+            this.deepAR.shutdown();
+            this.deepAR = null;
+        }
+        
+        // Stop processing
+        this.stopFpsCalculation();
+        
+        // Reset effect name
+        this.effectName = VideoEffect.NO_EFFECT;
+    }
+
 }
 
 WebRTCAdaptor.register((webrtcAdaptorInstance) => {
@@ -425,6 +512,12 @@ WebRTCAdaptor.register((webrtcAdaptorInstance) => {
     Object.defineProperty(webrtcAdaptorInstance, "setBackgroundImage", {
         value: function (imageElement) {
             videoEffect.virtualBackgroundImage = imageElement;
+        }
+    });
+
+    Object.defineProperty(webrtcAdaptorInstance, "turnOffEffectCamera", {
+        value: function () {
+            return videoEffect.turnOffCamera();
         }
     });
 
