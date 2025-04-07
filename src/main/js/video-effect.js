@@ -358,7 +358,8 @@ export class VideoEffect {
         if (this.canvasStream != null) {
             this.canvasStream.getVideoTracks().forEach(track => track.stop());
         }
-
+        this.turnOffCamera();
+        
         return this.webRTCAdaptor.switchVideoCameraCapture(this.webRTCAdaptor.publishStreamId);
     }
 
