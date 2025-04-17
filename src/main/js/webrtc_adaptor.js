@@ -365,6 +365,15 @@ export class WebRTCAdaptor {
 		this.pendingTryAgainTimerId = -1;
 
 		/**
+		 * Flag to indicate if peerconnection_config was provided by the user
+		 */
+		this.userDefinedIceServers = false;
+
+		if (initialValues && initialValues.peerconnection_config) {
+			this.userDefinedIceServers = true;
+		}
+
+		/**
 		 * All media management works for teh local stream are made by @MediaManager class.
 		 * for details please check @MediaManager
 		 */
@@ -468,7 +477,19 @@ export class WebRTCAdaptor {
 			this.checkWebSocketConnection();
 			resolve("Wait 'initialized' callback from websocket");
 		});
+	}
 
+	/**
+	 * Called to get the ICE server configuration from the server
+	 * if user hasn't provided any ICE servers in initialization
+	 */
+	getIceServerConfiguration() {
+		if (!this.userDefinedIceServers) {
+			let jsCmd = {
+				command: "getIceServerConfig"
+			};
+			this.webSocketAdaptor.send(JSON.stringify(jsCmd));
+		}
 	}
 
 	/**
