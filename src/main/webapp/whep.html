@@ -54,10 +54,20 @@
 
         const video = document.getElementById('video');
         const streamIdInput = document.getElementById('streamId');
+        const startPlayingButton = document.getElementById('startPlaying');
+        const stopPlayingButton = document.getElementById('stopPlaying');
         let whepSession = null;
+        
+        // Initialize button states
+        startPlayingButton.disabled = false;
+        stopPlayingButton.disabled = true;
         
         document.getElementById('startPlaying').addEventListener('click', async () => {
             const streamId = streamIdInput.value;
+            
+            // Disable start button and enable stop button
+            startPlayingButton.disabled = true;
+            stopPlayingButton.disabled = false;
             
             try {
                 // Create a new RTCPeerConnection
@@ -127,6 +137,9 @@
                         });
                         
                         if (!response.ok) { 
+                            // If error, reset button states
+                            startPlayingButton.disabled = false;
+                            stopPlayingButton.disabled = true;
                             throw new Error(`HTTP error! status: ${response.status}`);
                         }
 
@@ -152,6 +165,10 @@
                         console.log('WHEP connection established');
 
                     } catch (error) {
+                        // Reset button states on error
+                        startPlayingButton.disabled = false;
+                        stopPlayingButton.disabled = true;
+                        
                         console.error('Error establishing WHEP connection:', error);
                         $('video').notify("Warning: Error establishing WHEP connection: " + error.message, {
                             autoHideDelay: 5000,
@@ -161,6 +178,10 @@
                     }
                 }
             } catch (error) {
+                // Reset button states on error
+                startPlayingButton.disabled = false;
+                stopPlayingButton.disabled = true;
+                
                 console.error('Error setting up WebRTC:', error);
                 $('video').notify("Warning: Error setting up WebRTC: " + error.message, {
                     autoHideDelay: 5000,
@@ -173,6 +194,10 @@
         document.getElementById('stopPlaying').addEventListener('click', async () => {
             if (whepSession) {
                 try {
+                    // Reset button states
+                    startPlayingButton.disabled = false;
+                    stopPlayingButton.disabled = true;
+                    
                     // Build the server URL dynamically
                     const appName = location.pathname.substring(1, location.pathname.indexOf("/", 1) + 1);
                     const protocol = location.protocol;
