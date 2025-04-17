@@ -48,7 +48,10 @@
     <script src="js/external/bootstrap.min.js" crossorigin="anonymous"></script>
     <script src="js/external/notify.min.js" crossorigin="anonymous"></script>
 
-    <script type="text/javascript">
+    <script type="module">
+        import { getUrlParameter } from "./js/fetch.stream.js"
+        import { errorHandler } from "./js/utility.js"
+
         const video = document.getElementById('video');
         const streamIdInput = document.getElementById('streamId');
         let whepSession = null;
@@ -107,8 +110,15 @@
                     try {
                         console.log("Sending Whep offer");
                         
+                        // Get application name from the path
+                        const appName = location.pathname.substring(1, location.pathname.indexOf("/", 1) + 1);
+                        
+                        // Build the server URL dynamically using the current hostname and port
+                        const protocol = location.protocol;
+                        const baseURL = protocol + "//" + location.hostname + ":" + location.port + "/" + appName + "whep/" + streamId;
+
                         // Send the offer to the server in a single POST request
-                        const response = await fetch(`http://localhost:5080/LiveApp/whep/${streamId}`, {
+                        const response = await fetch(baseURL, {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/sdp'
@@ -163,8 +173,13 @@
         document.getElementById('stopPlaying').addEventListener('click', async () => {
             if (whepSession) {
                 try {
+                    // Build the server URL dynamically
+                    const appName = location.pathname.substring(1, location.pathname.indexOf("/", 1) + 1);
+                    const protocol = location.protocol;
+                    const baseURL = protocol + "//" + location.hostname + ":" + location.port + "/" + appName + "whep/" + whepSession.streamId + "/" + whepSession.eTag;
+
                     // Send DELETE request to terminate the session
-                    await fetch(`http://localhost:5080/LiveApp/whep/${whepSession.streamId}/${whepSession.eTag}`, {
+                    await fetch(baseURL, {
                         method: 'DELETE'
                     });
                     
