@@ -1768,7 +1768,6 @@ export class WebRTCAdaptor {
 		this.remotePeerConnectionStats[streamId].audioPacketsReceived = audioPacketsReceived;
 		this.remotePeerConnectionStats[streamId].videoPacketsReceived = videoPacketsReceived;
 
-		// --- FPS Fluctuation-based AV Sync Recovery ---
 		const now = Date.now();
 		const lastFrames = this._lastFramesReceived[streamId] ?? framesReceived;
 		const lastTime = this._lastStatsTime[streamId] ?? now;
@@ -1776,6 +1775,12 @@ export class WebRTCAdaptor {
 		this._lastFramesReceived[streamId] = framesReceived;
 		this._lastStatsTime[streamId] = now;
 
+		this.checkAndHandleFpsFluctuation(streamId, calculatedFps, now);
+
+		return this.remotePeerConnectionStats[streamId];
+	}
+
+	checkAndHandleFpsFluctuation(streamId, calculatedFps, now) {
 		if (!this._fpsHistory[streamId]) this._fpsHistory[streamId] = [];
 		this._fpsHistory[streamId].push(calculatedFps);
 		if (this._fpsHistory[streamId].length > this.fpsFluctuationWindowSize + 1) {
@@ -1783,7 +1788,6 @@ export class WebRTCAdaptor {
 		}
 
 		if (this._fpsHistory[streamId].length > this.fpsFluctuationWindowSize) {
-
 			Logger.debug(`FPS Fluctuation Detection - Stream: ${streamId}, Current FPS: ${calculatedFps.toFixed(2)}`);
 			// Exclude the current FPS from the average of previous values
 			const prevFpsValues = this._fpsHistory[streamId].slice(0, -1);
@@ -1851,12 +1855,7 @@ export class WebRTCAdaptor {
 				}
 			}
 		}
-		// --- End FPS Fluctuation-based AV Sync Recovery ---
-
-		return this.remotePeerConnectionStats[streamId];
 	}
-
-
 
 	/**
 	 * Called to start a periodic timer to get statistics periodically (5 seconds) for a specific stream.
