@@ -387,6 +387,30 @@ export class WebRTCAdaptor {
 		if (this.initializeComponents) {
 			this.initialize();
 		}
+
+		/**
+		 * Automatic AV Sync Recovery Configurations
+		 */
+		this.autoResyncOnFrameDrop = initialValues.autoResyncOnFrameDrop ?? true;
+		this.autoResyncCooldownMs = initialValues.autoResyncCooldownMs ?? 10000;
+		this._lastAutoResyncTime = {}; // { streamId: timestamp }
+		// FPS fluctuation-based auto-resync config
+		this.fpsFluctuationWindowSize = initialValues.fpsFluctuationWindowSize ?? 5; // e.g., last 5 seconds
+		this.fpsDropPercentThreshold = initialValues.fpsDropPercentThreshold ?? 0.3; // 30% drop
+		this.fpsFluctuationStdDevThreshold = initialValues.fpsFluctuationStdDevThreshold ?? 5; // e.g., 5 FPS
+		this.fpsFluctuationConsecutiveCount = initialValues.fpsFluctuationConsecutiveCount ?? 3;
+		this._fpsHistory = {}; // { streamId: [fps] }
+		this._fpsFluctuationCount = {}; // { streamId: count }
+		this._lastFramesReceived = {}; // { streamId: last framesReceived }
+		this._lastStatsTime = {}; // { streamId: last timestamp }
+		// Improved fluctuation handling
+		this.fpsStableStdDevThreshold = initialValues.fpsStableStdDevThreshold ?? 2;
+		// Dynamic healthy FPS baseline and stabilization window
+		this.fpsHealthyBaselineWindow = initialValues.fpsHealthyBaselineWindow ?? 5; // samples for healthy baseline
+		this.fpsStableWindow = initialValues.fpsStableWindow ?? 3; // samples for stabilization
+		this.fpsStablePercentOfBaseline = initialValues.fpsStablePercentOfBaseline ?? 0.8; // 80%
+		this._fpsHealthyBaseline = {}; // { streamId: [fps] }
+		this._fpsFluctuating = {}; // { streamId: boolean }
 	}
 
 	/**
@@ -1743,6 +1767,91 @@ export class WebRTCAdaptor {
 		this.remotePeerConnectionStats[streamId].currentRoundTripTime = currentRoundTripTime;
 		this.remotePeerConnectionStats[streamId].audioPacketsReceived = audioPacketsReceived;
 		this.remotePeerConnectionStats[streamId].videoPacketsReceived = videoPacketsReceived;
+
+		// --- FPS Fluctuation-based AV Sync Recovery ---
+		const now = Date.now();
+		const lastFrames = this._lastFramesReceived[streamId] ?? framesReceived;
+		const lastTime = this._lastStatsTime[streamId] ?? now;
+		const calculatedFps = (framesReceived - lastFrames) / ((now - lastTime) / 1000);
+		this._lastFramesReceived[streamId] = framesReceived;
+		this._lastStatsTime[streamId] = now;
+
+		if (!this._fpsHistory[streamId]) this._fpsHistory[streamId] = [];
+		this._fpsHistory[streamId].push(calculatedFps);
+		if (this._fpsHistory[streamId].length > this.fpsFluctuationWindowSize + 1) {
+			this._fpsHistory[streamId].shift();
+		}
+
+		if (this._fpsHistory[streamId].length > this.fpsFluctuationWindowSize) {
+
+			Logger.debug(`FPS Fluctuation Detection - Stream: ${streamId}, Current FPS: ${calculatedFps.toFixed(2)}`);
+			// Exclude the current FPS from the average of previous values
+			const prevFpsValues = this._fpsHistory[streamId].slice(0, -1);
+			const prevAvgFps = prevFpsValues.reduce((a, b) => a + b, 0) / prevFpsValues.length;
+			const prevStdDev = Math.sqrt(prevFpsValues.reduce((a, b) => a + Math.pow(b - prevAvgFps, 2), 0) / prevFpsValues.length);
+
+			// Update healthy baseline if not fluctuating
+			if (!this._fpsFluctuating[streamId]) {
+				if (!this._fpsHealthyBaseline[streamId]) this._fpsHealthyBaseline[streamId] = [];
+				this._fpsHealthyBaseline[streamId].push(calculatedFps);
+				if (this._fpsHealthyBaseline[streamId].length > this.fpsHealthyBaselineWindow) {
+					this._fpsHealthyBaseline[streamId].shift();
+				}
+			}
+
+			// Fluctuation detection
+			const fluctuationDetected = (
+				calculatedFps < prevAvgFps * (1 - this.fpsDropPercentThreshold) &&
+				prevStdDev > this.fpsFluctuationStdDevThreshold
+			);
+			if (fluctuationDetected) {
+				this._fpsFluctuationCount[streamId] = (this._fpsFluctuationCount[streamId] || 0) + 1;
+				Logger.debug(`FPS Fluctuation Detection - Stream: ${streamId}, Current FPS: ${calculatedFps.toFixed(2)}, Count: ${this._fpsFluctuationCount[streamId]}`);
+				if (this._fpsFluctuationCount[streamId] >= this.fpsFluctuationConsecutiveCount) {
+					this._fpsFluctuating[streamId] = true;
+				}
+			} else {
+				this._fpsFluctuationCount[streamId] = 0;
+			}
+
+			// If we are in a fluctuating state, check for stabilization
+			if (this._fpsFluctuating[streamId]) {
+				// Use only the last N samples for stabilization
+				const stableWindow = this._fpsHistory[streamId].slice(-this.fpsStableWindow);
+				const stableAvg = stableWindow.reduce((a, b) => a + b, 0) / stableWindow.length;
+				const stableStdDev = Math.sqrt(stableWindow.reduce((a, b) => a + Math.pow(b - stableAvg, 2), 0) / stableWindow.length);
+				// Use the healthy baseline
+				const healthyBaselineArr = this._fpsHealthyBaseline[streamId] || [];
+				const healthyBaseline = healthyBaselineArr.length > 0 ? (healthyBaselineArr.reduce((a, b) => a + b, 0) / healthyBaselineArr.length) : 0;
+				Logger.debug(`FPS Stabilization Check - Stream: ${streamId}, StableAvg: ${stableAvg.toFixed(2)}, StableStdDev: ${stableStdDev.toFixed(2)}, HealthyBaseline: ${healthyBaseline.toFixed(2)}`);
+				if (stableStdDev < this.fpsStableStdDevThreshold && stableAvg > healthyBaseline * this.fpsStablePercentOfBaseline) {
+					// Now stable, trigger restart
+					if (this.autoResyncOnFrameDrop && this.playStreamId && this.playStreamId.includes(streamId)) {
+						if (!this._lastAutoResyncTime[streamId] || now - this._lastAutoResyncTime[streamId] > this.autoResyncCooldownMs) {
+							this._lastAutoResyncTime[streamId] = now;
+							Logger.warn(`Auto-resync triggered for stream ${streamId} after FPS stabilized. StableAvg: ${stableAvg.toFixed(2)}, StableStdDev: ${stableStdDev.toFixed(2)}, HealthyBaseline: ${healthyBaseline.toFixed(2)}`);
+							this.stop(streamId);
+							setTimeout(() => {
+								this.play(
+									streamId,
+									this.playToken,
+									this.playRoomId,
+									this.playEnableTracks,
+									this.playSubscriberId,
+									this.playSubscriberCode,
+									this.playMetaData,
+									this.playRole
+								);
+								this.notifyEventListeners("auto_resync_triggered", { streamId, calculatedFps, stableAvg, stableStdDev, healthyBaseline, stabilized: true });
+							}, 500);
+						}
+					}
+					this._fpsFluctuating[streamId] = false; // Reset
+					this._fpsFluctuationCount[streamId] = 0;
+				}
+			}
+		}
+		// --- End FPS Fluctuation-based AV Sync Recovery ---
 
 		return this.remotePeerConnectionStats[streamId];
 	}
