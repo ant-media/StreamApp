@@ -1834,6 +1834,7 @@ export class WebRTCAdaptor {
 						if (!this._lastAutoResyncTime[streamId] || now - this._lastAutoResyncTime[streamId] > this.autoResyncCooldownMs) {
 							this._lastAutoResyncTime[streamId] = now;
 							Logger.warn(`Auto-resync triggered for stream ${streamId} after FPS stabilized. StableAvg: ${stableAvg.toFixed(2)}, StableStdDev: ${stableStdDev.toFixed(2)}, HealthyBaseline: ${healthyBaseline.toFixed(2)}`);
+							this.notifyEventListeners("auto_resync_triggered", { streamId, calculatedFps, stableAvg, stableStdDev, healthyBaseline, stabilized: true });
 							this.stop(streamId);
 							setTimeout(() => {
 								this.play(
@@ -1846,7 +1847,6 @@ export class WebRTCAdaptor {
 									this.playMetaData,
 									this.playRole
 								);
-								this.notifyEventListeners("auto_resync_triggered", { streamId, calculatedFps, stableAvg, stableStdDev, healthyBaseline, stabilized: true });
 							}, 500);
 						}
 					}
