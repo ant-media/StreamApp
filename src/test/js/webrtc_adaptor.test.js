@@ -2149,72 +2149,29 @@ describe("ICE Server Configuration", function() {
         adaptor.getIceServerConfiguration();
         expect(adaptor.webSocketAdaptor.send.called).to.be.false;
     });
-
-    it("WebSocketAdaptor should update peerconnection_config.iceServers for TURN and STUN", function() {
-        // Mock webrtcadaptor
-        const adaptor = new WebRTCAdaptor({
-            websocketURL: "ws://example.com",
-            initializeComponents: false
-        });
-        const wsAdaptor = new (class extends WebSocketAdaptor {
-            constructor() {
-                super({ websocket_url: "ws://example.com", webrtcadaptor: adaptor });
-                this.webrtcadaptor = adaptor;
-            }
-        })();
-        wsAdaptor.webrtcadaptor = adaptor;
-        // TURN
-        let obj = {
-            command: "iceServerConfig",
-            stunServerUri: "turn:turn.example.com",
-            turnServerUsername: "user",
-            turnServerCredential: "pass"
-        };
-        wsAdaptor.webrtcadaptor.peerconnection_config = { iceServers: [] };
-        wsAdaptor.debug = false;
-        wsAdaptor.wsConn = { send: sinon.fake() };
-        wsAdaptor.wsConn.onmessage = null;
-        // Simulate onmessage logic
-        wsAdaptor.wsConn = { send: sinon.fake() };
-        wsAdaptor.webrtcadaptor.peerconnection_config.iceServers = [];
-        wsAdaptor.debug = false;
-        wsAdaptor.wsConn = { send: sinon.fake() };
-        wsAdaptor.webrtcadaptor.peerconnection_config.iceServers = [];
-        // Directly call the logic
-        if (obj.stunServerUri.startsWith("turn:")) {
-            wsAdaptor.webrtcadaptor.peerconnection_config.iceServers = [
-                { urls: 'stun:stun1.l.google.com:19302' },
-                { urls: obj.stunServerUri, username: obj.turnServerUsername || "", credential: obj.turnServerCredential || "" }
-            ];
-        }
-        expect(wsAdaptor.webrtcadaptor.peerconnection_config.iceServers.length).to.equal(2);
-        expect(wsAdaptor.webrtcadaptor.peerconnection_config.iceServers[1].urls).to.equal("turn:turn.example.com");
-        expect(wsAdaptor.webrtcadaptor.peerconnection_config.iceServers[1].username).to.equal("user");
-        expect(wsAdaptor.webrtcadaptor.peerconnection_config.iceServers[1].credential).to.equal("pass");
-        // STUN
-        obj = {
-            command: "iceServerConfig",
-            stunServerUri: "stun:stun.example.com"
-        };
-        if (obj.stunServerUri.startsWith("stun:")) {
-            wsAdaptor.webrtcadaptor.peerconnection_config.iceServers = [
-                { urls: obj.stunServerUri }
-            ];
-        }
-        expect(wsAdaptor.webrtcadaptor.peerconnection_config.iceServers.length).to.equal(1);
-        expect(wsAdaptor.webrtcadaptor.peerconnection_config.iceServers[0].urls).to.equal("stun:stun.example.com");
-    });
 });
 
-describe("WebSocketAdaptor ICE ServerConfig Message", function() {
-    it("should update peerconnection_config.iceServers for TURN server via onmessage", function() {
-        const mockAdaptor = { peerconnection_config: { iceServers: [] } };
-        const wsAdaptor = new WebSocketAdaptor({ websocket_url: "ws://example.com", webrtcadaptor: mockAdaptor });
-        wsAdaptor.webrtcadaptor = mockAdaptor;
+describe("WebSocketAdaptor ICE ServerConfig Integration", function() {
+    let originalLogger;
+    let originalLog;
+    before(function() {
+        // Save and mock Logger and log for debug test
+        originalLogger = window.Logger;
+        originalLog = window.log;
+        window.log = { debug: () => {} };
+        window.Logger = window.log;
+    });
+    after(function() {
+        window.Logger = originalLogger;
+        window.log = originalLog;
+    });
+
+    it("should update peerconnection_config.iceServers for TURN server via real onmessage", function() {
+        const adaptor = { peerconnection_config: { iceServers: [] } };
+        const wsAdaptor = new WebSocketAdaptor({ websocket_url: "ws://example.com", webrtcadaptor: adaptor });
         wsAdaptor.debug = false;
-        // Mock wsConn to avoid real WebSocket
-        wsAdaptor.wsConn = { send: sinon.fake() };
-        // Simulate receiving a TURN config message
+        wsAdaptor.wsConn = {};
+        wsAdaptor.initWebSocketConnection();
         const event = {
             data: JSON.stringify({
                 command: "iceServerConfig",
@@ -2223,102 +2180,28 @@ describe("WebSocketAdaptor ICE ServerConfig Message", function() {
                 turnServerCredential: "pass"
             })
         };
-        wsAdaptor.onmessage = wsAdaptor.wsConn.onmessage;
-        // Call the real onmessage handler
-        wsAdaptor.wsConn.onmessage = wsAdaptor.initWebSocketConnection.toString(); // dummy to avoid errors
-        wsAdaptor.wsConn = { send: sinon.fake() };
-        // Manually call the handler as in the real code
-        wsAdaptor.wsConn = { send: sinon.fake() };
-        wsAdaptor.webrtcadaptor.peerconnection_config.iceServers = [];
-        wsAdaptor.debug = false;
-        // Actually call the handler
-        wsAdaptor.wsConn = { send: sinon.fake() };
-        wsAdaptor.wsConn.onmessage = wsAdaptor.initWebSocketConnection.toString(); // dummy
-        // Instead, call the handler directly as in the code
-        // (simulate the code in onmessage)
-        const obj = JSON.parse(event.data);
-        if (obj.stunServerUri) {
-            if (obj.stunServerUri.startsWith("turn:")) {
-                wsAdaptor.webrtcadaptor.peerconnection_config.iceServers = [
-                    { urls: 'stun:stun1.l.google.com:19302' },
-                    { urls: obj.stunServerUri, username: obj.turnServerUsername || "", credential: obj.turnServerCredential || "" }
-                ];
-            } else if (obj.stunServerUri.startsWith("stun:")) {
-                wsAdaptor.webrtcadaptor.peerconnection_config.iceServers = [
-                    { urls: obj.stunServerUri }
-                ];
-            }
-        }
-        expect(wsAdaptor.webrtcadaptor.peerconnection_config.iceServers.length).to.equal(2);
-        expect(wsAdaptor.webrtcadaptor.peerconnection_config.iceServers[1].urls).to.equal("turn:turn.example.com");
-        expect(wsAdaptor.webrtcadaptor.peerconnection_config.iceServers[1].username).to.equal("user");
-        expect(wsAdaptor.webrtcadaptor.peerconnection_config.iceServers[1].credential).to.equal("pass");
+        wsAdaptor.wsConn.onmessage(event);
+        expect(adaptor.peerconnection_config.iceServers.length).to.equal(2);
+        expect(adaptor.peerconnection_config.iceServers[1].urls).to.equal("turn:turn.example.com");
+        expect(adaptor.peerconnection_config.iceServers[1].username).to.equal("user");
+        expect(adaptor.peerconnection_config.iceServers[1].credential).to.equal("pass");
     });
 
-    it("should update peerconnection_config.iceServers for STUN server via onmessage", function() {
-        const mockAdaptor = { peerconnection_config: { iceServers: [] } };
-        const wsAdaptor = new WebSocketAdaptor({ websocket_url: "ws://example.com", webrtcadaptor: mockAdaptor });
-        wsAdaptor.webrtcadaptor = mockAdaptor;
+    it("should update peerconnection_config.iceServers for STUN server via real onmessage", function() {
+        const adaptor = { peerconnection_config: { iceServers: [] } };
+        const wsAdaptor = new WebSocketAdaptor({ websocket_url: "ws://example.com", webrtcadaptor: adaptor });
         wsAdaptor.debug = false;
-        wsAdaptor.wsConn = { send: sinon.fake() };
-        // Simulate receiving a STUN config message
+        wsAdaptor.wsConn = {};
+        wsAdaptor.initWebSocketConnection();
         const event = {
             data: JSON.stringify({
                 command: "iceServerConfig",
                 stunServerUri: "stun:stun.example.com"
             })
         };
-        const obj = JSON.parse(event.data);
-        if (obj.stunServerUri) {
-            if (obj.stunServerUri.startsWith("turn:")) {
-                wsAdaptor.webrtcadaptor.peerconnection_config.iceServers = [
-                    { urls: 'stun:stun1.l.google.com:19302' },
-                    { urls: obj.stunServerUri, username: obj.turnServerUsername || "", credential: obj.turnServerCredential || "" }
-                ];
-            } else if (obj.stunServerUri.startsWith("stun:")) {
-                wsAdaptor.webrtcadaptor.peerconnection_config.iceServers = [
-                    { urls: obj.stunServerUri }
-                ];
-            }
-        }
-        expect(wsAdaptor.webrtcadaptor.peerconnection_config.iceServers.length).to.equal(1);
-        expect(wsAdaptor.webrtcadaptor.peerconnection_config.iceServers[0].urls).to.equal("stun:stun.example.com");
+        wsAdaptor.wsConn.onmessage(event);
+        expect(adaptor.peerconnection_config.iceServers.length).to.equal(1);
+        expect(adaptor.peerconnection_config.iceServers[0].urls).to.equal("stun:stun.example.com");
     });
 
-    it("should log debug message if debug is true when updating iceServers", function() {
-        const mockAdaptor = { peerconnection_config: { iceServers: [] } };
-        const wsAdaptor = new WebSocketAdaptor({ websocket_url: "ws://example.com", webrtcadaptor: mockAdaptor });
-        wsAdaptor.webrtcadaptor = mockAdaptor;
-        wsAdaptor.debug = true;
-        wsAdaptor.wsConn = { send: sinon.fake() };
-        // Ensure window.Logger exists and has a debug method
-        if (!window.Logger) {
-            window.Logger = { debug: () => {} };
-        }
-        const loggerSpy = sinon.spy(window.Logger, "debug");
-        const event = {
-            data: JSON.stringify({
-                command: "iceServerConfig",
-                stunServerUri: "stun:stun.example.com"
-            })
-        };
-        const obj = JSON.parse(event.data);
-        if (obj.stunServerUri) {
-            if (obj.stunServerUri.startsWith("turn:")) {
-                wsAdaptor.webrtcadaptor.peerconnection_config.iceServers = [
-                    { urls: 'stun:stun1.l.google.com:19302' },
-                    { urls: obj.stunServerUri, username: obj.turnServerUsername || "", credential: obj.turnServerCredential || "" }
-                ];
-            } else if (obj.stunServerUri.startsWith("stun:")) {
-                wsAdaptor.webrtcadaptor.peerconnection_config.iceServers = [
-                    { urls: obj.stunServerUri }
-                ];
-            }
-            if (wsAdaptor.debug) {
-                Logger.debug("ice servers updated: " + JSON.stringify(wsAdaptor.webrtcadaptor.peerconnection_config.iceServers));
-            }
-        }
-        expect(loggerSpy.called).to.be.true;
-        loggerSpy.restore();
-    });
 });
