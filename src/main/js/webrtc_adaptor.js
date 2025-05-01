@@ -395,10 +395,10 @@ export class WebRTCAdaptor {
 		this.autoResyncCooldownMs = initialValues.autoResyncCooldownMs ?? 10000;
 		this._lastAutoResyncTime = {}; // { streamId: timestamp }
 		// FPS fluctuation-based auto-resync config
-		this.fpsFluctuationWindowSize = initialValues.fpsFluctuationWindowSize ?? 5; // e.g., last 5 seconds
-		this.fpsDropPercentThreshold = initialValues.fpsDropPercentThreshold ?? 0.3; // 30% drop
-		this.fpsFluctuationStdDevThreshold = initialValues.fpsFluctuationStdDevThreshold ?? 5; // e.g., 5 FPS
-		this.fpsFluctuationConsecutiveCount = initialValues.fpsFluctuationConsecutiveCount ?? 3;
+		this.fpsFluctuationWindowSize = initialValues.fpsFluctuationWindowSize ?? 3; // e.g., last 5 seconds
+		this.fpsDropPercentThreshold = initialValues.fpsDropPercentThreshold ?? 0.15; // 15% drop
+		this.fpsFluctuationStdDevThreshold = initialValues.fpsFluctuationStdDevThreshold ?? 1.5; // e.g., 5 FPS
+		this.fpsFluctuationConsecutiveCount = initialValues.fpsFluctuationConsecutiveCount ?? 2;
 		this._fpsHistory = {}; // { streamId: [fps] }
 		this._fpsFluctuationCount = {}; // { streamId: count }
 		this._lastFramesReceived = {}; // { streamId: last framesReceived }
@@ -410,6 +410,8 @@ export class WebRTCAdaptor {
 		this.fpsStableWindow = initialValues.fpsStableWindow ?? 3; // samples for stabilization
 		this.fpsStablePercentOfBaseline = initialValues.fpsStablePercentOfBaseline ?? 0.8; // 80%
 		this._fpsHealthyBaseline = {}; // { streamId: [fps] }
+		this._lastHealthyAvgFps = {}; // { streamId: number }
+		this.healthyWindowSize = initialValues.healthyWindowSize ?? 5;
 		this._fpsFluctuating = {}; // { streamId: boolean }
 	}
 
@@ -1794,18 +1796,24 @@ export class WebRTCAdaptor {
 			const prevAvgFps = prevFpsValues.reduce((a, b) => a + b, 0) / prevFpsValues.length;
 			const prevStdDev = Math.sqrt(prevFpsValues.reduce((a, b) => a + Math.pow(b - prevAvgFps, 2), 0) / prevFpsValues.length);
 
-			// Update healthy baseline if not fluctuating
+			// Update healthy baseline and last healthy avg if not fluctuating
 			if (!this._fpsFluctuating[streamId]) {
 				if (!this._fpsHealthyBaseline[streamId]) this._fpsHealthyBaseline[streamId] = [];
 				this._fpsHealthyBaseline[streamId].push(calculatedFps);
-				if (this._fpsHealthyBaseline[streamId].length > this.fpsHealthyBaselineWindow) {
+				if (this._fpsHealthyBaseline[streamId].length > this.healthyWindowSize) {
 					this._fpsHealthyBaseline[streamId].shift();
+				}
+				// Update last healthy avg
+				const healthyArr = this._fpsHealthyBaseline[streamId];
+				if (healthyArr.length === this.healthyWindowSize) {
+					this._lastHealthyAvgFps[streamId] = healthyArr.reduce((a, b) => a + b, 0) / healthyArr.length;
 				}
 			}
 
-			// Fluctuation detection
+			// Fluctuation detection: use last healthy avg
+			const healthyAvg = this._lastHealthyAvgFps[streamId] ?? calculatedFps;
 			const fluctuationDetected = (
-				calculatedFps < prevAvgFps * (1 - this.fpsDropPercentThreshold) &&
+				calculatedFps < healthyAvg * (1 - this.fpsDropPercentThreshold) &&
 				prevStdDev > this.fpsFluctuationStdDevThreshold
 			);
 			if (fluctuationDetected) {
