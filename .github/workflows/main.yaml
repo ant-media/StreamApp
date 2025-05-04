@@ -1,0 +1,98 @@
+name: Build and Deploy Java Project
+
+on:
+  push:
+    branches: [ '**' ]
+    tags: [ '*' ]
+  pull_request:
+    branches: [ '**' ]
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04 # Ubuntu Jammy equivalent
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up JDK 17
+      uses: actions/setup-java@v3
+      with:
+        java-version: '17'
+        distribution: 'temurin' # AdoptOpenJDK's new name
+        cache: 'maven'
+        
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '16.20.2'
+        cache: 'npm'
+
+        
+    - name: Import GPG key
+      run: |
+        echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --yes --import
+        gpg --list-keys
+      
+    - name: Clone and build parent project
+      run: |
+        BRANCH_NAME=${GITHUB_REF##*/}
+        if [ $(git ls-remote https://github.com/ant-media/ant-media-server-parent.git $BRANCH_NAME | wc -l) == "1" ]; then
+          echo "$BRANCH_NAME branch found"
+          git clone --depth=1 -b $BRANCH_NAME https://github.com/ant-media/ant-media-server-parent.git
+        else
+          echo "branch not found"
+          git clone --depth=1 https://github.com/ant-media/ant-media-server-parent.git
+        fi
+        cd ant-media-server-parent
+        mvn clean install -DskipTests -Dmaven.javadoc.skip=true -Dgpg.skip=true --quiet
+        cd ..
+        
+    - name: Clone and build server project
+      run: |
+        BRANCH_NAME=${GITHUB_REF##*/}
+        if [ $(git ls-remote https://github.com/ant-media/Ant-Media-Server.git $BRANCH_NAME | wc -l) == "1" ]; then
+          echo "$BRANCH_NAME branch found in Ant-Media-Server"
+          git clone --depth=1 -b $BRANCH_NAME https://github.com/ant-media/Ant-Media-Server.git
+        else
+          echo "$BRANCH_NAME branch not found checkout master"
+          git clone --depth=1 https://github.com/ant-media/Ant-Media-Server.git
+        fi
+        cd Ant-Media-Server
+        mvn clean install -DskipTests -Dmaven.javadoc.skip=true -Dgpg.skip=true --quiet
+        cd ..
+        
+    - name: Install and compile npm packages
+      run: |
+        pwd
+        ls -alh
+        npm install
+        npm run compile
+        cd embedded-player
+        npm install
+        npm run compile
+        npm run deploy
+        cd ..
+        
+    - name: Install Maven packages
+      run: mvn install -DskipTests=true -Dmaven.javadoc.skip=true -Dgpg.skip=true -B -V --quiet
+      
+    - name: Deploy Snapshot
+      if: ${{ !startsWith(github.ref, 'refs/tags/') }}
+      run: |
+        VERSION=$(mvn -q -Dexec.executable="echo" -Dexec.args='${project.version}' --non-recursive exec:exec)
+        if [[ "$VERSION" == *"SNAPSHOT"* ]]; then
+          mvn deploy -DskipTests --quiet --settings mvn-settings.xml
+        fi
+      env:
+        # Add your Maven credentials as secrets
+          CI_DEPLOY_USERNAME: ${{ secrets.CI_DEPLOY_USERNAME }}
+          CI_DEPLOY_PASSWORD: ${{ secrets.CI_DEPLOY_PASSWORD }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        
+    - name: Deploy Release
+      if: startsWith(github.ref, 'refs/tags/ams-v')
+      run: mvn deploy -DskipTests --quiet --settings mvn-settings.xml
+      env:
+          CI_DEPLOY_USERNAME: ${{ secrets.CI_DEPLOY_USERNAME }}
+          CI_DEPLOY_PASSWORD: ${{ secrets.CI_DEPLOY_PASSWORD }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
