@@ -2116,6 +2116,13 @@ describe("ICE Server Configuration", function() {
             initializeComponents: false
         });
         expect(adaptor.userDefinedIceServers).to.be.true;
+		
+		const adaptor2 = new WebRTCAdaptor({
+           websocketURL: "ws://example.com",
+           peerconnection_config: { sdpSemantics: 'unified-plan' },
+           initializeComponents: false
+       });
+       expect(adaptor2.userDefinedIceServers).to.be.false;
     });
 
     it("should set userDefinedIceServers to false if peerconnection_config is not provided", function() {

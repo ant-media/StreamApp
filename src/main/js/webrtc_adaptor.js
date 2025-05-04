@@ -369,7 +369,7 @@ export class WebRTCAdaptor {
 		 */
 		this.userDefinedIceServers = false;
 
-		if (initialValues && initialValues.peerconnection_config) {
+		if (initialValues && initialValues.peerconnection_config && initialValues.peerconnection_config.iceServers) {
 			this.userDefinedIceServers = true;
 		}
 
