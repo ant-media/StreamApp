@@ -35,28 +35,14 @@ jobs:
       
     - name: Clone and build parent project
       run: |
-        BRANCH_NAME=${GITHUB_REF##*/}
-        if [ $(git ls-remote https://github.com/ant-media/ant-media-server-parent.git $BRANCH_NAME | wc -l) == "1" ]; then
-          echo "$BRANCH_NAME branch found"
-          git clone --depth=1 -b $BRANCH_NAME https://github.com/ant-media/ant-media-server-parent.git
-        else
-          echo "branch not found"
-          git clone --depth=1 https://github.com/ant-media/ant-media-server-parent.git
-        fi
+        git clone --depth=1 -b ${{ github.ref_name }} https://github.com/ant-media/ant-media-server-parent.git || git clone --depth=1 https://github.com/ant-media/ant-media-server-parent.git
         cd ant-media-server-parent
         mvn clean install -DskipTests -Dmaven.javadoc.skip=true -Dgpg.skip=true --quiet
         cd ..
         
     - name: Clone and build server project
       run: |
-        BRANCH_NAME=${GITHUB_REF##*/}
-        if [ $(git ls-remote https://github.com/ant-media/Ant-Media-Server.git $BRANCH_NAME | wc -l) == "1" ]; then
-          echo "$BRANCH_NAME branch found in Ant-Media-Server"
-          git clone --depth=1 -b $BRANCH_NAME https://github.com/ant-media/Ant-Media-Server.git
-        else
-          echo "$BRANCH_NAME branch not found checkout master"
-          git clone --depth=1 https://github.com/ant-media/Ant-Media-Server.git
-        fi
+        git clone --depth=1 -b ${{ github.ref_name }} https://github.com/ant-media/Ant-Media-Server.git || git clone --depth=1 https://github.com/ant-media/Ant-Media-Server.git
         cd Ant-Media-Server
         mvn clean install -DskipTests -Dmaven.javadoc.skip=true -Dgpg.skip=true --quiet
         cd ..
