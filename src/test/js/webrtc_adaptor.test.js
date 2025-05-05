@@ -1251,39 +1251,47 @@ describe("WebRTCAdaptor", function() {
 	describe("turnOffLocalCamera", () => {
 		let adaptor;
 		let mockMediaManager;
+		let turnOffEffectCameraFake;
 
 		beforeEach(function() {
 			mockMediaManager = {
 				turnOffLocalCamera: sinon.fake()
 			};
 
+			turnOffEffectCameraFake = sinon.fake();
+
 			adaptor = new WebRTCAdaptor({
 				websocketURL: "ws://example.com",
 				isPlayMode: true,
-				mediaManager: mockMediaManager,
-				initializeComponents: false
+					mediaManager: mockMediaManager,
+					initializeComponents: false
 			});
+			adaptor.turnOffEffectCamera = turnOffEffectCameraFake;
 		});
 
 		it("should call turnOffLocalCamera on mediaManager with correct streamId", function() {
 			const streamId = "testStreamId";
 			let result = adaptor.turnOffLocalCamera(streamId);
 			assert.notEqual(result, undefined);
+			assert(turnOffEffectCameraFake.calledOnceWithExactly(streamId));
 		});
 
 		it("should handle undefined streamId", function() {
 			let result = adaptor.turnOffLocalCamera(undefined);
 			assert.notEqual(result, undefined);
+			assert(turnOffEffectCameraFake.calledOnceWithExactly(undefined));
 		});
 
 		it("should handle null streamId", function() {
 			let result = adaptor.turnOffLocalCamera(null);
 			assert.notEqual(result, undefined);
+			assert(turnOffEffectCameraFake.calledOnceWithExactly(null));
 		});
 
 		it("should handle empty string streamId", function() {
 			let result = adaptor.turnOffLocalCamera("");
 			assert.notEqual(result, undefined);
+			assert(turnOffEffectCameraFake.calledOnceWithExactly(""));
 		});
 	});
 
