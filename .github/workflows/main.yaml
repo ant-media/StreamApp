@@ -63,12 +63,7 @@ jobs:
       run: mvn install -DskipTests=true -Dmaven.javadoc.skip=true -Dgpg.skip=true -B -V --quiet
       
     - name: Deploy Snapshot
-      if: ${{ !startsWith(github.ref, 'refs/tags/') }}
-      run: |
-        VERSION=$(mvn -q -Dexec.executable="echo" -Dexec.args='${project.version}' --non-recursive exec:exec)
-        if [[ "$VERSION" == *"SNAPSHOT"* ]]; then
-          mvn deploy -DskipTests --quiet --settings mvn-settings.xml
-        fi
+      run: mvn deploy -DskipTests --quiet --settings mvn-settings.xml
       env:
         # Add your Maven credentials as secrets
           CI_DEPLOY_USERNAME: ${{ secrets.CI_DEPLOY_USERNAME }}
