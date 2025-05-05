@@ -1,7 +1,10 @@
 import { WebRTCAdaptor } from '../../main/js/webrtc_adaptor.js';
 import { MediaManager } from "../../main/js/media_manager.js";
 import { PeerStats } from "../../main/js/peer_stats.js";
+import { WebSocketAdaptor } from '../../main/js/websocket_adaptor.js';
 
+// Add this before the ICE ServerConfig debug logging test to mock Logger
+window.Logger = { debug: () => {} };
 
 describe("WebRTCAdaptor", function() {
 
@@ -2102,5 +2105,110 @@ describe("WebRTCAdaptor", function() {
     	});
 
 
+
+});
+
+describe("ICE Server Configuration", function() {
+    it("should set userDefinedIceServers to true if peerconnection_config is provided", function() {
+        const adaptor = new WebRTCAdaptor({
+            websocketURL: "ws://example.com",
+            peerconnection_config: { iceServers: [{ urls: "stun:custom" }] },
+            initializeComponents: false
+        });
+        expect(adaptor.userDefinedIceServers).to.be.true;
+		
+		const adaptor2 = new WebRTCAdaptor({
+           websocketURL: "ws://example.com",
+           peerconnection_config: { sdpSemantics: 'unified-plan' },
+           initializeComponents: false
+       });
+       expect(adaptor2.userDefinedIceServers).to.be.false;
+    });
+
+    it("should set userDefinedIceServers to false if peerconnection_config is not provided", function() {
+        const adaptor = new WebRTCAdaptor({
+            websocketURL: "ws://example.com",
+            initializeComponents: false
+        });
+        expect(adaptor.userDefinedIceServers).to.be.false;
+    });
+
+    it("getIceServerConfiguration should send getIceServerConfig if userDefinedIceServers is false", function() {
+        const adaptor = new WebRTCAdaptor({
+            websocketURL: "ws://example.com",
+            initializeComponents: false
+        });
+        adaptor.userDefinedIceServers = false;
+        adaptor.webSocketAdaptor = { send: sinon.fake() };
+        adaptor.getIceServerConfiguration();
+        expect(adaptor.webSocketAdaptor.send.calledOnce).to.be.true;
+        const sentArg = JSON.parse(adaptor.webSocketAdaptor.send.firstCall.args[0]);
+        expect(sentArg.command).to.equal("getIceServerConfig");
+    });
+
+    it("getIceServerConfiguration should NOT send getIceServerConfig if userDefinedIceServers is true", function() {
+        const adaptor = new WebRTCAdaptor({
+            websocketURL: "ws://example.com",
+            initializeComponents: false
+        });
+        adaptor.userDefinedIceServers = true;
+        adaptor.webSocketAdaptor = { send: sinon.fake() };
+        adaptor.getIceServerConfiguration();
+        expect(adaptor.webSocketAdaptor.send.called).to.be.false;
+    });
+});
+
+describe("WebSocketAdaptor ICE ServerConfig Integration", function() {
+    let originalLogger;
+    let originalLog;
+    before(function() {
+        // Save and mock Logger and log for debug test
+        originalLogger = window.Logger;
+        originalLog = window.log;
+        window.log = { debug: () => {} };
+        window.Logger = window.log;
+    });
+    after(function() {
+        window.Logger = originalLogger;
+        window.log = originalLog;
+    });
+
+    it("should update peerconnection_config.iceServers for TURN server via real onmessage", function() {
+        const adaptor = { peerconnection_config: { iceServers: [] } };
+        const wsAdaptor = new WebSocketAdaptor({ websocket_url: "ws://example.com", webrtcadaptor: adaptor });
+        wsAdaptor.debug = false;
+        wsAdaptor.wsConn = {};
+        wsAdaptor.initWebSocketConnection();
+        const event = {
+            data: JSON.stringify({
+                command: "iceServerConfig",
+                stunServerUri: "turn:turn.example.com",
+                turnServerUsername: "user",
+                turnServerCredential: "pass"
+            })
+        };
+        wsAdaptor.wsConn.onmessage(event);
+        expect(adaptor.peerconnection_config.iceServers.length).to.equal(2);
+        expect(adaptor.peerconnection_config.iceServers[1].urls).to.equal("turn:turn.example.com");
+        expect(adaptor.peerconnection_config.iceServers[1].username).to.equal("user");
+        expect(adaptor.peerconnection_config.iceServers[1].credential).to.equal("pass");
+    });
+
+    it("should update peerconnection_config.iceServers for STUN server via real onmessage", function() {
+        const adaptor = { peerconnection_config: { iceServers: [] } };
+        const wsAdaptor = new WebSocketAdaptor({ websocket_url: "ws://example.com", webrtcadaptor: adaptor });
+        wsAdaptor.debug = false;
+        wsAdaptor.wsConn = {};
+        wsAdaptor.initWebSocketConnection();
+        const event = {
+            data: JSON.stringify({
+                command: "iceServerConfig",
+                stunServerUri: "stun:stun.example.com"
+            })
+        };
+        wsAdaptor.wsConn.onmessage(event);
+        expect(adaptor.peerconnection_config.iceServers.length).to.equal(1);
+        expect(adaptor.peerconnection_config.iceServers[0].urls).to.equal("stun:stun.example.com");
+    });
 
 });
