@@ -60,6 +60,9 @@ export class WebSocketAdaptor {
             this.connected = true;
             this.connecting = false;
             this.callback("initialized");
+            
+            // Request ICE server configuration from server if user hasn't provided any
+            this.webrtcadaptor.getIceServerConfiguration();
 
             if (typeof callbackConnected != "undefined") {
                 callbackConnected();
@@ -117,6 +120,38 @@ export class WebSocketAdaptor {
                 this.join(obj.streamId);
             } else if (obj.command == "peerMessageCommand") {
                 this.callback(obj.command, obj);
+            } else if (obj.command == "iceServerConfig") {
+                if (this.debug) {
+                    Logger.debug("received ice server config");
+                }
+
+                if (obj.stunServerUri) {
+                    // Construct the iceServers configuration based on URI type
+                    if (obj.stunServerUri.startsWith("turn:")) {
+                        // For TURN server
+                        this.webrtcadaptor.peerconnection_config.iceServers = [
+                            {
+                                'urls': 'stun:stun1.l.google.com:19302'
+                            },
+                            {
+                                'urls': obj.stunServerUri,
+                                'username': obj.turnServerUsername || "",
+                                'credential': obj.turnServerCredential || ""
+                            }
+                        ];
+                    } else if (obj.stunServerUri.startsWith("stun:")) {
+                        // For STUN server
+                        this.webrtcadaptor.peerconnection_config.iceServers = [
+                            {
+                                'urls': obj.stunServerUri
+                            }
+                        ];
+                    }
+                    
+                    if (this.debug) {
+                        Logger.debug("ice servers updated: " + JSON.stringify(this.webrtcadaptor.peerconnection_config.iceServers));
+                    }
+                }
             }
         }
 
