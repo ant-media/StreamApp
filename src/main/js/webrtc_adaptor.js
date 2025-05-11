@@ -391,14 +391,14 @@ export class WebRTCAdaptor {
 		/**
 		 * Automatic AV Sync Recovery Configurations
 		 */
-		this.autoResyncOnFrameDrop = initialValues.autoResyncOnFrameDrop ?? true;
+		this.autoResyncOnFrameDrop = initialValues.autoResyncOnFrameDrop ?? false;
 		this.autoResyncCooldownMs = initialValues.autoResyncCooldownMs ?? 10000;
 		this._lastAutoResyncTime = {}; // { streamId: timestamp }
 		// FPS fluctuation-based auto-resync config
 		this.fpsFluctuationWindowSize = initialValues.fpsFluctuationWindowSize ?? 3; // e.g., last 5 seconds
-		this.fpsDropPercentThreshold = initialValues.fpsDropPercentThreshold ?? 0.15; // 15% drop
-		this.fpsFluctuationStdDevThreshold = initialValues.fpsFluctuationStdDevThreshold ?? 1.5; // e.g., 5 FPS
-		this.fpsFluctuationConsecutiveCount = initialValues.fpsFluctuationConsecutiveCount ?? 2;
+		this.fpsDropPercentThreshold = initialValues.fpsDropPercentThreshold ?? 0.1; // 10% drop
+		this.fpsFluctuationStdDevThreshold = initialValues.fpsFluctuationStdDevThreshold ?? 1; // e.g., 5 FPS
+		this.fpsFluctuationConsecutiveCount = initialValues.fpsFluctuationConsecutiveCount ?? 1;
 		this._fpsHistory = {}; // { streamId: [fps] }
 		this._fpsFluctuationCount = {}; // { streamId: count }
 		this._lastFramesReceived = {}; // { streamId: last framesReceived }

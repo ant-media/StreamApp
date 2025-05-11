@@ -2101,6 +2101,140 @@ describe("WebRTCAdaptor", function() {
     		expect(initPeerConnection.calledWithExactly(streamId, "play")).to.be.true;
     	});
 
+	describe("checkAndHandleFpsFluctuation", function() {
+		let adaptor;
+		let streamId = "testStream";
+		let now = Date.now();
+		let loggerDebugStub, loggerWarnStub;
+		let stopStub, playStub;
+		let notifyEventListenersStub;
 
+		beforeEach(function() {
+			adaptor = new WebRTCAdaptor({
+				websocketURL: "ws://example.com",
+				initializeComponents: false,
+			});
+			// Set up stubs for Logger
+			loggerDebugStub = sinon.stub(window.log, "debug");
+			loggerWarnStub = sinon.stub(window.log, "warn");
+			// Set up stubs for stop/play and event notification
+			stopStub = sinon.stub(adaptor, "stop");
+			playStub = sinon.stub(adaptor, "play");
+			notifyEventListenersStub = sinon.stub(adaptor, "notifyEventListeners");
+			// Set up playStreamId for auto-resync
+			adaptor.playStreamId = [streamId];
+			// Set up thresholds for easier testing
+			adaptor.fpsFluctuationWindowSize = 2;
+			adaptor.fpsFluctuationStdDevThreshold = 1;
+			adaptor.fpsDropPercentThreshold = 0.1;
+			adaptor.fpsFluctuationConsecutiveCount = 2;
+			adaptor.fpsStableWindow = 2;
+			adaptor.fpsStableStdDevThreshold = 1;
+			adaptor.fpsStablePercentOfBaseline = 0.8;
+			adaptor.healthyWindowSize = 2;
+			adaptor.autoResyncOnFrameDrop = true;
+			adaptor.autoResyncCooldownMs = 1000;
+		});
+
+		afterEach(function() {
+			sinon.restore();
+		});
+
+		it("should update healthy baseline and not trigger fluctuation or resync on stable FPS", function() {
+			adaptor._fpsFluctuating = {};
+			adaptor._fpsHealthyBaseline = {};
+			adaptor._lastHealthyAvgFps = {};
+			adaptor._fpsHistory = {};
+			adaptor._fpsFluctuationCount = {};
+			adaptor._lastAutoResyncTime = {};
+			// Push stable FPS values
+			adaptor.checkAndHandleFpsFluctuation(streamId, 30, now);
+			adaptor.checkAndHandleFpsFluctuation(streamId, 31, now + 1000);
+			adaptor.checkAndHandleFpsFluctuation(streamId, 32, now + 2000);
+			// Should not be fluctuating
+			expect(adaptor._fpsFluctuating[streamId]).to.not.be.true;
+			expect(adaptor._fpsFluctuationCount[streamId]).to.equal(0);
+			// Should update healthy baseline
+			expect(adaptor._fpsHealthyBaseline[streamId].length).to.be.at.most(adaptor.healthyWindowSize);
+		});
+
+		it("should detect FPS fluctuation and set fluctuating state after consecutive drops", function() {
+			const streamId = 'testStream';
+			const now = Date.now();
+			// Fill healthy baseline with stable values
+			adaptor._fpsHealthyBaseline[streamId] = [30, 30, 30, 30, 30];
+			adaptor._lastHealthyAvgFps[streamId] = 30;
+			adaptor._fpsFluctuationCount[streamId] = 0;
+			// Initialize FPS history with enough values to trigger fluctuation detection
+			adaptor._fpsHistory[streamId] = [30, 30, 30, 30, 30, 30, 30, 30, 30, 30];
+			// Add values that will trigger fluctuation detection
+			adaptor.checkAndHandleFpsFluctuation(streamId, 20, now - 1000);
+			adaptor.checkAndHandleFpsFluctuation(streamId, 15, now - 500);
+			adaptor.checkAndHandleFpsFluctuation(streamId, 10, now - 250);
+			// Simulate a dramatic drop
+			adaptor.checkAndHandleFpsFluctuation(streamId, 5, now);
+			// Should now be fluctuating
+			expect(adaptor._fpsFluctuating[streamId]).to.be.true;
+			expect(adaptor._fpsFluctuationCount[streamId]).to.be.at.least(1);
+		});
+
+		it("should trigger auto-resync and reset fluctuation state when FPS stabilizes", function() {
+			// Simulate fluctuating state
+			adaptor._fpsFluctuating[streamId] = true;
+			adaptor._fpsHistory[streamId] = [20, 20, 30, 31]; // last two are stable
+			adaptor._fpsHealthyBaseline[streamId] = [30, 30];
+			adaptor._lastHealthyAvgFps[streamId] = 30;
+			adaptor._fpsFluctuationCount[streamId] = 2;
+			adaptor.playToken = "token";
+			adaptor.playRoomId = "room";
+			adaptor.playEnableTracks = [];
+			adaptor.playSubscriberId = "subid";
+			adaptor.playSubscriberCode = "subcode";
+			adaptor.playMetaData = "meta";
+			adaptor.playRole = "role";
+			// Should trigger auto-resync
+			adaptor.checkAndHandleFpsFluctuation(streamId, 32, now + 2000);
+			expect(loggerWarnStub.called).to.be.true;
+			expect(notifyEventListenersStub.calledWith("auto_resync_triggered", sinon.match.object)).to.be.true;
+			expect(stopStub.calledWith(streamId)).to.be.true;
+			// Simulate setTimeout
+			clock.tick(600);
+			expect(playStub.calledWith(
+				streamId,
+				"token",
+				"room",
+				[],
+				"subid",
+				"subcode",
+				"meta",
+				"role"
+			)).to.be.true;
+			// Should reset fluctuation state
+			expect(adaptor._fpsFluctuating[streamId]).to.be.false;
+			expect(adaptor._fpsFluctuationCount[streamId]).to.equal(0);
+		});
+
+		it("should not trigger auto-resync if cooldown not passed", function() {
+			adaptor._fpsFluctuating[streamId] = true;
+			adaptor._fpsHistory[streamId] = [20, 20, 30, 31];
+			adaptor._fpsHealthyBaseline[streamId] = [30, 30];
+			adaptor._lastHealthyAvgFps[streamId] = 30;
+			adaptor._fpsFluctuationCount[streamId] = 2;
+			adaptor._lastAutoResyncTime[streamId] = now;
+			adaptor.playToken = "token";
+			adaptor.playRoomId = "room";
+			adaptor.playEnableTracks = [];
+			adaptor.playSubscriberId = "subid";
+			adaptor.playSubscriberCode = "subcode";
+			adaptor.playMetaData = "meta";
+			adaptor.playRole = "role";
+			// Should not trigger auto-resync due to cooldown
+			adaptor.checkAndHandleFpsFluctuation(streamId, 32, now + 500);
+			expect(loggerWarnStub.called).to.be.false;
+			expect(notifyEventListenersStub.calledWith("auto_resync_triggered", sinon.match.object)).to.be.false;
+			expect(stopStub.called).to.be.false;
+			expect(playStub.called).to.be.false;
+		});
+	});
 
 });
