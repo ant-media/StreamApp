@@ -256,6 +256,57 @@ describe("MediaManager", function () {
 
 
   });
+  
+  it("testSwitchDesktopCapture", async function () {
+      var videoElement = document.createElement("video");
+	  
+	  var streamId = "stream1";
+	  
+	  var mediaConstraints = {video: "something_video", audio: "something_audio"};
+
+      var adaptor = new WebRTCAdaptor({
+        websocketURL: "ws://example.com",
+        localVideoElement: videoElement,
+        initializeComponents: false,
+        mediaConstraints: mediaConstraints
+      });
+	  
+	  var shareMediaConstraint =  JSON.parse(JSON.stringify(mediaConstraints));
+	  shareMediaConstraint.video = true;
+
+	  var getMediaStub = sinon.stub(adaptor.mediaManager, "getMedia");
+	  
+	  await adaptor.mediaManager.switchDesktopCapture(streamId);
+
+	  sinon.assert.calledWith(getMediaStub, shareMediaConstraint, streamId);
+    });
+	
+	
+	it("switchDesktopCaptureWithCamera", async function () {
+	      var videoElement = document.createElement("video");
+		  
+		  var streamId = "stream1";
+		  
+		  var mediaConstraints = {video: "something_video", audio: "something_audio"};
+
+	      var adaptor = new WebRTCAdaptor({
+	        websocketURL: "ws://example.com",
+	        localVideoElement: videoElement,
+	        initializeComponents: false,
+	        mediaConstraints: mediaConstraints
+	      });
+		  
+		  var shareMediaConstraint =  JSON.parse(JSON.stringify(mediaConstraints));
+		  shareMediaConstraint.video = true;
+
+		  var getMediaStub = sinon.stub(adaptor.mediaManager, "getMedia");
+		  
+		  await adaptor.mediaManager.switchDesktopCaptureWithCamera(streamId);
+
+		  sinon.assert.calledWith(getMediaStub, shareMediaConstraint, streamId);
+	    });
+  
+  
 
 
   describe("checkAndStopLocalVideoTrackOnAndroid", function () {
