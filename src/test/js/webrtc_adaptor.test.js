@@ -2149,7 +2149,7 @@ describe("WebRTCAdaptor", function() {
 			let size = Math.floor(Math.random() * 100);
 			
 			let jsCmd = {
-				command: "getSubscriberList",
+				command: "getSubscribers",
 				streamId: streamId,
 				offset: offset,
 				size: size,
