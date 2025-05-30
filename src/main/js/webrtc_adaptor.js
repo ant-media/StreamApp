@@ -321,7 +321,7 @@ export class WebRTCAdaptor {
 		/**
 		 * This is the token to play the stream. It's added here to use in reconnect scenario
 		 */
-		this.playToken = null;
+		this.playTokens = new Map();
 
 		/**
 		 * This is the room id to play the stream. It's added here to use in reconnect scenario
@@ -606,7 +606,7 @@ export class WebRTCAdaptor {
 	 */
 	play(streamId, token, roomId, enableTracks, subscriberId, subscriberCode, metaData, role) {
 		this.playStreamId.push(streamId);
-		this.playToken = token;
+		this.playTokens.set(streamId, token);
 		this.playRoomId = roomId;
 		this.playEnableTracks = enableTracks;
 		this.playSubscriberId = subscriberId;
@@ -707,12 +707,13 @@ export class WebRTCAdaptor {
 				this.notifyEventListeners("reconnection_attempt_for_player", streamId);
 
 				Logger.log("It will try to play again for stream: " + streamId + " because it is not stopped on purpose")
+				const token = this.playTokens.get(streamId);
 				this.stop(streamId);
 				setTimeout(() => {
 					//play about some time later because server may not drop the connection yet 
 					//it may trigger already playing error 
 					Logger.log("Trying play again for stream: " + streamId);
-					this.play(streamId, this.playToken, this.playRoomId, this.playEnableTracks, this.playSubscriberId, this.playSubscriberCode, this.playMetaData, this.playRole);
+					this.play(streamId, token, this.playRoomId, this.playEnableTracks, this.playSubscriberId, this.playSubscriberCode, this.playMetaData, this.playRole);
 				}, 500);
 			}
 		}
@@ -1239,6 +1240,7 @@ export class WebRTCAdaptor {
 			var playStreamIndex = this.playStreamId.indexOf(streamId);
 			if (playStreamIndex != -1) {
 				this.playStreamId.splice(playStreamIndex, 1);
+				this.playTokens.delete(streamId);
 			}
 		}
 		//this is for the stats
