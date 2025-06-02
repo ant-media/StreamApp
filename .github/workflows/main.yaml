@@ -58,6 +58,41 @@ jobs:
         npm run compile
         npm run deploy
         cd ..
+
+    - name: Clone Web-Player
+      run: |
+        git clone --depth 1 -b ${{ github.ref_name }} https://github.com/ant-media/Web-Player.git || git clone --depth 1 https://github.com/ant-media/Web-Player.git
+
+    - name: Build Web-Player
+      working-directory: Web-Player
+      run: |
+        npm install --include=dev
+        npm run compile
+
+    - name: Copy StreamApp/dist to Web-Player
+      run: |
+        pwd
+        ls -alh
+        rm -rf Web-Player/node_modules/@antmedia/webrtc_adaptor
+        mkdir -p Web-Player/node_modules/@antmedia/webrtc_adaptor
+        cp -r dist/* Web-Player/node_modules/@antmedia/webrtc_adaptor/
+
+    - name: Rebuild Web-Player after copy
+      working-directory: Web-Player
+      run: |
+        npm install --include=dev
+        npm run compile
+
+    - name: Copy Web-Player/dist to StreamApp
+      run: |
+        rm -rf embedded-player/node_modules/@antmedia/web_player
+        mkdir -p embedded-player/node_modules/@antmedia/web_player
+        cp -r Web-Player/dist/* embedded-player/node_modules/@antmedia/web_player/
+
+    - name: Rebuild StreamApp 
+      run: |
+        npm install
+        npm run compile
         
     - name: Install Maven packages
       run: mvn install -DskipTests=true -Dmaven.javadoc.skip=true -Dgpg.skip=true -B -V --quiet
@@ -65,7 +100,6 @@ jobs:
     - name: Deploy Snapshot
       run: mvn deploy -DskipTests --quiet --settings mvn-settings.xml
       env:
-        # Add your Maven credentials as secrets
           CI_DEPLOY_USERNAME: ${{ secrets.CI_DEPLOY_USERNAME }}
           CI_DEPLOY_PASSWORD: ${{ secrets.CI_DEPLOY_PASSWORD }}
           GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
