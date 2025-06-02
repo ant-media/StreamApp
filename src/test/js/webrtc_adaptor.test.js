@@ -2112,6 +2112,58 @@ describe("WebRTCAdaptor", function() {
     		expect(initPeerConnection.calledWithExactly(streamId, "play")).to.be.true;
     	});
 
+		
+		it("getSubscriberCount", async function() {
+
+			let adaptor = new WebRTCAdaptor({
+				websocketURL: "ws://example.com",
+				isPlayMode: true
+			});
+
+			let streamId = "roomId";
+
+			let jsCmd = {
+				command: "getSubscriberCount",
+				streamId: streamId,
+			};
+
+			let webSocketAdaptor = sinon.mock(adaptor.webSocketAdaptor);
+
+			let sendExpectation = webSocketAdaptor.expects("send").once().withArgs(JSON.stringify(jsCmd));
+
+			adaptor.getSubscriberCount(streamId);
+
+			sendExpectation.verify()
+
+		});
+		
+		it("getSubscriberList", async function() {
+
+			let adaptor = new WebRTCAdaptor({
+				websocketURL: "ws://example.com",
+				isPlayMode: true
+			});
+
+			let streamId = "roomId";
+			let offset = Math.floor(Math.random() * 100);
+			let size = Math.floor(Math.random() * 100);
+			
+			let jsCmd = {
+				command: "getSubscribers",
+				streamId: streamId,
+				offset: offset,
+				size: size,
+			};
+
+			let webSocketAdaptor = sinon.mock(adaptor.webSocketAdaptor);
+
+			let sendExpectation = webSocketAdaptor.expects("send").once().withArgs(JSON.stringify(jsCmd));
+
+			adaptor.getSubscriberList(streamId, offset, size);
+
+			sendExpectation.verify()
+
+		});
 
 
 });
