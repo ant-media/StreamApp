@@ -354,7 +354,7 @@ export class MediaManager {
      */
     setDesktopwithCameraSource(stream, streamId, onEndedCallback) {
         this.desktopStream = stream;
-        return this.navigatorUserMedia({video: true, audio: false}, cameraStream => {
+        return this.navigatorUserMedia({video: this.mediaConstraints.video, audio: false}, cameraStream => {
             this.smallVideoTrack = cameraStream.getVideoTracks()[0];
 
             //create a canvas element
@@ -579,12 +579,7 @@ export class MediaManager {
 
                     // If error catched then redirect Default Stream Camera
                     if (this.localStream == null) {
-                        var mediaConstraints = {
-                            video: true,
-                            audio: true
-                        };
-
-                        this.openStream(mediaConstraints);
+                        this.openStream(this.mediaConstraints);
                     } else {
                         this.switchVideoCameraCapture(streamId);
                     }
@@ -614,14 +609,14 @@ export class MediaManager {
             return this.navigatorDisplayMedia(streamId,mediaConstraints).then(stream => {
                 if (this.smallVideoTrack)
                     this.smallVideoTrack.stop();
-                return this.prepareStreamTracks(mediaConstraints, audioConstraint, stream, streamId);
+                return this.prepareStreamTracks(this.mediaConstraints, audioConstraint, stream, streamId);
             });
         }
         else {
             return this.navigatorUserMedia(mediaConstraints).then(stream => {
                 if (this.smallVideoTrack)
                     this.smallVideoTrack.stop();
-                return this.prepareStreamTracks(mediaConstraints, audioConstraint, stream, streamId);
+                return this.prepareStreamTracks(this.mediaConstraints, audioConstraint, stream, streamId);
             }).catch(error => {
                 if (error.name == "NotFoundError") {
                     this.getDevices()
@@ -921,11 +916,13 @@ export class MediaManager {
     switchDesktopCapture(streamId) {
         this.publishMode = "screen";
 
-        if (typeof this.mediaConstraints.video != "undefined" && this.mediaConstraints.video != false) {
-            this.mediaConstraints.video = true
-        }
-        //TODO: I don't think we need to get audio again. We just need to switch the video stream
-        return this.getMedia(this.mediaConstraints, streamId);
+		let shareMediaConstraints = JSON.parse(JSON.stringify(this.mediaConstraints));
+	    if (typeof this.mediaConstraints.video != "undefined" && this.mediaConstraints.video != false) {
+	      shareMediaConstraints.video = true;
+	    }
+
+	    //TODO: I don't think we need to get audio again. We just need to switch the video stream
+	    return this.getMedia(shareMediaConstraints, streamId);
     }
 
     /**
@@ -935,14 +932,15 @@ export class MediaManager {
      * @param {*} streamId
      */
     switchDesktopCaptureWithCamera(streamId) {
-        if (typeof this.mediaConstraints.video != "undefined" && this.mediaConstraints.video != false) {
-            this.mediaConstraints.video = true
-        }
-
         this.publishMode = "screen+camera";
 
-        //TODO: I don't think we need to get audio again. We just need to switch the video stream
-        return this.getMedia(this.mediaConstraints, streamId);
+		let shareMediaConstraints = JSON.parse(JSON.stringify(this.mediaConstraints));
+	    if (typeof this.mediaConstraints.video != "undefined" && this.mediaConstraints.video != false) {
+	      shareMediaConstraints.video = true;
+	    }
+
+	    //TODO: I don't think we need to get audio again. We just need to switch the video stream
+	    return this.getMedia(shareMediaConstraints, streamId);
     }
 
     /**

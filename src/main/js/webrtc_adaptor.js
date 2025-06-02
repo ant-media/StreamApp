@@ -2200,6 +2200,39 @@ export class WebRTCAdaptor {
 		};
 		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
 	}
+	
+
+	/**
+	 * Called to get the subscriber count for a stream. AMS responds with the subscriberCount notification.
+	 * Parameters:
+	 * @param {string} streamId : stream id to get subscribers list
+	 */
+	getSubscriberCount(streamId) {
+		let jsCmd = {
+			command: "getSubscriberCount",
+			streamId: streamId,
+		};
+		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
+	}
+	
+	/**
+	 * Called to get the subscribers for a stream. AMS responds with the subscriberList notification.
+	 * Parameters:
+	 * @param {string} streamId : stream id to get subscribers list
+	 * @param {number} offset : offset for the subtrack list
+	 * @param {number} size : size for the subtrack list
+	 */
+	getSubscriberList(streamId, offset, size) {
+		let jsCmd = {
+			command: "getSubscribers",
+			streamId: streamId,
+			offset: offset,
+			size: size,
+		};
+		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
+	}
+	
+	
 
 	/**
 	 * The following messages are forwarded to MediaManager. They are also kept here because of backward compatibility.
