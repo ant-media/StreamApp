@@ -100,7 +100,7 @@ describe("WebRTCAdaptor", function() {
 
 	});
 	
-	it("WebsocketAdaptor - Test with Http Endpoint", async function() {
+	it("WebSocketAdaptor::checkBackendReady", async function() {
 		
 		var adaptor = new WebRTCAdaptor({
 				websocketURL: "ws://example.com",
@@ -110,13 +110,26 @@ describe("WebRTCAdaptor", function() {
 		var websocketAdaptor = new WebSocketAdaptor({
 					websocketURL: "ws://auto-managed-endpoint:8080",
 					webrtcadaptor: adaptor,
-				});
+					
+					callback: (info, obj) => {
+						console.info("info in WebSocketAdaptor: ", info, obj);
+					},
+					callbackError: (error, message) => {
+						console.error("Error in WebSocketAdaptor: ", error);
+					},
+		});
 		
 		expect(websocketAdaptor.websocketURL).to.be.equal("ws://auto-managed-endpoint:8080/?target=edge");
 		
 		websocketAdaptor = new WebSocketAdaptor({
 						websocket_url: "ws://auto-managed-endpoint:8080",
 						webrtcadaptor: adaptor,
+						callback: (info, obj) => {
+							console.info("info in WebSocketAdaptor: ", info, obj);
+						},
+						callbackError: (error, message) => {
+							console.error("Error in WebSocketAdaptor: ", error);
+						},
 					});
 			
 		expect(websocketAdaptor.websocketURL).to.be.equal("ws://auto-managed-endpoint:8080/?target=edge");
