@@ -99,6 +99,195 @@ describe("WebRTCAdaptor", function() {
 
 
 	});
+	
+	it("WebsocketAdaptor - Test with Http Endpoint", async function() {
+		
+		var adaptor = new WebRTCAdaptor({
+				websocketURL: "ws://example.com",
+				isPlayMode: true
+			});
+			
+		var websocketAdaptor = new WebSocketAdaptor({
+					websocketURL: "ws://auto-managed-endpoint:8080",
+					webrtcadaptor: adaptor,
+				});
+		
+		expect(websocketAdaptor.websocketURL).to.be.equal("ws://auto-managed-endpoint:8080/?target=edge");
+		
+		websocketAdaptor = new WebSocketAdaptor({
+						websocket_url: "ws://auto-managed-endpoint:8080",
+						webrtcadaptor: adaptor,
+					});
+			
+		expect(websocketAdaptor.websocketURL).to.be.equal("ws://auto-managed-endpoint:8080/?target=edge");
+		
+		websocketAdaptor = new WebSocketAdaptor({
+					httpEndpointUrl: "http://auto-managed-endpoint:8080",
+					initConnection: false,
+		});
+		
+		var initWebSocketConnection = sinon.replace(websocketAdaptor, "initWebSocketConnection", sinon.fake());
+		
+		await websocketAdaptor.checkBackendReady();
+		
+		//it should not call initWebSocketConnection because there is an http endpoint
+		expect(initWebSocketConnection.called).to.be.false;
+		
+		
+		
+		
+		websocketAdaptor = new WebSocketAdaptor({
+					httpEndpointUrl: "http://auto-managed-endpoint:8080",
+					initConnection: false,
+				});
+		
+		var getHttpEndpoint = sinon.replace(websocketAdaptor, "getHttpEndpoint", sinon.fake.returns(Promise.reject("this is on purpose")));
+	
+		var tryAgainAfterDelay = sinon.replace(websocketAdaptor, "tryAgainAfterDelay", sinon.fake());
+
+		
+		await websocketAdaptor.checkBackendReady();
+		expect(tryAgainAfterDelay.called).to.be.true;
+		
+		
+		//case
+		websocketAdaptor = new WebSocketAdaptor({
+							httpEndpointUrl: "http://auto-managed-endpoint:8080",
+							initConnection: false,
+						});
+		getHttpEndpoint = sinon.replace(websocketAdaptor, "getHttpEndpoint", sinon.fake.returns(Promise.resolve("this is on purpose")));
+		tryAgainAfterDelay = sinon.replace(websocketAdaptor, "tryAgainAfterDelay", sinon.fake());
+		
+		await websocketAdaptor.checkBackendReady();
+		//it is being called again because resturn response is not ok and it fires error
+		expect(tryAgainAfterDelay.called).to.be.true;
+		
+		
+		
+		//case
+		websocketAdaptor = new WebSocketAdaptor({
+									httpEndpointUrl: "http://auto-managed-endpoint:8080",
+									initConnection: false,
+								});
+								
+		var response = {
+			ok: true,
+			json() {
+				return {
+					fqdn:"hello.antmedia.cloud",
+					websocket_url:"ws://hello.antmedia.cloud:5080/auto-managed-endpoint/websocket?target=edge",
+					http_url:"http://hello.antmedia.cloud:5080/auto-managed-endpoint"
+				}
+			}
+		}						
+		getHttpEndpoint = sinon.replace(websocketAdaptor, "getHttpEndpoint", sinon.fake.returns(Promise.resolve(response)));
+		tryAgainAfterDelay = sinon.replace(websocketAdaptor, "tryAgainAfterDelay", sinon.fake());
+		
+		await websocketAdaptor.checkBackendReady();
+		//it is called because in the second fetch it checks the response and response status is not ok
+		expect(tryAgainAfterDelay.called).to.be.true;
+		
+		
+		
+		websocketAdaptor = new WebSocketAdaptor({
+											httpEndpointUrl: "http://auto-managed-endpoint:8080",
+											initConnection: false,
+											httpEndpointAccessToken:"testAccessToken"
+										});
+										
+		 response = {
+			ok: true,
+			json() {
+				return {
+					fqdn:"hello.antmedia.cloud",
+					websocket_url:"ws://hello.antmedia.cloud:5080/auto-managed-endpoint/websocket?target=edge",
+					http_url:"http://hello.antmedia.cloud:5080/auto-managed-endpoint"
+				}
+			},
+			status:200
+		}		
+						
+		getHttpEndpoint = sinon.replace(websocketAdaptor, "getHttpEndpoint", sinon.fake.returns(Promise.resolve(response)));
+		tryAgainAfterDelay = sinon.replace(websocketAdaptor, "tryAgainAfterDelay", sinon.fake());
+		initWebSocketConnection = sinon.replace(websocketAdaptor, "initWebSocketConnection", sinon.fake());
+
+		
+		await websocketAdaptor.checkBackendReady();
+		//it is called because in the second fetch it checks the response and response status is not ok
+		expect(tryAgainAfterDelay.called).to.be.false;
+		
+		expect(websocketAdaptor.httpEndpointUrl).to.be.equal("http://auto-managed-endpoint:8080/?source=sdk&accessToken=testAccessToken");
+		
+						
+		//it should be called because everything is as expected
+		expect(initWebSocketConnection.called).to.be.true;
+		
+	});
+	
+	it("WebSocketAdaptor::checkBackendInstanceUp", async function() {
+		{
+			var websocketAdaptor = new WebSocketAdaptor({
+														httpEndpointUrl: "http://auto-managed-endpoint:8080",
+														initConnection: false,
+														httpEndpointAccessToken:"testAccessToken"
+													});
+													
+			var response = {
+					ok: true,
+					json() {
+						return {
+							fqdn:"hello.antmedia.cloud",
+							websocket_url:"ws://hello.antmedia.cloud:5080/auto-managed-endpoint/websocket?target=edge",
+							http_url:"http://hello.antmedia.cloud:5080/auto-managed-endpoint"
+						}
+					},
+					status:200
+				}		
+			let getHttpEndpoint = sinon.replace(websocketAdaptor, "getHttpEndpoint", sinon.fake.returns(Promise.resolve(response)));
+			
+			let initWebSocketConnection = sinon.replace(websocketAdaptor, "initWebSocketConnection", sinon.fake());
+			
+			await websocketAdaptor.checkBackendInstanceUp("http://hello.antmedia.cloud:5080/auto-managed-endpoint");
+			expect(initWebSocketConnection.called).to.be.true;
+		}
+		
+		
+		{
+			var websocketAdaptor = new WebSocketAdaptor({
+														httpEndpointUrl: "http://auto-managed-endpoint:8080",
+														initConnection: false,
+														httpEndpointAccessToken:"testAccessToken"
+													});
+													
+			var response = {
+				
+					status:404
+				}		
+			let getHttpEndpoint = sinon.replace(websocketAdaptor, "getHttpEndpoint", sinon.fake.returns(Promise.resolve(response)));
+			
+			let tryAgainAfterDelay = sinon.replace(websocketAdaptor, "tryAgainAfterDelay", sinon.fake());
+			
+			await websocketAdaptor.checkBackendInstanceUp("http://hello.antmedia.cloud:5080/auto-managed-endpoint");
+			expect(tryAgainAfterDelay.called).to.be.true;
+		}
+		
+		{
+			var websocketAdaptor = new WebSocketAdaptor({
+														httpEndpointUrl: "http://auto-managed-endpoint:8080",
+														initConnection: false,
+														httpEndpointAccessToken:"testAccessToken"
+													});
+													
+		
+			let getHttpEndpoint = sinon.replace(websocketAdaptor, "getHttpEndpoint", sinon.fake.returns(Promise.reject("reject")));
+			
+			let tryAgainAfterDelay = sinon.replace(websocketAdaptor, "tryAgainAfterDelay", sinon.fake());
+			
+			await websocketAdaptor.checkBackendInstanceUp("http://hello.antmedia.cloud:5080/auto-managed-endpoint");
+			expect(tryAgainAfterDelay.called).to.be.true;
+		}
+		
+	});
 
 
 	it("Auto reconnect play", async function() {

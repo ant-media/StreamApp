@@ -26,12 +26,26 @@ export class WebSocketAdaptor {
 		 * HTTP Endpoint URL for access token
 		 */
 		this.httpEndpointAccessToken = null;
+		
+		
+		/**
+		 * WebRTCAdaptor which is responsible for handling WebRTC connections
+		 */
+		this.webrtcadaptor = null; 
 				
 		
         /**
          * @type {boolean}
          */
         this.debug = false;
+		
+		
+		/**
+		 * Init the connectin when constructor is called
+		 */
+		this.initConnection = true;
+		
+		
         for (var key in initialValues) {
             if (initialValues.hasOwnProperty(key)) {
                 this[key] = initialValues[key];
@@ -42,8 +56,9 @@ export class WebSocketAdaptor {
 			this.websocketURL = this.websocket_url;
 		}
 
-        this.checkBackendReady();
-		
+		if (this.initConnection == true) {
+        	this.checkBackendReady();
+		}
 		addEventListener("offline", (event) => { 
 			this.connected = false;
 			this.connecting = false;
@@ -52,7 +67,38 @@ export class WebSocketAdaptor {
 
     }
 	
-	checkBackendReady(callbackConnected) {
+	getHttpEndpoint(endpointUrl, options) {
+		return fetch(endpointUrl,   options)
+	}
+	
+	tryAgainAfterDelay(callbackConnected) {
+		setTimeout(()=> {
+			this.checkBackendReady(callbackConnected)
+		}, 3000);
+	}
+	
+	async checkBackendInstanceUp(data, callbackConnected) 
+	{
+		return this.getHttpEndpoint(data.http_url, { method: 'HEAD' })
+		  .then(response => {
+				if (response.status >= 200 && response.status < 400) {
+					this.websocketURL = data.websocket_url;
+					this.initWebSocketConnection(callbackConnected);
+				}
+				else {
+					Logger.warn('Backend does not return ok. Retrying in 3 seconds...');
+					this.tryAgainAfterDelay(callbackConnected);
+				}
+			
+			})
+			.catch((e) => {
+				Logger.warn('Backend is not ready yet. Retrying in 3 seconds...');
+				Logger.error(e);
+				this.tryAgainAfterDelay(callbackConnected);
+		    });
+	}
+	
+	async checkBackendReady(callbackConnected) {
 		
 		this.connecting = true;
 		this.connected = false;
@@ -69,11 +115,11 @@ export class WebSocketAdaptor {
 			
 			
 			this.httpEndpointUrl = endpointUrl.toString();
-			
-			fetch(this.httpEndpointUrl, { method: 'GET' })
+			//return promise for this case
+			return this.getHttpEndpoint(this.httpEndpointUrl,  { method: "GET" })
 		      .then(response => {
                   if (response.ok) {
-                      Logger.info("http endpoint returns")
+                      Logger.info("http endpoint returns ok")
 					  return response.json(); // Parse JSON from body
                   }
 				  throw new Error('Network response was not ok');
@@ -82,42 +128,23 @@ export class WebSocketAdaptor {
 			  .then(data => {
 			          Logger.info("Response body -> fqdn :" + data.fqdn + "	websocket_url: " + data.websocket_url + " http_url: " + data.http_url); 
 					  
-					  
-					  fetch(data.http_url, { method: 'HEAD' })
-					  .then(response => {
-							if (response.status >= 200 && response.status < 400) {
-								this.websocketURL = data.websocket_url;
-								this.initWebSocketConnection(callbackConnected);
-							}
-							else {
-								Logger.info('Backend does not return ok. Retrying in 3 seconds...');
-								setTimeout(()=> {
-									this.checkBackendReady(callbackConnected)
-								}, 3000);
-							}
-						
-						})
-						.catch((e) => {
-							Logger.info('Backend is not ready yet. Retrying in 3 seconds...');
-							Logger.error(e);
-							setTimeout(()=> {
-									this.checkBackendReady(callbackConnected)
-								}, 3000);
-					    });
-					  
-					  
+					  return this.checkBackendInstanceUp(data, callbackConnected)
 			      })
-              .catch((e) => {
-                   Logger.info('HttpEndpoint is not ready yet', e);
-				   Logger.error(e);
-				   setTimeout(()=> {
-						this.checkBackendReady(callbackConnected)
-					}, 3000);
+              .catch(e => {
+			  	this.tryAgainAfterDelay(callbackConnected);
+                Logger.warn('HttpEndpoint is not ready yet', e);
+				Logger.error(e);
+				  
               });
 					  
 		}
 		else {
-			this.initWebSocketConnection(callbackConnected);
+			return new Promise((resolve, reject) => {
+				this.initWebSocketConnection(callbackConnected);
+				resolve();
+			});
+				
+			
 		}
 		
 	}
@@ -144,7 +171,7 @@ export class WebSocketAdaptor {
         const url = new URL(this.websocketURL);
         if (!['origin', 'edge'].includes(url.searchParams.get('target'))) {
             url.searchParams.set('target', this.webrtcadaptor.isPlayMode ? 'edge' : 'origin');
-            this.websocketUrl = url.toString();
+            this.websocketURL = url.toString();
         }
 
         this.wsConn = new WebSocket(this.websocketURL);
