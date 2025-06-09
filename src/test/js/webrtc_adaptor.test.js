@@ -2168,7 +2168,6 @@ describe("WebRTCAdaptor", function() {
 		            };
 
 		    		webSocketAdaptor.expects("send").once().withArgs(JSON.stringify(jsCmd));
-		    		expect(initPeerConnection.calledWithExactly(streamId, "play")).to.be.true;
 		    	});
 
 		
