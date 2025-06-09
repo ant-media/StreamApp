@@ -2111,6 +2111,65 @@ describe("WebRTCAdaptor", function() {
     		webSocketAdaptor.expects("send").once().withArgs(JSON.stringify(jsCmd));
     		expect(initPeerConnection.calledWithExactly(streamId, "play")).to.be.true;
     	});
+		
+		it("Play with single parameter", async function() {
+		            let publishStreamId = "publish1"
+		            let streamId = "stream1";
+		            let token = "yourToken";
+		            let roomId = "yourRoomId";
+		            let enableTracks = true;
+		            let subscriberId = "yourSubscriberId";
+					let subscriberName = "yourSubscriberName";
+		            let subscriberCode = "yourSubscriberCode";
+		            let metaData = "yourMetaData";
+		            let role = "subscriber";
+					let disableTracksByDefault = true;
+
+		    		var adaptor = new WebRTCAdaptor({
+		    			websocketURL: "ws://example.com",
+		    			isPlayMode: true,
+		    			publishStreamId: publishStreamId
+		    		});
+
+		    		var peerConnection = new RTCPeerConnection();
+		            var initPeerConnection = sinon.replace(adaptor, "initPeerConnection", sinon.fake.returns(peerConnection));
+		    		var webSocketAdaptor = sinon.mock(adaptor.webSocketAdaptor);
+
+					
+					var playParameters;			
+					
+					playParameters.playStreamId = streamId;
+					playParameters.playToken = token;
+					playParameters.playRoomId = roomId;
+					playParameters.playEnableTracks = enableTracks;
+					playParameters.playSubscriberId = subscriberId;
+					playParameters.playSubscriberName = subscriberName;
+					playParameters.playSubscriberCode = subscriberCode;
+					playParameters.playMetaData = metaData;
+					playParameters.playRole = role;
+					playParameters.disableTracksByDefault = disableTracksByDefault
+
+					
+		            adaptor.play(playParameters);
+
+		            let jsCmd = {
+		                command: "play",
+		                streamId: streamId,
+		                token: token,
+		                room: roomId,
+		                trackList: enableTracks,
+		                subscriberId: subscriberId,
+						playSubscriberName: playSubscriberName,
+		                subscriberCode: subscriberCode,
+		                viewerInfo: metaData,
+		                role: role,
+		                userPublishId: publishStreamId,
+						disableTracksByDefault: disableTracksByDefault
+		            };
+
+		    		webSocketAdaptor.expects("send").once().withArgs(JSON.stringify(jsCmd));
+		    		expect(initPeerConnection.calledWithExactly(streamId, "play")).to.be.true;
+		    	});
 
 		
 		it("getSubscriberCount", async function() {
