@@ -2136,7 +2136,7 @@ describe("WebRTCAdaptor", function() {
 		    		var webSocketAdaptor = sinon.mock(adaptor.webSocketAdaptor);
 
 					
-					var playParameters;			
+					var playParameters = {};
 					
 					playParameters.streamId = streamId;
 					playParameters.playToken = token;
