@@ -2159,7 +2159,7 @@ describe("WebRTCAdaptor", function() {
 		                room: roomId,
 		                trackList: enableTracks,
 		                subscriberId: subscriberId,
-						playSubscriberName: playSubscriberName,
+						playSubscriberName: subscriberName,
 		                subscriberCode: subscriberCode,
 		                viewerInfo: metaData,
 		                role: role,
