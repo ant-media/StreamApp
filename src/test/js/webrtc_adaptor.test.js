@@ -2139,14 +2139,14 @@ describe("WebRTCAdaptor", function() {
 					var playParameters = {};
 					
 					playParameters.streamId = streamId;
-					playParameters.playToken = token;
-					playParameters.playRoomId = roomId;
-					playParameters.playEnableTracks = enableTracks;
-					playParameters.playSubscriberId = subscriberId;
-					playParameters.playSubscriberName = subscriberName;
-					playParameters.playSubscriberCode = subscriberCode;
-					playParameters.playMetaData = metaData;
-					playParameters.playRole = role;
+					playParameters.token = token;
+					playParameters.roomId = roomId;
+					playParameters.enableTracks = enableTracks;
+					playParameters.subscriberId = subscriberId;
+					playParameters.subscriberName = subscriberName;
+					playParameters.subscriberCode = subscriberCode;
+					playParameters.metaData = metaData;
+					playParameters.role = role;
 					playParameters.disableTracksByDefault = disableTracksByDefault
 
 					
