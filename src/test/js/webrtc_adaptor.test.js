@@ -2138,7 +2138,7 @@ describe("WebRTCAdaptor", function() {
 					
 					var playParameters;			
 					
-					playParameters.playStreamId = streamId;
+					playParameters.streamId = streamId;
 					playParameters.playToken = token;
 					playParameters.playRoomId = roomId;
 					playParameters.playEnableTracks = enableTracks;
