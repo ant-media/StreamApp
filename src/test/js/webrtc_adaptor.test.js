@@ -2150,7 +2150,7 @@ describe("WebRTCAdaptor", function() {
 					playParameters.disableTracksByDefault = disableTracksByDefault
 
 					
-		            adaptor.play(playParameters);
+		            adaptor.playStream(playParameters);
 
 		            let jsCmd = {
 		                command: "play",

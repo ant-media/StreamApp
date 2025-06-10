@@ -607,7 +607,7 @@ export class WebRTCAdaptor {
 	 *    {string=} [role] : role for the stream. It is used for selective forwarding of subtracks in conference mode.
 	 *    {string=} [disableTracksByDefault] : disables tracks by default
 	 */
-	play(streamParameters) {
+	playStream(streamParameters) {
 		this.playStreamId.push(streamParameters.streamId);
 		this.playToken = streamParameters.token;
 		this.playRoomId = streamParameters.roomId;
