@@ -1571,6 +1571,9 @@ export class WebRTCAdaptor {
 
 		var inboundRtp = [];
 
+		var videoNtpTimestamp = -1;
+		var audioNtpTimestamp = -1;
+
 		stats.forEach(value => {
 			//Logger.debug(value);
 			if (value.type == "inbound-rtp" && typeof value.kind != "undefined") {
@@ -1710,6 +1713,16 @@ export class WebRTCAdaptor {
 						audioJitter = value.jitter;
 					}
 				}
+			} else if (value.type == "remote-outbound-rtp" && typeof value.kind != "undefined") {
+				// Extract NTP timestamp from RTCP Sender Report
+				// This is basically data from the perspective of entity who is publishing this stream
+				if (typeof value.remoteTimestamp != "undefined") {
+					if (value.kind == "video") {
+						videoNtpTimestamp = value.remoteTimestamp;
+					} else if (value.kind == "audio") {
+						audioNtpTimestamp = value.remoteTimestamp;
+					}
+				}
 			} else if (value.type == "media-source") {
 				if (value.kind == "video") { //returns video source dimensions, not necessarily dimensions being encoded by browser
 					width = value.width;
@@ -1764,6 +1777,9 @@ export class WebRTCAdaptor {
 		this.remotePeerConnectionStats[streamId].currentRoundTripTime = currentRoundTripTime;
 		this.remotePeerConnectionStats[streamId].audioPacketsReceived = audioPacketsReceived;
 		this.remotePeerConnectionStats[streamId].videoPacketsReceived = videoPacketsReceived;
+
+		this.remotePeerConnectionStats[streamId].videoNtpTimestamp = videoNtpTimestamp;
+		this.remotePeerConnectionStats[streamId].audioNtpTimestamp = audioNtpTimestamp;
 
 		return this.remotePeerConnectionStats[streamId];
 	}
@@ -2390,7 +2406,105 @@ export class WebRTCAdaptor {
 
 	closeStream() {
 		return this.mediaManager.closeStream();
-	};
+	}
+
+	/**
+	 * NTP Timestamp Generation Utilities
+	 * Used for generating NTP timestamps in RTCP format
+	 */
+	
+	/**
+	 * Generate an NTP timestamp from current time
+	 * @param {number} [jsTimestamp] - Optional JavaScript timestamp (Date.now()), defaults to current time
+	 * @param {number} [clockOffset] - Optional clock offset for synchronization (in milliseconds)
+	 * @returns {Object} Object containing NTP timestamp components
+	 */
+	generateNTPTimestamp(jsTimestamp, clockOffset) {
+		// Use current time if not provided
+		const currentTime = jsTimestamp || Date.now();
+		
+		// Apply clock offset if provided (for synchronization)
+		const adjustedTime = currentTime + (clockOffset || 0);
+		
+		// NTP epoch: January 1, 1900 00:00:00 UTC
+		// JavaScript epoch: January 1, 1970 00:00:00 UTC  
+		// Difference: 70 years = 2,208,988,800 seconds
+		const NTP_EPOCH_OFFSET = 2208988800;
+		
+		// Convert milliseconds to seconds and fractional part
+		const totalSeconds = adjustedTime / 1000;
+		const ntpSeconds = Math.floor(totalSeconds) + NTP_EPOCH_OFFSET;
+		const fractionalSeconds = totalSeconds - Math.floor(totalSeconds);
+		
+		// Convert fractional seconds to NTP fractional format (32-bit)
+		const ntpFraction = Math.round(fractionalSeconds * 0xFFFFFFFF);
+		
+		return {
+			// Full 64-bit NTP timestamp as hex string (for debugging)
+			ntpTimestamp: ((ntpSeconds >>> 0).toString(16).padStart(8, '0') + 
+						  (ntpFraction >>> 0).toString(16).padStart(8, '0')).toUpperCase(),
+			
+			// Individual components
+			seconds: ntpSeconds >>> 0,           // 32-bit seconds
+			fraction: ntpFraction >>> 0,         // 32-bit fraction
+			
+			// Human readable
+			humanReadable: new Date(adjustedTime).toISOString(),
+			
+			// For WebRTC compatibility (same format as remoteTimestamp)
+			webRtcFormat: adjustedTime,
+			
+			// Original JavaScript timestamp used
+			jsTimestamp: adjustedTime
+		};
+	}
+
+	/**
+	 * Convert WebRTC remoteTimestamp to NTP format
+	 * @param {number} remoteTimestamp - The remoteTimestamp from WebRTC stats
+	 * @returns {Object} NTP timestamp object
+	 */
+	convertRemoteTimestampToNTP(remoteTimestamp) {
+		if (!remoteTimestamp || typeof remoteTimestamp !== 'number') {
+			return null;
+		}
+		
+		return this.generateNTPTimestamp(remoteTimestamp);
+	}
+
+	/**
+	 * Extract NTP timestamp from RTCP data (if available)
+	 * @param {Object} rtcpStats - The RTCP stats object
+	 * @returns {Object|null} NTP timestamp object or null if not available
+	 */
+	extractNTPFromRTCP(rtcpStats) {
+		// Check if we have remoteTimestamp (NTP-based)
+		if (rtcpStats.remoteTimestamp) {
+			return this.convertRemoteTimestampToNTP(rtcpStats.remoteTimestamp);
+		}
+		
+		// Fallback: generate based on local timestamp
+		if (rtcpStats.timestamp) {
+			console.warn("No remoteTimestamp available, generating NTP from local timestamp");
+			return this.generateNTPTimestamp(rtcpStats.timestamp);
+		}
+		
+		return null;
+	}
+
+	/**
+	 * Calculate time difference between NTP timestamps
+	 * @param {Object} ntp1 - First NTP timestamp object
+	 * @param {Object} ntp2 - Second NTP timestamp object  
+	 * @returns {number} Difference in milliseconds
+	 */
+	calculateNTPTimeDifference(ntp1, ntp2) {
+		if (!ntp1 || !ntp2) {
+			return 0;
+		}
+		
+		return ntp2.jsTimestamp - ntp1.jsTimestamp;
+	}
 }
 
 

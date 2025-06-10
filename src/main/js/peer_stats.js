@@ -247,6 +247,18 @@ export class PeerStats {
 		 * The current round trip time for the candidate pair
 		 */
 		this.currentRoundTripTime = 0;
+
+        /**
+         * The NTP timestamp of the video.
+         * NTP timestamp from the perspective of entity who is publishing this stream.
+         *
+         * Retreived using:
+         * https://developer.mozilla.org/en-US/docs/Web/API/RTCRemoteOutboundRtpStreamStats/remoteTimestamp
+         * @type {number}
+         */
+        this.videoNtpTimestamp = 0;
+
+        this.audioNtpTimestamp = 0;
     }
     //kbits/sec
     get averageOutgoingBitrate() {
