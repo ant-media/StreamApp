@@ -657,6 +657,12 @@ export class WebRTCAdaptor {
 	 *  @param {string=} [role] : role for the stream. It is used for selective forwarding of subtracks in conference mode.
 	 */
 	play(streamId, token, roomId, enableTracks, subscriberId, subscriberCode, metaData, role) {
+		if (typeof streamId === 'object') {
+			// Object-style: play({ streamId, token, ... })
+			this.playStream(streamId);
+			return;
+		}
+		
 		this.playStreamId.push(streamId);
 		this.playToken = token;
 		this.playRoomId = roomId;
