@@ -266,6 +266,8 @@
 	var streamName = getUrlParameter("streamName");
 
 	var subscriberId = getUrlParameter("subscriberId");
+	var subscriberName = getUrlParameter("subscriberName");
+
 	var subscriberCode = getUrlParameter("subscriberCode");
 
 	var volume_change_input = document.getElementById("volume_change_input");
@@ -526,7 +528,14 @@
 		if (!playOnly) {
 			publish(publishStreamId, token);
 		}
-		webRTCAdaptor.play(roomNameBox.value, token, roomNameBox.value, [], subscriberId, subscriberCode, null, role);
+
+
+		webRTCAdaptor.play({"streamId":roomNameBox.value, 
+							"token":token, 
+							 "subscriberId":subscriberId, 
+							 "subscriberCode": subscriberCode,
+							 "role": role,
+							 "subscriberName": subscriberName,});
 	}
 
 	function leaveRoom() {
