@@ -182,6 +182,27 @@
 		<url-pattern>/whip/*</url-pattern>
 	</servlet-mapping>
 	
+  <servlet>
+		<servlet-name>whep-serlvet</servlet-name>
+		<servlet-class>
+			org.glassfish.jersey.servlet.ServletContainer
+		</servlet-class>
+		<init-param>
+			<param-name>jersey.config.server.provider.packages</param-name>
+			<param-value>io.antmedia.whep</param-value>
+		</init-param>
+		<init-param>
+			<param-name>jersey.config.server.provider.classnames</param-name>
+			<param-value>org.glassfish.jersey.media.multipart.MultiPartFeature
+			</param-value>
+		</init-param>
+		<async-supported>true</async-supported>
+		<load-on-startup>1</load-on-startup>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>whep-serlvet</servlet-name>
+		<url-pattern>/whep/*</url-pattern>
+	</servlet-mapping>
 
 	<servlet>
 		<servlet-name>jersey-serlvet</servlet-name>
