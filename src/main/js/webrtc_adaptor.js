@@ -228,6 +228,12 @@ export class WebRTCAdaptor {
 		 * Websocket URL
 		 */
 		this.websocketURL = null;
+		
+		/**
+		 * HTTP Endpoint URL is the endpoint that returns the websocket URL
+
+		 */
+		this.httpEndpointUrl = null;
 
 		/**
 		 * flag to initialize components in constructor
@@ -255,8 +261,8 @@ export class WebRTCAdaptor {
 			this.websocketURL = this.websocket_url;
 		}
 
-		if (this.websocketURL == null) {
-			throw new Error("WebSocket URL is not defined. It's mandatory");
+		if (this.websocketURL == null && this.httpEndpointUrl == null) {
+			throw new Error("WebSocket URL or HTTP Endpoint URL should be defined. It's mandatory");
 		}
 		/**
 		 * The html video tag for receiver is got here
@@ -1864,6 +1870,7 @@ export class WebRTCAdaptor {
 			Logger.debug("websocket url : " + this.websocketURL);
 			this.webSocketAdaptor = new WebSocketAdaptor({
 				websocket_url: this.websocketURL,
+				httpEndpointUrl: this.httpEndpointUrl,
 				webrtcadaptor: this,
 				callback: (info, obj) => {
 					this.websocketCallback(info, obj)

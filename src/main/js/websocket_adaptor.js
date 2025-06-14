@@ -8,18 +8,57 @@ export class WebSocketAdaptor {
      * @param {object} initialValues 
      */
     constructor(initialValues) {
+		
+		
+		/**
+		 * Websocket URL
+		 */
+		this.websocketURL = null;
+		
+		/**
+		 * HTTP Endpoint URL is the endpoint that returns the websocket URL
+
+		 */
+		this.httpEndpointUrl = null;
+		
+		
+		/**
+		 * HTTP Endpoint URL for access token
+		 */
+		this.httpEndpointAccessToken = null;
+		
+		
+		/**
+		 * WebRTCAdaptor which is responsible for handling WebRTC connections
+		 */
+		this.webrtcadaptor = null; 
+				
+		
         /**
          * @type {boolean}
          */
         this.debug = false;
+		
+		
+		/**
+		 * Init the connectin when constructor is called
+		 */
+		this.initConnection = true;
+		
+		
         for (var key in initialValues) {
             if (initialValues.hasOwnProperty(key)) {
                 this[key] = initialValues[key];
             }
         }
-
-        this.initWebSocketConnection();
 		
+		if (this.websocketURL == null) {
+			this.websocketURL = this.websocket_url;
+		}
+
+		if (this.initConnection == true) {
+        	this.checkBackendReady();
+		}
 		addEventListener("offline", (event) => { 
 			this.connected = false;
 			this.connecting = false;
@@ -27,6 +66,90 @@ export class WebSocketAdaptor {
 		});
 
     }
+	
+	getHttpEndpoint(endpointUrl, options) {
+		return fetch(endpointUrl,   options)
+	}
+	
+	tryAgainAfterDelay(callbackConnected) {
+		setTimeout(()=> {
+			this.checkBackendReady(callbackConnected)
+		}, 3000);
+	}
+	
+	async checkBackendInstanceUp(data, callbackConnected) 
+	{
+		return this.getHttpEndpoint(data.http_url, { method: 'HEAD' })
+		  .then(response => {
+				if (response.status >= 200 && response.status < 400) {
+					this.websocketURL = data.websocket_url;
+					this.initWebSocketConnection(callbackConnected);
+				}
+				else {
+					Logger.warn('Backend does not return ok. Retrying in 3 seconds...');
+					this.tryAgainAfterDelay(callbackConnected);
+				}
+			
+			})
+			.catch((e) => {
+				Logger.warn('Backend is not ready yet. Retrying in 3 seconds...');
+				Logger.error(e);
+				this.tryAgainAfterDelay(callbackConnected);
+		    });
+	}
+	
+	async checkBackendReady(callbackConnected) {
+		
+		this.connecting = true;
+		this.connected = false;
+		
+		if (this.httpEndpointUrl != null) {
+					
+			const endpointUrl = new URL(this.httpEndpointUrl);
+			
+			endpointUrl.searchParams.set('source', 'sdk');
+			
+			if (this.httpEndpointAccessToken != null) {
+				endpointUrl.searchParams.set('accessToken', this.httpEndpointAccessToken);
+			}
+			
+			
+			this.httpEndpointUrl = endpointUrl.toString();
+			//return promise for this case
+			return this.getHttpEndpoint(this.httpEndpointUrl,  { method: "GET" })
+		      .then(response => {
+                  if (response.ok) {
+                      Logger.info("http endpoint returns ok")
+					  return response.json(); // Parse JSON from body
+                  }
+				  throw new Error('Network response was not ok');
+		                  
+              })
+			  .then(data => {
+			          Logger.info("Response body -> fqdn :" + data.fqdn + "	websocket_url: " + data.websocket_url + " http_url: " + data.http_url); 
+					  
+					  return this.checkBackendInstanceUp(data, callbackConnected)
+			      })
+              .catch(e => {
+			  	this.tryAgainAfterDelay(callbackConnected);
+                Logger.warn('HttpEndpoint is not ready yet', e);
+				Logger.error(e);
+				  
+              });
+					  
+		}
+		else {
+			return new Promise((resolve, reject) => {
+				this.initWebSocketConnection(callbackConnected);
+				resolve();
+			});
+				
+			
+		}
+		
+	}
+	
+	
     /**
      * Initializes the WebSocket connection.
      * @param {Function} callbackConnected - Optional callback function to be called when the connection is established.
@@ -35,20 +158,23 @@ export class WebSocketAdaptor {
     initWebSocketConnection(callbackConnected) {
         this.connecting = true;
         this.connected = false;
-        this.pingTimerId = -1;
+        this.clearPingTimer();
+		
+		
+				
 
         /*
         * It's not mandatory if you don't use the new Load Balancer mechanism
         * It uses one of the nodes on Cluster mode
         * Example parameters: "origin" or "edge"
         */
-        const url = new URL(this.websocket_url);
+        const url = new URL(this.websocketURL);
         if (!['origin', 'edge'].includes(url.searchParams.get('target'))) {
             url.searchParams.set('target', this.webrtcadaptor.isPlayMode ? 'edge' : 'origin');
-            this.websocket_url = url.toString();
+            this.websocketURL = url.toString();
         }
 
-        this.wsConn = new WebSocket(this.websocket_url);
+        this.wsConn = new WebSocket(this.websocketURL);
         this.wsConn.onopen = () => {
             Logger.debug("websocket connected");
             
@@ -204,7 +330,7 @@ export class WebSocketAdaptor {
     send(text) {
         if (this.connecting == false && this.connected == false) {
             //try to reconnect
-            this.initWebSocketConnection(() => {
+            this.checkBackendReady(() => {
                 this.send(text);
             });
             return;
