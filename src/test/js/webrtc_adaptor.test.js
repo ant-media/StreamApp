@@ -99,6 +99,208 @@ describe("WebRTCAdaptor", function() {
 
 
 	});
+	
+	it("WebSocketAdaptor::checkBackendReady", async function() {
+		
+		var adaptor = new WebRTCAdaptor({
+				websocketURL: "ws://example.com",
+				isPlayMode: true
+			});
+			
+		var websocketAdaptor = new WebSocketAdaptor({
+					websocketURL: "ws://auto-managed-endpoint:8080",
+					webrtcadaptor: adaptor,
+					
+					callback: (info, obj) => {
+						console.info("info in WebSocketAdaptor: ", info, obj);
+					},
+					callbackError: (error, message) => {
+						console.error("Error in WebSocketAdaptor: ", error);
+					},
+		});
+		
+		expect(websocketAdaptor.websocketURL).to.be.equal("ws://auto-managed-endpoint:8080/?target=edge");
+		
+		websocketAdaptor = new WebSocketAdaptor({
+						websocket_url: "ws://auto-managed-endpoint:8080",
+						webrtcadaptor: adaptor,
+						callback: (info, obj) => {
+							console.info("info in WebSocketAdaptor: ", info, obj);
+						},
+						callbackError: (error, message) => {
+							console.error("Error in WebSocketAdaptor: ", error);
+						},
+					});
+			
+		expect(websocketAdaptor.websocketURL).to.be.equal("ws://auto-managed-endpoint:8080/?target=edge");
+		
+		websocketAdaptor = new WebSocketAdaptor({
+					httpEndpointUrl: "http://auto-managed-endpoint:8080",
+					initConnection: false,
+		});
+		
+		var initWebSocketConnection = sinon.replace(websocketAdaptor, "initWebSocketConnection", sinon.fake());
+		
+		await websocketAdaptor.checkBackendReady();
+		
+		//it should not call initWebSocketConnection because there is an http endpoint
+		expect(initWebSocketConnection.called).to.be.false;
+		
+		
+		
+		
+		websocketAdaptor = new WebSocketAdaptor({
+					httpEndpointUrl: "http://auto-managed-endpoint:8080",
+					initConnection: false,
+				});
+		
+		var getHttpEndpoint = sinon.replace(websocketAdaptor, "getHttpEndpoint", sinon.fake.returns(Promise.reject("this is on purpose")));
+	
+		var tryAgainAfterDelay = sinon.replace(websocketAdaptor, "tryAgainAfterDelay", sinon.fake());
+
+		
+		await websocketAdaptor.checkBackendReady();
+		expect(tryAgainAfterDelay.called).to.be.true;
+		
+		
+		//case
+		websocketAdaptor = new WebSocketAdaptor({
+							httpEndpointUrl: "http://auto-managed-endpoint:8080",
+							initConnection: false,
+						});
+		getHttpEndpoint = sinon.replace(websocketAdaptor, "getHttpEndpoint", sinon.fake.returns(Promise.resolve("this is on purpose")));
+		tryAgainAfterDelay = sinon.replace(websocketAdaptor, "tryAgainAfterDelay", sinon.fake());
+		
+		await websocketAdaptor.checkBackendReady();
+		//it is being called again because resturn response is not ok and it fires error
+		expect(tryAgainAfterDelay.called).to.be.true;
+		
+		
+		
+		//case
+		websocketAdaptor = new WebSocketAdaptor({
+									httpEndpointUrl: "http://auto-managed-endpoint:8080",
+									initConnection: false,
+								});
+								
+		var response = {
+			ok: true,
+			json() {
+				return {
+					fqdn:"hello.antmedia.cloud",
+					websocket_url:"ws://hello.antmedia.cloud:5080/auto-managed-endpoint/websocket?target=edge",
+					http_url:"http://hello.antmedia.cloud:5080/auto-managed-endpoint"
+				}
+			}
+		}						
+		getHttpEndpoint = sinon.replace(websocketAdaptor, "getHttpEndpoint", sinon.fake.returns(Promise.resolve(response)));
+		tryAgainAfterDelay = sinon.replace(websocketAdaptor, "tryAgainAfterDelay", sinon.fake());
+		
+		await websocketAdaptor.checkBackendReady();
+		//it is called because in the second fetch it checks the response and response status is not ok
+		expect(tryAgainAfterDelay.called).to.be.true;
+		
+		
+		
+		websocketAdaptor = new WebSocketAdaptor({
+											httpEndpointUrl: "http://auto-managed-endpoint:8080",
+											initConnection: false,
+											httpEndpointAccessToken:"testAccessToken"
+										});
+										
+		 response = {
+			ok: true,
+			json() {
+				return {
+					fqdn:"hello.antmedia.cloud",
+					websocket_url:"ws://hello.antmedia.cloud:5080/auto-managed-endpoint/websocket?target=edge",
+					http_url:"http://hello.antmedia.cloud:5080/auto-managed-endpoint"
+				}
+			},
+			status:200
+		}		
+						
+		getHttpEndpoint = sinon.replace(websocketAdaptor, "getHttpEndpoint", sinon.fake.returns(Promise.resolve(response)));
+		tryAgainAfterDelay = sinon.replace(websocketAdaptor, "tryAgainAfterDelay", sinon.fake());
+		initWebSocketConnection = sinon.replace(websocketAdaptor, "initWebSocketConnection", sinon.fake());
+
+		
+		await websocketAdaptor.checkBackendReady();
+		//it is called because in the second fetch it checks the response and response status is not ok
+		expect(tryAgainAfterDelay.called).to.be.false;
+		
+		expect(websocketAdaptor.httpEndpointUrl).to.be.equal("http://auto-managed-endpoint:8080/?source=sdk&accessToken=testAccessToken");
+		
+						
+		//it should be called because everything is as expected
+		expect(initWebSocketConnection.called).to.be.true;
+		
+	});
+	
+	it("WebSocketAdaptor::checkBackendInstanceUp", async function() {
+		{
+			var websocketAdaptor = new WebSocketAdaptor({
+														httpEndpointUrl: "http://auto-managed-endpoint:8080",
+														initConnection: false,
+														httpEndpointAccessToken:"testAccessToken"
+													});
+													
+			var response = {
+					ok: true,
+					json() {
+						return {
+							fqdn:"hello.antmedia.cloud",
+							websocket_url:"ws://hello.antmedia.cloud:5080/auto-managed-endpoint/websocket?target=edge",
+							http_url:"http://hello.antmedia.cloud:5080/auto-managed-endpoint"
+						}
+					},
+					status:200
+				}		
+			let getHttpEndpoint = sinon.replace(websocketAdaptor, "getHttpEndpoint", sinon.fake.returns(Promise.resolve(response)));
+			
+			let initWebSocketConnection = sinon.replace(websocketAdaptor, "initWebSocketConnection", sinon.fake());
+			
+			await websocketAdaptor.checkBackendInstanceUp("http://hello.antmedia.cloud:5080/auto-managed-endpoint");
+			expect(initWebSocketConnection.called).to.be.true;
+		}
+		
+		
+		{
+			var websocketAdaptor = new WebSocketAdaptor({
+														httpEndpointUrl: "http://auto-managed-endpoint:8080",
+														initConnection: false,
+														httpEndpointAccessToken:"testAccessToken"
+													});
+													
+			var response = {
+				
+					status:404
+				}		
+			let getHttpEndpoint = sinon.replace(websocketAdaptor, "getHttpEndpoint", sinon.fake.returns(Promise.resolve(response)));
+			
+			let tryAgainAfterDelay = sinon.replace(websocketAdaptor, "tryAgainAfterDelay", sinon.fake());
+			
+			await websocketAdaptor.checkBackendInstanceUp("http://hello.antmedia.cloud:5080/auto-managed-endpoint");
+			expect(tryAgainAfterDelay.called).to.be.true;
+		}
+		
+		{
+			var websocketAdaptor = new WebSocketAdaptor({
+														httpEndpointUrl: "http://auto-managed-endpoint:8080",
+														initConnection: false,
+														httpEndpointAccessToken:"testAccessToken"
+													});
+													
+		
+			let getHttpEndpoint = sinon.replace(websocketAdaptor, "getHttpEndpoint", sinon.fake.returns(Promise.reject("reject")));
+			
+			let tryAgainAfterDelay = sinon.replace(websocketAdaptor, "tryAgainAfterDelay", sinon.fake());
+			
+			await websocketAdaptor.checkBackendInstanceUp("http://hello.antmedia.cloud:5080/auto-managed-endpoint");
+			expect(tryAgainAfterDelay.called).to.be.true;
+		}
+		
+	});
 
 
 	it("Auto reconnect play", async function() {
@@ -2111,6 +2313,112 @@ describe("WebRTCAdaptor", function() {
     		webSocketAdaptor.expects("send").once().withArgs(JSON.stringify(jsCmd));
     		expect(initPeerConnection.calledWithExactly(streamId, "play")).to.be.true;
     	});
+		
+		
+		it("play-single-parameter-backward-compatible", async function() {
+			
+			
+			let publishStreamId = "publish1"
+			let streamId = "stream1";
+			let token = "yourToken";
+			let roomId = "yourRoomId";
+			let enableTracks = true;
+			let subscriberId = "yourSubscriberId";
+			let subscriberName = "yourSubscriberName";
+			let subscriberCode = "yourSubscriberCode";
+			let metaData = "yourMetaData";
+			let role = "subscriber";
+			let disableTracksByDefault = true;
+								
+			var playParameters = {};
+								
+			playParameters.streamId = streamId;
+			playParameters.token = token;
+			playParameters.roomId = roomId;
+			playParameters.enableTracks = enableTracks;
+			playParameters.subscriberId = subscriberId;
+			playParameters.subscriberName = subscriberName;
+			playParameters.subscriberCode = subscriberCode;
+			playParameters.metaData = metaData;
+			playParameters.role = role;
+			playParameters.disableTracksByDefault = disableTracksByDefault
+
+			var adaptor = new WebRTCAdaptor({
+					    			websocketURL: "ws://example.com",
+					    			isPlayMode: true,
+					    			publishStreamId: publishStreamId
+					    		});
+								
+			var peerConnection = new RTCPeerConnection();
+			var initPeerConnection = sinon.replace(adaptor, "initPeerConnection", sinon.fake.returns(peerConnection));
+			var webSocketAdaptor = sinon.mock(adaptor.webSocketAdaptor);
+			
+			var playStream = sinon.replace(adaptor, "playStream", sinon.fake());
+			
+			adaptor.play(playParameters);
+			
+			expect(playStream.called).to.be.true;
+
+
+		});
+		
+		it("Play with single parameter", async function() {
+		            let publishStreamId = "publish1"
+		            let streamId = "stream1";
+		            let token = "yourToken";
+		            let roomId = "yourRoomId";
+		            let enableTracks = true;
+		            let subscriberId = "yourSubscriberId";
+					let subscriberName = "yourSubscriberName";
+		            let subscriberCode = "yourSubscriberCode";
+		            let metaData = "yourMetaData";
+		            let role = "subscriber";
+					let disableTracksByDefault = true;
+
+		    		var adaptor = new WebRTCAdaptor({
+		    			websocketURL: "ws://example.com",
+		    			isPlayMode: true,
+		    			publishStreamId: publishStreamId
+		    		});
+
+		    		var peerConnection = new RTCPeerConnection();
+		            var initPeerConnection = sinon.replace(adaptor, "initPeerConnection", sinon.fake.returns(peerConnection));
+		    		var webSocketAdaptor = sinon.mock(adaptor.webSocketAdaptor);
+
+					
+					var playParameters = {};
+					
+					playParameters.streamId = streamId;
+					playParameters.token = token;
+					playParameters.roomId = roomId;
+					playParameters.enableTracks = enableTracks;
+					playParameters.subscriberId = subscriberId;
+					playParameters.subscriberName = subscriberName;
+					playParameters.subscriberCode = subscriberCode;
+					playParameters.metaData = metaData;
+					playParameters.role = role;
+					playParameters.disableTracksByDefault = disableTracksByDefault
+
+					
+		            adaptor.playStream(playParameters);
+
+		            let jsCmd = {
+		                command: "play",
+		                streamId: streamId,
+		                token: token,
+		                room: roomId,
+		                trackList: enableTracks,
+		                subscriberId: subscriberId,
+						playSubscriberName: subscriberName,
+		                subscriberCode: subscriberCode,
+		                viewerInfo: metaData,
+		                role: role,
+		                userPublishId: publishStreamId,
+						disableTracksByDefault: disableTracksByDefault
+		            };
+
+		    		webSocketAdaptor.expects("send").once().withArgs(JSON.stringify(jsCmd));
+		    	});
 
 		
 		it("getSubscriberCount", async function() {

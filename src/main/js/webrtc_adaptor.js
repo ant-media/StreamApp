@@ -228,6 +228,12 @@ export class WebRTCAdaptor {
 		 * Websocket URL
 		 */
 		this.websocketURL = null;
+		
+		/**
+		 * HTTP Endpoint URL is the endpoint that returns the websocket URL
+
+		 */
+		this.httpEndpointUrl = null;
 
 		/**
 		 * flag to initialize components in constructor
@@ -255,8 +261,8 @@ export class WebRTCAdaptor {
 			this.websocketURL = this.websocket_url;
 		}
 
-		if (this.websocketURL == null) {
-			throw new Error("WebSocket URL is not defined. It's mandatory");
+		if (this.websocketURL == null && this.httpEndpointUrl == null) {
+			throw new Error("WebSocket URL or HTTP Endpoint URL should be defined. It's mandatory");
 		}
 		/**
 		 * The html video tag for receiver is got here
@@ -590,6 +596,58 @@ export class WebRTCAdaptor {
 		}
 		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
 	}
+	
+	/**
+	 * Called to start a playing session for a stream. AMS responds with start message.
+	 * Parameters:
+	 *  @param {streamParameters} includes:
+	 *    {string} streamId :(string) unique id for the stream that you want to play
+	 *    {string=} token :(string) required if any stream security (token control) enabled. Check https://github.com/ant-media/Ant-Media-Server/wiki/Stream-Security-Documentation
+	 *    {string=} roomId :(string) required if this stream is belonging to a room participant
+	 *    {Array.<MediaStreamTrack>=} enableTracks :(array) required if the stream is a main stream of multitrack playing. You can pass the the subtrack id list that you want to play.
+	 *                    you can also provide a track id that you don't want to play by adding ! before the id.
+	 *    {string=} subscriberId :(string) required if TOTP enabled. Check https://github.com/ant-media/Ant-Media-Server/wiki/Time-based-One-Time-Password-(TOTP)
+	 *    {string=} subscriberName :(string) human readable name for subscriber
+	 *    {string=} subscriberCode :(string) required if TOTP enabled. Check https://github.com/ant-media/Ant-Media-Server/wiki/Time-based-One-Time-Password-(TOTP)
+	 *    {string=} metaData :(string, json) a free text information for the stream to AMS. It is provided to Rest methods by the AMS
+	 *    {string=} [role] : role for the stream. It is used for selective forwarding of subtracks in conference mode.
+	 *    {string=} [disableTracksByDefault] : disables tracks by default
+	 */
+	playStream(streamParameters) {
+		this.playStreamId.push(streamParameters.streamId);
+		this.playToken = streamParameters.token;
+		this.playRoomId = streamParameters.roomId;
+		this.playEnableTracks = streamParameters.enableTracks;
+		this.playSubscriberId = streamParameters.subscriberId;
+		this.playSubscriberName = streamParameters.subscriberName;
+		this.playSubscriberCode = streamParameters.subscriberCode;
+		this.playMetaData = streamParameters.metaData;
+		this.playRole = streamParameters.role;
+		this.disableTracksByDefault = streamParameters.disableTracksByDefault
+
+		let jsCmd =
+		{
+			command: "play",
+			streamId: streamParameters.streamId,
+			token: typeof streamParameters.token !== undefined && streamParameters.token != null ? streamParameters.token : "",
+			room: typeof streamParameters.roomId !== undefined && streamParameters.roomId != null ? streamParameters.roomId : "",
+			trackList: typeof streamParameters.enableTracks !== undefined && streamParameters.enableTracks != null ? streamParameters.enableTracks : [],
+			subscriberId: typeof streamParameters.subscriberId !== undefined && streamParameters.subscriberId != null ? streamParameters.subscriberId : "",
+			subscriberName: typeof streamParameters.subscriberName !== undefined && streamParameters.subscriberName != null ? streamParameters.subscriberName : "",
+			subscriberCode: typeof streamParameters.subscriberCode !== undefined && streamParameters.subscriberId != null ? streamParameters.subscriberCode : "",
+			viewerInfo: typeof streamParameters.metaData !== undefined && streamParameters.metaData != null ? streamParameters.metaData : "",
+			role: (typeof streamParameters.role !== undefined && streamParameters.role != null) ? streamParameters.role : "",
+			userPublishId: typeof this.publishStreamId !== undefined && this.publishStreamId != null ? this.publishStreamId : "",
+			disableTracksByDefault: typeof streamParameters.disableTracksByDefault !== undefined && streamParameters.disableTracksByDefault != null ? streamParameters.disableTracksByDefault : false,
+		}
+
+		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
+
+		//init peer connection for reconnectIfRequired
+		this.initPeerConnection(streamParameters.streamId, streamParameters);
+		this.reconnectIfRequired(3000, false);
+	}
+	
 
 	/**
 	 * Called to start a playing session for a stream. AMS responds with start message.
@@ -605,6 +663,12 @@ export class WebRTCAdaptor {
 	 *  @param {string=} [role] : role for the stream. It is used for selective forwarding of subtracks in conference mode.
 	 */
 	play(streamId, token, roomId, enableTracks, subscriberId, subscriberCode, metaData, role) {
+		if (typeof streamId === 'object') {
+			// Object-style: play({ streamId, token, ... })
+			this.playStream(streamId);
+			return;
+		}
+		
 		this.playStreamId.push(streamId);
 		this.playTokens.set(streamId, token);
 		this.playRoomId = roomId;
@@ -1808,6 +1872,7 @@ export class WebRTCAdaptor {
 			Logger.debug("websocket url : " + this.websocketURL);
 			this.webSocketAdaptor = new WebSocketAdaptor({
 				websocket_url: this.websocketURL,
+				httpEndpointUrl: this.httpEndpointUrl,
 				webrtcadaptor: this,
 				callback: (info, obj) => {
 					this.websocketCallback(info, obj)
