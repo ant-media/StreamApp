@@ -337,7 +337,7 @@ describe("MediaManager", function () {
 		    
   });
   
-  it.only("getMedia-stopScreenShareSystemAudioTrack", async function(){
+  it("getMedia-stopScreenShareSystemAudioTrack", async function(){
 	var adaptor = new WebRTCAdaptor({
 	    websocketURL: "ws://example.com",
 	  });
