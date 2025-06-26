@@ -337,6 +337,47 @@ describe("MediaManager", function () {
 		    
   });
   
+  it.only("getMedia-stopScreenShareSystemAudioTrack", async function(){
+	var adaptor = new WebRTCAdaptor({
+	    websocketURL: "ws://example.com",
+	  });
+
+	  var mediaManager = new MediaManager({
+	    userParameters: {
+	      mediaConstraints: {
+	        video: false,
+	        audio: true,
+	      },
+		  publishMode: "screen",
+	    },
+	    webRTCAdaptor: adaptor,
+
+	    callback: (info, obj) => {
+	      adaptor.notifyEventListeners(info, obj)
+	    },
+	    callbackError: (error, message) => {
+	      adaptor.notifyErrorEventListeners(error, message)
+	    },
+	    getSender: (streamId, type) => {
+	      return adaptor.getSender(streamId, type)
+	    },
+	  });
+	  
+	  var stopScreenShareSystemAudioTrack = sinon.replace(mediaManager, "stopScreenShareSystemAudioTrack", sinon.fake());
+
+	  var navigatorDisplayMedia = sinon.replace(mediaManager, "navigatorDisplayMedia", sinon.fake.returns(Promise.resolve({})));
+
+	  var prepareStreamTracks = sinon.replace(mediaManager, "prepareStreamTracks", sinon.fake());
+
+	  
+	  await mediaManager.getMedia({video:true})
+	  
+	  
+	  expect(stopScreenShareSystemAudioTrack.calledOnce).to.be.true;
+
+	 
+  });
+  
   it("testStopScreenShareSystemAudioTrackCalled", async function(){
 	  var videoElement = document.createElement("video");
 
