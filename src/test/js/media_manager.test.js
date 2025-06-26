@@ -306,7 +306,176 @@ describe("MediaManager", function () {
 		  sinon.assert.calledWith(getMediaStub, shareMediaConstraint, streamId);
 	    });
   
+  it("stopScreenShareSystemAudioTrack", async function(){
+	  var videoElement = document.createElement("video");
+
+	  var streamId = "stream1";
+
+	  var mediaConstraints = { video: "true", audio: "true" };
+
+	  var adaptor = new WebRTCAdaptor({
+		  websocketURL: "ws://example.com",
+		  localVideoElement: videoElement,
+		  initializeComponents: false,
+		  mediaConstraints: mediaConstraints
+	  });
+
+	  const fakeStop = sinon.fake();
+
+	  const screenShareAudioTrack = {
+		  stop: fakeStop 
+	  };
+
+	  adaptor.mediaManager.screenShareAudioTrack = screenShareAudioTrack;
+	  adaptor.mediaManager.stopScreenShareSystemAudioTrack();
+
+	  expect(fakeStop.calledOnce).to.be.true;
+	  expect(adaptor.mediaManager.screenShareAudioTrack).to.be.null;
+	  
+	  //check that there is no error when calling stop again
+	  adaptor.mediaManager.stopScreenShareSystemAudioTrack();
+		    
+  });
   
+  it("getMedia-stopScreenShareSystemAudioTrack", async function(){
+	var adaptor = new WebRTCAdaptor({
+	    websocketURL: "ws://example.com",
+	  });
+
+	  var mediaManager = new MediaManager({
+	    userParameters: {
+	      mediaConstraints: {
+	        video: false,
+	        audio: true,
+	      },
+		  publishMode: "screen",
+	    },
+	    webRTCAdaptor: adaptor,
+
+	    callback: (info, obj) => {
+	      adaptor.notifyEventListeners(info, obj)
+	    },
+	    callbackError: (error, message) => {
+	      adaptor.notifyErrorEventListeners(error, message)
+	    },
+	    getSender: (streamId, type) => {
+	      return adaptor.getSender(streamId, type)
+	    },
+	  });
+	  
+	  var stopScreenShareSystemAudioTrack = sinon.replace(mediaManager, "stopScreenShareSystemAudioTrack", sinon.fake());
+
+	  var navigatorDisplayMedia = sinon.replace(mediaManager, "navigatorDisplayMedia", sinon.fake.returns(Promise.resolve({})));
+
+	  var prepareStreamTracks = sinon.replace(mediaManager, "prepareStreamTracks", sinon.fake());
+
+	  
+	  await mediaManager.getMedia({video:true})
+	  
+	  
+	  expect(stopScreenShareSystemAudioTrack.calledOnce).to.be.true;
+
+	 
+  });
+  
+  
+  it("prepareStreamTracks-stopScreenShareSystemAudioTrack", async function(){
+  var adaptor = new WebRTCAdaptor({
+      websocketURL: "ws://example.com",
+    });
+
+    var mediaManager = new MediaManager({
+      userParameters: {
+        mediaConstraints: {
+          video: false,
+          audio: true,
+        },
+  	  publishMode: "screen",
+      },
+      webRTCAdaptor: adaptor,
+
+      callback: (info, obj) => {
+        adaptor.notifyEventListeners(info, obj)
+      },
+      callbackError: (error, message) => {
+        adaptor.notifyErrorEventListeners(error, message)
+      },
+      getSender: (streamId, type) => {
+        return adaptor.getSender(streamId, type)
+      },
+    });
+    
+    var stopScreenShareSystemAudioTrack = sinon.replace(mediaManager, "stopScreenShareSystemAudioTrack", sinon.fake());
+
+    var navigatorDisplayMedia = sinon.replace(mediaManager, "navigatorDisplayMedia", sinon.fake.returns(Promise.resolve({})));
+
+	var stream = new MediaStream();
+    await mediaManager.prepareStreamTracks({video:true}, false, stream, "stream1");
+    
+    expect(stopScreenShareSystemAudioTrack.calledOnce).to.be.true;
+
+   
+  });
+  
+  it("testStopScreenShareSystemAudioTrackCalled", async function(){
+	  var videoElement = document.createElement("video");
+
+	  var streamId = "stream1";
+	
+	  var mediaConstraints = { video: "true", audio: "true" };
+	
+	  var adaptor = new WebRTCAdaptor({
+		  websocketURL: "ws://example.com",
+		  localVideoElement: videoElement,
+		  initializeComponents: false,
+		  mediaConstraints: mediaConstraints
+	  });
+	  
+
+	  
+	  
+	 adaptor.mediaManager.secondaryAudioTrackGainNode = {}
+	 
+	 var stopScreenShareSystemAudioTrack = sinon.replace(adaptor.mediaManager, "stopScreenShareSystemAudioTrack", sinon.fake());
+	 
+	 let setGainNodeStream = sinon.replace(adaptor.mediaManager, "setGainNodeStream", sinon.fake());
+
+	 let updateAudioTrack = sinon.replace(adaptor.mediaManager, "updateAudioTrack", sinon.fake());
+	 
+	 adaptor.mediaManager.setGainNodeandUpdateAudioTrack("streamId", {
+			getAudioTracks:( )=> {
+				return [1,2,3]
+			},
+		}, 	
+		{
+				video:true,
+				audio:true
+		},
+		true,
+			sinon.fake()
+		);
+	 
+	 expect(stopScreenShareSystemAudioTrack.calledOnce).to.be.true;
+	 
+	 //call again 
+	 adaptor.mediaManager.setGainNodeandUpdateAudioTrack("streamId", {
+	 		getAudioTracks:( )=> {
+	 			return [1,2,3]
+	 		},
+	 	}, 	
+	 	{
+	 			video:true,
+	 			audio:true
+	 	},
+	 	false,
+	 	sinon.fake()
+	 	);
+		
+	//no further call because stopDesktop is false
+	expect(stopScreenShareSystemAudioTrack.calledTwice).to.be.false;
+	  
+		  
+  });
 
 
   describe("checkAndStopLocalVideoTrackOnAndroid", function () {
