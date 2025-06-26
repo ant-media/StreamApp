@@ -141,6 +141,13 @@ export class MediaManager {
          * The camera (overlay) video track in screen+camera mode
          */
         this.smallVideoTrack = null;
+		
+		
+		/**
+		 * The screen share audio track in screen+camera mode or screen share mode when
+		 * there browser tab is shared with audio
+		 */
+		this.screenShareAudioTrack = null;
 
         /**
 		 * black video track for switching between dummy video track to real tracks on the fly
@@ -453,13 +460,21 @@ export class MediaManager {
 
                 if (this.publishMode == "screen") {
                     return this.updateVideoTrack(stream, streamId, onended, true).then(() => {
-                        if (audioTracks.length > 0) { //system audio share case, then mix it with device audio
+                        if (audioTracks.length > 0) 
+						{ //system audio share case, then mix it with device audio
+							
+							this.stopScreenShareSystemAudioTrack();
+							this.screenShareAudioTrack = audioTracks[0];
                             audioStream = this.mixAudioStreams(stream, audioStream);
                         }
                         return this.updateAudioTrack(audioStream, streamId, null);
                     });
                 } else if (this.publishMode == "screen+camera") {
-                    if (audioTracks.length > 0) { //system audio share case, then mix it with device audio
+                    if (audioTracks.length > 0) 
+					{ //system audio share case, then mix it with device audio
+						
+						this.stopScreenShareSystemAudioTrack();
+						this.screenShareAudioTrack = audioTracks[0];
                         audioStream = this.mixAudioStreams(stream, audioStream);
                     }
 
@@ -609,6 +624,9 @@ export class MediaManager {
             return this.navigatorDisplayMedia(streamId,mediaConstraints).then(stream => {
                 if (this.smallVideoTrack)
                     this.smallVideoTrack.stop();
+
+				this.stopScreenShareSystemAudioTrack();
+				
                 return this.prepareStreamTracks(this.mediaConstraints, audioConstraint, stream, streamId);
             });
         }
@@ -616,6 +634,9 @@ export class MediaManager {
             return this.navigatorUserMedia(mediaConstraints).then(stream => {
                 if (this.smallVideoTrack)
                     this.smallVideoTrack.stop();
+
+				this.stopScreenShareSystemAudioTrack();
+				
                 return this.prepareStreamTracks(this.mediaConstraints, audioConstraint, stream, streamId);
             }).catch(error => {
                 if (error.name == "NotFoundError") {
@@ -1119,25 +1140,45 @@ export class MediaManager {
         })
 
     }
+	
+	
+	stopScreenShareSystemAudioTrack() 
+	{
+		if (this.screenShareAudioTrack) {
+			this.screenShareAudioTrack.stop();
+            this.screenShareAudioTrack = null;
+		}
+	}
+	
+	setGainNodeandUpdateAudioTrack(streamId, stream, mediaConstraints, stopDesktop, onEndedCallback){
+		if (stopDesktop && this.secondaryAudioTrackGainNode && stream.getAudioTracks().length > 0) {
+
+			//if there is a screen share audio track from browser tab, stop it 
+			this.stopScreenShareSystemAudioTrack();
+
+			//This audio track update is necessary for such a case:
+			//If you enable screen share with browser audio and then
+			//return back to the camera, the audio should be only from mic.
+			//If, we don't update audio with the following lines,
+			//the mixed (mic+browser) audio would be streamed in the camera mode.
+			this.secondaryAudioTrackGainNode = null;
+			stream = this.setGainNodeStream(stream);
+			this.updateAudioTrack(stream, streamId, mediaConstraints, onEndedCallback)
+
+		}
+	}
+	
 
     /**
      * This method sets Video Input Source and called when you change video device
      * It calls updateVideoTrack function to update local video stream.
      */
     setVideoCameraSource(streamId, mediaConstraints, onEndedCallback, stopDesktop) {
+		
         return this.navigatorUserMedia(mediaConstraints, stream => {
-            if (stopDesktop && this.secondaryAudioTrackGainNode && stream.getAudioTracks().length > 0) {
-                //This audio track update is necessary for such a case:
-                //If you enable screen share with browser audio and then
-                //return back to the camera, the audio should be only from mic.
-                //If, we don't update audio with the following lines,
-                //the mixed (mic+browser) audio would be streamed in the camera mode.
-                this.secondaryAudioTrackGainNode = null;
-                stream = this.setGainNodeStream(stream);
-                this.updateAudioTrack(stream, streamId, mediaConstraints, onEndedCallback)
-
-            }
-
+			
+			this.setGainNodeandUpdateAudioTrack(streamId, stream, mediaConstraints, stopDesktop, onEndedCallback);
+           
             if (this.cameraEnabled) {
                 return this.updateVideoTrack(stream, streamId, onEndedCallback, stopDesktop);
             } else {
