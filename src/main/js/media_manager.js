@@ -440,13 +440,11 @@ export class MediaManager {
     prepareStreamTracks(mediaConstraints, audioConstraint, stream, streamId) {
         //this trick, getting audio and video separately, make us add or remove tracks on the fly
 		
-		console.log("prepareStreamTracks: ", mediaConstraints, audioConstraint, stream, streamId);
         var audioTracks = stream.getAudioTracks()
         if (audioTracks.length > 0 && this.publishMode == "camera") {
             audioTracks[0].stop();
             stream.removeTrack(audioTracks[0]);
         }
-		console.log("2. prepareStreamTracks: ", mediaConstraints, audioConstraint, stream, streamId);
 
 		//stopScreenShareSystemAudioTrack if exists
 		this.stopScreenShareSystemAudioTrack();
