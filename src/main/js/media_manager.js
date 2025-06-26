@@ -419,6 +419,9 @@ export class MediaManager {
             });
         }, true)
     }
+	
+	prepare
+	
 
     /**
      * This function does these:
@@ -436,11 +439,19 @@ export class MediaManager {
      */
     prepareStreamTracks(mediaConstraints, audioConstraint, stream, streamId) {
         //this trick, getting audio and video separately, make us add or remove tracks on the fly
+		
+		console.log("prepareStreamTracks: ", mediaConstraints, audioConstraint, stream, streamId);
         var audioTracks = stream.getAudioTracks()
         if (audioTracks.length > 0 && this.publishMode == "camera") {
             audioTracks[0].stop();
             stream.removeTrack(audioTracks[0]);
         }
+		console.log("2. prepareStreamTracks: ", mediaConstraints, audioConstraint, stream, streamId);
+
+		//stopScreenShareSystemAudioTrack if exists
+		this.stopScreenShareSystemAudioTrack();
+
+		
         //now get only audio to add this stream
         if (audioConstraint != "undefined" && audioConstraint != false) {
             var media_audio_constraint = {audio: audioConstraint};
@@ -463,7 +474,6 @@ export class MediaManager {
                         if (audioTracks.length > 0) 
 						{ //system audio share case, then mix it with device audio
 							
-							this.stopScreenShareSystemAudioTrack();
 							this.screenShareAudioTrack = audioTracks[0];
                             audioStream = this.mixAudioStreams(stream, audioStream);
                         }
@@ -473,7 +483,6 @@ export class MediaManager {
                     if (audioTracks.length > 0) 
 					{ //system audio share case, then mix it with device audio
 						
-						this.stopScreenShareSystemAudioTrack();
 						this.screenShareAudioTrack = audioTracks[0];
                         audioStream = this.mixAudioStreams(stream, audioStream);
                     }
@@ -486,7 +495,7 @@ export class MediaManager {
                     if (audioConstraint != false && audioConstraint != undefined) {
                         stream.addTrack(audioStream.getAudioTracks()[0]);
                     }
-
+					
                     if (stream.getVideoTracks().length > 0)
                     {
                         return this.updateVideoTrack(stream, streamId, null, null).then(() =>
@@ -1144,6 +1153,7 @@ export class MediaManager {
 	
 	stopScreenShareSystemAudioTrack() 
 	{
+		//stopping the audoTrack resolves the screen sharing banner issue https://github.com/ant-media/Ant-Media-Server/issues/7335
 		if (this.screenShareAudioTrack) {
 			this.screenShareAudioTrack.stop();
             this.screenShareAudioTrack = null;
