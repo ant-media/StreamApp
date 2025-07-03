@@ -144,7 +144,6 @@ describe("MediaManager", function () {
       }
     });
 
-
     await adaptor.mediaManager.initLocalStream();
 
     expect(adaptor.mediaManager.localStream.getAudioTracks().length).to.be.equal(1);

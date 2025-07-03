@@ -1335,7 +1335,7 @@ export class MediaManager {
      * turns of the camera stream and starts streaming black dummy frame
      */
     turnOffLocalCamera(streamId) {
-		if(this.publishMode = "screen+camera") {
+		if(this.publishMode == "screen+camera") {
 			this.cameraEnabled = false;
 			return;
 		}
@@ -1383,7 +1383,7 @@ export class MediaManager {
      * turns of the camera stream and starts streaming camera again instead of black dummy frame
      */
     turnOnLocalCamera(streamId) {
-        if(this.publishMode = "screen+camera") {
+        if(this.publishMode == "screen+camera") {
 			this.cameraEnabled = true;
 			return;
 		}
