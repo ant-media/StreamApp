@@ -2299,7 +2299,6 @@ export class WebRTCAdaptor {
 	 * @returns 
 	 */
 	turnOffLocalCamera(streamId) {
-		this.turnOffEffectCamera(streamId);
 		return this.mediaManager.turnOffLocalCamera(streamId);
 	}
 	/**

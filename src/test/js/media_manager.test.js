@@ -161,6 +161,28 @@ describe("MediaManager", function () {
 
   });
 
+  it("turnOnOffLocalCameraInScreenPlusCamera", async function () {
+
+    var adaptor = new WebRTCAdaptor({
+      websocketURL: "ws://example.com",
+      initializeComponents: false,
+      mediaConstraints: {
+        video: true,
+        audio: true
+      }
+    });
+
+    adaptor.mediaManager.publishMode = "screen+camera";
+
+    expect(adaptor.mediaManager.cameraEnabled).to.be.equal(true);
+
+    await adaptor.mediaManager.turnOffLocalCamera();
+    expect(adaptor.mediaManager.cameraEnabled).to.be.equal(false);
+
+    await adaptor.turnOnLocalCamera();
+    expect(adaptor.mediaManager.cameraEnabled).to.be.equal(true);
+  });
+
   it("testOnEndedCallback", function (done) {
     this.timeout(5000);
 

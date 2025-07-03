@@ -402,19 +402,21 @@ export class MediaManager {
                     canvas.height = screenVideo.videoHeight;
                     canvasContext.drawImage(screenVideo, 0, 0, canvas.width, canvas.height);
 
-                    var cameraWidth = screenVideo.videoWidth * (this.camera_percent / 100);
-                    var cameraHeight = (cameraVideo.videoHeight / cameraVideo.videoWidth) * cameraWidth
-
-                    var positionX = (canvas.width - cameraWidth) - this.camera_margin;
-                    var positionY;
-
-                    if (this.camera_location == "top") {
-                        positionY = this.camera_margin;
-                    } else { //if not top, make it bottom
-                        //draw camera on right bottom corner
-                        positionY = (canvas.height - cameraHeight) - this.camera_margin;
-                    }
-                    canvasContext.drawImage(cameraVideo, positionX, positionY, cameraWidth, cameraHeight);
+					if(this.cameraEnabled) {
+	                    var cameraWidth = screenVideo.videoWidth * (this.camera_percent / 100);
+	                    var cameraHeight = (cameraVideo.videoHeight / cameraVideo.videoWidth) * cameraWidth
+	
+	                    var positionX = (canvas.width - cameraWidth) - this.camera_margin;
+	                    var positionY;
+	
+	                    if (this.camera_location == "top") {
+	                        positionY = this.camera_margin;
+	                    } else { //if not top, make it bottom
+	                        //draw camera on right bottom corner
+	                        positionY = (canvas.height - cameraHeight) - this.camera_margin;
+	                    }
+	                    canvasContext.drawImage(cameraVideo, positionX, positionY, cameraWidth, cameraHeight);
+					}
                 }, 66);
             });
         }, true)
@@ -1333,6 +1335,10 @@ export class MediaManager {
      * turns of the camera stream and starts streaming black dummy frame
      */
     turnOffLocalCamera(streamId) {
+		if(this.publishMode = "screen+camera") {
+			this.cameraEnabled = false;
+			return;
+		}
         //Initialize the first dummy frame for switching.
         this.getBlackVideoTrack();
 
@@ -1377,6 +1383,11 @@ export class MediaManager {
      * turns of the camera stream and starts streaming camera again instead of black dummy frame
      */
     turnOnLocalCamera(streamId) {
+        if(this.publishMode = "screen+camera") {
+			this.cameraEnabled = true;
+			return;
+		}
+
         this.clearBlackVideoTrackTimer();
 
         this.stopBlackVideoTrack();
