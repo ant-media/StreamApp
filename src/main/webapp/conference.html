@@ -6,7 +6,7 @@
 	<meta charset="UTF-8">
 	<link rel="stylesheet" href="css/external//bootstrap4/bootstrap.min.css">
 	<script src="js/external/adapter-latest.js"></script>
-	<script src="js/external/jquery-3.4.1.min.js"></script>
+	<script src="js/external/jquery-3.7.1.min.js"></script>
 	<script src="js/external/notify.min.js" crossorigin="anonymous"></script>
 	<link rel="stylesheet" href="css/common.css" />
 	<style>
@@ -233,6 +233,11 @@
 	import { getUrlParameter } from "./js/fetch.stream.js"
 	import { SoundMeter } from "./js/soundmeter.js"
 	import { generateRandomString, getWebSocketURL, errorHandler, updateBroadcastStatusInfo } from "./js/utility.js"
+	import "./js/loglevel.min.js";
+
+	const Logger = window.log;
+	
+	Logger.setLevel("debug");
 
 	/**
 	 * This page accepts 3 arguments through url parameter
@@ -261,6 +266,8 @@
 	var streamName = getUrlParameter("streamName");
 
 	var subscriberId = getUrlParameter("subscriberId");
+	var subscriberName = getUrlParameter("subscriberName");
+
 	var subscriberCode = getUrlParameter("subscriberCode");
 
 	var volume_change_input = document.getElementById("volume_change_input");
@@ -521,7 +528,14 @@
 		if (!playOnly) {
 			publish(publishStreamId, token);
 		}
-		webRTCAdaptor.play(roomNameBox.value, token, roomNameBox.value, [], subscriberId, subscriberCode, null, role);
+
+
+		webRTCAdaptor.play({"streamId":roomNameBox.value, 
+							"token":token, 
+							 "subscriberId":subscriberId, 
+							 "subscriberCode": subscriberCode,
+							 "role": role,
+							 "subscriberName": subscriberName,});
 	}
 
 	function leaveRoom() {
