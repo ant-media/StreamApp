@@ -144,7 +144,6 @@ describe("MediaManager", function () {
       }
     });
 
-
     await adaptor.mediaManager.initLocalStream();
 
     expect(adaptor.mediaManager.localStream.getAudioTracks().length).to.be.equal(1);
@@ -159,6 +158,28 @@ describe("MediaManager", function () {
     expect(adaptor.mediaManager.blackVideoTrack).to.be.null;
     expect(adaptor.mediaManager.blackFrameTimer).to.be.null;
 
+  });
+
+  it("turnOnOffLocalCameraInScreenPlusCamera", async function () {
+
+    var adaptor = new WebRTCAdaptor({
+      websocketURL: "ws://example.com",
+      initializeComponents: false,
+      mediaConstraints: {
+        video: true,
+        audio: true
+      }
+    });
+
+    adaptor.mediaManager.publishMode = "screen+camera";
+
+    expect(adaptor.mediaManager.cameraEnabled).to.be.equal(true);
+
+    await adaptor.mediaManager.turnOffLocalCamera();
+    expect(adaptor.mediaManager.cameraEnabled).to.be.equal(false);
+
+    await adaptor.turnOnLocalCamera();
+    expect(adaptor.mediaManager.cameraEnabled).to.be.equal(true);
   });
 
   it("testOnEndedCallback", function (done) {
