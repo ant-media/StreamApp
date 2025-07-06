@@ -28,6 +28,7 @@
 			<comments>A business-friendly OSS license</comments>
 		</license>
 	</licenses>
+	
 	<repositories>
         <repository>
             <snapshots>
@@ -37,27 +38,9 @@
             <name>Central Repository</name>
             <url>https://repo.maven.apache.org/maven2</url>
         </repository>
-        <repository>
-            <id>sonatype-snapshots</id>
-            <name>Sonatype Snapshots</name>
-            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-        </repository>
-        <repository>
-            <id>sonatype-releases</id>
-            <name>Sonatype Releases</name>
-            <url>https://oss.sonatype.org/content/repositories/releases</url>
-        </repository>
     </repositories>
-	<distributionManagement>
-		<snapshotRepository>
-			<id>ossrh</id>
-			<url>https://oss.sonatype.org/content/repositories/snapshots</url>
-		</snapshotRepository>
-		<repository>
-			<id>ossrh</id>
-			<url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-		</repository>
-	</distributionManagement>
+	
+
 	<build>
 		<finalName>StreamApp</finalName>
 		<testSourceDirectory>src/test/java</testSourceDirectory>
@@ -66,7 +49,7 @@
 			<plugin>
 	          <groupId>org.sonatype.central</groupId>
 	          <artifactId>central-publishing-maven-plugin</artifactId>
-	          <version>0.8.0</version>
+	          <version>${central-publishing-maven-plugin.version}</version>
 	          <extensions>true</extensions>
 	          <configuration>
 	            <publishingServerId>central</publishingServerId>
