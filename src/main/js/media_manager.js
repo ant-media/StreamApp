@@ -442,6 +442,7 @@ export class MediaManager {
     prepareStreamTracks(mediaConstraints, audioConstraint, stream, streamId) {
         //this trick, getting audio and video separately, make us add or remove tracks on the fly
 		
+		//if audio stream is silent, no need to change it
 		if (mediaConstraints.audio == "dummy")
 		{
 			return this.gotStream(stream);
@@ -546,6 +547,7 @@ export class MediaManager {
      */
     navigatorUserMedia(mediaConstraints, func, catch_error) {
 		if (mediaConstraints.video == "dummy" && mediaConstraints.audio == "dummy") {
+			//if we will have black frame as video and silence as audio, lets add them and return. Can't get user media.
 			var stream = new MediaStream();
 	
 			stream.addTrack(this.getSilentAudioTrack());
@@ -557,6 +559,7 @@ export class MediaManager {
 		}
 		else
 		{
+			//We need to replace "dummy" with false before getting user media.
 			var tempMediaConstraints = {video: mediaConstraints.video, audio: mediaConstraints.audio};
 			
 			if (mediaConstraints.audio == "dummy")
@@ -571,11 +574,15 @@ export class MediaManager {
 						
 	
 			return navigator.mediaDevices.getUserMedia(tempMediaConstraints).then((stream) => {
+				//if silence is desired as audio, add it to stream. 
+				//Stream shouldn't have audio because audio is set to false in tempMediaConstraints above.   
 				if (mediaConstraints.audio == "dummy")
 				{
 					stream.addTrack(this.getSilentAudioTrack());
 				}
 	
+				//if black frame is desired as video, add it to stream. 
+				//Stream shouldn't have video because video is set to false in tempMediaConstraints above.   				
 				if (mediaConstraints.video == "dummy")
 				{
 					stream.addTrack(this.getBlackVideoTrack());
@@ -594,13 +601,12 @@ export class MediaManager {
 	                }
 	            } else {
 	                Logger.warn(error);
-	
+
 	            }
 	            //throw error if there is a promise
 	            throw error;
 	        });
-		}
-        
+        }
     }
 
     /**
@@ -1434,7 +1440,9 @@ export class MediaManager {
 
         this.stopBlackVideoTrack();
 		
-		var tempMediaConstraints = {video: true, audio: this.mediaConstraints.audio};
+		//make video true if it is "dummy"
+		var tempMediaConstraints = {video: this.mediaConstraints.video == "dummy" ? true : this.mediaConstraints.video, 
+			audio: this.mediaConstraints.audio};
 
 
         if (this.localStream == null) {
@@ -1480,7 +1488,9 @@ export class MediaManager {
 		this.isMuted = false;
 
 		if (this.mediaConstraints.audio == "dummy") {
-			var tempMediaConstraints = {video: this.mediaConstraints.video, audio: true};
+			//make audio true if it is "dummy"
+			var tempMediaConstraints = {video: this.mediaConstraints.video, 
+					audio: this.mediaConstraints.audio == "dummy" ? true : this.mediaConstraints.audio};
             return this.navigatorUserMedia(tempMediaConstraints, stream => {
 				this.updateAudioTrack(stream, this.publishStreamId, null);
             }, false);
