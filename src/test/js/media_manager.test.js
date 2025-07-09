@@ -254,6 +254,32 @@ describe("MediaManager", function () {
     adaptor.mediaManager.localStream.getAudioTracks().forEach(track => expect(track.enabled).to.be.equal(true));
 
   });
+  
+  it("unmute while silent", async function () {
+      var videoElement = document.createElement("video");
+
+      var adaptor = new WebRTCAdaptor({
+        websocketURL: "ws://example.com",
+        localVideoElement: videoElement,
+        initializeComponents: false,
+        mediaConstraints: {
+          video: true,
+          audio: "dummy"
+        }
+      });
+
+      await adaptor.mediaManager.initLocalStream();
+	  
+	  var silentTrack = adaptor.mediaManager.localStream.getAudioTracks();
+
+      adaptor.unmuteLocalMic();
+	  
+	  var micTrack = adaptor.mediaManager.localStream.getAudioTracks();
+
+      expect(silentTrack).not.to.be.equal(micTrack);
+
+  });
+	
   it("enableSecondStreamInMixedAudio", async function () {
     var videoElement = document.createElement("video");
 
