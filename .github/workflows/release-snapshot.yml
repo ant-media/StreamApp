@@ -22,7 +22,7 @@ jobs:
       - run: npm install --include=dev
       - run: npm test
       - run: npm run compile
-      - run: echo "LATEST_SNAPSHOT_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" >> $GITHUB_ENV
+      - run: echo "LATEST_SNAPSHOT_VERSION=3.0.0-SNAPSHOT" >> $GITHUB_ENV
         env:
           NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
       - run: npm version ${{ env.LATEST_SNAPSHOT_VERSION }}"-`date +"%Y-%b-%d-%I-%M"`"  --no-git-tag-version
