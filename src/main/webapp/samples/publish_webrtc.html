@@ -206,6 +206,8 @@
 	var streamName = getUrlParameter("streamName");
 	var mainTrack = getUrlParameter("mainTrack");
 	var playType = getUrlParameter("play");
+	var metaData = getUrlParameter("metaData");
+
 	var playTitle;
 	if (playType == "hls") {
 		playTitle = "HLS";
@@ -389,7 +391,7 @@
 		setBitrateValue();
 		webRTCAdaptor.bandwidth = maxVideoBitrateKbps;
 		streamId = streamIdBox.value;
-		webRTCAdaptor.publish(streamId, token, subscriberId, subscriberCode, streamName, mainTrack);
+		webRTCAdaptor.publish(streamId, token, subscriberId, subscriberCode, streamName, mainTrack, metaData);
 	}
 
 	function stopPublishing() {

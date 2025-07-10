@@ -191,6 +191,7 @@
 
 	var subscriberId = getUrlParameter("subscriberId");
 	var subscriberCode = getUrlParameter("subscriberCode");
+	var metaData = getUrlParameter("metaData");
 
 	var start_play_button = document.getElementById("start_play_button");
 	start_play_button.addEventListener("click", startPlaying, false)
@@ -304,7 +305,7 @@
 
 	function startPlaying() {
 		streamId = streamNameBox.value;
-		webRTCAdaptor.play(streamNameBox.value, token, "", [], subscriberId, subscriberCode);
+		webRTCAdaptor.play(streamNameBox.value, token, "", [], subscriberId, subscriberCode, metaData);
 	}
 
 	function stopPlaying() {
