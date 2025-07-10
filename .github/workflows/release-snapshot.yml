@@ -2,7 +2,7 @@ name: publish sdk snapshot  to npmjs
 on:
   push:
     branches:
-      - master
+      - custom/npmUpload
 jobs:
   publish-npmjs:
     runs-on: ubuntu-latest
