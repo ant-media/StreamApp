@@ -442,6 +442,13 @@ export class MediaManager {
     prepareStreamTracks(mediaConstraints, audioConstraint, stream, streamId) {
         //this trick, getting audio and video separately, make us add or remove tracks on the fly
 		
+		//if audio stream is silent, no need to change it
+		if (mediaConstraints.audio == "dummy")
+		{
+			return this.gotStream(stream);
+		}
+
+		
         var audioTracks = stream.getAudioTracks()
         if (audioTracks.length > 0 && this.publishMode == "camera") {
             audioTracks[0].stop();
@@ -539,28 +546,48 @@ export class MediaManager {
      * @param {*} catch_error : error is checked if catch_error is true
      */
     navigatorUserMedia(mediaConstraints, func, catch_error) {
-
-		if (mediaConstraints.video == "dummy" || mediaConstraints.audio == "dummy") {
+		if (mediaConstraints.video == "dummy" && mediaConstraints.audio == "dummy") {
+			//if we will have black frame as video and silence as audio, lets add them and return. Can't get user media.
 			var stream = new MediaStream();
-
-			if (mediaConstraints.audio == "dummy")
-			{
-				stream.addTrack(this.getSilentAudioTrack());
-			}
-
-			if (mediaConstraints.video == "dummy")
-			{
-				stream.addTrack(this.getBlackVideoTrack());
-			}
-
+	
+			stream.addTrack(this.getSilentAudioTrack());
+			stream.addTrack(this.getBlackVideoTrack());
+	
 			return new Promise((resolve, reject) => {
-            	resolve(stream);
-        	})
+	        	resolve(stream);
+	    	})
 		}
 		else
 		{
-
-			return navigator.mediaDevices.getUserMedia(mediaConstraints).then((stream) => {
+			//We need to replace "dummy" with false before getting user media.
+			var tempMediaConstraints = {video: mediaConstraints.video, audio: mediaConstraints.audio};
+			
+			if (mediaConstraints.audio == "dummy")
+			{
+				tempMediaConstraints.audio = false;
+			}
+	
+			if (mediaConstraints.video == "dummy")
+			{
+				tempMediaConstraints.video = false;
+			}
+						
+	
+			return navigator.mediaDevices.getUserMedia(tempMediaConstraints).then((stream) => {
+				//if silence is desired as audio, add it to stream. 
+				//Stream shouldn't have audio because audio is set to false in tempMediaConstraints above.   
+				if (mediaConstraints.audio == "dummy")
+				{
+					stream.addTrack(this.getSilentAudioTrack());
+				}
+	
+				//if black frame is desired as video, add it to stream. 
+				//Stream shouldn't have video because video is set to false in tempMediaConstraints above.   				
+				if (mediaConstraints.video == "dummy")
+				{
+					stream.addTrack(this.getBlackVideoTrack());
+				}
+				
 	            if (typeof func != "undefined" || func != null) {
 	                func(stream);
 	            }
@@ -1006,11 +1033,13 @@ export class MediaManager {
             }
         }
 
-        if (this.isMuted) {
-            this.muteLocalMic();
-        } else {
-            this.unmuteLocalMic();
-        }
+		if (this.mediaConstraints.audio != "dummy") {
+			if (this.isMuted) {
+	            this.muteLocalMic();
+	        } else {
+	            this.unmuteLocalMic();
+	        }
+		}
 
         if (this.localStreamSoundMeter != null) {
             this.enableAudioLevelForLocalStream(this.levelCallback)
@@ -1303,16 +1332,35 @@ export class MediaManager {
 
     /**
      * Silent audio track
-	 */
-    getSilentAudioTrack()
-    {
+	 */	
+	getSilentAudioTrack() {
+		if (!this.audioContext) {
+			this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+		}
+
+		// Stop previous track if exists
 		this.stopSilentAudioTrack();
+
+		// Create oscillator
 		this.oscillator = this.audioContext.createOscillator();
-  		let dst = this.oscillator.connect(this.audioContext.createMediaStreamDestination());
-  		this.oscillator.start();
-  		this.silentAudioTrack = dst.stream.getAudioTracks()[0];
-  		return this.silentAudioTrack;
+		this.oscillator.frequency.value = 0; // technically optional
+
+		// Create gain node to mute
+		this.gainNode = this.audioContext.createGain();
+		this.gainNode.gain.value = 0;
+
+		// Connect oscillator -> gain -> destination
+		this.oscillator.connect(this.gainNode);
+		let dst = this.gainNode.connect(this.audioContext.createMediaStreamDestination());
+
+		// Start oscillator
+		this.oscillator.start();
+
+		// Return silent audio track
+		this.silentAudioTrack = dst.stream.getAudioTracks()[0];
+		return this.silentAudioTrack;
 	}
+
 
 
 	stopSilentAudioTrack() {
@@ -1391,16 +1439,20 @@ export class MediaManager {
         this.clearBlackVideoTrackTimer();
 
         this.stopBlackVideoTrack();
+		
+		//make video true if it is "dummy"
+		var tempMediaConstraints = {video: this.mediaConstraints.video == "dummy" ? true : this.mediaConstraints.video, 
+			audio: this.mediaConstraints.audio};
 
 
         if (this.localStream == null) {
-            return this.navigatorUserMedia(this.mediaConstraints, stream => {
+            return this.navigatorUserMedia(tempMediaConstraints, stream => {
                 this.gotStream(stream);
             }, false);
         }
         //This method will get the camera track and replace it with dummy track
         else {
-            return this.navigatorUserMedia(this.mediaConstraints, stream => {
+            return this.navigatorUserMedia(tempMediaConstraints, stream => {
                 let choosenId;
                 if (streamId != null || typeof streamId != "undefined") {
                     choosenId = streamId;
@@ -1433,7 +1485,17 @@ export class MediaManager {
      * if there is audio it calls callbackError with "AudioAlreadyActive" parameter
      */
     unmuteLocalMic() {
-        this.isMuted = false;
+		this.isMuted = false;
+
+		if (this.mediaConstraints.audio == "dummy") {
+			//make audio true if it is "dummy"
+			var tempMediaConstraints = {video: this.mediaConstraints.video, 
+					audio: this.mediaConstraints.audio == "dummy" ? true : this.mediaConstraints.audio};
+            return this.navigatorUserMedia(tempMediaConstraints, stream => {
+				this.updateAudioTrack(stream, this.publishStreamId, null);
+            }, false);
+        }
+		
         if (this.localStream != null) {
             this.localStream.getAudioTracks().forEach(track => track.enabled = true);
         } else {
