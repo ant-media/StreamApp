@@ -12,26 +12,22 @@ jobs:
     runs-on: ubuntu-22.04 # Ubuntu Jammy equivalent
     
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     
     - name: Set up JDK 17
-      uses: actions/setup-java@v3
+      uses: actions/setup-java@v4
       with:
         java-version: '17'
-        distribution: 'temurin' # AdoptOpenJDK's new name
+        distribution: 'adopt' # AdoptOpenJDK's new name
         cache: 'maven'
+        gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
         
     - name: Set up Node.js
-      uses: actions/setup-node@v3
+      uses: actions/setup-node@v4
       with:
         node-version: '16.20.2'
         cache: 'npm'
 
-        
-    - name: Import GPG key
-      run: |
-        echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --yes --import
-        gpg --list-keys
       
     - name: Clone and build parent project
       run: |
@@ -62,18 +58,14 @@ jobs:
     - name: Install Maven packages
       run: mvn install -DskipTests=true -Dmaven.javadoc.skip=true -Dgpg.skip=true -B -V --quiet
       
-    - name: Deploy Snapshot
-      run: mvn deploy -DskipTests --quiet --settings mvn-settings.xml
+    - name: Deploy 
+      run: |
+       export GPG_TTY=$(tty)
+       gpg --list-keys
+       mvn deploy -DskipTests --settings mvn-settings.xml
       env:
         # Add your Maven credentials as secrets
           CI_DEPLOY_USERNAME: ${{ secrets.CI_DEPLOY_USERNAME }}
           CI_DEPLOY_PASSWORD: ${{ secrets.CI_DEPLOY_PASSWORD }}
           GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
-        
-    - name: Deploy Release
-      if: startsWith(github.ref, 'refs/tags/ams-v')
-      run: mvn deploy -DskipTests --quiet --settings mvn-settings.xml
-      env:
-          CI_DEPLOY_USERNAME: ${{ secrets.CI_DEPLOY_USERNAME }}
-          CI_DEPLOY_PASSWORD: ${{ secrets.CI_DEPLOY_PASSWORD }}
-          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+      
