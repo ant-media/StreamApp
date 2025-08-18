@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>webrtc-sdk publish sample</title>
+    <style>
+      body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 16px; }
+      video { width: 100%; max-width: 520px; background: #000; height: 300px; }
+      .row { display: flex; gap: 16px; flex-wrap: wrap; }
+    </style>
+  </head>
+  <body>
+    <h2>Publish Sample (TS v2)</h2>
+    <div class="row">
+      <div>
+        <label>Local</label>
+        <video id="local" autoplay playsinline muted></video>
+      </div>
+    </div>
+    <div style="margin-top: 12px;">
+      <input id="streamId" placeholder="stream id" />
+      <input id="token" placeholder="token (optional)" />
+      <button id="start">Start</button>
+      <button id="stop" disabled>Stop</button>
+    </div>
+    <div style="margin-top: 12px;">
+      <label>Video Input:</label>
+      <select id="videoInput"></select>
+      <label>Audio Input:</label>
+      <select id="audioInput"></select>
+      <button id="refreshDevices">Refresh Devices</button>
+    </div>
+    <div style="margin-top:12px;">
+      <fieldset>
+        <legend>Controls</legend>
+        <button id="turnOffCam">Turn off Camera</button>
+        <button id="turnOnCam">Turn on Camera</button>
+      </fieldset>
+    </div>
+    <div style="margin-top:12px;">
+      <fieldset>
+        <legend>Data Channel</legend>
+        <input id="dcText" placeholder="message" />
+        <button id="sendText" disabled>Send Text</button>
+        <button id="sendBin" disabled>Send 128KB Binary</button>
+      </fieldset>
+    </div>
+    <div style="margin-top:12px;">
+      <fieldset>
+        <legend>Screen Share</legend>
+        <button id="startShare">Start Share</button>
+        <button id="stopShare" disabled>Stop Share</button>
+      </fieldset>
+    </div>
+    <div style="margin-top:12px;">
+      <fieldset>
+        <legend>Stats</legend>
+        <button id="enableStats">Enable Stats</button>
+        <div id="stats"></div>
+      </fieldset>
+    </div>
+    <pre id="log"></pre>
+
+    <script type="module">
+      import { WebRTCAdaptor, getWebSocketURL, generateRandomString } from './js/index.js';
+
+      const local = document.getElementById('local');
+      const streamIdEl = document.getElementById('streamId');
+      const tokenEl = document.getElementById('token');
+      const startBtn = document.getElementById('start');
+      const stopBtn = document.getElementById('stop');
+      const videoSel = document.getElementById('videoInput');
+      const audioSel = document.getElementById('audioInput');
+      const refreshBtn = document.getElementById('refreshDevices');
+      const logEl = document.getElementById('log');
+      const dcText = document.getElementById('dcText');
+      const sendTextBtn = document.getElementById('sendText');
+      const sendBinBtn = document.getElementById('sendBin');
+      const statsEl = document.getElementById('stats');
+      const enableStatsBtn = document.getElementById('enableStats');
+      const startShareBtn = document.getElementById('startShare');
+      const stopShareBtn = document.getElementById('stopShare');
+      const turnOffCamBtn = document.getElementById('turnOffCam');
+      const turnOnCamBtn = document.getElementById('turnOnCam');
+
+      function log(msg) {
+        logEl.textContent += msg + '\n';
+      }
+
+      // derive ws URL similar to legacy utility
+      const websocketURL = getWebSocketURL(window.location);
+
+      const adaptor = new WebRTCAdaptor({
+        websocketURL,
+        httpEndpointUrl: '',
+        localVideo: local,
+        isPlayMode: false,
+        mediaConstraints: { video: true, audio: true },
+      });
+
+      adaptor.on('initialized', () => log('initialized'));
+      adaptor.on('publish_started', (o) => { log('publish_started ' + o.streamId); stopBtn.disabled = false; });
+      adaptor.on('publish_finished', (o) => { log('publish_finished ' + o.streamId); stopBtn.disabled = true; });
+      adaptor.on('ice_connection_state_changed', ({ state }) => log('ice: ' + state));
+      adaptor.on('devices_updated', (g) => {
+        videoSel.innerHTML = g.videoInputs.map(d => `<option value="${d.deviceId}">${d.label}</option>`).join('');
+        audioSel.innerHTML = g.audioInputs.map(d => `<option value="${d.deviceId}">${d.label}</option>`).join('');
+        if (g.selectedVideoInputId) videoSel.value = g.selectedVideoInputId;
+        if (g.selectedAudioInputId) audioSel.value = g.selectedAudioInputId;
+      });
+      refreshBtn.onclick = async () => { await adaptor.listDevices(); };
+      adaptor.on('data_channel_opened', () => { log('data channel opened'); sendTextBtn.disabled = false; sendBinBtn.disabled = false; });
+      adaptor.on('data_channel_closed', () => { log('data channel closed'); sendTextBtn.disabled = true; sendBinBtn.disabled = true; });
+      adaptor.on('data_received', ({ data }) => {
+        if (typeof data === 'string') log('dc <- ' + data);
+        else log('dc <- binary ' + (data.byteLength || 0) + ' bytes');
+      });
+      adaptor.on('updated_stats', (ps) => {
+        statsEl.textContent = `bytesSent=${ps.totalBytesSent} bytesRecv=${ps.totalBytesReceived}`;
+      });
+      adaptor.on('error', (e) => log('error: ' + e.error));
+
+      let currentId = '';
+      startBtn.onclick = async () => {
+        const id = streamIdEl.value || 'stream_' + generateRandomString(6);
+        try {
+          await adaptor.ready();
+          await adaptor.join({ role: 'publisher', streamId: id, token: tokenEl.value.trim() || undefined, timeoutMs: 20000 });
+          currentId = id;
+          startShareBtn.disabled = false;
+        } catch (e) {
+          log('join failed: ' + e.message);
+        }
+      };
+
+      stopBtn.onclick = () => { if (currentId) adaptor.stop(currentId); };
+
+      videoSel.onchange = async () => {
+        await adaptor.selectVideoInput(videoSel.value);
+      };
+      audioSel.onchange = async () => {
+        await adaptor.selectAudioInput(audioSel.value);
+      };
+
+      sendTextBtn.onclick = async () => {
+        if (!currentId) return;
+        try {
+          await adaptor.sendData(currentId, dcText.value || 'hello');
+          log('dc -> ' + (dcText.value || 'hello'));
+        } catch (e) { log('send failed: ' + e.message); }
+      };
+      sendBinBtn.onclick = async () => {
+        if (!currentId) return;
+        try {
+          const size = 128 * 1024;
+          const buf = new Uint8Array(size);
+          for (let i=0;i<size;i++) buf[i] = i % 251;
+          await adaptor.sendData(currentId, buf.buffer);
+          log('dc -> binary 131072 bytes');
+        } catch (e) { log('send failed: ' + e.message); }
+      };
+      enableStatsBtn.onclick = () => { if (currentId) adaptor.enableStats(currentId, 2000); };
+
+      startShareBtn.onclick = async () => {
+        try {
+          await adaptor.startScreenShare();
+          startShareBtn.disabled = true;
+          stopShareBtn.disabled = false;
+          log('screen share started');
+        } catch (e) { log('start share failed: ' + e.message); }
+      };
+      stopShareBtn.onclick = async () => {
+        try {
+          await adaptor.stopScreenShare();
+          startShareBtn.disabled = false;
+          stopShareBtn.disabled = true;
+          log('screen share stopped');
+        } catch (e) { log('stop share failed: ' + e.message); }
+      };
+
+      turnOffCamBtn.onclick = () => {
+        adaptor.turnOffLocalCamera();
+        log('camera turned off');
+      };
+      turnOnCamBtn.onclick = () => {
+        adaptor.turnOnLocalCamera();
+        log('camera turned on');
+      };
+    </script>
+  </body>
+</html>

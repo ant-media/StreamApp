@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>webrtc-sdk play sample</title>
+    <style>
+      body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 16px; }
+      video { width: 100%; max-width: 720px; background: #000; height: 400px; }
+    </style>
+  </head>
+  <body>
+    <h2>Play Sample (TS v2)</h2>
+    <div>
+      <label>Remote</label>
+      <video id="remote" autoplay playsinline controls></video>
+    </div>
+    <div style="margin-top: 12px;">
+      <input id="streamId" placeholder="stream id" />
+      <input id="token" placeholder="token (optional)" />
+      <button id="start">Start</button>
+      <button id="stop" disabled>Stop</button>
+    </div>
+    <div style="margin-top:12px;">
+      <fieldset>
+        <legend>Audio Output</legend>
+        <select id="audioOutput"></select>
+        <button id="refreshDevices">Refresh Devices</button>
+      </fieldset>
+    </div>
+    <div style="margin-top:12px;">
+      <fieldset>
+        <legend>Data Channel</legend>
+        <input id="dcText" placeholder="message" />
+        <button id="sendText" disabled>Send Text</button>
+        <input type="file" id="sendFile" />
+        <button id="sendFileBtn" disabled>Send File</button>
+      </fieldset>
+    </div>
+    <div style="margin-top:12px;">
+      <fieldset>
+        <legend>Stats</legend>
+        <button id="enableStats">Enable Stats</button>
+        <div id="stats"></div>
+      </fieldset>
+    </div>
+    <pre id="log"></pre>
+
+    <script type="module">
+      import { WebRTCAdaptor, getWebSocketURL } from './js/index.js';
+
+      const remote = document.getElementById('remote');
+      const streamIdEl = document.getElementById('streamId');
+      const tokenEl = document.getElementById('token');
+      const startBtn = document.getElementById('start');
+      const stopBtn = document.getElementById('stop');
+      const logEl = document.getElementById('log');
+      const dcText = document.getElementById('dcText');
+      const sendTextBtn = document.getElementById('sendText');
+      const sendFileInput = document.getElementById('sendFile');
+      const sendFileBtn = document.getElementById('sendFileBtn');
+      const statsEl = document.getElementById('stats');
+      const enableStatsBtn = document.getElementById('enableStats');
+      const audioOutSel = document.getElementById('audioOutput');
+      const refreshBtn = document.getElementById('refreshDevices');
+
+      function log(msg) { logEl.textContent += msg + '\n'; }
+
+      const websocketURL = getWebSocketURL(window.location);
+
+      const adaptor = new WebRTCAdaptor({
+        websocketURL,
+        remoteVideo: remote,
+        isPlayMode: true,
+      });
+
+      adaptor.on('initialized', () => log('initialized'));
+      adaptor.on('play_started', (o) => { log('play_started ' + o.streamId); stopBtn.disabled = false; });
+      adaptor.on('play_finished', (o) => { log('play_finished ' + o.streamId); stopBtn.disabled = true; });
+      adaptor.on('newTrackAvailable', ({ streamId }) => log('new track for ' + streamId));
+      adaptor.on('ice_connection_state_changed', ({ state }) => log('ice: ' + state));
+      adaptor.on('error', (e) => log('error: ' + e.error));
+      adaptor.on('data_channel_opened', () => { log('data channel opened'); sendTextBtn.disabled = false; });
+      adaptor.on('data_channel_closed', () => { log('data channel closed'); sendTextBtn.disabled = true; });
+      adaptor.on('data_received', ({ data }) => {
+        if (typeof data === 'string') log('dc <- ' + data);
+        else log('dc <- binary ' + (data.byteLength || 0) + ' bytes');
+      });
+      adaptor.on('updated_stats', (ps) => {
+        statsEl.textContent = `bytesSent=${ps.totalBytesSent} bytesRecv=${ps.totalBytesReceived}`;
+      });
+
+      async function refreshDevices() {
+        try {
+          const g = await adaptor.listDevices();
+          audioOutSel.innerHTML = g.audioOutputs.map(d => `<option value="${d.deviceId}">${d.label}</option>`).join('');
+        } catch {}
+      }
+      refreshBtn.onclick = refreshDevices;
+      // initial best-effort (may be empty without permission)
+      refreshDevices();
+
+      let currentId = '';
+      startBtn.onclick = async () => {
+        const id = streamIdEl.value.trim();
+        if (!id) { log('enter stream id'); return; }
+        try {
+          await adaptor.ready();
+          await adaptor.join({ role: 'viewer', streamId: id, token: tokenEl.value.trim() || undefined, timeoutMs: 20000 });
+          currentId = id;
+        } catch (e) {
+          log('join failed: ' + e.message);
+        }
+      };
+
+      stopBtn.onclick = () => { if (currentId) { adaptor.stop(currentId); stopBtn.disabled = true; } };
+
+      sendTextBtn.onclick = async () => {
+        if (!currentId) return;
+        try {
+          await adaptor.sendData(currentId, dcText.value || 'hello from viewer');
+          log('dc -> ' + (dcText.value || 'hello from viewer'));
+        } catch (e) { log('send failed: ' + e.message); }
+      };
+      sendFileBtn.onclick = async () => {
+        if (!currentId) return;
+        const f = sendFileInput.files && sendFileInput.files[0];
+        if (!f) return;
+        const ab = await f.arrayBuffer();
+        await adaptor.sendData(currentId, ab);
+        log('dc -> file ' + f.name + ' (' + ab.byteLength + ' bytes)');
+      };
+      enableStatsBtn.onclick = () => { if (currentId) adaptor.enableStats(currentId, 2000); };
+
+      audioOutSel.onchange = async () => {
+        const sinkId = audioOutSel.value;
+        if (typeof remote.sinkId !== 'undefined' && remote.setSinkId) {
+          try { await remote.setSinkId(sinkId); log('Audio output -> ' + sinkId); } catch { log('setSinkId failed'); }
+        } else {
+          log('setSinkId not supported in this browser');
+        }
+      };
+    </script>
+  </body>
+</html>
