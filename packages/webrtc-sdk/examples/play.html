@@ -47,7 +47,7 @@
     <pre id="log"></pre>
 
     <script type="module">
-      import { WebRTCAdaptor, getWebSocketURL } from './js/index.js';
+      import { WebRTCClient, getWebSocketURL } from './js/index.js';
 
       const remote = document.getElementById('remote');
       const streamIdEl = document.getElementById('streamId');
@@ -68,7 +68,7 @@
 
       const websocketURL = getWebSocketURL(window.location);
 
-      const adaptor = new WebRTCAdaptor({
+      const adaptor = new WebRTCClient({
         websocketURL,
         remoteVideo: remote,
         isPlayMode: true,

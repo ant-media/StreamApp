@@ -51,7 +51,7 @@
     <pre id="log"></pre>
 
     <script type="module">
-      import { WebRTCAdaptor, getWebSocketURL, generateRandomString } from './js/index.js';
+      import { WebRTCClient, getWebSocketURL, generateRandomString } from './js/index.js';
 
       const roomIdEl = document.getElementById('roomId');
       const streamIdEl = document.getElementById('streamId');
@@ -75,7 +75,7 @@
       const local = document.getElementById('local');
 
       const websocketURL = getWebSocketURL(window.location);
-      const adaptor = new WebRTCAdaptor({ websocketURL, mediaConstraints: { audio: true, video: true }, localVideo: local });
+      const adaptor = new WebRTCClient({ websocketURL, mediaConstraints: { audio: true, video: true }, localVideo: local });
 
       function log(msg) { logEl.textContent += msg + '\n'; }
 

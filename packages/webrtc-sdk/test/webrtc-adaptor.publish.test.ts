@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { WebRTCAdaptor } from '../src/core/webrtc-adaptor.js';
+import { WebRTCClient } from '../src/core/webrtc-client.js';
 
 // Provide MediaStream in Node if missing
 if (typeof (global as any).MediaStream === 'undefined') {
@@ -42,10 +42,10 @@ class MockPC {
 
 // Mock WebSocketAdaptor inside instance by monkey patching send
 
-describe('WebRTCAdaptor publish flow', () => {
+describe('WebRTCClient publish flow', () => {
   it('sends publish then takeConfiguration after start', async () => {
     const sent: any[] = [];
-    const adaptor = new WebRTCAdaptor({ websocketURL: 'wss://x', isPlayMode: false, mediaConstraints: { video: false, audio: false } });
+    const adaptor = new WebRTCClient({ websocketURL: 'wss://x', isPlayMode: false, mediaConstraints: { video: false, audio: false } });
     // @ts-ignore access private
     adaptor['ws'] = { send: (t: string) => sent.push(JSON.parse(t)) } as any;
 

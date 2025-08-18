@@ -21,10 +21,23 @@ interface PeerContext {
 }
 
 /**
- * Ant Media Server WebRTC client SDK (v2). Orchestrates media, signaling, peer connections,
- * and provides a promise-based API with typed events.
+ * Ant Media Server WebRTC client SDK (v2).
+ *
+ * This class is the primary entry point you should use in applications. It
+ * orchestrates local media (via {@link MediaManager}), signaling (via
+ * {@link WebSocketAdaptor}), and peer connections, and exposes a modern,
+ * promise-based API with typed events.
+ *
+ * Guidance:
+ * - Prefer using the methods on {@link WebRTCClient} (publish, play, join,
+ *   listDevices, selectVideoInput, startScreenShare, sendData, getStats, …).
+ * - The lower-level classes {@link WebSocketAdaptor} and {@link MediaManager}
+ *   are composed internally. Use them directly only for advanced
+ *   customizations (e.g., custom signaling transport, bespoke media capture
+ *   flows). For most apps, you should never need to instantiate or call them
+ *   yourself.
  */
-export class WebRTCAdaptor extends Emitter<EventMap> {
+export class WebRTCClient extends Emitter<EventMap> {
   private ws?: WebSocketAdaptor;
   private media: MediaManager;
   private isReady = false;
@@ -90,6 +103,7 @@ export class WebRTCAdaptor extends Emitter<EventMap> {
 
     if (info === "start") {
       const { streamId } = obj as unknown as { streamId: string };
+
       this.log.debug("start received for %s", streamId);
       void this.startPublishing(streamId);
     } else if (info === "takeConfiguration") {
@@ -98,9 +112,11 @@ export class WebRTCAdaptor extends Emitter<EventMap> {
         sdp: string;
         type: RTCSdpType;
       };
+
       this.log.debug("takeConfiguration %s %s", streamId, type);
       if (type === "answer") {
         const ctx = this.peers.get(streamId);
+
         if (ctx) {
           ctx.pc.setRemoteDescription(new RTCSessionDescription({ type, sdp })).then(() => {
             this.remoteDescriptionSet.set(streamId, true);
@@ -131,9 +147,11 @@ export class WebRTCAdaptor extends Emitter<EventMap> {
         label: number | null;
         candidate: string;
       };
+
       this.log.debug("takeCandidate %s", streamId);
       const ice: RTCIceCandidateInit = { sdpMLineIndex: label ?? undefined, candidate };
       const ctx = this.peers.get(streamId);
+
       if (ctx) {
         if (this.remoteDescriptionSet.get(streamId)) {
           ctx.pc
@@ -241,14 +259,17 @@ export class WebRTCAdaptor extends Emitter<EventMap> {
       this.emit("ice_connection_state_changed", { state: pc.iceConnectionState, streamId });
       // Reconnect strategy similar to v1
       if (!this.autoReconnect) return;
+
       if (!this.activeStreams.has(streamId)) return;
       const state = pc.iceConnectionState;
+
       if (state === "failed" || state === "closed") {
         this.reconnectIfRequired(streamId, 0, false);
       } else if (state === "disconnected") {
         this.reconnectIfRequired(streamId, 3000, false);
       }
     };
+
     pc.ontrack = (event: RTCTrackEvent) => {
       this.log.debug("ontrack %s", streamId);
       const stream = event.streams[0];
@@ -257,6 +278,7 @@ export class WebRTCAdaptor extends Emitter<EventMap> {
       }
       this.emit("newTrackAvailable", { stream, track: event.track, streamId });
     };
+
     this.peers.set(streamId, { pc });
     return pc;
   }
@@ -294,11 +316,13 @@ export class WebRTCAdaptor extends Emitter<EventMap> {
           this.rxChunks.set(token, { expected: total, received: 0, buffers: [] });
           return;
         }
+
         if (u8.byteLength >= 4) {
           const view = new DataView(u8.buffer, u8.byteOffset, u8.byteLength);
           const token = view.getInt32(0, true);
           const dataPart = u8.subarray(4);
           const st = this.rxChunks.get(token);
+
           if (!st) {
             // Not a chunked transfer we know; pass through
             this.emit("data_received", {
@@ -309,6 +333,7 @@ export class WebRTCAdaptor extends Emitter<EventMap> {
           }
           st.buffers.push(dataPart);
           st.received += dataPart.byteLength;
+
           if (st.received >= st.expected) {
             const full = new Uint8Array(st.expected);
             let offset = 0;
@@ -361,10 +386,13 @@ export class WebRTCAdaptor extends Emitter<EventMap> {
   private async startPublishing(streamId: string): Promise<void> {
     const pc = this.peers.get(streamId)?.pc ?? this.createPeer(streamId);
     const stream = this.media.getLocalStream();
+
     if (!stream) throw new Error("no_local_stream");
+
     if (pc.getSenders().length === 0) {
       for (const track of stream.getTracks()) pc.addTrack(track, stream);
     }
+
     // create data channel in publish mode like v1
     try {
       const dc = pc.createDataChannel
@@ -395,7 +423,7 @@ export class WebRTCAdaptor extends Emitter<EventMap> {
    *
    * Example:
    * ```ts
-   * const sdk = new WebRTCAdaptor({ websocketURL, mediaConstraints: { audio: true, video: true } });
+   * const sdk = new WebRTCClient({ websocketURL, mediaConstraints: { audio: true, video: true } });
    * await sdk.ready();
    * await sdk.publish('stream1', 'OPTIONAL_TOKEN');
    * sdk.on('publish_started', ({ streamId }) => console.log('publishing', streamId));
@@ -429,7 +457,7 @@ export class WebRTCAdaptor extends Emitter<EventMap> {
    *
    * Example:
    * ```ts
-   * const sdk = new WebRTCAdaptor({ websocketURL, isPlayMode: true, remoteVideo });
+   * const sdk = new WebRTCClient({ websocketURL, isPlayMode: true, remoteVideo });
    * await sdk.ready();
    * await sdk.play('stream1');
    * sdk.on('play_started', ({ streamId }) => console.log('playing', streamId));
@@ -478,10 +506,13 @@ export class WebRTCAdaptor extends Emitter<EventMap> {
    */
   async playSelective(opts: PlaySelectiveOptions): Promise<void> {
     await this.ready();
+
     this.log.info("playSelective %s", opts.streamId);
     this.activeStreams.set(opts.streamId, { mode: "play", token: opts.token });
+
     const pc = this.createPeer(opts.streamId);
     pc.ondatachannel = ev => this.setupDataChannel(opts.streamId, ev.channel);
+
     if (this.ws) {
       const jsCmd = {
         command: "play",
@@ -530,12 +561,12 @@ export class WebRTCAdaptor extends Emitter<EventMap> {
    * Examples:
    * ```ts
    * // Publish
-   * const sdk = new WebRTCAdaptor({ websocketURL, mediaConstraints: { audio: true, video: true } });
+   * const sdk = new WebRTCClient({ websocketURL, mediaConstraints: { audio: true, video: true } });
    * await sdk.ready();
    * await sdk.join({ role: 'publisher', streamId: 's1', token: 'OPTIONAL' });
    *
    * // Play
-   * const viewer = new WebRTCAdaptor({ websocketURL, isPlayMode: true, remoteVideo });
+   * const viewer = new WebRTCClient({ websocketURL, isPlayMode: true, remoteVideo });
    * await viewer.ready();
    * await viewer.join({ role: 'viewer', streamId: 's1' });
    * ```

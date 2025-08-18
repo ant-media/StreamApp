@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { WebRTCAdaptor } from '../src/core/webrtc-adaptor.js';
+import { WebRTCClient } from '../src/core/webrtc-client.js';
 
 class MockPC {
   localDescription: any;
@@ -26,7 +26,7 @@ class MockPC {
 describe('candidate queueing', () => {
   it('queues until remote description set then flushes', async () => {
     const sent: any[] = [];
-    const adaptor = new WebRTCAdaptor({ websocketURL: 'wss://x', isPlayMode: true });
+    const adaptor = new WebRTCClient({ websocketURL: 'wss://x', isPlayMode: true });
     // @ts-ignore
     adaptor['ws'] = { send: (t: string) => sent.push(JSON.parse(t)) } as any;
     // @ts-ignore

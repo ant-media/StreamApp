@@ -6,7 +6,7 @@
 export type Role = "publisher" | "viewer";
 
 /**
- * Options to configure {@link WebRTCAdaptor}.
+ * Options to configure {@link WebRTCClient}.
  */
 export interface WebRTCAdaptorOptions {
   /** WebSocket signaling URL (e.g. wss://host:5443/App/websocket) */
@@ -28,7 +28,7 @@ export interface WebRTCAdaptorOptions {
 }
 
 /**
- * Options for the one-liner {@link WebRTCAdaptor.join} flow.
+ * Options for the one-liner {@link WebRTCClient.join} flow.
  */
 export interface JoinOptions {
   /** Whether to publish or view a stream */
@@ -53,7 +53,7 @@ export interface JoinOptions {
 }
 
 /**
- * Result returned by {@link WebRTCAdaptor.join} when connection is established.
+ * Result returned by {@link WebRTCClient.join} when connection is established.
  */
 export interface JoinResult {
   /** Stream identifier */

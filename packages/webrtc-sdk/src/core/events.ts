@@ -2,7 +2,7 @@ import type { GroupedDevices } from "./types";
 import type { PeerStats } from "./peer-stats";
 
 /**
- * Typed events emitted by {@link WebRTCAdaptor} and helpers.
+ * Typed events emitted by {@link WebRTCClient} and helpers.
  */
 export interface EventMap {
   [key: string]: unknown;

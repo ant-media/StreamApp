@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { WebRTCAdaptor } from '../src/core/webrtc-adaptor.js';
+import { WebRTCClient } from '../src/core/webrtc-client.js';
 
 if (typeof (global as any).MediaStream === 'undefined') {
   (global as any).MediaStream = class {} as any;
@@ -20,7 +20,7 @@ class MockPC {
 
 describe('notifications mapping', () => {
   it('maps server notifications and closed/server_will_stop', async () => {
-    const adaptor = new WebRTCAdaptor({ websocketURL: 'wss://x', isPlayMode: false, mediaConstraints: { video: false, audio: false } });
+    const adaptor = new WebRTCClient({ websocketURL: 'wss://x', isPlayMode: false, mediaConstraints: { video: false, audio: false } });
     const events: string[] = [];
     adaptor.on('publish_started', () => events.push('publish_started'));
     adaptor.on('publish_finished', () => events.push('publish_finished'));

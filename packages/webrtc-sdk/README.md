@@ -14,9 +14,9 @@ npm run build
 ## Usage
 
 ```ts
-import { WebRTCAdaptor, getWebSocketURL } from 'webrtc-sdk';
+import { WebRTCClient, getWebSocketURL } from 'webrtc-sdk';
 
-const adaptor = new WebRTCAdaptor({
+const adaptor = new WebRTCClient({
   websocketURL: getWebSocketURL('wss://example.com:5443/LiveApp/websocket'),
   localVideo: document.getElementById('local') as HTMLVideoElement,
   remoteVideo: document.getElementById('remote') as HTMLVideoElement,
@@ -64,6 +64,22 @@ npm run docs
 ```
 
 Open `docs/index.html` in a browser.
+
+### Architecture and usage guidance
+
+`WebRTCClient` is the primary API surface. It composes:
+
+- `WebSocketAdaptor`: handles signaling with Ant Media Server (WS commands, notifications).
+- `MediaManager`: handles local media (getUserMedia, device switching, screen share).
+
+For most applications, call methods on `WebRTCClient` only. It exposes the common
+operations you need: `ready()`, `join()`, `publish()`, `play()`, `stop()`, `listDevices()`,
+`selectVideoInput()`, `selectAudioInput()`, `startScreenShare()`, `stopScreenShare()`,
+`sendData()`, `enableStats()/disableStats()`, room/multitrack helpers, and emits typed events.
+
+Only use `WebSocketAdaptor` or `MediaManager` directly if you have advanced
+customization needs (e.g., custom signaling transport or bespoke media capture).
+Otherwise, prefer the higher-level `WebRTCClient` methods.
 
 ### Room / Multitrack quick start
 

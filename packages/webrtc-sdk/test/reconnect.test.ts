@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { WebRTCAdaptor } from '../src/core/webrtc-adaptor.js';
+import { WebRTCClient } from '../src/core/webrtc-client.js';
 
 if (typeof (global as any).MediaStream === 'undefined') {
   (global as any).MediaStream = class {} as any;
@@ -43,7 +43,7 @@ class MockPC {
 describe('auto reconnect', () => {
   it('schedules reconnect on ice disconnected/failed', async () => {
     const sent: any[] = [];
-    const adaptor = new WebRTCAdaptor({ websocketURL: 'wss://x', isPlayMode: false, mediaConstraints: { audio: false, video: false }, autoReconnect: true });
+    const adaptor = new WebRTCClient({ websocketURL: 'wss://x', isPlayMode: false, mediaConstraints: { audio: false, video: false }, autoReconnect: true });
     // @ts-ignore
     adaptor['ws'] = { send: (t: string) => sent.push(JSON.parse(t)) } as any;
     // @ts-ignore

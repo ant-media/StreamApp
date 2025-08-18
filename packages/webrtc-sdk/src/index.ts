@@ -5,5 +5,5 @@ export * from "./core/errors.js";
 export * from "./core/emitter.js";
 export * from "./core/websocket-adaptor.js";
 export * from "./core/media-manager.js";
-export * from "./core/webrtc-adaptor.js";
+export * from "./core/webrtc-client.js";
 export * from "./utils/utility.js";

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { WebRTCAdaptor } from '../src/core/webrtc-adaptor.js';
+import { WebRTCClient } from '../src/core/webrtc-client.js';
 
 if (typeof (global as any).MediaStream === 'undefined') {
   (global as any).MediaStream = class {} as any;
@@ -16,7 +16,7 @@ class MockPC {
 
 describe('disableStats and close', () => {
   it('stops stats timer and emits closed on close()', async () => {
-    const adaptor = new WebRTCAdaptor({ websocketURL: 'wss://x', isPlayMode: true });
+    const adaptor = new WebRTCClient({ websocketURL: 'wss://x', isPlayMode: true });
     // @ts-ignore
     adaptor['notify']('initialized', undefined as any);
 
