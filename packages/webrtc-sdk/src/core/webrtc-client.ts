@@ -7,7 +7,7 @@ import type {
   GroupedDevices,
   JoinOptions,
   JoinResult,
-  WebRTCAdaptorOptions,
+  WebRTCClientOptions,
   RoomJoinOptions,
   PlaySelectiveOptions,
 } from "./types.js";
@@ -60,9 +60,9 @@ export class WebRTCClient extends Emitter<EventMap> {
 
   /**
    * Create a new adaptor instance.
-   * @param opts See {@link WebRTCAdaptorOptions}
+   * @param opts See {@link WebRTCClientOptions}
    */
-  constructor(opts: WebRTCAdaptorOptions) {
+  constructor(opts: WebRTCClientOptions) {
     super();
     this.isPlayMode = !!opts.isPlayMode;
     this.autoReconnect = opts.autoReconnect ?? true;

@@ -9,3 +9,6 @@ node_modules
 /tsbuild
 /types
 /.vscode
+/packages/webrtc-sdk/docs/*
+/packages/webrtc-sdk/dist
+/packages/webrtc-sdk/docs

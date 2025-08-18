@@ -8,7 +8,7 @@ export type Role = "publisher" | "viewer";
 /**
  * Options to configure {@link WebRTCClient}.
  */
-export interface WebRTCAdaptorOptions {
+export interface WebRTCClientOptions {
   /** WebSocket signaling URL (e.g. wss://host:5443/App/websocket) */
   websocketURL?: string;
   /** HTTP REST endpoint of Ant Media (used as fallback by signaling layer) */
