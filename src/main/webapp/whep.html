@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <title>WHEP Player</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="css/external/bootstrap4/bootstrap.min.css" />
+    <script src="js/external/adapter-latest.js"></script>
+    <link rel="stylesheet" href="css/samples.css" />
+    <link rel="stylesheet" href="css/common.css" />
+</head>
+<body>
+    <div class="container">
+        <div class="header clearfix">
+            <div class="row">
+                <h3 class="col text-muted">
+                    <a href="samples.html">WebRTC Samples</a> > WHEP Player
+                </h3>
+            </div>
+        </div>
+
+        <div class="jumbotron">
+            <div class="col-sm-12 form-group">
+                <div id='video-overlay'>
+                    <span class="loader"></span>
+                </div>
+                <video id="video" autoplay playsinline controls></video>
+            </div>
+            <div class="form-group col-sm-12 text-left">
+                <input type="text" class="form-control" id="streamId" placeholder="Stream ID" value="stream1">
+            </div>
+
+            <div class="form-group">
+                <button class="btn btn-primary" id="startPlaying">Start Playing</button>
+                <button class="btn btn-primary" id="stopPlaying">Stop Playing</button>
+            </div>
+        </div>
+
+        <footer class="footer text-center">
+            <p>
+                <a href="http://antmedia.io">antmedia.io</a>
+            </p>
+        </footer>
+    </div>
+
+    <script src="js/external/jquery-3.4.1.min.js" crossorigin="anonymous"></script>
+    <script src="js/external/popper.min.js" crossorigin="anonymous"></script>
+    <script src="js/external/bootstrap.min.js" crossorigin="anonymous"></script>
+    <script src="js/external/notify.min.js" crossorigin="anonymous"></script>
+
+    <script type="module">
+        import { getUrlParameter } from "./js/fetch.stream.js"
+        import { errorHandler } from "./js/utility.js"
+
+        const video = document.getElementById('video');
+        const streamIdInput = document.getElementById('streamId');
+        const startPlayingButton = document.getElementById('startPlaying');
+        const stopPlayingButton = document.getElementById('stopPlaying');
+        let whepSession = null;
+        
+        // Initialize button states
+        startPlayingButton.disabled = false;
+        stopPlayingButton.disabled = true;
+        
+        document.getElementById('startPlaying').addEventListener('click', async () => {
+            const streamId = streamIdInput.value;
+            
+            // Disable start button and enable stop button
+            startPlayingButton.disabled = true;
+            stopPlayingButton.disabled = false;
+            
+            try {
+                // Create a new RTCPeerConnection
+                const pc = new RTCPeerConnection({
+                    iceServers: [{ urls: 'stun:stun1.l.google.com:19302' }]
+                });
+                
+                // Add event listeners
+                pc.ontrack = (event) => {
+                    console.log('Received track', event);
+                    if (event.track.kind === 'video' || event.track.kind === 'audio') {
+                        video.srcObject = event.streams[0];
+                    }
+                };
+                
+                pc.onicecandidate = ({candidate}) => {
+                    if (!candidate) {
+                        // When ICE gathering is complete, send the offer to the server
+                    }
+                };
+                
+                // Add transceivers for receiving audio and video
+                pc.addTransceiver('audio', {direction: 'recvonly'});
+                pc.addTransceiver('video', {direction: 'recvonly'});
+                
+                // Create an offer
+                const offer = await pc.createOffer();
+                await pc.setLocalDescription(offer);
+
+                console.log("Offer created: ", offer);
+                console.log("Offer local description: ", pc.localDescription);
+                
+                // Wait for ICE gathering to complete
+                await new Promise((resolve) => {
+                    if (pc.iceGatheringState === 'complete') {
+                        resolve();
+                    } else {
+                        pc.addEventListener('icegatheringstatechange', function onStateChange() {
+                            if (pc.iceGatheringState === 'complete') {
+                                pc.removeEventListener('icegatheringstatechange', onStateChange);
+                                resolve();
+                            }
+                        });
+                    }
+                });
+                
+                sendWhepOffer();
+                
+                async function sendWhepOffer() {
+                    try {
+                        console.log("Sending Whep offer");
+                        
+                        // Get application name from the path
+                        const appName = location.pathname.substring(1, location.pathname.indexOf("/", 1) + 1);
+                        
+                        // Build the server URL dynamically using the current hostname and port
+                        const protocol = location.protocol;
+                        const baseURL = protocol + "//" + location.hostname + ":" + location.port + "/" + appName + "whep/" + streamId;
+
+                        // Send the offer to the server in a single POST request
+                        const response = await fetch(baseURL, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/sdp'
+                            },
+                            body: pc.localDescription.sdp
+                        });
+                        
+                        if (!response.ok) { 
+                            // If error, reset button states
+                            startPlayingButton.disabled = false;
+                            stopPlayingButton.disabled = true;
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+
+                        console.log("Whep offer was successfully sent");
+                        
+                        // Get the ETag header which contains the session ID
+                        const eTag = response.headers.get('ETag');
+                        whepSession = { pc, streamId, eTag };
+
+                        console.log("ETag received: ", eTag);
+
+                        // Get the SDP answer from the response
+                        const answerSdp = await response.text();
+                        console.log("Answer SDP received: ", answerSdp);
+
+                        // Create and set the remote description with the answer from the server
+                        const remoteDesc = new RTCSessionDescription({
+                            type: 'answer',
+                            sdp: answerSdp
+                        });
+
+                        await pc.setRemoteDescription(remoteDesc);
+                        console.log('WHEP connection established');
+
+                    } catch (error) {
+                        // Reset button states on error
+                        startPlayingButton.disabled = false;
+                        stopPlayingButton.disabled = true;
+                        
+                        console.error('Error establishing WHEP connection:', error);
+                        $('video').notify("Warning: Error establishing WHEP connection: " + error.message, {
+                            autoHideDelay: 5000,
+                            className: 'error',
+                            position: 'bottom center'
+                        });
+                    }
+                }
+            } catch (error) {
+                // Reset button states on error
+                startPlayingButton.disabled = false;
+                stopPlayingButton.disabled = true;
+                
+                console.error('Error setting up WebRTC:', error);
+                $('video').notify("Warning: Error setting up WebRTC: " + error.message, {
+                    autoHideDelay: 5000,
+                    className: 'error',
+                    position: 'bottom center'
+                });
+            }
+        });
+        
+        document.getElementById('stopPlaying').addEventListener('click', async () => {
+            if (whepSession) {
+                try {
+                    // Reset button states
+                    startPlayingButton.disabled = false;
+                    stopPlayingButton.disabled = true;
+                    
+                    // Build the server URL dynamically
+                    const appName = location.pathname.substring(1, location.pathname.indexOf("/", 1) + 1);
+                    const protocol = location.protocol;
+                    const baseURL = protocol + "//" + location.hostname + ":" + location.port + "/" + appName + "whep/" + whepSession.streamId + "/" + whepSession.eTag;
+
+                    // Send DELETE request to terminate the session
+                    await fetch(baseURL, {
+                        method: 'DELETE'
+                    });
+                    
+                    // Close the peer connection
+                    whepSession.pc.close();
+                    whepSession = null;
+                    
+                    // Clear the video
+                    video.srcObject = null;
+                    
+                    console.log('WHEP session terminated');
+                } catch (error) {
+                    console.error('Error terminating WHEP session:', error);
+                    $('video').notify("Warning: Error terminating WHEP session: " + error.message, {
+                        autoHideDelay: 5000,
+                        className: 'error',
+                        position: 'bottom center'
+                    });
+                }
+            }
+        });
+    </script>
+</body>
+</html>
