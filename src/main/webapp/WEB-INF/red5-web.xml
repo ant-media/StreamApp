@@ -75,6 +75,11 @@
 		<property name="appSettings" ref="app.settings" />
 		<property name="dataStoreFactory" ref="dataStoreFactory" />
 		<property name="streamAcceptFilter" ref="streamAcceptFilter"/>
+		<property name="streamPlaySecurityList">
+      	<list>
+        	<ref bean="token.service"/>
+		</list>
+		</property>
 		<property name="streamPublishSecurityList">
 			<list>
 				<ref bean="acceptOnlyStreamsInDataStore"/>
