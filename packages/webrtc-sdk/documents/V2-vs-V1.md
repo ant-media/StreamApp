@@ -15,6 +15,21 @@
 - **Rooms/Multitrack helpers**: `playSelective`, `enableTrack`, track assignment APIs.
 - **New v2 features**: plugin API, data-only publish, audio output selection (sinkId), remote audio level metering, stream metadata update.
 
+### Quick start (v2)
+```ts
+import { WebRTCClient } from 'webrtc-sdk';
+
+const { client } = await WebRTCClient.createSession({
+  websocketURL,
+  role: 'publisher',            // or 'viewer'
+  streamId: 's1',
+  localVideo,
+  remoteVideo,
+  mediaConstraints: { audio: true, video: true },
+  autoPlay: true,
+});
+```
+
 ### Quick usage comparison
 
 #### Initialize and publish
@@ -85,6 +100,32 @@ adaptor.sendData('s1', 'hello');
 ```ts
 // v2
 await sdk.sendData('s1', 'hello');
+await sdk.sendJSON('s1', { type: 'chat', text: 'hi' });
+```
+
+#### Event handling
+```js
+// v1: single callback fanout
+const adaptor = new WebRTCAdaptor({
+  websocketURL,
+  callback: (info, obj) => {
+    if (info === 'publish_started') console.log('publishing', obj.streamId);
+    if (info === 'play_started') console.log('playing', obj.streamId);
+    if (info === 'roomInformation') console.log('room info', obj);
+  },
+  callbackError: (err, message) => console.warn('error', err, message),
+});
+```
+
+```ts
+// v2: typed, granular listeners + dynamic notification channel
+client.on('publish_started', ({ streamId }) => console.log('publishing', streamId));
+client.on('play_started', ({ streamId }) => console.log('playing', streamId));
+client.on('error', ({ error, message }) => console.warn('error', error, message));
+
+// AMS notifications are exposed as first-class events and under notification:<name>
+client.on('room_information', payload => console.log('room_information', payload));
+client.on('notification:subscriberCount', payload => console.log('subscriberCount', payload));
 ```
 
 ### New v2 capabilities (not in v1 by default)
@@ -111,14 +152,6 @@ adaptor.enableTrack('main', 'camera_u1', true);
 await viewer.playSelective({ streamId: 'main', enableTracks: ['camera_u1'], disableTracksByDefault: true });
 viewer.enableTrack('main', 'camera_u1', true);
 ```
-
-### What still differs from v1
-- **Peer-to-peer multi-peer mode**: v1 supports `join(streamId)`/`isMultiPeer`; v2 focuses on publish/play/rooms and does not expose multi-peer.
-- **Low-level media helpers**: v1 exposes `applyConstraints`, `openStream`, `updateVideoTrack`, etc.; v2 favors higher-level APIs.
-- **DataChannel enable flag**: v1 `dataChannelEnabled`; v2 enables DC by default (no flag).
-- **Play parameters**: v1 includes `subscriberName` and sets `userPublishId`; v2 does not send those fields.
-- **ICE protocol list**: v1 exposes mutable `candidateTypes`; v2 keeps an internal list.
-- **Stats detail**: v1 exposes extra fields (`fractionLost`, jitter averages, full inbound lists); v2 focuses on the common metrics.
 
 ### Migration tips
 - Publishing: `adaptor.publish(...)` → `await sdk.publish(streamId)` or `await sdk.join({ role: 'publisher', ... })`.

@@ -5,6 +5,13 @@
 const { client } = await WebRTCClient.createSession({ websocketURL, role: 'publisher', streamId: 's1', localVideo, remoteVideo, mediaConstraints: { audio: true, video: true }, autoPlay: true });
 ```
 
+### 1b) Event listeners
+```ts
+client.on('publish_started', ({ streamId }) => console.log('publishing', streamId));
+client.on('data_received', ({ data }) => console.log('dc <-', data));
+
+```
+
 ### 2) Device switching
 ```ts
 await client.selectVideoInput(cameraId);
@@ -71,5 +78,6 @@ client.resumeTrack('audio');
 const { client } = await WebRTCClient.createSession({ websocketURL, role: 'publisher', streamId: 'data', onlyDataChannel: true });
 await client.sendJSON('data', { ping: true });
 ```
+
 
 

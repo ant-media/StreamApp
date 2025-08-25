@@ -96,6 +96,21 @@ Common events emitted by the SDK (see TypeDoc for full list):
 - `reconnection_attempt_for_publisher` / `reconnection_attempt_for_player`
 - `error` { error, message? }
 
+### Listening to events (v2)
+
+```ts
+client.on('initialized', () => console.log('ready'));
+client.on('publish_started', ({ streamId }) => console.log('publishing', streamId));
+client.on('play_started', ({ streamId }) => console.log('playing', streamId));
+client.on('data_received', ({ streamId, data }) => console.log('dc <-', streamId, data));
+client.on('ice_connection_state_changed', ({ state, streamId }) => console.log('ice', state, streamId));
+client.on('reconnected', ({ streamId }) => console.log('reconnected', streamId));
+
+// AMS server notifications exposed as typed events and also under notification:<name>
+client.on('broadcast_object', (obj) => console.log('broadcast_object', obj));
+client.on('notification:subscriberCount', (payload) => console.log('subscriberCount', payload));
+```
+
 ### Stats helpers
 
 ```ts
@@ -181,6 +196,35 @@ await adaptor.sendData('s1', new Uint8Array([1,2,3]).buffer);
 // Optional sanitize received strings
 adaptor.setSanitizeDataChannelStrings(true);
 adaptor.on('data_received', ({ data }) => console.log('rx', data));
+```
+
+### Legacy v1-style callbacks (optional shim)
+
+If you are migrating from v1 and prefer a single `callback(info, obj)` and `callbackError(err, message)` style, use this small helper:
+
+```ts
+function attachLegacyCallbacks(client: WebRTCClient, {
+  callback,
+  callbackError,
+}: { callback?: (info: string, obj?: unknown) => void; callbackError?: (err: string, msg?: unknown) => void; }) {
+  const events = [
+    'initialized','publish_started','publish_finished','play_started','play_finished',
+    'ice_connection_state_changed','updated_stats','data_channel_opened','data_channel_closed',
+    'newTrackAvailable','devices_updated','room_joined','room_left','broadcast_object','room_information',
+  ] as const;
+  events.forEach((ev) => client.on(ev as any, (obj: unknown) => callback && callback(ev as string, obj)));
+  // forward common notifications
+  client.on('subscriber_count', (obj) => callback && callback('subscriberCount', obj));
+  client.on('subscriber_list', (obj) => callback && callback('subscriberList', obj));
+  // errors
+  client.on('error', (e) => callbackError && callbackError(e.error as string, e.message));
+}
+
+// usage
+attachLegacyCallbacks(client, {
+  callback: (info, obj) => console.log('event', info, obj),
+  callbackError: (err, msg) => console.warn('error', err, msg),
+});
 ```
 
 ## Examples
