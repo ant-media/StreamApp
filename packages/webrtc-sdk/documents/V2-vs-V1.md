@@ -137,6 +137,7 @@ client.on('notification:subscriberCount', payload => console.log('subscriberCoun
 - **Reconnect backoff config**: `configureReconnect({ backoff, baseMs, maxMs, jitter })` with `reconnected` event.
 - **Device hot-swap**: automatic default device re-acquisition on `devicechange`, emits `device_hotswapped`.
 - **Track controls**: `pauseTrack('audio'|'video')` and `resumeTrack(...)`, emitting `local_track_paused/resumed`.
+- **Tooling**: ESLint + Prettier baked in for consistent, automated code quality.
 
 ### Rooms / multitrack
 ```js

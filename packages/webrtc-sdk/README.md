@@ -237,7 +237,8 @@ attachLegacyCallbacks(client, {
 
 ## Development
 
-- Lint: `npm run lint`
+- Lint: `npm run lint` (ESLint)
+- Format: Prettier (integrated; run `npm run lint:fix` for quick fixes)
 - Tests: `npm test`
 - Docs: `npm run docs`
 
