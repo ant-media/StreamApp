@@ -30,12 +30,7 @@ const { client } = await WebRTCClient.createSession({
 client.on('play_started', ({ streamId }) => console.log('playing', streamId));
 ```
 
-### Convenience
 
-```ts
-// Send JSON over data-channel
-await client.sendJSON('s1', { type: 'chat', text: 'Hello' });
-```
 
 ### Reconnect configuration
 
