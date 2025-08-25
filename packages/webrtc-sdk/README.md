@@ -30,13 +30,9 @@ const { client } = await WebRTCClient.createSession({
 client.on('play_started', ({ streamId }) => console.log('playing', streamId));
 ```
 
-### Convenience helpers
+### Convenience
 
 ```ts
-// One-liners
-await client.publishAuto('s1');
-await client.playAuto({ streamId: 's1', token: 'OPTIONAL' });
-
 // Send JSON over data-channel
 await client.sendJSON('s1', { type: 'chat', text: 'Hello' });
 ```

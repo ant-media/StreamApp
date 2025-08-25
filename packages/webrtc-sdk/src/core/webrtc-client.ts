@@ -569,12 +569,6 @@ export class WebRTCClient extends Emitter<EventMap> {
       this.ws.send(JSON.stringify(jsCmd));
     }
   }
-  /** Convenience: ensure ready, then publish. Accepts string or { streamId, token }. */
-  async publishAuto(arg: string | { streamId: string; token?: string }): Promise<void> {
-    await this.ready();
-    if (typeof arg === "string") return this.publish(arg);
-    return this.publish(arg.streamId, arg.token);
-  }
 
   /**
    * Start playing the given stream. The server will send an SDP offer that we answer.
@@ -614,12 +608,6 @@ export class WebRTCClient extends Emitter<EventMap> {
       };
       this.ws.send(JSON.stringify(jsCmd));
     }
-  }
-  /** Convenience: ensure ready, then play. Accepts string or { streamId, token }. */
-  async playAuto(arg: string | { streamId: string; token?: string }): Promise<void> {
-    await this.ready();
-    if (typeof arg === "string") return this.play(arg);
-    return this.play(arg.streamId, arg.token);
   }
 
   /**

@@ -133,7 +133,7 @@ client.on('notification:subscriberCount', payload => console.log('subscriberCoun
 - **Remote audio levels (viewer)**: `enableRemoteAudioLevel('s1', cb)` to meter incoming audio.
 - **Stream metadata update**: `updateStreamMetaData('s1', obj)` to push metadata to AMS.
 - **One-liner sessions**: `WebRTCClient.createSession({ role, streamId, autoPlay })` simplifies startup.
-- **Convenience helpers**: `publishAuto`, `playAuto`, `sendJSON` for common cases.
+- **Convenience**: `sendJSON` for data-channel JSON messaging.
 - **Reconnect backoff config**: `configureReconnect({ backoff, baseMs, maxMs, jitter })` with `reconnected` event.
 - **Device hot-swap**: automatic default device re-acquisition on `devicechange`, emits `device_hotswapped`.
 - **Track controls**: `pauseTrack('audio'|'video')` and `resumeTrack(...)`, emitting `local_track_paused/resumed`.
