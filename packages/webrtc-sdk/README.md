@@ -16,17 +16,65 @@ npm run build
 ```ts
 import { WebRTCClient, getWebSocketURL } from 'webrtc-sdk';
 
-const adaptor = new WebRTCClient({
+// One-liner session helper (recommended for most apps)
+const { client } = await WebRTCClient.createSession({
   websocketURL: getWebSocketURL('wss://example.com:5443/LiveApp/websocket'),
+  role: 'publisher',
+  streamId: 'stream1',
   localVideo: document.getElementById('local') as HTMLVideoElement,
   remoteVideo: document.getElementById('remote') as HTMLVideoElement,
   mediaConstraints: { audio: true, video: true },
+  autoPlay: true, // attempt autoplay on the remote element after join
 });
 
-await adaptor.ready();
-await adaptor.join({ role: 'publisher', streamId: 'stream1' });
+client.on('play_started', ({ streamId }) => console.log('playing', streamId));
+```
 
-adaptor.on('play_started', ({ streamId }) => console.log('playing', streamId));
+### Convenience helpers
+
+```ts
+// One-liners
+await client.publishAuto('s1');
+await client.playAuto({ streamId: 's1', token: 'OPTIONAL' });
+
+// Send JSON over data-channel
+await client.sendJSON('s1', { type: 'chat', text: 'Hello' });
+```
+
+### Reconnect configuration
+
+```ts
+client.configureReconnect({ backoff: "exp", baseMs: 500, maxMs: 10000, jitter: 0.3 });
+client.on("reconnected", ({ streamId }) => console.log("reconnected", streamId));
+```
+
+### Device hot-swap and track controls
+
+```ts
+client.on("device_hotswapped", e => console.log("hotswapped", e));
+
+// Pause/resume tracks without renegotiation
+client.pauseTrack("audio");
+client.resumeTrack("audio");
+```
+
+### Remote audio level (viewer)
+
+```ts
+await client.enableRemoteAudioLevel("s1", level => console.log(level), 200);
+client.disableRemoteAudioLevel("s1");
+```
+
+### Data-only publish
+
+```ts
+const { client } = await WebRTCClient.createSession({
+  websocketURL: getWebSocketURL('wss://example.com:5443/LiveApp/websocket'),
+  role: 'publisher',
+  streamId: 'data-only',
+  onlyDataChannel: true,
+});
+await client.sendJSON('data-only', { hello: 'world' });
 ```
 
 ### Events quick reference

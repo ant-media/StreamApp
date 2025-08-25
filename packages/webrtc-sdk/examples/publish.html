@@ -36,6 +36,26 @@
         <legend>Controls</legend>
         <button id="turnOffCam">Turn off Camera</button>
         <button id="turnOnCam">Turn on Camera</button>
+        <button id="pauseAudio">Pause Audio</button>
+        <button id="resumeAudio">Resume Audio</button>
+        <button id="pauseVideo">Pause Video</button>
+        <button id="resumeVideo">Resume Video</button>
+      </fieldset>
+    </div>
+    <div style="margin-top:12px;">
+      <fieldset>
+        <legend>Network / QoS</legend>
+        <label>Bandwidth (kbps):</label>
+        <input id="bw" type="number" min="100" step="50" placeholder="600" style="width:100px" />
+        <button id="applyBw">Apply</button>
+        <button id="unlimitedBw">Unlimited</button>
+        <label style="margin-left:12px;">Degradation:</label>
+        <select id="degrad">
+          <option value="maintain-framerate">maintain-framerate</option>
+          <option value="maintain-resolution">maintain-resolution</option>
+          <option value="balanced">balanced</option>
+        </select>
+        <button id="applyDegrad">Apply</button>
       </fieldset>
     </div>
     <div style="margin-top:12px;">
@@ -99,6 +119,15 @@
       const stopOverlayBtn = document.getElementById('stopOverlay');
       const turnOffCamBtn = document.getElementById('turnOffCam');
       const turnOnCamBtn = document.getElementById('turnOnCam');
+      const pauseAudioBtn = document.getElementById('pauseAudio');
+      const resumeAudioBtn = document.getElementById('resumeAudio');
+      const pauseVideoBtn = document.getElementById('pauseVideo');
+      const resumeVideoBtn = document.getElementById('resumeVideo');
+      const bw = document.getElementById('bw');
+      const applyBw = document.getElementById('applyBw');
+      const unlimitedBw = document.getElementById('unlimitedBw');
+      const degradSel = document.getElementById('degrad');
+      const applyDegrad = document.getElementById('applyDegrad');
       const vol = document.getElementById('volume');
       const meterOn = document.getElementById('meterOn');
       const meterOff = document.getElementById('meterOff');
@@ -123,6 +152,7 @@
       adaptor.on('publish_started', (o) => { log('publish_started ' + o.streamId); stopBtn.disabled = false; });
       adaptor.on('publish_finished', (o) => { log('publish_finished ' + o.streamId); stopBtn.disabled = true; });
       adaptor.on('ice_connection_state_changed', ({ state }) => log('ice: ' + state));
+      adaptor.on('reconnected', ({ streamId }) => log('reconnected ' + streamId));
       adaptor.on('devices_updated', (g) => {
         videoSel.innerHTML = g.videoInputs.map(d => `<option value="${d.deviceId}">${d.label}</option>`).join('');
         audioSel.innerHTML = g.audioInputs.map(d => `<option value="${d.deviceId}">${d.label}</option>`).join('');
@@ -224,6 +254,28 @@
       turnOnCamBtn.onclick = () => {
         adaptor.turnOnLocalCamera();
         log('camera turned on');
+      };
+
+      pauseAudioBtn.onclick = () => { adaptor.pauseTrack('audio'); log('audio paused'); };
+      resumeAudioBtn.onclick = () => { adaptor.resumeTrack('audio'); log('audio resumed'); };
+      pauseVideoBtn.onclick = () => { adaptor.pauseTrack('video'); log('video paused'); };
+      resumeVideoBtn.onclick = () => { adaptor.resumeTrack('video'); log('video resumed'); };
+
+      applyBw.onclick = async () => {
+        if (!currentId) return;
+        const val = parseInt(bw.value || '600', 10);
+        await adaptor.changeBandwidth(currentId, isFinite(val) ? val : 600);
+        log('bandwidth applied');
+      };
+      unlimitedBw.onclick = async () => {
+        if (!currentId) return;
+        await adaptor.changeBandwidth(currentId, 'unlimited');
+        log('bandwidth unlimited');
+      };
+      applyDegrad.onclick = async () => {
+        if (!currentId) return;
+        await adaptor.setDegradationPreference(currentId, degradSel.value);
+        log('degradation set to ' + degradSel.value);
       };
 
       vol.oninput = () => {

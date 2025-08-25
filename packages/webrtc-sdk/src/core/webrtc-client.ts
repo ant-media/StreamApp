@@ -53,6 +53,43 @@ export class WebRTCClient extends Emitter<EventMap> {
   static register(initMethod: (sdk: WebRTCClient) => void): void {
     WebRTCClient.pluginInitMethods.push(initMethod);
   }
+  /**
+   * One-liner session helper. Creates a client, awaits ready, joins, and returns both.
+   * Example:
+   * ```ts
+   * const { client } = await WebRTCClient.createSession({
+   *   websocketURL: getWebSocketURL('wss://host:5443/App/websocket'),
+   *   role: 'viewer',
+   *   streamId: 's1',
+   *   remoteVideo,
+   *   autoPlay: true,
+   * });
+   * ```
+   */
+  static async createSession(
+    opts: import("./types.js").WebRTCClientOptions &
+      Pick<import("./types.js").JoinOptions, "role" | "streamId" | "token" | "timeoutMs"> & {
+        /** Attempt to play() on the provided media element after join */
+        autoPlay?: boolean;
+      }
+  ): Promise<{ client: WebRTCClient; result: import("./types.js").JoinResult }> {
+    const client = new WebRTCClient(opts);
+    await client.ready();
+    const result = await client.join({
+      role: opts.role,
+      streamId: opts.streamId,
+      token: opts.token,
+      timeoutMs: opts.timeoutMs,
+    });
+    if (opts.autoPlay && opts.remoteVideo) {
+      try {
+        await opts.remoteVideo.play();
+      } catch {
+        // ignore autoplay errors (e.g., user gesture required)
+      }
+    }
+    return { client, result };
+  }
   private ws?: WebSocketAdaptor;
   private media: MediaManager;
   private isReady = false;
@@ -70,6 +107,17 @@ export class WebRTCClient extends Emitter<EventMap> {
   private rxChunks: Map<number, { expected: number; received: number; buffers: Uint8Array[] }> =
     new Map();
   private autoReconnect = true;
+  private reconnectConfig: {
+    backoff: "fixed" | "exp";
+    baseMs: number;
+    maxMs: number;
+    jitter: number;
+  } = {
+    backoff: "exp",
+    baseMs: 500,
+    maxMs: 8000,
+    jitter: 0.2,
+  };
   private sanitizeDcStrings = false;
   private activeStreams: Map<string, { mode: "publish" | "play"; token?: string }> = new Map();
   private reconnectTimers: Map<string, ReturnType<typeof setTimeout>> = new Map();
@@ -96,6 +144,14 @@ export class WebRTCClient extends Emitter<EventMap> {
     this.autoReconnect = opts.autoReconnect ?? true;
     this.sanitizeDcStrings = !!opts.sanitizeDataChannelStrings;
     this.onlyDataChannel = !!opts.onlyDataChannel;
+    if (opts.reconnectConfig) {
+      this.reconnectConfig = {
+        backoff: opts.reconnectConfig.backoff ?? this.reconnectConfig.backoff,
+        baseMs: opts.reconnectConfig.baseMs ?? this.reconnectConfig.baseMs,
+        maxMs: opts.reconnectConfig.maxMs ?? this.reconnectConfig.maxMs,
+        jitter: opts.reconnectConfig.jitter ?? this.reconnectConfig.jitter,
+      };
+    }
     this.media = new MediaManager({
       mediaConstraints: opts.mediaConstraints,
       localVideo: opts.localVideo,
@@ -513,6 +569,12 @@ export class WebRTCClient extends Emitter<EventMap> {
       this.ws.send(JSON.stringify(jsCmd));
     }
   }
+  /** Convenience: ensure ready, then publish. Accepts string or { streamId, token }. */
+  async publishAuto(arg: string | { streamId: string; token?: string }): Promise<void> {
+    await this.ready();
+    if (typeof arg === "string") return this.publish(arg);
+    return this.publish(arg.streamId, arg.token);
+  }
 
   /**
    * Start playing the given stream. The server will send an SDP offer that we answer.
@@ -552,6 +614,12 @@ export class WebRTCClient extends Emitter<EventMap> {
       };
       this.ws.send(JSON.stringify(jsCmd));
     }
+  }
+  /** Convenience: ensure ready, then play. Accepts string or { streamId, token }. */
+  async playAuto(arg: string | { streamId: string; token?: string }): Promise<void> {
+    await this.ready();
+    if (typeof arg === "string") return this.play(arg);
+    return this.play(arg.streamId, arg.token);
   }
 
   /**
@@ -615,6 +683,13 @@ export class WebRTCClient extends Emitter<EventMap> {
     // optimistic finish events
     this.emit("publish_finished", { streamId });
     this.emit("play_finished", { streamId });
+  }
+
+  /** Configure reconnect backoff at runtime. */
+  configureReconnect(
+    cfg: Partial<{ backoff: "fixed" | "exp"; baseMs: number; maxMs: number; jitter: number }>
+  ): void {
+    this.reconnectConfig = { ...this.reconnectConfig, ...cfg } as typeof this.reconnectConfig;
   }
 
   /**
@@ -721,6 +796,16 @@ export class WebRTCClient extends Emitter<EventMap> {
     await this.media.selectAudioInput(deviceId);
     // If camera is disabled, there may be no video track; still ensure audio sender gets replaced
     await this.applyLocalTracks();
+  }
+
+  /** Pause sending local track(s) without renegotiation. */
+  pauseTrack(kind: "audio" | "video"): void {
+    this.media.pauseLocalTrack(kind);
+  }
+
+  /** Resume sending local track(s) without renegotiation. */
+  resumeTrack(kind: "audio" | "video"): void {
+    this.media.resumeLocalTrack(kind);
   }
 
   /**
@@ -1107,6 +1192,17 @@ export class WebRTCClient extends Emitter<EventMap> {
     }
   }
 
+  /** Convenience: send JSON over data channel (stringifies safely). */
+  async sendJSON(streamId: string, obj: unknown): Promise<void> {
+    try {
+      const text = JSON.stringify(obj);
+      await this.sendData(streamId, text);
+    } catch (e) {
+      this.log.warn("sendJSON stringify failed", e);
+      throw e;
+    }
+  }
+
   /** Close signaling and all peers; emit closed. */
   close(): void {
     for (const streamId of Array.from(this.peers.keys())) {
@@ -1128,7 +1224,7 @@ export class WebRTCClient extends Emitter<EventMap> {
   private reconnectIfRequired(streamId: string, delayMs = 3000, forceReconnect = false): void {
     if (!this.autoReconnect) return;
     if (!this.activeStreams.has(streamId)) return;
-    if (delayMs <= 0) delayMs = 500;
+    if (delayMs <= 0) delayMs = this.reconnectConfig.baseMs;
     if (this.reconnectTimers.has(streamId)) return;
     const now = Date.now();
     const last = this.lastReconnectAt.get(streamId) ?? 0;
@@ -1141,11 +1237,25 @@ export class WebRTCClient extends Emitter<EventMap> {
       this.emit("reconnection_attempt_for_publisher" as keyof EventMap, { streamId } as never);
     else if (mode === "play")
       this.emit("reconnection_attempt_for_player" as keyof EventMap, { streamId } as never);
+    const nextDelay = this.computeNextDelay(delayMs);
     const timer = setTimeout(() => {
       this.reconnectTimers.delete(streamId);
       this.tryAgain(streamId, forceReconnect);
-    }, delayMs);
+    }, nextDelay);
     this.reconnectTimers.set(streamId, timer);
+  }
+
+  private computeNextDelay(lastDelay: number): number {
+    const { backoff, baseMs, maxMs, jitter } = this.reconnectConfig;
+    let next =
+      backoff === "exp"
+        ? Math.min(maxMs, Math.max(baseMs, lastDelay * 2))
+        : Math.min(maxMs, baseMs);
+    if (jitter > 0) {
+      const rand = 1 + (Math.random() * 2 - 1) * jitter; // 1±jitter
+      next = Math.max(0, Math.floor(next * rand));
+    }
+    return next;
   }
 
   private tryAgain(streamId: string, _forceReconnect: boolean): void {

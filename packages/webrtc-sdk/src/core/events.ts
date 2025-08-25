@@ -15,6 +15,7 @@ export interface EventMap {
   play_started: { streamId: string };
   play_finished: { streamId: string };
   ice_connection_state_changed: { state: string; streamId: string };
+  reconnected?: { streamId: string };
   updated_stats: PeerStats;
   data_received: { streamId: string; data: string | ArrayBuffer };
   data_channel_opened: { streamId: string };
@@ -22,6 +23,9 @@ export interface EventMap {
   newTrackAvailable: { stream: MediaStream; track: MediaStreamTrack; streamId: string };
   devices_updated: GroupedDevices;
   local_tracks_changed: void;
+  device_hotswapped?: { kind: "audioinput" | "videoinput"; deviceId?: string };
+  local_track_paused?: { kind: "audio" | "video" };
+  local_track_resumed?: { kind: "audio" | "video" };
   error: { error: string; message?: unknown };
   // dynamic notification channel e.g. notification:subscriberCount -> payload from server
   [k: `notification:${string}`]: unknown;

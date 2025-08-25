@@ -44,6 +44,14 @@
         <div id="stats"></div>
       </fieldset>
     </div>
+    <div style="margin-top:12px;">
+      <fieldset>
+        <legend>Remote Audio Level</legend>
+        <button id="levelOn">Enable</button>
+        <button id="levelOff">Disable</button>
+        <span id="rlevel">level: 0.00</span>
+      </fieldset>
+    </div>
     <pre id="log"></pre>
 
     <script type="module">
@@ -63,6 +71,9 @@
       const enableStatsBtn = document.getElementById('enableStats');
       const audioOutSel = document.getElementById('audioOutput');
       const refreshBtn = document.getElementById('refreshDevices');
+      const levelOn = document.getElementById('levelOn');
+      const levelOff = document.getElementById('levelOff');
+      const rlevel = document.getElementById('rlevel');
 
       function log(msg) { logEl.textContent += msg + '\n'; }
 
@@ -79,6 +90,7 @@
       adaptor.on('play_finished', (o) => { log('play_finished ' + o.streamId); stopBtn.disabled = true; });
       adaptor.on('newTrackAvailable', ({ streamId }) => log('new track for ' + streamId));
       adaptor.on('ice_connection_state_changed', ({ state }) => log('ice: ' + state));
+      adaptor.on('reconnected', ({ streamId }) => log('reconnected ' + streamId));
       adaptor.on('error', (e) => log('error: ' + e.error));
       adaptor.on('data_channel_opened', () => { log('data channel opened'); sendTextBtn.disabled = false; });
       adaptor.on('data_channel_closed', () => { log('data channel closed'); sendTextBtn.disabled = true; });
@@ -131,6 +143,12 @@
         log('dc -> file ' + f.name + ' (' + ab.byteLength + ' bytes)');
       };
       enableStatsBtn.onclick = () => { if (currentId) adaptor.enableStats(currentId, 2000); };
+
+      levelOn.onclick = async () => {
+        if (!currentId) return;
+        await adaptor.enableRemoteAudioLevel(currentId, (v) => { rlevel.textContent = 'level: ' + v.toFixed(2); }, 200);
+      };
+      levelOff.onclick = () => { if (currentId) { adaptor.disableRemoteAudioLevel(currentId); rlevel.textContent = 'level: 0.00'; } };
 
       audioOutSel.onchange = async () => {
         const sinkId = audioOutSel.value;

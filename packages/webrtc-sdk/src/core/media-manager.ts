@@ -22,6 +22,7 @@ export class MediaManager extends Emitter<EventMap> {
   private selectedVideoInputId: string | null = null;
   private selectedAudioInputId: string | null = null;
   private selectedAudioOutputId: string | null = null;
+  private defaultDeviceListenerInstalled = false;
   private cameraDisabled = false;
   // v1 parity: keep a dummy canvas based black frame stream when camera is off
   private dummyCanvas: HTMLCanvasElement = document.createElement("canvas");
@@ -66,6 +67,18 @@ export class MediaManager extends Emitter<EventMap> {
     this.localStream = stream;
     if (this.localVideo) this.localVideo.srcObject = stream;
     await this.refreshDevices();
+
+    if (!this.defaultDeviceListenerInstalled) {
+      this.defaultDeviceListenerInstalled = true;
+      try {
+        navigator.mediaDevices.addEventListener("devicechange", () => {
+          // If default devices changed, re-open tracks with current constraints and replace
+          void this.handleDeviceHotSwap();
+        });
+      } catch {
+        // ignore if unsupported
+      }
+    }
   }
 
   async refreshDevices(): Promise<GroupedDevices> {
@@ -89,9 +102,67 @@ export class MediaManager extends Emitter<EventMap> {
     return grouped;
   }
 
+  /** Re-acquire default devices and replace local tracks; emits device_hotswapped. */
+  private async handleDeviceHotSwap(): Promise<void> {
+    try {
+      const prevVideoId = this.selectedVideoInputId;
+      const prevAudioId = this.selectedAudioInputId;
+      // Re-enumerate devices
+      const devs = await navigator.mediaDevices.enumerateDevices();
+      const defaultCam = devs.find(d => d.kind === "videoinput");
+      const defaultMic = devs.find(d => d.kind === "audioinput");
+      // If user has explicitly selected ids, keep them. Otherwise use defaults.
+      if (!prevVideoId && defaultCam) {
+        const cam = await navigator.mediaDevices.getUserMedia({
+          video: { deviceId: { exact: defaultCam.deviceId } },
+          audio: false,
+        });
+        const v = cam.getVideoTracks()[0];
+        if (v) this.replaceLocalVideoTrack(v);
+        this.emit("device_hotswapped", {
+          kind: "videoinput",
+          deviceId: defaultCam.deviceId,
+        } as never);
+      }
+      if (!prevAudioId && defaultMic) {
+        const mic = await navigator.mediaDevices.getUserMedia({
+          audio: { deviceId: { exact: defaultMic.deviceId } },
+          video: false,
+        });
+        const a = mic.getAudioTracks()[0];
+        if (a) this.replaceLocalAudioTrack(a);
+        this.emit("device_hotswapped", {
+          kind: "audioinput",
+          deviceId: defaultMic.deviceId,
+        } as never);
+      }
+      await this.refreshDevices();
+    } catch (e) {
+      this.emit("error", { error: "device_hotswap_failed", message: e } as never);
+    }
+  }
+
   /** Enumerate and group available input/output devices. */
   async listDevices(): Promise<GroupedDevices> {
     return this.refreshDevices();
+  }
+
+  /** Pause local track of given kind (audio/video) without renegotiation. */
+  pauseLocalTrack(kind: "audio" | "video"): void {
+    if (!this.localStream) return;
+    const tracks =
+      kind === "video" ? this.localStream.getVideoTracks() : this.localStream.getAudioTracks();
+    for (const t of tracks) t.enabled = false;
+    this.emit("local_track_paused", { kind } as never);
+  }
+
+  /** Resume local track of given kind (audio/video). */
+  resumeLocalTrack(kind: "audio" | "video"): void {
+    if (!this.localStream) return;
+    const tracks =
+      kind === "video" ? this.localStream.getVideoTracks() : this.localStream.getAudioTracks();
+    for (const t of tracks) t.enabled = true;
+    this.emit("local_track_resumed", { kind } as never);
   }
 
   /** Update video constraints to use a specific deviceId or facingMode and refresh stream. */

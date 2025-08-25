@@ -27,6 +27,13 @@ export interface WebRTCClientOptions {
   debug?: boolean;
   /** Enable automatic reconnection on ICE failure/disconnect (default: true) */
   autoReconnect?: boolean;
+  /** Configure reconnect backoff; defaults used when omitted */
+  reconnectConfig?: {
+    backoff?: "fixed" | "exp";
+    baseMs?: number;
+    maxMs?: number;
+    jitter?: number; // 0..1
+  };
   /** If true, sanitize string data-channel messages by escaping HTML brackets */
   sanitizeDataChannelStrings?: boolean;
 }
