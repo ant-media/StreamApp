@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>webrtc-sdk data-only sample</title>
+    <style> body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 16px; } </style>
+  </head>
+  <body>
+    <h2>Data-Only Publish (TS v2)</h2>
+    <div>
+      <input id="streamId" placeholder="stream id" />
+      <button id="start">Start</button>
+      <button id="stop" disabled>Stop</button>
+    </div>
+    <fieldset style="margin-top:12px;">
+      <legend>Data Channel</legend>
+      <input id="dcText" placeholder="message" />
+      <button id="sendText" disabled>Send Text</button>
+      <button id="sendJSON" disabled>Send JSON</button>
+    </fieldset>
+    <pre id="log"></pre>
+
+    <script type="module">
+      import { WebRTCClient, getWebSocketURL, generateRandomString } from './js/index.js';
+      const websocketURL = getWebSocketURL(window.location);
+      const streamIdEl = document.getElementById('streamId');
+      const startBtn = document.getElementById('start');
+      const stopBtn = document.getElementById('stop');
+      const dcText = document.getElementById('dcText');
+      const sendTextBtn = document.getElementById('sendText');
+      const sendJSONBtn = document.getElementById('sendJSON');
+      const logEl = document.getElementById('log');
+      let client = null;
+      let currentId = '';
+      function log(m) { logEl.textContent += m + '\n'; }
+
+      startBtn.onclick = async () => {
+        const id = streamIdEl.value.trim() || 'data_' + generateRandomString(6);
+        try {
+          const r = await WebRTCClient.createSession({ websocketURL, role: 'publisher', streamId: id, onlyDataChannel: true });
+          client = r.client; currentId = id; stopBtn.disabled = false;
+          client.on('data_channel_opened', () => { sendTextBtn.disabled = false; sendJSONBtn.disabled = false; log('data channel opened'); });
+          client.on('data_channel_closed', () => { sendTextBtn.disabled = true; sendJSONBtn.disabled = true; log('data channel closed'); });
+          client.on('data_received', ({ data }) => log('dc <- ' + (typeof data === 'string' ? data : (data.byteLength + ' bytes'))));
+          log('started data-only for ' + id);
+        } catch(e) { log('start failed: ' + (e && e.message ? e.message : e)); }
+      };
+      stopBtn.onclick = () => { if (client && currentId) { client.stop(currentId); stopBtn.disabled = true; } };
+      sendTextBtn.onclick = async () => { if (client && currentId) { await client.sendData(currentId, dcText.value || 'hello'); log('dc -> ' + (dcText.value || 'hello')); } };
+      sendJSONBtn.onclick = async () => { if (client && currentId) { await client.sendJSON(currentId, { hello: 'world' }); log('dc -> {"hello":"world"}'); } };
+    </script>
+  </body>
+  </html>
+
