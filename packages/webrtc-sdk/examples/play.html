@@ -117,7 +117,6 @@
         const id = streamIdEl.value.trim();
         if (!id) { log('enter stream id'); return; }
         try {
-          await adaptor.ready();
           await adaptor.join({ role: 'viewer', streamId: id, token: tokenEl.value.trim() || undefined, timeoutMs: 20000 });
           currentId = id;
         } catch (e) {

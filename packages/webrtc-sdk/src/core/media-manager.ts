@@ -102,7 +102,10 @@ export class MediaManager extends Emitter<EventMap> {
     return grouped;
   }
 
-  /** Re-acquire default devices and replace local tracks; emits device_hotswapped. */
+  /**
+   * Re-acquire default input devices when `devicechange` fires and replace local tracks in-place.
+   * Emits `device_hotswapped` with the swapped kind. Does nothing if user explicitly selected devices.
+   */
   private async handleDeviceHotSwap(): Promise<void> {
     try {
       const prevVideoId = this.selectedVideoInputId;

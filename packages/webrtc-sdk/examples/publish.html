@@ -176,7 +176,6 @@
       startBtn.onclick = async () => {
         const id = streamIdEl.value || 'stream_' + generateRandomString(6);
         try {
-          await adaptor.ready();
           await adaptor.join({ role: 'publisher', streamId: id, token: tokenEl.value.trim() || undefined, timeoutMs: 20000 });
           currentId = id;
           startShareBtn.disabled = false;

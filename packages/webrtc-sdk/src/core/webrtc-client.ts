@@ -762,7 +762,10 @@ export class WebRTCClient extends Emitter<EventMap> {
     return this.media.listDevices();
   }
 
-  /** Set audio output device for a media element (or local preview by default). */
+  /**
+   * Set audio output device (sinkId) for a media element (or local preview by default).
+   * If the browser does not support sinkId, an `error` event with code `set_sink_id_unsupported` is emitted.
+   */
   async setAudioOutput(deviceId: string, element?: HTMLMediaElement | null): Promise<void> {
     await this.media.setAudioOutput(deviceId, element);
   }
@@ -860,7 +863,8 @@ export class WebRTCClient extends Emitter<EventMap> {
    * sdk.enableTrack('mainStreamId', 'camera_user3', true);
    * ```
    */
-  enableTrack(mainTrackId: string, trackId: string, enabled: boolean): void {
+  async enableTrack(mainTrackId: string, trackId: string, enabled: boolean): Promise<void> {
+    await this.ready();
     if (!this.ws) return;
     const jsCmd = {
       command: "enableTrack",
@@ -879,7 +883,8 @@ export class WebRTCClient extends Emitter<EventMap> {
    * sdk.forceStreamQuality('mainStreamId', 720); // or 'auto'
    * ```
    */
-  forceStreamQuality(streamId: string, height: number | "auto"): void {
+  async forceStreamQuality(streamId: string, height: number | "auto"): Promise<void> {
+    await this.ready();
     if (!this.ws) return;
     const jsCmd = {
       command: "forceStreamQuality",
@@ -1296,49 +1301,57 @@ export class WebRTCClient extends Emitter<EventMap> {
   }
 
   /** Request stream info; listen on 'notification:streamInformation' or stream_information. */
-  getStreamInfo(streamId: string): void {
+  async getStreamInfo(streamId: string): Promise<void> {
+    await this.ready();
     if (!this.ws) return;
     this.ws.send(JSON.stringify({ command: "getStreamInfo", streamId }));
   }
 
   /** Request broadcast object; listen on 'notification:broadcastObject' or broadcast_object. */
-  getBroadcastObject(streamId: string): void {
+  async getBroadcastObject(streamId: string): Promise<void> {
+    await this.ready();
     if (!this.ws) return;
     this.ws.send(JSON.stringify({ command: "getBroadcastObject", streamId }));
   }
 
   /** Request room info of roomId; optionally include streamId for context. */
-  getRoomInfo(roomId: string, streamId = ""): void {
+  async getRoomInfo(roomId: string, streamId = ""): Promise<void> {
+    await this.ready();
     if (!this.ws) return;
     this.ws.send(JSON.stringify({ command: "getRoomInfo", room: roomId, streamId }));
   }
 
   /** Request track list under a main stream. */
-  getTracks(streamId: string, token = ""): void {
+  async getTracks(streamId: string, token = ""): Promise<void> {
+    await this.ready();
     if (!this.ws) return;
     this.ws.send(JSON.stringify({ command: "getTrackList", streamId, token }));
   }
 
   /** Request subtracks for a main stream with optional paging and role filter. */
-  getSubtracks(streamId: string, role = "", offset = 0, size = 50): void {
+  async getSubtracks(streamId: string, role = "", offset = 0, size = 50): Promise<void> {
+    await this.ready();
     if (!this.ws) return;
     this.ws.send(JSON.stringify({ command: "getSubtracks", streamId, role, offset, size }));
   }
 
   /** Request subtrack count for a main stream with optional role/status. */
-  getSubtrackCount(streamId: string, role = "", status = ""): void {
+  async getSubtrackCount(streamId: string, role = "", status = ""): Promise<void> {
+    await this.ready();
     if (!this.ws) return;
     this.ws.send(JSON.stringify({ command: "getSubtracksCount", streamId, role, status }));
   }
 
   /** Request current subscriber count; listen on subscriber_count. */
-  getSubscriberCount(streamId: string): void {
+  async getSubscriberCount(streamId: string): Promise<void> {
+    await this.ready();
     if (!this.ws) return;
     this.ws.send(JSON.stringify({ command: "getSubscriberCount", streamId }));
   }
 
   /** Request current subscriber list; listen on subscriber_list. */
-  getSubscriberList(streamId: string, offset = 0, size = 50): void {
+  async getSubscriberList(streamId: string, offset = 0, size = 50): Promise<void> {
+    await this.ready();
     if (!this.ws) return;
     this.ws.send(JSON.stringify({ command: "getSubscribers", streamId, offset, size }));
   }
@@ -1416,7 +1429,8 @@ export class WebRTCClient extends Emitter<EventMap> {
   }
 
   /** Request video track assignments list for a main stream. */
-  requestVideoTrackAssignments(streamId: string): void {
+  async requestVideoTrackAssignments(streamId: string): Promise<void> {
+    await this.ready();
     if (!this.ws) return;
     this.ws.send(JSON.stringify({ command: "getVideoTrackAssignmentsCommand", streamId }));
   }
@@ -1453,7 +1467,10 @@ export class WebRTCClient extends Emitter<EventMap> {
    * sdk.updateVideoTrackAssignments({ streamId: 'main', offset: 20, size: 10 });
    * ```
    */
-  updateVideoTrackAssignments(opts: import("./types.js").UpdateVideoTrackAssignmentsOptions): void {
+  async updateVideoTrackAssignments(
+    opts: import("./types.js").UpdateVideoTrackAssignmentsOptions
+  ): Promise<void> {
+    await this.ready();
     if (!this.ws) return;
     this.ws.send(
       JSON.stringify({
@@ -1473,7 +1490,8 @@ export class WebRTCClient extends Emitter<EventMap> {
    * sdk.setMaxVideoTrackCount('mainStreamId', 9);
    * ```
    */
-  setMaxVideoTrackCount(streamId: string, maxTrackCount: number): void {
+  async setMaxVideoTrackCount(streamId: string, maxTrackCount: number): Promise<void> {
+    await this.ready();
     if (!this.ws) return;
     this.ws.send(
       JSON.stringify({

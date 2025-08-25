@@ -140,9 +140,11 @@ Open `docs/index.html` in a browser.
 - `MediaManager`: handles local media (getUserMedia, device switching, screen share).
 
 For most applications, call methods on `WebRTCClient` only. It exposes the common
-operations you need: `ready()`, `join()`, `publish()`, `play()`, `stop()`, `listDevices()`,
+operations you need: `join()`, `publish()`, `play()`, `stop()`, `listDevices()`,
 `selectVideoInput()`, `selectAudioInput()`, `startScreenShare()`, `stopScreenShare()`,
 `sendData()`, `enableStats()/disableStats()`, room/multitrack helpers, and emits typed events.
+
+Note: Methods internally wait for signaling readiness; you don't need to call `ready()` yourself.
 
 Only use `WebSocketAdaptor` or `MediaManager` directly if you have advanced
 customization needs (e.g., custom signaling transport or bespoke media capture).
