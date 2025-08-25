@@ -42,7 +42,6 @@ interface PeerContext {
  * Quick start:
  * ```ts
  * const sdk = new WebRTCClient({ websocketURL, mediaConstraints: { audio: true, video: true }, localVideo });
- * await sdk.ready();
  * await sdk.join({ role: 'publisher', streamId: 's1' });
  * sdk.on('publish_started', ({ streamId }) => console.log('publishing', streamId));
  * ```
@@ -542,7 +541,6 @@ export class WebRTCClient extends Emitter<EventMap> {
    * Example:
    * ```ts
    * const sdk = new WebRTCClient({ websocketURL, mediaConstraints: { audio: true, video: true } });
-   * await sdk.ready();
    * await sdk.publish('stream1', 'OPTIONAL_TOKEN');
    * sdk.on('publish_started', ({ streamId }) => console.log('publishing', streamId));
    * ```
@@ -576,7 +574,6 @@ export class WebRTCClient extends Emitter<EventMap> {
    * Example:
    * ```ts
    * const sdk = new WebRTCClient({ websocketURL, isPlayMode: true, remoteVideo });
-   * await sdk.ready();
    * await sdk.play('stream1');
    * sdk.on('play_started', ({ streamId }) => console.log('playing', streamId));
    * ```
@@ -687,12 +684,10 @@ export class WebRTCClient extends Emitter<EventMap> {
    * ```ts
    * // Publish
    * const sdk = new WebRTCClient({ websocketURL, mediaConstraints: { audio: true, video: true } });
-   * await sdk.ready();
    * await sdk.join({ role: 'publisher', streamId: 's1', token: 'OPTIONAL' });
    *
    * // Play
    * const viewer = new WebRTCClient({ websocketURL, isPlayMode: true, remoteVideo });
-   * await viewer.ready();
    * await viewer.join({ role: 'viewer', streamId: 's1' });
    * ```
    */
