@@ -15,6 +15,8 @@ export interface WebRTCClientOptions {
   httpEndpointUrl?: string;
   /** If true, initializes in play-only mode and skips getUserMedia */
   isPlayMode?: boolean;
+  /** If true, creates data-only sessions without capturing audio/video locally */
+  onlyDataChannel?: boolean;
   /** Default media constraints used for getUserMedia */
   mediaConstraints?: MediaStreamConstraints;
   /** Local preview element for publisher (srcObject will be assigned) */
@@ -25,6 +27,8 @@ export interface WebRTCClientOptions {
   debug?: boolean;
   /** Enable automatic reconnection on ICE failure/disconnect (default: true) */
   autoReconnect?: boolean;
+  /** If true, sanitize string data-channel messages by escaping HTML brackets */
+  sanitizeDataChannelStrings?: boolean;
 }
 
 /**

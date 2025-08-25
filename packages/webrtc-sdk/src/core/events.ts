@@ -9,6 +9,7 @@ export interface EventMap {
   initialized: void;
   closed: unknown;
   server_will_stop: unknown;
+  /** Emitted when new local tracks are attached or replaced; used internally to refresh senders */
   publish_started: { streamId: string };
   publish_finished: { streamId: string };
   play_started: { streamId: string };
@@ -20,6 +21,7 @@ export interface EventMap {
   data_channel_closed: { streamId: string };
   newTrackAvailable: { stream: MediaStream; track: MediaStreamTrack; streamId: string };
   devices_updated: GroupedDevices;
+  local_tracks_changed: void;
   error: { error: string; message?: unknown };
   // dynamic notification channel e.g. notification:subscriberCount -> payload from server
   [k: `notification:${string}`]: unknown;
@@ -31,6 +33,13 @@ export interface EventMap {
   room_joined?: unknown;
   room_left?: unknown;
   video_track_assignments?: unknown;
+  // additional common notifications
+  stream_information?: unknown;
+  track_list?: unknown;
+  subtrack_list?: unknown;
+  subtrack_count?: unknown;
+  reconnection_attempt_for_publisher?: string | { streamId: string };
+  reconnection_attempt_for_player?: string | { streamId: string };
 }
 
 export interface TypedEmitter<M extends Record<string, unknown>> {

@@ -18,6 +18,8 @@ interface PeerContext {
   pc: RTCPeerConnection;
   dc?: RTCDataChannel;
   mode?: "publish" | "play";
+  videoSender?: RTCRtpSender;
+  audioSender?: RTCRtpSender;
 }
 
 /**
@@ -36,12 +38,26 @@ interface PeerContext {
  *   customizations (e.g., custom signaling transport, bespoke media capture
  *   flows). For most apps, you should never need to instantiate or call them
  *   yourself.
+ *
+ * Quick start:
+ * ```ts
+ * const sdk = new WebRTCClient({ websocketURL, mediaConstraints: { audio: true, video: true }, localVideo });
+ * await sdk.ready();
+ * await sdk.join({ role: 'publisher', streamId: 's1' });
+ * sdk.on('publish_started', ({ streamId }) => console.log('publishing', streamId));
+ * ```
  */
 export class WebRTCClient extends Emitter<EventMap> {
+  // ===== Plugin API (v2 style) =====
+  static pluginInitMethods: Array<(sdk: WebRTCClient) => void> = [];
+  static register(initMethod: (sdk: WebRTCClient) => void): void {
+    WebRTCClient.pluginInitMethods.push(initMethod);
+  }
   private ws?: WebSocketAdaptor;
   private media: MediaManager;
   private isReady = false;
   isPlayMode: boolean;
+  private onlyDataChannel = false;
   private peers: Map<string, PeerContext> = new Map();
   private log = new Logger("debug");
   private peerConfig: RTCConfiguration = {
@@ -54,9 +70,21 @@ export class WebRTCClient extends Emitter<EventMap> {
   private rxChunks: Map<number, { expected: number; received: number; buffers: Uint8Array[] }> =
     new Map();
   private autoReconnect = true;
+  private sanitizeDcStrings = false;
   private activeStreams: Map<string, { mode: "publish" | "play"; token?: string }> = new Map();
   private reconnectTimers: Map<string, ReturnType<typeof setTimeout>> = new Map();
   private lastReconnectAt: Map<string, number> = new Map();
+  private remoteStreams: Map<string, MediaStream> = new Map();
+  private audioContext: AudioContext | null = null;
+  private remoteMeters: Map<
+    string,
+    {
+      analyser: AnalyserNode;
+      timer: ReturnType<typeof setInterval>;
+      data: Uint8Array;
+      source: MediaStreamAudioSourceNode;
+    }
+  > = new Map();
 
   /**
    * Create a new adaptor instance.
@@ -66,6 +94,8 @@ export class WebRTCClient extends Emitter<EventMap> {
     super();
     this.isPlayMode = !!opts.isPlayMode;
     this.autoReconnect = opts.autoReconnect ?? true;
+    this.sanitizeDcStrings = !!opts.sanitizeDataChannelStrings;
+    this.onlyDataChannel = !!opts.onlyDataChannel;
     this.media = new MediaManager({
       mediaConstraints: opts.mediaConstraints,
       localVideo: opts.localVideo,
@@ -73,8 +103,11 @@ export class WebRTCClient extends Emitter<EventMap> {
     this.remoteVideo = opts.remoteVideo ?? null;
 
     this.media.on("devices_updated", g => this.emit("devices_updated", g));
+    this.media.on("local_tracks_changed", () => {
+      void this.applyLocalTracks();
+    });
 
-    if (!this.isPlayMode) {
+    if (!this.isPlayMode && !this.onlyDataChannel) {
       this.media.initLocalStream().catch(() => {
         this.emit("error", { error: "getUserMediaIsNotAllowed" });
       });
@@ -95,6 +128,15 @@ export class WebRTCClient extends Emitter<EventMap> {
         this.log.info("adaptor initialized");
         this.ws?.send(JSON.stringify({ command: "getIceServerConfig" }));
       });
+    }
+
+    // Initialize plugins
+    for (const init of WebRTCClient.pluginInitMethods) {
+      try {
+        init(this);
+      } catch (e) {
+        this.log.warn("plugin init failed", e);
+      }
     }
   }
 
@@ -207,6 +249,13 @@ export class WebRTCClient extends Emitter<EventMap> {
       if (def === "subscriberList") this.emit("subscriber_list" as keyof EventMap, obj as never);
       if (def === "roomInformation") this.emit("room_information" as keyof EventMap, obj as never);
       if (def === "broadcastObject") this.emit("broadcast_object" as keyof EventMap, obj as never);
+      if (def === "videoTrackAssignmentList")
+        this.emit("video_track_assignments" as keyof EventMap, obj as never);
+      if (def === "streamInformation")
+        this.emit("stream_information" as keyof EventMap, obj as never);
+      if (def === "trackList") this.emit("track_list" as keyof EventMap, obj as never);
+      if (def === "subtrackList") this.emit("subtrack_list" as keyof EventMap, obj as never);
+      if (def === "subtrackCount") this.emit("subtrack_count" as keyof EventMap, obj as never);
       if (def === "joinedTheRoom") this.emit("room_joined" as keyof EventMap, obj as never);
       if (def === "leavedTheRoom") this.emit("room_left" as keyof EventMap, obj as never);
       // Also emit dynamic channel for other notifications
@@ -276,6 +325,7 @@ export class WebRTCClient extends Emitter<EventMap> {
       if (this.remoteVideo && this.remoteVideo.srcObject !== stream) {
         this.remoteVideo.srcObject = stream;
       }
+      if (stream) this.remoteStreams.set(streamId, stream);
       this.emit("newTrackAvailable", { stream, track: event.track, streamId });
     };
 
@@ -354,7 +404,8 @@ export class WebRTCClient extends Emitter<EventMap> {
       };
 
       if (typeof raw === "string") {
-        this.emit("data_received", { streamId, data: raw });
+        const text = this.sanitizeDcStrings ? raw.replace(/</g, "&lt;").replace(/>/g, "&gt;") : raw;
+        this.emit("data_received", { streamId, data: text });
         return;
       }
       // Blob (WebKit) → ArrayBuffer
@@ -386,11 +437,22 @@ export class WebRTCClient extends Emitter<EventMap> {
   private async startPublishing(streamId: string): Promise<void> {
     const pc = this.peers.get(streamId)?.pc ?? this.createPeer(streamId);
     const stream = this.media.getLocalStream();
+    if (!stream && !this.onlyDataChannel) throw new Error("no_local_stream");
 
-    if (!stream) throw new Error("no_local_stream");
-
-    if (pc.getSenders().length === 0) {
-      for (const track of stream.getTracks()) pc.addTrack(track, stream);
+    if (!this.onlyDataChannel && pc.getSenders().length === 0 && stream) {
+      for (const track of stream.getTracks()) {
+        const sender = pc.addTrack(track, stream);
+        if (track.kind === "video") (this.peers.get(streamId) as any).videoSender = sender;
+        if (track.kind === "audio") (this.peers.get(streamId) as any).audioSender = sender;
+      }
+    } else {
+      // Refresh cached senders if missing
+      const ctx = this.peers.get(streamId);
+      if (ctx) {
+        const senders = pc.getSenders();
+        ctx.videoSender = ctx.videoSender || senders.find(s => s.track?.kind === "video");
+        ctx.audioSender = ctx.audioSender || senders.find(s => s.track?.kind === "audio");
+      }
     }
 
     // create data channel in publish mode like v1
@@ -436,8 +498,8 @@ export class WebRTCClient extends Emitter<EventMap> {
     this.activeStreams.set(streamId, { mode: "publish", token });
 
     const stream = this.media.getLocalStream();
-    const hasVideo = !!stream && stream.getVideoTracks().length > 0;
-    const hasAudio = !!stream && stream.getAudioTracks().length > 0;
+    const hasVideo = this.onlyDataChannel ? false : !!stream && stream.getVideoTracks().length > 0;
+    const hasAudio = this.onlyDataChannel ? false : !!stream && stream.getAudioTracks().length > 0;
 
     if (this.ws) {
       const jsCmd = {
@@ -625,6 +687,11 @@ export class WebRTCClient extends Emitter<EventMap> {
     return this.media.listDevices();
   }
 
+  /** Set audio output device for a media element (or local preview by default). */
+  async setAudioOutput(deviceId: string, element?: HTMLMediaElement | null): Promise<void> {
+    await this.media.setAudioOutput(deviceId, element);
+  }
+
   /**
    * Switch the active camera. Uses replaceTrack under the hood for ongoing sessions.
    *
@@ -652,6 +719,7 @@ export class WebRTCClient extends Emitter<EventMap> {
    */
   async selectAudioInput(deviceId: string): Promise<void> {
     await this.media.selectAudioInput(deviceId);
+    // If camera is disabled, there may be no video track; still ensure audio sender gets replaced
     await this.applyLocalTracks();
   }
 
@@ -757,30 +825,35 @@ export class WebRTCClient extends Emitter<EventMap> {
     await this.applyLocalTracks();
   }
 
+  /** Begin screen share with camera overlay (canvas composition). */
+  async startScreenWithCameraOverlay(): Promise<void> {
+    await this.media.startScreenWithCameraOverlay();
+    await this.applyLocalTracks();
+  }
+
+  /** Stop screen+camera overlay and restore camera track. */
+  async stopScreenWithCameraOverlay(): Promise<void> {
+    await this.media.stopScreenWithCameraOverlay();
+    await this.applyLocalTracks();
+  }
+
   /**
    * Turn off camera hardware: stop local camera track and detach from sender without renegotiation.
    */
   async turnOffLocalCamera(): Promise<void> {
     this.media.turnOffLocalCamera();
-    // Detach track and pause sender encoding to avoid sending frames
+    // Replace with black dummy track similar to v1 (keeps sender alive)
     for (const ctx of this.peers.values()) {
-      const sender = ctx.pc.getSenders().find(s => s.track && s.track.kind === "video");
+      const primary = ctx.videoSender;
+      let sender = primary as RTCRtpSender | undefined;
+      if (!sender) sender = ctx.pc.getSenders().find(s => s.track && s.track.kind === "video");
       if (!sender) continue;
       try {
-        await sender.replaceTrack(null);
+        const stream = this.media.getLocalStream();
+        const blackTrack = stream?.getVideoTracks()[0] || null;
+        await sender.replaceTrack(blackTrack);
       } catch (e) {
-        this.log.warn("replaceTrack(null) failed", e);
-      }
-      try {
-        const params = sender.getParameters();
-        if (params && Array.isArray(params.encodings)) {
-          for (const enc of params.encodings) {
-            (enc as { active?: boolean }).active = false;
-          }
-          await sender.setParameters(params);
-        }
-      } catch (e) {
-        this.log.warn("setParameters pause failed", e);
+        this.log.warn("replaceTrack(black) failed", e);
       }
     }
   }
@@ -791,22 +864,6 @@ export class WebRTCClient extends Emitter<EventMap> {
   async turnOnLocalCamera(): Promise<void> {
     await this.media.turnOnLocalCamera();
     await this.applyLocalTracks();
-    // Resume encodings
-    for (const ctx of this.peers.values()) {
-      const sender = ctx.pc.getSenders().find(s => s.track && s.track.kind === "video");
-      if (!sender) continue;
-      try {
-        const params = sender.getParameters();
-        if (params && Array.isArray(params.encodings)) {
-          for (const enc of params.encodings) {
-            (enc as { active?: boolean }).active = true;
-          }
-          await sender.setParameters(params);
-        }
-      } catch (e) {
-        this.log.warn("setParameters resume failed", e);
-      }
-    }
   }
 
   /** Mute local microphone (pause audio track). */
@@ -817,6 +874,51 @@ export class WebRTCClient extends Emitter<EventMap> {
   /** Unmute local microphone (resume audio track). */
   unmuteLocalMic(): void {
     this.media.unmuteLocalMic();
+  }
+
+  /**
+   * Set outgoing audio volume for the published stream (0..1).
+   * This controls what remote peers hear by applying a GainNode to the audio track.
+   * @param level Value between 0.0 (mute) and 1.0 (full volume)
+   */
+  setVolumeLevel(level: number): void {
+    this.media.setVolumeLevel(level);
+  }
+
+  /**
+   * Enable local audio level metering.
+   * Emits sampled RMS levels to the provided callback at the specified interval.
+   * @param callback Function receiving a level value (0..1 approx)
+   * @param periodMs Sampling interval in milliseconds (default 200ms)
+   */
+  async enableAudioLevelForLocalStream(
+    callback: (level: number) => void,
+    periodMs = 200
+  ): Promise<void> {
+    await this.media.enableAudioLevelForLocalStream(callback, periodMs);
+  }
+
+  /** Disable the local audio level metering started by enableAudioLevelForLocalStream. */
+  disableAudioLevelForLocalStream(): void {
+    this.media.disableAudioLevelForLocalStream();
+  }
+
+  /**
+   * Enable speaking detection while muted.
+   * Useful to notify users when they are speaking but their mic is muted.
+   * @param callback Called with true when level > threshold, else false
+   * @param threshold Sensitivity threshold (default 0.1)
+   */
+  async enableAudioLevelWhenMuted(
+    callback: (speaking: boolean) => void,
+    threshold = 0.1
+  ): Promise<void> {
+    await this.media.enableAudioLevelWhenMuted(callback, threshold);
+  }
+
+  /** Disable speaking detection started by enableAudioLevelWhenMuted. */
+  disableAudioLevelWhenMuted(): void {
+    this.media.disableAudioLevelWhenMuted();
   }
 
   /**
@@ -1018,6 +1120,11 @@ export class WebRTCClient extends Emitter<EventMap> {
     this.emit("closed", undefined as unknown as never);
   }
 
+  /** Toggle sanitization for incoming data-channel strings at runtime. */
+  setSanitizeDataChannelStrings(enabled: boolean): void {
+    this.sanitizeDcStrings = !!enabled;
+  }
+
   private reconnectIfRequired(streamId: string, delayMs = 3000, forceReconnect = false): void {
     if (!this.autoReconnect) return;
     if (!this.activeStreams.has(streamId)) return;
@@ -1028,6 +1135,12 @@ export class WebRTCClient extends Emitter<EventMap> {
     if (!forceReconnect && now - last < 1000) {
       delayMs = Math.max(delayMs, 1000);
     }
+    // notify reconnection attempt similar to v1
+    const mode = this.activeStreams.get(streamId)?.mode;
+    if (mode === "publish")
+      this.emit("reconnection_attempt_for_publisher" as keyof EventMap, { streamId } as never);
+    else if (mode === "play")
+      this.emit("reconnection_attempt_for_player" as keyof EventMap, { streamId } as never);
     const timer = setTimeout(() => {
       this.reconnectTimers.delete(streamId);
       this.tryAgain(streamId, forceReconnect);
@@ -1059,27 +1172,369 @@ export class WebRTCClient extends Emitter<EventMap> {
     }, 500);
   }
 
+  // ===== Parity signaling helpers (v1 compatibility) =====
+  /** Instruct server to enable/disable a remote video track. */
+  toggleVideo(streamId: string, trackId: string, enabled: boolean): void {
+    if (!this.ws) return;
+    this.ws.send(JSON.stringify({ command: "toggleVideo", streamId, trackId, enabled }));
+  }
+
+  /** Instruct server to enable/disable a remote audio track. */
+  toggleAudio(streamId: string, trackId: string, enabled: boolean): void {
+    if (!this.ws) return;
+    this.ws.send(JSON.stringify({ command: "toggleAudio", streamId, trackId, enabled }));
+  }
+
+  /** Request stream info; listen on 'notification:streamInformation' or stream_information. */
+  getStreamInfo(streamId: string): void {
+    if (!this.ws) return;
+    this.ws.send(JSON.stringify({ command: "getStreamInfo", streamId }));
+  }
+
+  /** Request broadcast object; listen on 'notification:broadcastObject' or broadcast_object. */
+  getBroadcastObject(streamId: string): void {
+    if (!this.ws) return;
+    this.ws.send(JSON.stringify({ command: "getBroadcastObject", streamId }));
+  }
+
+  /** Request room info of roomId; optionally include streamId for context. */
+  getRoomInfo(roomId: string, streamId = ""): void {
+    if (!this.ws) return;
+    this.ws.send(JSON.stringify({ command: "getRoomInfo", room: roomId, streamId }));
+  }
+
+  /** Request track list under a main stream. */
+  getTracks(streamId: string, token = ""): void {
+    if (!this.ws) return;
+    this.ws.send(JSON.stringify({ command: "getTrackList", streamId, token }));
+  }
+
+  /** Request subtracks for a main stream with optional paging and role filter. */
+  getSubtracks(streamId: string, role = "", offset = 0, size = 50): void {
+    if (!this.ws) return;
+    this.ws.send(JSON.stringify({ command: "getSubtracks", streamId, role, offset, size }));
+  }
+
+  /** Request subtrack count for a main stream with optional role/status. */
+  getSubtrackCount(streamId: string, role = "", status = ""): void {
+    if (!this.ws) return;
+    this.ws.send(JSON.stringify({ command: "getSubtracksCount", streamId, role, status }));
+  }
+
+  /** Request current subscriber count; listen on subscriber_count. */
+  getSubscriberCount(streamId: string): void {
+    if (!this.ws) return;
+    this.ws.send(JSON.stringify({ command: "getSubscriberCount", streamId }));
+  }
+
+  /** Request current subscriber list; listen on subscriber_list. */
+  getSubscriberList(streamId: string, offset = 0, size = 50): void {
+    if (!this.ws) return;
+    this.ws.send(JSON.stringify({ command: "getSubscribers", streamId, offset, size }));
+  }
+
+  /** Peer-to-peer messaging helper. */
+  peerMessage(streamId: string, definition: string, data: unknown): void {
+    if (!this.ws) return;
+    this.ws.send(JSON.stringify({ command: "peerMessageCommand", streamId, definition, data }));
+  }
+
+  /** Register a push notification token with AMS. */
+  registerPushNotificationToken(
+    subscriberId: string,
+    authToken: string,
+    pushToken: string,
+    tokenType: "fcm" | "apn"
+  ): void {
+    if (!this.ws) return;
+    this.ws.send(
+      JSON.stringify({
+        command: "registerPushNotificationToken",
+        subscriberId,
+        token: authToken,
+        pnsRegistrationToken: pushToken,
+        pnsType: tokenType,
+      })
+    );
+  }
+
+  /** Send a push notification to specific subscribers. */
+  sendPushNotification(
+    subscriberId: string,
+    authToken: string,
+    pushNotificationContent: Record<string, unknown>,
+    subscriberIdsToNotify: string[]
+  ): void {
+    if (!this.ws) return;
+    if (typeof pushNotificationContent !== "object") {
+      throw new Error("pushNotificationContent must be an object");
+    }
+    if (!Array.isArray(subscriberIdsToNotify)) {
+      throw new Error("subscriberIdsToNotify must be an array");
+    }
+    this.ws.send(
+      JSON.stringify({
+        command: "sendPushNotification",
+        subscriberId,
+        token: authToken,
+        pushNotificationContent,
+        subscriberIdsToNotify,
+      })
+    );
+  }
+
+  /** Send a push notification to a topic. */
+  sendPushNotificationToTopic(
+    subscriberId: string,
+    authToken: string,
+    pushNotificationContent: Record<string, unknown>,
+    topic: string
+  ): void {
+    if (!this.ws) return;
+    if (typeof pushNotificationContent !== "object") {
+      throw new Error("pushNotificationContent must be an object");
+    }
+    this.ws.send(
+      JSON.stringify({
+        command: "sendPushNotification",
+        subscriberId,
+        token: authToken,
+        pushNotificationContent,
+        topic,
+      })
+    );
+  }
+
+  /** Request video track assignments list for a main stream. */
+  requestVideoTrackAssignments(streamId: string): void {
+    if (!this.ws) return;
+    this.ws.send(JSON.stringify({ command: "getVideoTrackAssignmentsCommand", streamId }));
+  }
+
+  /**
+   * Assign/unassign a specific video track under a main stream.
+   *
+   * Example:
+   * ```ts
+   * // Show only a specific participant's camera
+   * sdk.assignVideoTrack('mainStreamId', 'camera_user3', true);
+   * // Hide it again
+   * sdk.assignVideoTrack('mainStreamId', 'camera_user3', false);
+   * ```
+   */
+  assignVideoTrack(streamId: string, videoTrackId: string, enabled: boolean): void {
+    if (!this.ws) return;
+    this.ws.send(
+      JSON.stringify({
+        command: "assignVideoTrackCommand",
+        streamId,
+        videoTrackId,
+        enabled,
+      })
+    );
+  }
+
+  /**
+   * Update paginated video track assignments for UI pagination scenarios.
+   *
+   * Example:
+   * ```ts
+   * // Fetch next page of assignments (offset 20, size 10)
+   * sdk.updateVideoTrackAssignments({ streamId: 'main', offset: 20, size: 10 });
+   * ```
+   */
+  updateVideoTrackAssignments(opts: import("./types.js").UpdateVideoTrackAssignmentsOptions): void {
+    if (!this.ws) return;
+    this.ws.send(
+      JSON.stringify({
+        command: "updateVideoTrackAssignmentsCommand",
+        streamId: opts.streamId,
+        offset: opts.offset,
+        size: opts.size,
+      })
+    );
+  }
+
+  /**
+   * Set the maximum number of video tracks for a main stream (conference pagination).
+   *
+   * Example:
+   * ```ts
+   * sdk.setMaxVideoTrackCount('mainStreamId', 9);
+   * ```
+   */
+  setMaxVideoTrackCount(streamId: string, maxTrackCount: number): void {
+    if (!this.ws) return;
+    this.ws.send(
+      JSON.stringify({
+        command: "setMaxVideoTrackCountCommand",
+        streamId,
+        maxTrackCount,
+      })
+    );
+  }
+
+  /**
+   * Change outbound video bandwidth (kbps) or 'unlimited' via RTCRtpSender.setParameters.
+   *
+   * Example:
+   * ```ts
+   * await sdk.changeBandwidth('s1', 600);     // limit to 600 kbps
+   * await sdk.changeBandwidth('s1', 'unlimited');
+   * ```
+   */
+  async changeBandwidth(streamId: string, bandwidth: number | "unlimited"): Promise<void> {
+    const ctx = this.peers.get(streamId);
+    if (!ctx) return;
+    const sender = ctx.videoSender || ctx.pc.getSenders().find(s => s.track?.kind === "video");
+    if (!sender) return;
+    const params = sender.getParameters();
+    params.encodings = params.encodings || [{}];
+    if (bandwidth === "unlimited")
+      delete (params.encodings[0] as Record<string, unknown>).maxBitrate;
+    else (params.encodings[0] as Record<string, unknown>).maxBitrate = bandwidth * 1000;
+    try {
+      await sender.setParameters(params);
+    } catch (e) {
+      this.log.warn("setParameters(maxBitrate) failed", e);
+    }
+  }
+
+  /**
+   * Set degradationPreference for the video sender.
+   *
+   * Example:
+   * ```ts
+   * await sdk.setDegradationPreference('s1', 'maintain-framerate');
+   * ```
+   */
+  async setDegradationPreference(
+    streamId: string,
+    preference: "maintain-framerate" | "maintain-resolution" | "balanced"
+  ): Promise<void> {
+    const ctx = this.peers.get(streamId);
+    if (!ctx) return;
+    const sender = ctx.videoSender || ctx.pc.getSenders().find(s => s.track?.kind === "video");
+    if (!sender) return;
+    const params = sender.getParameters();
+    try {
+      (params as unknown as { degradationPreference?: string }).degradationPreference = preference;
+      await sender.setParameters(params);
+      this.log.info("Degradation Preference set to %s", preference);
+    } catch (e) {
+      this.log.warn("setParameters(degradationPreference) failed", e);
+    }
+  }
+
+  /** Update stream metadata on the server side. */
+  updateStreamMetaData(streamId: string, metaData: unknown): void {
+    if (!this.ws) return;
+    this.ws.send(JSON.stringify({ command: "updateStreamMetaData", streamId, metaData }));
+  }
+
   private async applyLocalTracks(): Promise<void> {
     const stream = this.media.getLocalStream();
     if (!stream) return;
     for (const ctx of this.peers.values()) {
       const senders = ctx.pc.getSenders();
-      for (const track of stream.getTracks()) {
-        const sender = senders.find(s => s.track && s.track.kind === track.kind);
+      // v1 parity: update video first, then audio
+      const videoTracks = stream.getVideoTracks();
+      for (const track of videoTracks) {
+        let sender =
+          (track.kind === "video" ? ctx.videoSender : ctx.audioSender) ||
+          senders.find(s => s.track && s.track.kind === track.kind);
         if (sender && sender.replaceTrack) {
           try {
             await sender.replaceTrack(track);
+            if (track.kind === "video") ctx.videoSender = sender;
+            if (track.kind === "audio") ctx.audioSender = sender;
           } catch (e) {
             this.log.warn("replaceTrack failed", e);
           }
         } else {
           try {
-            ctx.pc.addTrack(track, stream);
+            sender = ctx.pc.addTrack(track, stream);
+            if (track.kind === "video") ctx.videoSender = sender;
+            if (track.kind === "audio") ctx.audioSender = sender;
+          } catch (e) {
+            this.log.warn("addTrack failed", e);
+          }
+        }
+      }
+      const audioTracks = stream.getAudioTracks();
+      for (const track of audioTracks) {
+        let sender = ctx.audioSender || senders.find(s => s.track && s.track.kind === "audio");
+        if (sender && sender.replaceTrack) {
+          try {
+            await sender.replaceTrack(track);
+            ctx.audioSender = sender;
+          } catch (e) {
+            this.log.warn("replaceTrack failed", e);
+          }
+        } else {
+          try {
+            sender = ctx.pc.addTrack(track, stream);
+            ctx.audioSender = sender;
           } catch (e) {
             this.log.warn("addTrack failed", e);
           }
         }
       }
     }
+  }
+
+  // ===== Remote audio level metering (viewer side) =====
+  /** Measure audio level for remote stream and invoke callback periodically. */
+  async enableRemoteAudioLevel(
+    streamId: string,
+    callback: (level: number) => void,
+    periodMs = 200
+  ): Promise<void> {
+    const stream =
+      this.remoteStreams.get(streamId) ||
+      (this.remoteVideo?.srcObject as MediaStream | null) ||
+      null;
+    if (!stream) return;
+    if (!this.audioContext) this.audioContext = new AudioContext();
+    const ctx = this.audioContext;
+    const source = ctx.createMediaStreamSource(stream);
+    const analyser = ctx.createAnalyser();
+    analyser.fftSize = 256;
+    source.connect(analyser);
+    const data = new Uint8Array(analyser.frequencyBinCount);
+    if (this.remoteMeters.has(streamId)) this.disableRemoteAudioLevel(streamId);
+    const timer = setInterval(() => {
+      analyser.getByteTimeDomainData(data);
+      let sum = 0;
+      for (let i = 0; i < data.length; i++) {
+        const v = (data[i] - 128) / 128;
+        sum += v * v;
+      }
+      const rms = Math.sqrt(sum / data.length);
+      try {
+        callback(rms);
+      } catch (e) {
+        this.log.warn("remote audio level callback failed", e);
+      }
+    }, periodMs);
+    this.remoteMeters.set(streamId, { analyser, timer, data, source });
+  }
+
+  /** Stop remote audio level metering. */
+  disableRemoteAudioLevel(streamId: string): void {
+    const meter = this.remoteMeters.get(streamId);
+    if (!meter) return;
+    clearInterval(meter.timer);
+    try {
+      meter.source.disconnect();
+    } catch (e) {
+      this.log.warn("remote audio source disconnect failed", e);
+    }
+    try {
+      meter.analyser.disconnect();
+    } catch (e) {
+      this.log.warn("remote audio analyser disconnect failed", e);
+    }
+    this.remoteMeters.delete(streamId);
   }
 }

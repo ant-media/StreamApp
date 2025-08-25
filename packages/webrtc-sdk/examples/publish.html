@@ -44,6 +44,7 @@
         <input id="dcText" placeholder="message" />
         <button id="sendText" disabled>Send Text</button>
         <button id="sendBin" disabled>Send 128KB Binary</button>
+        <label style="margin-left:12px"><input type="checkbox" id="sanitize" /> Sanitize Strings</label>
       </fieldset>
     </div>
     <div style="margin-top:12px;">
@@ -51,6 +52,18 @@
         <legend>Screen Share</legend>
         <button id="startShare">Start Share</button>
         <button id="stopShare" disabled>Stop Share</button>
+        <button id="startOverlay">Start Share + Camera Overlay</button>
+        <button id="stopOverlay" disabled>Stop Overlay</button>
+      </fieldset>
+    </div>
+    <div style="margin-top:12px;">
+      <fieldset>
+        <legend>Audio</legend>
+        <label>Volume:</label>
+        <input id="volume" type="range" min="0" max="1" step="0.01" value="1" />
+        <button id="meterOn">Enable Level Meter</button>
+        <button id="meterOff">Disable Level Meter</button>
+        <span id="level">level: 0.00</span>
       </fieldset>
     </div>
     <div style="margin-top:12px;">
@@ -77,12 +90,19 @@
       const dcText = document.getElementById('dcText');
       const sendTextBtn = document.getElementById('sendText');
       const sendBinBtn = document.getElementById('sendBin');
+      const sanitizeCb = document.getElementById('sanitize');
       const statsEl = document.getElementById('stats');
       const enableStatsBtn = document.getElementById('enableStats');
       const startShareBtn = document.getElementById('startShare');
       const stopShareBtn = document.getElementById('stopShare');
+      const startOverlayBtn = document.getElementById('startOverlay');
+      const stopOverlayBtn = document.getElementById('stopOverlay');
       const turnOffCamBtn = document.getElementById('turnOffCam');
       const turnOnCamBtn = document.getElementById('turnOnCam');
+      const vol = document.getElementById('volume');
+      const meterOn = document.getElementById('meterOn');
+      const meterOff = document.getElementById('meterOff');
+      const level = document.getElementById('level');
 
       function log(msg) {
         logEl.textContent += msg + '\n';
@@ -116,6 +136,7 @@
         if (typeof data === 'string') log('dc <- ' + data);
         else log('dc <- binary ' + (data.byteLength || 0) + ' bytes');
       });
+      sanitizeCb.onchange = () => adaptor.setSanitizeDataChannelStrings(sanitizeCb.checked);
       adaptor.on('updated_stats', (ps) => {
         statsEl.textContent = `bytesSent=${ps.totalBytesSent} bytesRecv=${ps.totalBytesReceived}`;
       });
@@ -179,6 +200,23 @@
         } catch (e) { log('stop share failed: ' + e.message); }
       };
 
+      startOverlayBtn.onclick = async () => {
+        try {
+          await adaptor.startScreenWithCameraOverlay();
+          startOverlayBtn.disabled = true;
+          stopOverlayBtn.disabled = false;
+          log('overlay started');
+        } catch (e) { log('start overlay failed: ' + e.message); }
+      };
+      stopOverlayBtn.onclick = async () => {
+        try {
+          await adaptor.stopScreenWithCameraOverlay();
+          startOverlayBtn.disabled = false;
+          stopOverlayBtn.disabled = true;
+          log('overlay stopped');
+        } catch (e) { log('stop overlay failed: ' + e.message); }
+      };
+
       turnOffCamBtn.onclick = () => {
         adaptor.turnOffLocalCamera();
         log('camera turned off');
@@ -186,6 +224,19 @@
       turnOnCamBtn.onclick = () => {
         adaptor.turnOnLocalCamera();
         log('camera turned on');
+      };
+
+      vol.oninput = () => {
+        adaptor.setVolumeLevel(parseFloat(vol.value));
+      };
+      meterOn.onclick = async () => {
+        await adaptor.enableAudioLevelForLocalStream((v) => {
+          level.textContent = 'level: ' + v.toFixed(2);
+        }, 200);
+      };
+      meterOff.onclick = () => {
+        adaptor.disableAudioLevelForLocalStream();
+        level.textContent = 'level: 0.00';
       };
     </script>
   </body>

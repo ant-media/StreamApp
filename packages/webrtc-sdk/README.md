@@ -42,6 +42,10 @@ Common events emitted by the SDK (see TypeDoc for full list):
 - `data_received` { streamId, data: string | ArrayBuffer }
 - `updated_stats` PeerStats
 - `devices_updated` GroupedDevices
+- `room_joined` / `room_left`
+- `room_information`, `broadcast_object`, `subscriber_count`, `subscriber_list`
+- `video_track_assignments`
+- `reconnection_attempt_for_publisher` / `reconnection_attempt_for_player`
 - `error` { error, message? }
 
 ### Stats helpers
@@ -99,6 +103,36 @@ adaptor.enableTrack('mainStreamId', 'camera_user3', true);
 
 // Force quality (ABR)
 adaptor.forceStreamQuality('mainStreamId', 720); // or 'auto'
+```
+
+### Device management and screen share
+
+```ts
+// Switch devices without renegotiation
+await adaptor.selectVideoInput('camera-device-id');
+await adaptor.selectAudioInput('mic-device-id');
+
+// Camera on/off keeps sender alive (black dummy track)
+await adaptor.turnOffLocalCamera();
+await adaptor.turnOnLocalCamera();
+
+// Screen share and overlay (PIP camera)
+await adaptor.startScreenShare();
+await adaptor.stopScreenShare();
+await adaptor.startScreenWithCameraOverlay();
+await adaptor.stopScreenWithCameraOverlay();
+```
+
+### Data channel
+
+```ts
+// Text
+await adaptor.sendData('s1', 'hello');
+// Binary
+await adaptor.sendData('s1', new Uint8Array([1,2,3]).buffer);
+// Optional sanitize received strings
+adaptor.setSanitizeDataChannelStrings(true);
+adaptor.on('data_received', ({ data }) => console.log('rx', data));
 ```
 
 ## Examples
