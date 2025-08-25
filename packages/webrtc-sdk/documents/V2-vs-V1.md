@@ -49,7 +49,6 @@ adaptor.publish('s1', 'OPTIONAL_TOKEN');
 // v2 (TS)
 import { WebRTCClient } from './src';
 const sdk = new WebRTCClient({ websocketURL, mediaConstraints: { audio: true, video: true }, localVideo });
-await sdk.ready();
 await sdk.join({ role: 'publisher', streamId: 's1', token: 'OPTIONAL_TOKEN' });
 ```
 
@@ -62,7 +61,6 @@ adaptor.play('s1');
 ```ts
 // v2
 const viewer = new WebRTCClient({ websocketURL, isPlayMode: true, remoteVideo });
-await viewer.ready();
 await viewer.join({ role: 'viewer', streamId: 's1' });
 ```
 
