@@ -214,35 +214,6 @@ client.enableStats('s1', 2000);
 - HTTPS required: `getUserMedia` and `getDisplayMedia` need HTTPS (or localhost). Serve examples over HTTPS.
 - TURN/ICE: if connections fail across networks, configure proper TURN servers on Ant Media Server and pass `peerConfig.iceServers` if needed.
 
-### Legacy v1-style callbacks (optional shim)
-
-If you are migrating from v1 and prefer a single `callback(info, obj)` and `callbackError(err, message)` style, use this small helper:
-
-```ts
-function attachLegacyCallbacks(client: WebRTCClient, {
-  callback,
-  callbackError,
-}: { callback?: (info: string, obj?: unknown) => void; callbackError?: (err: string, msg?: unknown) => void; }) {
-  const events = [
-    'initialized','publish_started','publish_finished','play_started','play_finished',
-    'ice_connection_state_changed','updated_stats','data_channel_opened','data_channel_closed',
-    'newTrackAvailable','devices_updated','room_joined','room_left','broadcast_object','room_information',
-  ] as const;
-  events.forEach((ev) => client.on(ev as any, (obj: unknown) => callback && callback(ev as string, obj)));
-  // forward common notifications
-  client.on('subscriber_count', (obj) => callback && callback('subscriberCount', obj));
-  client.on('subscriber_list', (obj) => callback && callback('subscriberList', obj));
-  // errors
-  client.on('error', (e) => callbackError && callbackError(e.error as string, e.message));
-}
-
-// usage
-attachLegacyCallbacks(client, {
-  callback: (info, obj) => console.log('event', info, obj),
-  callbackError: (err, msg) => console.warn('error', err, msg),
-});
-```
-
 ## Examples
 
 - `examples/publish.html`
