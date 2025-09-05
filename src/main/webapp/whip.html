@@ -30,8 +30,10 @@
 
   <script type="module">
 
-	//we started to import the WHIPClient this way because module file is causing problem
-    import { WHIPClient } from "https://esm.sh/@eyevinn/whip-web-client/dist/whip-client.modern.js";
+    // Using custom ./js/SimpleWhipClient.js because @eyevinn library is now broken in browser-only context
+    // import { WHIPClient } from "https://esm.sh/@eyevinn/whip-web-client/dist/whip-client.modern.js";
+    import { WhipClient } from "./js/SimpleWhipClient.js";
+
 
     import {getQueryParameter, generateRandomString} from "./js/utility.js" 
     import {getUrlParameter} from "./js/fetch.stream.js" 
@@ -65,7 +67,7 @@
       else {
       	streamId = "stream" + generateRandomString(6);
 	  }
-      client = new WHIPClient({
+      client = new WhipClient({
         endpoint: whipEndpoint + streamId,
         opts: {
           debug: true,
