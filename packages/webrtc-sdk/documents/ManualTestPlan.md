@@ -9,6 +9,7 @@
 - `selectVideoInput()` while publishing. Remote video switches without renegotiation.
 - `selectAudioInput()` while publishing. Remote audio continues.
 - `turnOffLocalCamera()` then `turnOnLocalCamera()`; remote shows black → restores.
+- `muteLocalMic()` then `unmuteLocalMic()`; remote shows black → restores.
 
 ### 3. Screen share
 - `startScreenShare()`; verify screen video and mixed system+mic audio at remote.
