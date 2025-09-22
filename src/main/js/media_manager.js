@@ -97,6 +97,12 @@ export class MediaManager {
 		this.volumeMeterUrl = 'volume-meter-processor.js';
 
         /**
+         * If camera permission is denied during initialization but microphone is granted,
+         * fallback to audio-only initialization automatically
+         */
+        this.fallbackToAudioIfVideoPermissionDenied = true;
+
+        /**
          * The values of the above fields are provided as user parameters by the constructor.
          * TODO: Also some other hidden parameters may be passed here
          */
@@ -261,7 +267,27 @@ export class MediaManager {
         this.checkWebRTCPermissions();
         if (typeof this.mediaConstraints.video != "undefined" && this.mediaConstraints.video != false)
         {
-            return this.openStream(this.mediaConstraints);
+            return this.openStream(this.mediaConstraints).catch(error => {
+                // If camera access is denied but audio is allowed, optionally fallback to audio-only
+                if (this.fallbackToAudioIfVideoPermissionDenied && this.isCameraPermissionError(error)) {
+                    // if audio is requested (true or constraints object), try audio-only
+                    if (typeof this.mediaConstraints.audio == "undefined" || this.mediaConstraints.audio == false) {
+                        // no audio requested, cannot fallback
+                        throw error;
+                    }
+
+                    const retryConstraints = { video: false, audio: this.mediaConstraints.audio };
+                    return this.navigatorUserMedia(retryConstraints).then((stream) => {
+                        return this.gotStream(stream).then(() => {
+                            this.callback("audio_only_fallback", { reason: error.name });
+                        });
+                    }).catch((e) => {
+                        // propagate original error
+                        throw error;
+                    });
+                }
+                throw error;
+            });
         }
         else if (typeof this.mediaConstraints.audio != "undefined" && this.mediaConstraints.audio != false)
         {
@@ -297,6 +323,21 @@ export class MediaManager {
         if (typeof navigator.mediaDevices == "undefined" || navigator.mediaDevices == undefined || navigator.mediaDevices == null) {
             this.callbackError("getUserMediaIsNotAllowed");
         }
+    }
+
+    /**
+     * Returns true if the error corresponds to camera permission/availability issues
+     */
+    isCameraPermissionError(error) {
+        if (!error) {
+            return false;
+        }
+        const name = error.name || "";
+        return name == "NotAllowedError" ||
+               name == "NotFoundError" ||
+               name == "NotReadableError" ||
+               name == "OverconstrainedError" ||
+               name == "SecurityError";
     }
 
     /*
@@ -679,6 +720,7 @@ export class MediaManager {
                     this.getDevices()
                 } else {
                     this.callbackError(error.name, error.message);
+                    throw error;
                 }
             });
         }
