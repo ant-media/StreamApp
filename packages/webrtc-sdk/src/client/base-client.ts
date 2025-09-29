@@ -50,6 +50,21 @@ interface ReconnectConfig {
   jitter: number;
 }
 
+/**
+ * BaseClient
+ *
+ * Low-level WebRTC signaling and media management foundation used by higher-level clients
+ * (e.g., {@link ConferenceClient}, {@link StreamingClient}).
+ *
+ * Responsibilities:
+ * - Manages WebSocket signaling to Ant Media Server
+ * - Creates/maintains per-stream RTCPeerConnections and DataChannels
+ * - Applies local media tracks and exposes helpers to control devices and screen share
+ * - Emits typed events described by {@link EventMap}
+ * - Provides reconnection with backoff and per-stream tracking
+ *
+ * Consumers typically use concrete subclasses rather than instantiating this class directly.
+ */
 export abstract class BaseClient extends Emitter<EventMap> {
   static pluginInitMethods: Array<(sdk: BaseClient) => void> = [];
 

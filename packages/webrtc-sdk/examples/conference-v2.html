@@ -469,15 +469,11 @@
       }
 
       function handleBroadcastObject(obj) {
-        console.log('=== BROADCAST OBJECT RECEIVED ===', obj);
         const broadcastObject = typeof obj.broadcast === 'string' ? JSON.parse(obj.broadcast) : obj.broadcast;
         if (!broadcastObject) return;
-        console.log('=== PARSED BROADCAST OBJECT ===', broadcastObject);
         if (obj.streamId === roomNameEl.value.trim()) {
-          console.log('=== ROOM BROADCAST OBJECT ===', broadcastObject);
           handleRoomBroadcastObject(broadcastObject);
         } else {
-          console.log('=== PARTICIPANT BROADCAST OBJECT ===', broadcastObject);
           handleParticipantBroadcastObject(broadcastObject);
         }
       }
