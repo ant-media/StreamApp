@@ -22,7 +22,7 @@
     <pre id="log"></pre>
 
     <script type="module">
-      import { WebRTCClient, getWebSocketURL, generateRandomString } from './js/index.js';
+      import { StreamingClient, getWebSocketURL, generateRandomString } from './js/index.js';
       const websocketURL = getWebSocketURL(window.location);
       const streamIdEl = document.getElementById('streamId');
       const startBtn = document.getElementById('start');
@@ -38,7 +38,7 @@
       startBtn.onclick = async () => {
         const id = streamIdEl.value.trim() || 'data_' + generateRandomString(6);
         try {
-          const r = await WebRTCClient.createSession({ websocketURL, role: 'publisher', streamId: id, onlyDataChannel: true });
+          const r = await StreamingClient.createSession({ websocketURL, role: 'publisher', streamId: id, onlyDataChannel: true });
           client = r.client; currentId = id; stopBtn.disabled = false;
           client.on('data_channel_opened', () => { sendTextBtn.disabled = false; sendJSONBtn.disabled = false; log('data channel opened'); });
           client.on('data_channel_closed', () => { sendTextBtn.disabled = true; sendJSONBtn.disabled = true; log('data channel closed'); });

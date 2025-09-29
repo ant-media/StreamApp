@@ -96,7 +96,7 @@
     <pre id="log"></pre>
 
     <script type="module">
-      import { WebRTCClient, getWebSocketURL, generateRandomString } from './js/index.js';
+      import { StreamingClient, getWebSocketURL, generateRandomString } from './js/index.js';
 
       const local = document.getElementById('local');
       const streamIdEl = document.getElementById('streamId');
@@ -140,7 +140,7 @@
       // derive ws URL similar to legacy utility
       const websocketURL = getWebSocketURL(window.location);
 
-      const adaptor = new WebRTCClient({
+      const adaptor = new StreamingClient({
         websocketURL,
         httpEndpointUrl: '',
         localVideo: local,

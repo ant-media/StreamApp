@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ant Media WebRTC Conference (SDK v2)</title>
+    <script src="js/external/adapter-latest.js"></script>
+	<script src="js/external/jquery-3.7.1.min.js"></script>
+	<script src="js/external/notify.min.js" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="css/external//bootstrap4/bootstrap.min.css">
+    <link rel="stylesheet" href="css/common.css">
+    <style>
+      video {
+        width: 100%;
+        max-width: 320px;
+        height: 100%;
+        max-height: 240px;
+        background: #000;
+      }
+
+      body {
+        padding-top: 20px;
+        padding-bottom: 20px;
+      }
+
+      .options {
+        display: none;
+      }
+
+      .message-area {
+        height: 300px;
+        overflow-y: auto;
+        border-style: groove;
+        border-width: thin;
+        background-color: white;
+      }
+
+      #players {
+        position: relative;
+      }
+
+      .player-tile {
+        position: relative;
+        margin-bottom: 12px;
+      }
+
+      .player-overlay {
+        font-size: 10px;
+        position: absolute;
+        top: 5px;
+        left: 50%;
+        transform: translateX(-50%);
+        color: white;
+        background-color: rgba(0, 0, 0, 0.5);
+        padding: 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header clearfix">
+        <div class="row">
+          <h3 class="col text-muted">WebRTC Multitrack Conference (SDK v2)</h3>
+          <nav class="col align-self-center">
+            <ul class="nav float-right">
+              <li><a href="http://antmedia.io">Contact</a></li>
+            </ul>
+          </nav>
+        </div>
+      </div>
+
+      <div class="jumbotron">
+        <div class="alert alert-primary text-center enterprise-feature" role="alert" style="margin-top:-2em">
+          WebRTC Conference is an enterprise edition feature.<br />
+          <a href="https://antmedia.io">Try Enterprise Edition for free at antmedia.io</a>
+        </div>
+        <div class="alert alert-primary text-center" role="alert" style="margin-top:-2em">
+          Something ready to use?<br />
+          <a href="https://antmedia.io/marketplace/circle-video-conferencing-tool/">Circle: Online Video Conferencing</a>
+        </div>
+        <div id="players" class="row">
+          <div class="col-sm-3 player-tile" id="player-local">
+            <video id="localVideo" autoplay muted playsinline></video>
+            <div style="margin-top:10px;display:none" class="col-sm-8 col-sm-offset-2">
+              Microphone Gain:
+              <input type="range" id="volume_change_input" min="0" max="1" value="1" step="0.01" />
+            </div>
+          </div>
+        </div>
+
+        <div class="row" style="padding: 15px;">
+          <div class="col-sm-8 offset-sm-2">
+            <div style="padding:5px" class="form-check form-check-inline col-sm-10">
+              <input type="text" class="form-control" value="room1" id="roomName" placeholder="Type room name" />
+            </div>
+            <div style="padding:5px">
+              <button class="btn btn-primary" id="join_publish_button">Join Room</button>
+              <button class="btn btn-primary" disabled id="stop_publish_button">Leave Room</button>
+            </div>
+
+            <div class="badge badge-success" id="broadcastingInfo" style="font-size: 14px; display: none">
+              Publishing
+            </div>
+
+            <div class="col-sm-12 text-right">
+              <button type="button" id="options" class="btn btn-outline-primary btn-sm">Options</button>
+            </div>
+            <div class="form-group col-sm-12 text-left options">
+              <div style="padding:10px">
+                <button id="turn_off_camera_button" class="btn btn-outline-primary">Turn off Camera</button>
+                <button id="turn_on_camera_button" disabled class="btn btn-outline-primary">Turn on Camera</button>
+                <button id="mute_mic_button" class="btn btn-outline-primary">Mute Local Mic</button>
+                <button id="unmute_mic_button" disabled class="btn btn-outline-primary">Unmute Local Mic</button>
+              </div>
+
+              <label>Video Source</label>
+              <br />
+              <div class="form-check form-check-inline">
+                <input class="form-check-input video-source" disabled name="videoSource" type="radio" value="camera" id="camera_checkbox" checked />
+                <label class="form-check-label" for="camera_checkbox" style="font-weight:normal">Camera</label>
+              </div>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input video-source" disabled name="videoSource" type="radio" value="screen" id="screen_share_checkbox" />
+                <label class="form-check-label" for="screen_share_checkbox" style="font-weight:normal">Screen</label>
+              </div>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input video-source" disabled name="videoSource" type="radio" value="screen+camera" id="screen_share_with_camera_checkbox" />
+                <label class="form-check-label" for="screen_share_with_camera_checkbox" style="font-weight:normal">Screen with Camera</label>
+                <div class="form-check form-check-inline"></div>
+                <a id="browser_screen_share_doesnt_support" href="https://caniuse.com/#search=getDisplayMedia">Your browser doesn't support screen share. You can see supported browsers in this link</a>
+              </div>
+              <br />
+              <label>Data Channel Messages</label>
+              <div id="all-messages" class="message-area"></div>
+              <div class="form-row">
+                <div class="form-group col-sm-10">
+                  <input type="text" class="form-control" id="dataTextbox" placeholder="Write your message" />
+                </div>
+                <div class="form-group col-sm-2">
+                  <button type="button" id="send" class="btn btn-outline-primary btn-block">Send</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <footer class="footer">
+        <p>
+          <a href="http://antmedia.io">Ant Media Server Enterprise Edition</a>
+        </p>
+      </footer>
+    </div>
+
+    <script type="module">
+      import { ConferenceClient } from './js/index.js';
+      import { getUrlParameter } from "./js/fetch.stream.js"
+	  import { generateRandomString, getWebSocketURL, errorHandler, updateBroadcastStatusInfo } from "./js/utility.js"
+
+      const Logger = window.log || console;
+
+      const volumeSlider = document.getElementById('volume_change_input');
+      const joinBtn = document.getElementById('join_publish_button');
+      const leaveBtn = document.getElementById('stop_publish_button');
+      const turnOffCamBtn = document.getElementById('turn_off_camera_button');
+      const turnOnCamBtn = document.getElementById('turn_on_camera_button');
+      const muteBtn = document.getElementById('mute_mic_button');
+      const unmuteBtn = document.getElementById('unmute_mic_button');
+      const optionsBtn = document.getElementById('options');
+      const sendBtn = document.getElementById('send');
+      const dataTextbox = document.getElementById('dataTextbox');
+      const messagesEl = document.getElementById('all-messages');
+      const playersEl = document.getElementById('players');
+      const broadcastingInfo = document.getElementById('broadcastingInfo');
+      const roomNameEl = document.getElementById('roomName');
+      const screenRadio = document.getElementById('screen_share_checkbox');
+      const cameraRadio = document.getElementById('camera_checkbox');
+      const screenCamRadio = document.getElementById('screen_share_with_camera_checkbox');
+      const browserScreenShareInfo = document.getElementById('browser_screen_share_doesnt_support');
+      const optionsPanel = document.querySelector('.options');
+
+      const token = getUrlParameter('token') || undefined;
+      let publishStreamId = getUrlParameter('streamId') || '';
+      let playOnly = getUrlParameter('playOnly') === 'true';
+      const dcOnly = getUrlParameter('dcOnly') === 'true';
+      const role = getUrlParameter('role') || undefined;
+      const roomIdFromUrl = getUrlParameter('roomId');
+      const streamNameFromUrl = getUrlParameter('streamName');
+      const subscriberId = getUrlParameter('subscriberId') || undefined;
+      const subscriberName = getUrlParameter('subscriberName') || undefined;
+      const subscriberCode = getUrlParameter('subscriberCode') || undefined;
+
+      if (roomIdFromUrl) {
+        roomNameEl.value = roomIdFromUrl;
+      }
+
+      const websocketURL = getWebSocketURL(location);
+
+      const client = new ConferenceClient({
+        websocketURL,
+        localVideo: document.getElementById('localVideo'),
+        isPlayMode: playOnly,
+        onlyDataChannel: dcOnly,
+        autoReconnect: true,
+        mediaConstraints: { video: !dcOnly ? { width: { min: 176, max: 360 } } : !dcOnly, audio: !dcOnly },
+        debug: true
+      });
+
+      window.conferenceClient = client;
+
+      const participants = new Map();
+      let isCameraOff = false;
+      let isMicMuted = false;
+      let isDataChannelOpen = false;
+      let isPlayingRoom = false;
+
+      function log(msg, ...args) {
+        Logger.debug('[conference]', msg, ...args);
+      }
+
+      function setJoinEnabled(flag) {
+        joinBtn.disabled = !flag;
+      }
+
+      function setLeaveEnabled(flag) {
+        leaveBtn.disabled = !flag;
+      }
+
+      function toggleOptions() {
+        if (!optionsPanel) return;
+        const isVisible = optionsPanel.style.display === 'block';
+        optionsPanel.style.display = isVisible ? 'none' : 'block';
+      }
+
+      function appendMessage(text) {
+        messagesEl.innerHTML += `${text}<br />`;
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+      }
+
+      function handleCameraButtons() {
+        turnOffCamBtn.disabled = isCameraOff;
+        turnOnCamBtn.disabled = !isCameraOff;
+      }
+
+      function handleMicButtons() {
+        muteBtn.disabled = isMicMuted;
+        unmuteBtn.disabled = !isMicMuted;
+      }
+
+      function getUserMetadata() {
+        return {
+          isMicMuted,
+          isCameraOff
+        };
+      }
+
+      function updateMetadata() {
+        if (publishStreamId) {
+          client.updateStreamMetaData(publishStreamId, JSON.stringify(getUserMetadata()));
+        }
+      }
+
+      function createRemoteTile(streamId, kind) {
+        const existing = document.getElementById(`player-${streamId}`);
+        if (existing) return existing;
+        const col = document.createElement('div');
+        col.className = 'col-sm-3 player-tile';
+        col.id = `player-${streamId}`;
+        if (kind === 'audio') {
+          col.style.display = 'none';
+        }
+        col.innerHTML = `
+          <video id="remoteVideo-${streamId}" autoplay playsinline controls></video>
+          <div class="player-overlay" id="overlay-${streamId}">${streamId}</div>
+        `;
+        playersEl.appendChild(col);
+        return col;
+      }
+
+      function removeRemoteTile(streamId) {
+        const col = document.getElementById(`player-${streamId}`);
+        if (col) {
+          const video = col.querySelector('video');
+          if (video) {
+            const media = video.srcObject;
+            if (media) {
+              media.getTracks().forEach(t => t.stop());
+            }
+            video.srcObject = null;
+          }
+          playersEl.removeChild(col);
+        }
+      }
+
+      function removeAllRemoteTiles() {
+        [...playersEl.querySelectorAll('.player-tile')].forEach((tile, index) => {
+          if (tile.id === 'player-local') return;
+          playersEl.removeChild(tile);
+        });
+      }
+
+      function updateOverlay(streamId, text) {
+        const overlay = document.getElementById(`overlay-${streamId}`);
+        if (overlay) {
+          overlay.textContent = text;
+        }
+      }
+
+      async function handleJoin() {
+        const roomId = roomNameEl.value.trim();
+        if (!roomId) {
+          appendMessage('Room name is required.');
+          return;
+        }
+
+        if (!publishStreamId) {
+          publishStreamId = generateRandomString(12);
+        }
+
+        const metadata = JSON.stringify(getUserMetadata());
+
+        try {
+          if (!playOnly) {
+            await client.publish({
+              streamId: publishStreamId,
+              roomId,
+              token,
+              subscriberId,
+              subscriberCode,
+              streamName: streamNameFromUrl || publishStreamId,
+              metaData: metadata,
+              role
+            });
+          }
+
+          await client.play({
+            streamId: roomId,
+            roomId,
+            token,
+            subscriberId,
+            subscriberCode,
+            subscriberName,
+            role,
+            disableTracksByDefault: false,
+            userPublishId: publishStreamId
+          });
+
+          setJoinEnabled(false);
+          setLeaveEnabled(true);
+          toggleVideoSourceControls(true);
+        } catch (err) {
+          appendMessage(`Join failed: ${err?.message || err?.error || err}`);
+          log('Join failed', err);
+        }
+      }
+
+      function toggleVideoSourceControls(enabled) {
+        for (const radio of document.querySelectorAll('input[name="videoSource"]')) {
+          radio.disabled = !enabled;
+        }
+      }
+
+      function handleLeave() {
+        const roomId = roomNameEl.value.trim();
+        removeAllRemoteTiles();
+        participants.clear();
+        setJoinEnabled(true);
+        setLeaveEnabled(false);
+        toggleVideoSourceControls(false);
+        broadcastingInfo.style.display = 'none';
+        if (publishStreamId) {
+          client.stop(publishStreamId);
+        }
+        if (roomId) {
+          client.stop(roomId);
+        }
+        isPlayingRoom = false;
+      }
+
+      async function handleSendData() {
+        const message = dataTextbox.value.trim();
+        if (!message) return;
+        const payload = { streamId: publishStreamId, eventType: 'CHAT_MESSAGE', message };
+        try {
+          if (isDataChannelOpen && publishStreamId) {
+            await client.sendJSON(publishStreamId, payload);
+          } else if (isDataChannelOpen) {
+            await client.sendJSON(roomNameEl.value.trim(), payload);
+          } else {
+            appendMessage('Data channel is not open.');
+            return;
+          }
+          appendMessage(`Sent: ${message}`);
+          dataTextbox.value = '';
+        } catch (err) {
+          appendMessage(`Send failed: ${err?.message || err?.error || err}`);
+        }
+      }
+
+      async function switchVideoMode(mode) {
+        try {
+          if (mode === 'screen') {
+            await client.startScreenShare();
+          } else if (mode === 'screen+camera') {
+            await client.startScreenWithCameraOverlay();
+          } else {
+            await client.stopScreenShare();
+            await client.turnOnLocalCamera();
+          }
+        } catch (err) {
+          appendMessage(`Switch video failed: ${err?.message || err?.error || err}`);
+          cameraRadio.checked = true;
+        }
+      }
+
+      async function turnOffCamera() {
+        try {
+          await client.turnOffLocalCamera();
+          isCameraOff = true;
+          handleCameraButtons();
+          sendNotificationEvent('CAM_TURNED_OFF');
+          updateMetadata();
+        } catch (err) {
+          appendMessage('Turn off camera failed.');
+        }
+      }
+
+      async function turnOnCamera() {
+        try {
+          await client.turnOnLocalCamera();
+          isCameraOff = false;
+          handleCameraButtons();
+          sendNotificationEvent('CAM_TURNED_ON');
+          updateMetadata();
+        } catch (err) {
+          appendMessage('Turn on camera failed.');
+        }
+      }
+
+      function muteMic() {
+        client.muteLocalMic();
+        isMicMuted = true;
+        handleMicButtons();
+        sendNotificationEvent('MIC_MUTED');
+        updateMetadata();
+      }
+
+      function unmuteMic() {
+        client.unmuteLocalMic();
+        isMicMuted = false;
+        handleMicButtons();
+        sendNotificationEvent('MIC_UNMUTED');
+        updateMetadata();
+      }
+
+      function sendNotificationEvent(eventType) {
+        if (!isDataChannelOpen) {
+          log('Data channel closed; cannot send notification');
+          return;
+        }
+        const payload = { streamId: publishStreamId, eventType };
+        try {
+          if (publishStreamId) {
+            client.sendJSON(publishStreamId, payload);
+          }
+        } catch (err) {
+          log('Notification send failed', err);
+        }
+      }
+
+      function handleBroadcastObject(obj) {
+        console.log('=== BROADCAST OBJECT RECEIVED ===', obj);
+        const broadcastObject = typeof obj.broadcast === 'string' ? JSON.parse(obj.broadcast) : obj.broadcast;
+        if (!broadcastObject) return;
+        console.log('=== PARSED BROADCAST OBJECT ===', broadcastObject);
+        if (obj.streamId === roomNameEl.value.trim()) {
+          console.log('=== ROOM BROADCAST OBJECT ===', broadcastObject);
+          handleRoomBroadcastObject(broadcastObject);
+        } else {
+          console.log('=== PARTICIPANT BROADCAST OBJECT ===', broadcastObject);
+          handleParticipantBroadcastObject(broadcastObject);
+        }
+      }
+
+      function handleRoomBroadcastObject(broadcastObject) {
+        const list = broadcastObject.subTrackStreamIds || [];
+        // Remove missing
+        for (const [streamId, info] of participants.entries()) {
+          if (!info.isFake && !list.includes(streamId)) {
+            log('Removing participant', streamId);
+            participants.delete(streamId);
+            removeRemoteTile(streamId);
+          }
+        }
+        // Fetch missing
+        list.forEach(id => {
+          if (!participants.has(id)) {
+            client.getBroadcastObject(id);
+          }
+        });
+      }
+
+      function handleParticipantBroadcastObject(broadcastObject) {
+        const streamId = broadcastObject.streamId;
+        if (!streamId) return;
+        if (broadcastObject.metaData) {
+          try {
+            const meta = JSON.parse(broadcastObject.metaData);
+            broadcastObject.isCameraOff = meta.isCameraOff;
+            broadcastObject.isMicMuted = meta.isMicMuted;
+          } catch (e) {
+            log('Metadata parse failed', e);
+          }
+        }
+        participants.set(streamId, broadcastObject);
+        updateOverlay(streamId, `${streamId}${broadcastObject.isMicMuted ? ' (muted)' : ''}`);
+      }
+
+      function handleNotificationEvent(data) {
+        const payload = typeof data.data === 'string' ? JSON.parse(data.data) : data.data;
+        if (!payload || typeof payload !== 'object') {
+          log('Unknown data payload', payload);
+          return;
+        }
+        const { eventType, message, streamId } = payload;
+        switch (eventType) {
+          case 'CHAT_MESSAGE':
+            appendMessage(`Received: ${message}`);
+            break;
+          case 'CAM_TURNED_OFF':
+          case 'CAM_TURNED_ON':
+          case 'MIC_MUTED':
+          case 'MIC_UNMUTED':
+          case 'TRACK_LIST_UPDATED':
+            client.getBroadcastObject(roomNameEl.value.trim());
+            break;
+          case 'VIDEO_TRACK_ASSIGNMENT_LIST':
+            if (payload.payload) {
+              payload.payload.forEach(item => {
+                var overlay = document.getElementById("overlay-" + item.videoLabel);
+                if (overlay != null) {
+                  overlay.innerHTML = item.videoLabel + "->" + item.trackId;
+                }
+              });
+            }
+            break;
+          default:
+            log('Notification event', eventType, payload);
+            break;
+        }
+      }
+
+      function startBroadcastingAnimation() {
+        broadcastingInfo.style.display = 'inline-block';
+        broadcastingInfo.style.opacity = '1';
+        broadcastingInfo.animate(
+          [{ opacity: 1 }, { opacity: 0 }],
+          { duration: 1600, iterations: Infinity }
+        );
+      }
+
+      volumeSlider.addEventListener('input', () => {
+        client.setVolumeLevel(parseFloat(volumeSlider.value));
+      });
+
+      joinBtn.addEventListener('click', handleJoin);
+      leaveBtn.addEventListener('click', handleLeave);
+      optionsBtn.addEventListener('click', toggleOptions);
+      sendBtn.addEventListener('click', handleSendData);
+      dataTextbox.addEventListener('keyup', e => {
+        if (e.key === 'Enter') handleSendData();
+      });
+      turnOffCamBtn.addEventListener('click', () => { void turnOffCamera(); });
+      turnOnCamBtn.addEventListener('click', () => { void turnOnCamera(); });
+      muteBtn.addEventListener('click', muteMic);
+      unmuteBtn.addEventListener('click', unmuteMic);
+
+      document.querySelectorAll('input[name="videoSource"]').forEach(radio => {
+        radio.addEventListener('change', e => {
+          if (e.target.checked) {
+            void switchVideoMode(e.target.value);
+          }
+        });
+      });
+
+      client.on('initialized', () => {
+        log('initialized');
+        setJoinEnabled(true);
+        setLeaveEnabled(false);
+        if (playOnly) {
+          isCameraOff = true;
+          handleCameraButtons();
+        }
+      });
+
+      client.on('browser_screen_share_supported', () => {
+        screenRadio.disabled = false;
+        cameraRadio.disabled = false;
+        screenCamRadio.disabled = false;
+        browserScreenShareInfo.style.display = 'none';
+      });
+
+      client.on('publish_started', ({ streamId }) => {
+        log('publish started', streamId);
+        setJoinEnabled(false);
+        setLeaveEnabled(true);
+        startBroadcastingAnimation();
+      });
+
+      client.on('play_started', ({ streamId }) => {
+        log('play started', streamId);
+        if (streamId === roomNameEl.value.trim()) {
+          isPlayingRoom = true;
+          client.getBroadcastObject(streamId);
+        }
+      });
+
+      client.on('play_finished', ({ streamId }) => {
+        log('play finished', streamId);
+        if (streamId === roomNameEl.value.trim()) {
+          isPlayingRoom = false;
+          removeAllRemoteTiles();
+        }
+      });
+
+      client.on('data_channel_opened', () => {
+        log('data channel opened');
+        isDataChannelOpen = true;
+      });
+
+      client.on('data_channel_closed', () => {
+        log('data channel closed');
+        isDataChannelOpen = false;
+      });
+
+      client.on('data_received', handleNotificationEvent);
+
+      function playVideo(obj) {
+        // EXACT copy of conference.html playVideo function
+        var roomId = roomNameEl.value.trim();
+        
+        //trackId is ARDAMSv+STREAM_ID or ARDAMSa+STREAM_ID
+        var incomingTrackId = obj.trackId.substring("ARDAMSx".length);
+        
+        if (incomingTrackId == roomId || incomingTrackId == publishStreamId) {
+          return;
+        }
+        
+        var video = document.getElementById("remoteVideo-" + incomingTrackId);
+        
+        if (video == null) {
+          createRemoteTile(incomingTrackId, obj.track.kind);
+          video = document.getElementById("remoteVideo-" + incomingTrackId);
+          video.srcObject = new MediaStream();
+        }
+        
+        video.srcObject.addTrack(obj.track);
+        
+        obj.track.onended = event => {
+          console.log("track is ended with id: " + event.target.id);
+        };
+        
+        obj.stream.onremovetrack = event => {
+          console.log("track is removed with id: " + event.track.id);
+          var removedTrackId = event.track.id.substring("ARDAMSx".length);
+          removeRemoteTile(removedTrackId);
+        };
+      }
+
+      client.on('newTrackAvailable', playVideo);
+
+      client.on('broadcast_object', handleBroadcastObject);
+
+      client.on('notification:videoTrackAssignmentList', handleNotificationEvent);
+      
+
+      client.on('ice_connection_state_changed', ({ state, streamId }) => {
+        log('ICE state', state, streamId);
+        if (state === 'failed' || state === 'closed') {
+          client.getBroadcastObject(roomNameEl.value.trim());
+        }
+      });
+
+      client.on('reconnection_attempt_for_publisher', () => {
+        log('Reconnection attempt (publisher)');
+      });
+
+      client.on('reconnection_attempt_for_player', () => {
+        log('Reconnection attempt (player)');
+      });
+
+      client.on('session_restored', () => {
+        log('Session restored');
+        setJoinEnabled(false);
+        setLeaveEnabled(true);
+        startBroadcastingAnimation();
+      });
+
+      client.on('error', ({ error, message }) => {
+        appendMessage(`Error: ${message || error}`);
+      });
+    </script>
+  </body>
+</html>
+

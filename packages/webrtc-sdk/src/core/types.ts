@@ -6,9 +6,9 @@
 export type Role = "publisher" | "viewer";
 
 /**
- * Options to configure {@link WebRTCClient}.
+ * Common configuration shared across client implementations.
  */
-export interface WebRTCClientOptions {
+export interface BaseClientOptions {
   /** WebSocket signaling URL (e.g. wss://host:5443/App/websocket) */
   websocketURL?: string;
   /** HTTP REST endpoint of Ant Media (used as fallback by signaling layer) */
@@ -23,6 +23,8 @@ export interface WebRTCClientOptions {
   localVideo?: HTMLVideoElement | null;
   /** Remote element to render incoming media (viewer side) */
   remoteVideo?: HTMLVideoElement | null;
+  /** Optional preconfigured MediaManager instance for advanced integrations */
+  mediaManager?: import("./media-manager.js").MediaManager;
   /** Enable verbose logging */
   debug?: boolean;
   /** Enable automatic reconnection on ICE failure/disconnect (default: true) */
@@ -36,6 +38,40 @@ export interface WebRTCClientOptions {
   };
   /** If true, sanitize string data-channel messages by escaping HTML brackets */
   sanitizeDataChannelStrings?: boolean;
+}
+
+/**
+ * Options to configure {@link WebRTCClient}.
+ */
+export interface WebRTCClientOptions extends BaseClientOptions {}
+
+export interface StreamingClientOptions extends BaseClientOptions {}
+
+export interface ConferenceClientOptions extends BaseClientOptions {}
+
+export interface ConferencePublishOptions {
+  streamId: string;
+  roomId: string;
+  token?: string;
+  subscriberId?: string;
+  subscriberCode?: string;
+  streamName?: string;
+  metaData?: unknown;
+  role?: string;
+}
+
+export interface ConferencePlayOptions {
+  streamId: string;
+  roomId?: string;
+  token?: string;
+  enableTracks?: string[];
+  subscriberId?: string;
+  subscriberCode?: string;
+  subscriberName?: string;
+  metaData?: unknown;
+  role?: string;
+  userPublishId?: string;
+  disableTracksByDefault?: boolean;
 }
 
 /**
@@ -95,6 +131,9 @@ export interface RoomJoinOptions {
   streamId?: string;
   role?: string;
   metaData?: unknown;
+  streamName?: string;
+  mode?: "mcu" | "amcu" | "multitrack";
+  timeoutMs?: number;
 }
 
 export interface UpdateVideoTrackAssignmentsOptions {

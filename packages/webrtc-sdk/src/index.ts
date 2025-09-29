@@ -7,3 +7,6 @@ export * from "./core/websocket-adaptor.js";
 export * from "./core/media-manager.js";
 export * from "./core/webrtc-client.js";
 export * from "./utils/utility.js";
+export * from "./client/base-client.js";
+export * from "./client/streaming-client.js";
+export * from "./client/conference-client.js";
