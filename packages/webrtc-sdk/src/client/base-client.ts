@@ -1,11 +1,9 @@
 import { Logger } from "../utils/logger.js";
-
 import { Emitter } from "../core/emitter.js";
 import type { EventMap } from "../core/events.js";
 import { MediaManager } from "../core/media-manager.js";
 import type { BaseClientOptions, GroupedDevices } from "../core/types.js";
 import { WebSocketAdaptor } from "../core/websocket-adaptor.js";
-
 export interface PeerContext {
   pc: RTCPeerConnection;
   dc?: RTCDataChannel;
@@ -124,7 +122,8 @@ export abstract class BaseClient extends Emitter<EventMap> {
       };
     }
 
-    this.media = opts.mediaManager ??
+    this.media =
+      opts.mediaManager ??
       new MediaManager({ mediaConstraints: opts.mediaConstraints, localVideo: opts.localVideo });
 
     this.media.on("devices_updated", g => this.emit("devices_updated", g));
@@ -143,7 +142,8 @@ export abstract class BaseClient extends Emitter<EventMap> {
         websocketURL: opts.websocketURL,
         httpEndpointUrl: opts.httpEndpointUrl,
         webrtcadaptor: {
-          notifyEventListeners: (info: string, obj?: unknown) => this.handleTransportEvent(info, obj),
+          notifyEventListeners: (info: string, obj?: unknown) =>
+            this.handleTransportEvent(info, obj),
         },
         debug: opts.debug,
       });
@@ -247,7 +247,7 @@ export abstract class BaseClient extends Emitter<EventMap> {
     this.media.turnOffLocalCamera();
     for (const ctx of this.peers.values()) {
       const primary = ctx.videoSender;
-      let sender = primary ?? ctx.pc.getSenders().find(s => s.track?.kind === "video");
+      const sender = primary ?? ctx.pc.getSenders().find(s => s.track?.kind === "video");
       if (!sender) continue;
       try {
         const stream = this.media.getLocalStream();
@@ -276,7 +276,10 @@ export abstract class BaseClient extends Emitter<EventMap> {
     this.media.setVolumeLevel(level);
   }
 
-  async enableAudioLevelForLocalStream(callback: (level: number) => void, periodMs = 200): Promise<void> {
+  async enableAudioLevelForLocalStream(
+    callback: (level: number) => void,
+    periodMs = 200
+  ): Promise<void> {
     await this.media.enableAudioLevelForLocalStream(callback, periodMs);
   }
 
@@ -284,7 +287,10 @@ export abstract class BaseClient extends Emitter<EventMap> {
     this.media.disableAudioLevelForLocalStream();
   }
 
-  async enableAudioLevelWhenMuted(callback: (speaking: boolean) => void, threshold = 0.1): Promise<void> {
+  async enableAudioLevelWhenMuted(
+    callback: (speaking: boolean) => void,
+    threshold = 0.1
+  ): Promise<void> {
     await this.media.enableAudioLevelWhenMuted(callback, threshold);
   }
 
@@ -303,36 +309,42 @@ export abstract class BaseClient extends Emitter<EventMap> {
       let now = 0;
       stats.forEach(r => {
         if (r.type === "outbound-rtp") {
-          bytesSent += (r as any).bytesSent || 0;
-          if ((r as any).packetsSent) {
-            if ((r as any).kind === "audio") ps.audioPacketsSent = (r as any).packetsSent;
-            if ((r as any).kind === "video") {
-              ps.videoPacketsSent = (r as any).packetsSent;
-              ps.frameWidth = (r as any).frameWidth ?? ps.frameWidth;
-              ps.frameHeight = (r as any).frameHeight ?? ps.frameHeight;
-              if ((r as any).framesEncoded != null) ps.framesEncoded = (r as any).framesEncoded;
+          bytesSent += (r as RTCOutboundRtpStreamStats).bytesSent || 0;
+          if ((r as RTCOutboundRtpStreamStats).packetsSent) {
+            if ((r as RTCOutboundRtpStreamStats).kind === "audio")
+              ps.audioPacketsSent = (r as RTCOutboundRtpStreamStats).packetsSent;
+            if ((r as RTCOutboundRtpStreamStats).kind === "video") {
+              ps.videoPacketsSent = (r as RTCOutboundRtpStreamStats).packetsSent;
+              ps.frameWidth = (r as RTCOutboundRtpStreamStats).frameWidth ?? ps.frameWidth;
+              ps.frameHeight = (r as RTCOutboundRtpStreamStats).frameHeight ?? ps.frameHeight;
+              if ((r as RTCOutboundRtpStreamStats).framesEncoded != null)
+                ps.framesEncoded = (r as RTCOutboundRtpStreamStats).framesEncoded;
             }
           }
-          now = (r as any).timestamp || now;
+          now = (r as RTCOutboundRtpStreamStats).timestamp || now;
         } else if (r.type === "inbound-rtp") {
-          bytesRecv += (r as any).bytesReceived || 0;
-          if ((r as any).packetsReceived) {
-            if ((r as any).kind === "audio") ps.audioPacketsReceived = (r as any).packetsReceived;
-            if ((r as any).kind === "video") ps.videoPacketsReceived = (r as any).packetsReceived;
+          bytesRecv += (r as RTCInboundRtpStreamStats).bytesReceived || 0;
+          if ((r as RTCInboundRtpStreamStats).packetsReceived) {
+            if ((r as RTCInboundRtpStreamStats).kind === "audio")
+              ps.audioPacketsReceived = (r as RTCInboundRtpStreamStats).packetsReceived;
+            if ((r as RTCInboundRtpStreamStats).kind === "video")
+              ps.videoPacketsReceived = (r as RTCInboundRtpStreamStats).packetsReceived;
           }
-          now = (r as any).timestamp || now;
+          now = (r as RTCInboundRtpStreamStats).timestamp || now;
         } else if (r.type === "remote-inbound-rtp") {
-          if ((r as any).kind === "audio") {
-            if ((r as any).packetsLost != null) ps.audioPacketsLost = (r as any).packetsLost;
+          if ((r as RTCInboundRtpStreamStats).kind === "audio") {
+            if ((r as RTCInboundRtpStreamStats).packetsLost != null)
+              ps.audioPacketsLost = (r as RTCInboundRtpStreamStats).packetsLost;
             if ((r as any).roundTripTime != null) ps.audioRoundTripTime = (r as any).roundTripTime;
-            if ((r as any).jitter != null) ps.audioJitter = (r as any).jitter;
-          } else if ((r as any).kind === "video") {
+            if ((r as RTCInboundRtpStreamStats).jitter != null)
+              ps.audioJitter = (r as RTCInboundRtpStreamStats).jitter;
+          } else if ((r as RTCRtpStreamStats).kind === "video") {
             if ((r as any).packetsLost != null) ps.videoPacketsLost = (r as any).packetsLost;
             if ((r as any).roundTripTime != null) ps.videoRoundTripTime = (r as any).roundTripTime;
             if ((r as any).jitter != null) ps.videoJitter = (r as any).jitter;
           }
         } else if (r.type === "track") {
-          if ((r as any).kind === "video") {
+          if ((r as RTCRtpStreamStats).kind === "video") {
             if ((r as any).frameWidth != null) ps.frameWidth = (r as any).frameWidth;
             if ((r as any).frameHeight != null) ps.frameHeight = (r as any).frameHeight;
             if ((r as any).framesDecoded != null) ps.framesDecoded = (r as any).framesDecoded;
@@ -340,11 +352,13 @@ export abstract class BaseClient extends Emitter<EventMap> {
             if ((r as any).framesReceived != null) ps.framesReceived = (r as any).framesReceived;
           }
         } else if (r.type === "candidate-pair" && (r as any).state === "succeeded") {
-          if ((r as any).availableOutgoingBitrate != null) {
-            ps.availableOutgoingBitrateKbps = ((r as any).availableOutgoingBitrate as number) / 1000;
+          if ((r as RTCIceCandidatePairStats).availableOutgoingBitrate != null) {
+            ps.availableOutgoingBitrateKbps =
+              ((r as RTCIceCandidatePairStats).availableOutgoingBitrate as number) / 1000;
           }
-          if ((r as any).currentRoundTripTime != null) {
-            ps.currentRoundTripTime = (r as any).currentRoundTripTime as number;
+          if ((r as RTCIceCandidatePairStats).currentRoundTripTime != null) {
+            ps.currentRoundTripTime = (r as RTCIceCandidatePairStats)
+              .currentRoundTripTime as number;
           }
         }
       });
@@ -360,15 +374,17 @@ export abstract class BaseClient extends Emitter<EventMap> {
 
   enableStats(streamId: string, periodMs = 5000): void {
     const key = `__stats_${streamId}`;
-    if ((this as any)[key]) return;
-    (this as any)[key] = setInterval(() => {
+    if ((this as unknown as Record<string, unknown>)[key]) return;
+    (this as unknown as Record<string, unknown>)[key] = setInterval(() => {
       void this.getStats(streamId);
     }, periodMs);
   }
 
   disableStats(streamId: string): void {
     const key = `__stats_${streamId}`;
-    const timer = (this as unknown as Record<string, unknown>)[key] as ReturnType<typeof setInterval> | undefined;
+    const timer = (this as unknown as Record<string, unknown>)[key] as
+      | ReturnType<typeof setInterval>
+      | undefined;
     if (timer) {
       clearInterval(timer);
       delete (this as unknown as Record<string, unknown>)[key];
@@ -408,10 +424,10 @@ export abstract class BaseClient extends Emitter<EventMap> {
       if (dc.bufferedAmount > dc.bufferedAmountLowThreshold) {
         await new Promise<void>(resolve => {
           const onlow = () => {
-            (dc as any).removeEventListener("bufferedamountlow", onlow);
+            (dc as RTCDataChannel).removeEventListener("bufferedamountlow", onlow);
             resolve();
           };
-          (dc as any).addEventListener("bufferedamountlow", onlow, { once: true });
+          (dc as RTCDataChannel).addEventListener("bufferedamountlow", onlow, { once: true });
         });
       }
       dc.send(buffer);
@@ -440,8 +456,15 @@ export abstract class BaseClient extends Emitter<EventMap> {
     this.sanitizeDcStrings = !!enabled;
   }
 
-  async enableRemoteAudioLevel(streamId: string, callback: (level: number) => void, periodMs = 200): Promise<void> {
-    const stream = this.remoteStreams.get(streamId) ?? (this.remoteVideo?.srcObject as MediaStream | null) ?? null;
+  async enableRemoteAudioLevel(
+    streamId: string,
+    callback: (level: number) => void,
+    periodMs = 200
+  ): Promise<void> {
+    const stream =
+      this.remoteStreams.get(streamId) ??
+      (this.remoteVideo?.srcObject as MediaStream | null) ??
+      null;
     if (!stream) return;
     if (!this.audioContext) this.audioContext = new AudioContext();
     const ctx = this.audioContext;
@@ -483,6 +506,16 @@ export abstract class BaseClient extends Emitter<EventMap> {
       this.log.warn("remote audio analyser disconnect failed", e);
     }
     this.remoteMeters.delete(streamId);
+  }
+
+  /**
+   * Called to get the signalling state for a stream.
+   * This information can be used for error handling.
+   * Check: https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection/connectionState
+   * @param {string} streamId : unique id for the stream
+   */
+  signallingState(streamId: string): RTCSignalingState | null {
+    return this.peers.get(streamId)?.pc.signalingState ?? null;
   }
 
   protected abstract restartStream(streamId: string, info: ActiveStreamInfo): void;
@@ -631,7 +664,7 @@ export abstract class BaseClient extends Emitter<EventMap> {
           if (!st) {
             this.emit("data_received", {
               streamId,
-              data: u8.buffer.slice(u8.byteOffset, u8.byteOffset + u8.byteLength),
+              data: u8.buffer.slice(u8.byteOffset, u8.byteOffset + u8.byteLength) as ArrayBuffer,
             });
             return;
           }
@@ -651,7 +684,7 @@ export abstract class BaseClient extends Emitter<EventMap> {
         }
         this.emit("data_received", {
           streamId,
-          data: u8.buffer.slice(u8.byteOffset, u8.byteOffset + u8.byteLength),
+          data: u8.buffer.slice(u8.byteOffset, u8.byteOffset + u8.byteLength) as ArrayBuffer,
         });
       };
 
@@ -661,7 +694,8 @@ export abstract class BaseClient extends Emitter<EventMap> {
         return;
       }
       if (typeof Blob !== "undefined" && raw instanceof Blob) {
-        raw.arrayBuffer()
+        raw
+          .arrayBuffer()
           .then(ab => processBuffer(new Uint8Array(ab)))
           .catch(() => {
             this.emit("error", { error: "data_channel_blob_parse_failed", message: raw });
@@ -702,7 +736,9 @@ export abstract class BaseClient extends Emitter<EventMap> {
     }
 
     try {
-      const dc = pc.createDataChannel ? pc.createDataChannel(streamId, { ordered: true }) : undefined;
+      const dc = pc.createDataChannel
+        ? pc.createDataChannel(streamId, { ordered: true })
+        : undefined;
       if (dc) this.setupDataChannel(streamId, dc);
     } catch (e) {
       this.log.warn("createDataChannel not supported", e);
@@ -727,7 +763,9 @@ export abstract class BaseClient extends Emitter<EventMap> {
       const senders = ctx.pc.getSenders();
       const videoTracks = stream.getVideoTracks();
       for (const track of videoTracks) {
-        let sender = (track.kind === "video" ? ctx.videoSender : ctx.audioSender) || senders.find(s => s.track && s.track.kind === track.kind);
+        let sender =
+          (track.kind === "video" ? ctx.videoSender : ctx.audioSender) ||
+          senders.find(s => s.track && s.track.kind === track.kind);
         if (sender && sender.replaceTrack) {
           try {
             await sender.replaceTrack(track);
@@ -768,10 +806,87 @@ export abstract class BaseClient extends Emitter<EventMap> {
     }
   }
 
+  protected takeConfiguration(obj: Record<string, unknown>): void {
+    const payload = obj as {
+      streamId: string;
+      sdp: string;
+      type: RTCSdpType;
+      idMapping?: Record<string, string>;
+      streamTrackIds?: Record<string, string>;
+    };
+    const { streamId, sdp, type } = payload;
+
+    this.log.debug("takeConfiguration %s %s", streamId, type);
+
+    const mapping = payload.idMapping || payload.streamTrackIds;
+
+    if (mapping) {
+      this.idMapping[streamId] = mapping;
+    }
+
+    if (type === "answer") {
+      const ctx = this.peers.get(streamId);
+      if (ctx) {
+        ctx.pc.setRemoteDescription(new RTCSessionDescription({ type, sdp })).then(() => {
+          this.remoteDescriptionSet.set(streamId, true);
+          const queued = this.candidateQueue.get(streamId) ?? [];
+          queued.forEach(c => ctx.pc.addIceCandidate(new RTCIceCandidate(c)));
+          this.candidateQueue.set(streamId, []);
+          this.onRemoteAnswerApplied(streamId);
+        });
+      }
+    } else if (type === "offer") {
+      const pc = this.createPeer(streamId, "play");
+      // Set up data channel for play mode like the original WebRTCAdaptor
+      pc.ondatachannel = ev => {
+        this.setupDataChannel(streamId, ev.channel);
+      };
+      pc.setRemoteDescription(new RTCSessionDescription({ type, sdp }))
+        .then(async () => {
+          const answer = await pc.createAnswer();
+          await pc.setLocalDescription(answer);
+          this.sendTakeConfiguration(streamId, answer.type, answer.sdp ?? "");
+          this.remoteDescriptionSet.set(streamId, true);
+
+          const queued = this.candidateQueue.get(streamId) ?? [];
+          queued.forEach(c => pc.addIceCandidate(new RTCIceCandidate(c)));
+          this.candidateQueue.set(streamId, []);
+          this.onRemoteOfferAnswered(streamId);
+        })
+        .catch(e => this.log.warn("setRemoteDescription failed", e));
+    }
+  }
+
+  protected takeCandidate(obj: Record<string, unknown>): void {
+    const { streamId, label, id, candidate } = obj as {
+      streamId: string;
+      label: number | null;
+      id?: string;
+      candidate: string;
+    };
+    this.log.debug("takeCandidate %s", streamId);
+
+    const ice: RTCIceCandidateInit = { sdpMLineIndex: label ?? undefined, sdpMid: id, candidate };
+    const ctx = this.peers.get(streamId);
+
+    if (ctx) {
+      if (this.remoteDescriptionSet.get(streamId)) {
+        ctx.pc
+          .addIceCandidate(new RTCIceCandidate(ice))
+          .catch(e => this.log.warn("addIceCandidate failed", e));
+      } else {
+        const q = this.candidateQueue.get(streamId) ?? [];
+        q.push(ice);
+        this.candidateQueue.set(streamId, q);
+      }
+    }
+  }
+
   private handleTransportEvent(info: string, obj?: unknown): void {
     if (info === "initialized") {
       this.isReady = true;
       this.log.info("adaptor initialized");
+
       for (const init of BaseClient.pluginInitMethods) {
         try {
           init(this);
@@ -779,6 +894,7 @@ export abstract class BaseClient extends Emitter<EventMap> {
           this.log.warn("plugin init failed", e);
         }
       }
+
       this.onInitialized();
       return;
     } else if (info === "start") {
@@ -786,59 +902,15 @@ export abstract class BaseClient extends Emitter<EventMap> {
       this.log.debug("start received for %s", streamId);
       this.onStartCommand(streamId);
     } else if (info === "takeConfiguration") {
-      const payload = obj as { streamId: string; sdp: string; type: RTCSdpType; idMapping?: Record<string, string>; streamTrackIds?: Record<string, string> };
-      const { streamId, sdp, type } = payload;
-      this.log.debug("takeConfiguration %s %s", streamId, type);
-      const mapping = payload.idMapping || payload.streamTrackIds;
-      if (mapping) {
-        this.idMapping[streamId] = mapping;
-      }
-      if (type === "answer") {
-        const ctx = this.peers.get(streamId);
-        if (ctx) {
-          ctx.pc.setRemoteDescription(new RTCSessionDescription({ type, sdp })).then(() => {
-            this.remoteDescriptionSet.set(streamId, true);
-            const queued = this.candidateQueue.get(streamId) ?? [];
-            queued.forEach(c => ctx.pc.addIceCandidate(new RTCIceCandidate(c)));
-            this.candidateQueue.set(streamId, []);
-            this.onRemoteAnswerApplied(streamId);
-          });
-        }
-      } else if (type === "offer") {
-        const pc = this.createPeer(streamId, "play");
-        // Set up data channel for play mode like the original WebRTCAdaptor
-        pc.ondatachannel = ev => {
-          this.setupDataChannel(streamId, ev.channel);
-        };
-        pc.setRemoteDescription(new RTCSessionDescription({ type, sdp }))
-          .then(async () => {
-            const answer = await pc.createAnswer();
-            await pc.setLocalDescription(answer);
-            this.sendTakeConfiguration(streamId, answer.type, answer.sdp ?? "");
-            this.remoteDescriptionSet.set(streamId, true);
-            const queued = this.candidateQueue.get(streamId) ?? [];
-            queued.forEach(c => pc.addIceCandidate(new RTCIceCandidate(c)));
-            this.candidateQueue.set(streamId, []);
-            this.onRemoteOfferAnswered(streamId);
-          })
-          .catch(e => this.log.warn("setRemoteDescription failed", e));
-      }
+      this.takeConfiguration(obj as Record<string, unknown>);
     } else if (info === "takeCandidate") {
-      const { streamId, label, id, candidate } = obj as { streamId: string; label: number | null; id?: string; candidate: string };
-      this.log.debug("takeCandidate %s", streamId);
-      const ice: RTCIceCandidateInit = { sdpMLineIndex: label ?? undefined, sdpMid: id, candidate };
-      const ctx = this.peers.get(streamId);
-      if (ctx) {
-        if (this.remoteDescriptionSet.get(streamId)) {
-          ctx.pc.addIceCandidate(new RTCIceCandidate(ice)).catch(e => this.log.warn("addIceCandidate failed", e));
-        } else {
-          const q = this.candidateQueue.get(streamId) ?? [];
-          q.push(ice);
-          this.candidateQueue.set(streamId, q);
-        }
-      }
+      this.takeCandidate(obj as Record<string, unknown>);
     } else if (info === "iceServerConfig") {
-      const cfg = obj as { stunServerUri?: string; turnServerUsername?: string; turnServerCredential?: string };
+      const cfg = obj as {
+        stunServerUri?: string;
+        turnServerUsername?: string;
+        turnServerCredential?: string;
+      };
       if (cfg.stunServerUri) {
         if (cfg.stunServerUri.startsWith("turn:")) {
           this.peerConfig.iceServers = [
@@ -862,6 +934,7 @@ export abstract class BaseClient extends Emitter<EventMap> {
       const payload = obj as Record<string, unknown>;
       const def = (payload.definition as string) || "";
       const streamId = (payload.streamId as string) || "";
+
       if (def === "publish_started") this.emit("publish_started", { streamId });
       if (def === "publish_finished") this.emit("publish_finished", { streamId });
       if (def === "play_started") this.emit("play_started", { streamId });
@@ -870,14 +943,17 @@ export abstract class BaseClient extends Emitter<EventMap> {
       if (def === "subscriberList") this.emit("subscriber_list" as keyof EventMap, obj as never);
       if (def === "roomInformation") this.emit("room_information" as keyof EventMap, obj as never);
       if (def === "broadcastObject") this.emit("broadcast_object" as keyof EventMap, obj as never);
-      if (def === "videoTrackAssignmentList") this.emit("video_track_assignments" as keyof EventMap, obj as never);
-      if (def === "streamInformation") this.emit("stream_information" as keyof EventMap, obj as never);
+      if (def === "videoTrackAssignmentList")
+        this.emit("video_track_assignments" as keyof EventMap, obj as never);
+      if (def === "streamInformation")
+        this.emit("stream_information" as keyof EventMap, obj as never);
       if (def === "trackList") this.emit("track_list" as keyof EventMap, obj as never);
       if (def === "subtrackList") this.emit("subtrack_list" as keyof EventMap, obj as never);
       if (def === "subtrackCount") this.emit("subtrack_count" as keyof EventMap, obj as never);
       if (def === "joinedTheRoom") this.emit("room_joined" as keyof EventMap, obj as never);
       if (def === "leavedTheRoom") this.emit("room_left" as keyof EventMap, obj as never);
       if (def) this.emit(`notification:${def}` as keyof EventMap, obj as never);
+
       this.onNotification(payload);
     } else if (info === "closed") {
       this.emit("closed", obj as never);
@@ -917,7 +993,10 @@ export abstract class BaseClient extends Emitter<EventMap> {
 
   private computeNextDelay(lastDelay: number): number {
     const { backoff, baseMs, maxMs, jitter } = this.reconnectConfig;
-    let next = backoff === "exp" ? Math.min(maxMs, Math.max(baseMs, lastDelay * 2)) : Math.min(maxMs, baseMs);
+    let next =
+      backoff === "exp"
+        ? Math.min(maxMs, Math.max(baseMs, lastDelay * 2))
+        : Math.min(maxMs, baseMs);
     if (jitter > 0) {
       const rand = 1 + (Math.random() * 2 - 1) * jitter;
       next = Math.max(0, Math.floor(next * rand));
@@ -942,4 +1021,3 @@ export abstract class BaseClient extends Emitter<EventMap> {
     }, 500);
   }
 }
-

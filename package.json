@@ -28,6 +28,14 @@
     {
       "from": "./dist/es/*",
       "to": "./src/main/webapp/js/"
+    },
+    {
+      "from": "./packages/webrtc-sdk/dist/**/*",
+      "to": "./src/main/webapp/js/"
+    },
+    {
+      "from": "./packages/webrtc-sdk/examples/*",
+      "to": "./src/main/webapp/"
     }
   ],
   "copyFilesSettings": {

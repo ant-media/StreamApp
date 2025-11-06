@@ -1,2 +1,6 @@
 /*.js
 /*.ts
+/client/*
+/core/*
+/utils/*
+index.d.ts.map
