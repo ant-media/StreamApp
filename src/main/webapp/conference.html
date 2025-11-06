@@ -474,7 +474,6 @@
 	}
 
 	function handleNotificationEvent(data) {
-		console.log("=== CONFERENCE.HTML ALL NOTIFICATION EVENTS ===", data);
 		var notificationEvent = JSON.parse(data.data);
 		if (notificationEvent != null && typeof (notificationEvent) == "object") {
 			var eventStreamId = notificationEvent.streamId;
@@ -503,21 +502,14 @@
 			} else if (eventTyp == "UPDATE_SOUND_LEVEL") {
 				//console.log("Received data : ", data.data);
 			} else if (eventTyp == "VIDEO_TRACK_ASSIGNMENT_LIST") {
-				console.log("=== CONFERENCE.HTML TRACK ASSIGNMENT ===");
 				console.log("VIDEO_TRACK_ASSIGNMENT_LIST: " + data.data);
 				const jsonObject = JSON.parse(data.data);
-				console.log("=== PARSED ASSIGNMENT PAYLOAD ===", jsonObject.payload);
 
 				jsonObject.payload.forEach(item => {
-					console.log("=== ASSIGNMENT ITEM ===", item);
-					console.log("videoLabel:", item.videoLabel, "trackId:", item.trackId);
 					var overlay = document.getElementById("overlay" + item.videoLabel);
 
 					if (overlay != null) {
-						console.log("UPDATING OVERLAY:", item.videoLabel + "->" + item.trackId);
 						overlay.innerHTML = item.videoLabel + "->" + item.trackId;
-					} else {
-						console.log("OVERLAY NOT FOUND for:", item.videoLabel);
 					}
 				});
 			}
@@ -573,22 +565,13 @@
 		//In multitrack conferencing the stream is same, tracks are being and remove from the stream
 
 		var roomId = roomNameBox.value;
-		console.log("=== CONFERENCE.HTML NEW TRACK AVAILABLE ===");
-		console.log("trackId:", obj.trackId);
-		console.log("track.id:", obj.track.id);
-		console.log("track.kind:", obj.track.kind);
-		console.log("stream:", obj.stream);
-		console.log("--------------------------------------------------new track available with id: "
+		console.log("new track available with id: "
 				+ obj.trackId + " and kind: " + obj.track.kind + " on the room:" + roomId);
 
 		//trackId is ARDAMSv+STREAM_ID or  ARDAMSa+STREAM_ID
 		var incomingTrackId = obj.trackId.substring("ARDAMSx".length);
 
-		console.log("**1*0312*3012*30 incomingTrackId", incomingTrackId);
-		console.log("roomId:", roomId, "publishStreamId:", publishStreamId);
-
 		if (incomingTrackId == roomId || incomingTrackId == publishStreamId) {
-			console.log("SKIPPING TRACK - matches room or publish stream");
 			return;
 		}
 
@@ -601,37 +584,6 @@
 		}
 
 		video.srcObject.addTrack(obj.track)
-		
-		console.log("CONFERENCE.HTML: ADDED TRACK TO VIDEO", incomingTrackId);
-		console.log("CONFERENCE.HTML: VIDEO ELEMENT STATE AFTER ADDING TRACK:", {
-			readyState: video.readyState,
-			networkState: video.networkState,
-			paused: video.paused,
-			autoplay: video.autoplay,
-			tracks: video.srcObject ? video.srcObject.getTracks().length : 0
-		});
-		
-		// Try explicit play like conference-v2
-		try {
-			console.log("CONFERENCE.HTML: TRYING TO PLAY VIDEO", incomingTrackId);
-			video.play().then(() => {
-				console.log("CONFERENCE.HTML: VIDEO PLAY SUCCESS", incomingTrackId);
-			}).catch(e => {
-				console.log("CONFERENCE.HTML: VIDEO PLAY FAILED", incomingTrackId, e);
-			});
-		} catch (e) {
-			console.log("CONFERENCE.HTML: VIDEO PLAY ERROR", incomingTrackId, e);
-		}
-		
-		console.log("CONFERENCE.HTML: CHECKING IF WE REQUEST TRACK ASSIGNMENTS...");
-		
-		// Let's see if the original requests track assignments anywhere
-		if (typeof webRTCAdaptor.requestVideoTrackAssignments === 'function') {
-			console.log("CONFERENCE.HTML: REQUESTING VIDEO TRACK ASSIGNMENTS");
-			webRTCAdaptor.requestVideoTrackAssignments(roomId);
-		} else {
-			console.log("CONFERENCE.HTML: requestVideoTrackAssignments not available");
-		}
 
 		obj.track.onended = event => {
 			console.log("track is ended with id: " + event.target.id)
@@ -657,7 +609,6 @@
 	};
 
 	function createRemoteVideo(trackLabel, kind) {
-		console.log("=== CONFERENCE.HTML CREATING VIDEO ===", trackLabel, kind);
 		var player = document.createElement("div");
 		player.className = "col-sm-3";
 		player.id = "player" + trackLabel;
@@ -670,7 +621,6 @@
 			+'<div id="overlay' + trackLabel + '" style="font-size: 10px;position: absolute; top: 5px; left: 50%; transform: translateX(-50%); color: white; background-color: rgba(0, 0, 0, 0.5); padding: 5px;">' + trackLabel + '</div>';
 
 		document.getElementById("players").appendChild(player);
-		console.log("=== CONFERENCE.HTML VIDEO CREATED ===", trackLabel);
 	}
 
 	function removeRemoteVideo(trackLabel) {
@@ -861,17 +811,14 @@
 						isPlaying = false;
 					}
 					else if (info == "data_channel_opened") {
-						console.log("=== CONFERENCE.HTML DATA CHANNEL OPENED ===", obj);
 						console.log("Data Channel open for stream id", obj);
 						isDataChannelOpen = true;
 					}
 					else if (info == "data_channel_closed") {
-						console.log("=== CONFERENCE.HTML DATA CHANNEL CLOSED ===", obj);
 						console.log("Data Channel closed for stream id", obj);
 						isDataChannelOpen = false;
 					}
 					else if (info == "data_received") {
-						console.log("=== CONFERENCE.HTML DATA RECEIVED ===", obj);
 						handleNotificationEvent(obj);
 					}
 					else if (info == "session_restored") {

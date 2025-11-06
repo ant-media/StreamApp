@@ -398,11 +398,6 @@ export class WebRTCAdaptor {
 			},
 		});
 
-		// New additive fields for promise-based readiness and event helpers
-		this._readyPromise = null;
-		this._readyResolve = null;
-		this._eventHandlers = new Map();
-
 		//Initialize the local stream (if needed) and web socket connection
 		if (this.initializeComponents) {
 			this.initialize();
@@ -434,28 +429,6 @@ export class WebRTCAdaptor {
 		this.errorEventListeners.push(errorListener);
 	}
 
-	// Additive ergonomic event helpers (non-breaking)
-	on(eventName, handler) {
-		if (!this._eventHandlers.has(eventName)) {
-			this._eventHandlers.set(eventName, new Set());
-		}
-		this._eventHandlers.get(eventName).add(handler);
-	}
-	
-	off(eventName, handler) {
-		if (this._eventHandlers.has(eventName)) {
-			this._eventHandlers.get(eventName).delete(handler);
-		}
-	}
-	
-	once(eventName, handler) {
-		const wrapper = (payload) => {
-			this.off(eventName, wrapper);
-			try { handler(payload); } catch(e) { Logger.warn(e); }
-		};
-		this.on(eventName, wrapper);
-	}
-
 	/**
 	 * Notify event listeners and callback method
 	 * @param {*} info
@@ -467,13 +440,6 @@ export class WebRTCAdaptor {
 		});
 		if (this.callback != null) {
 			this.callback(info, obj);
-		}
-		// Dispatch to additive event handlers specific to the event name
-		const handlers = this._eventHandlers && typeof this._eventHandlers.get === "function" ? this._eventHandlers.get(info) : null;
-		if (handlers) {
-			handlers.forEach((fn) => {
-				try { fn(obj); } catch(e) { Logger.warn(e); }
-			});
 		}
 	}
 
@@ -488,19 +454,6 @@ export class WebRTCAdaptor {
 		});
 		if (this.callbackError != null) {
 			this.callbackError(error, message);
-		}
-		// Also emit a generic 'error' event and a specific error-code event
-		const genericHandlers = this._eventHandlers && typeof this._eventHandlers.get === "function" ? this._eventHandlers.get("error") : null;
-		if (genericHandlers) {
-			genericHandlers.forEach((fn) => {
-				try { fn({ error: error, message: message }); } catch(e) { Logger.warn(e); }
-			});
-		}
-		const specificHandlers = this._eventHandlers && typeof this._eventHandlers.get === "function" ? this._eventHandlers.get(error) : null;
-		if (specificHandlers) {
-			specificHandlers.forEach((fn) => {
-				try { fn(message); } catch(e) { Logger.warn(e); }
-			});
 		}
 	}
 
@@ -530,20 +483,6 @@ export class WebRTCAdaptor {
 			this.checkWebSocketConnection();
 			resolve("Wait 'initialized' callback from websocket");
 		});
-	}
-
-	// Additive readiness promise (non-breaking)
-	ready() {
-		if (this.webSocketAdaptor && this.webSocketAdaptor.isConnected()) {
-			return Promise.resolve();
-		}
-		if (this._readyPromise) {
-			return this._readyPromise;
-		}
-		this._readyPromise = new Promise((resolve) => {
-			this._readyResolve = resolve;
-		});
-		return this._readyPromise;
 	}
 
 	/**
@@ -1957,16 +1896,6 @@ export class WebRTCAdaptor {
 			this.reconnectIfRequired(0, true);
 		}
 		
-		// Resolve readiness on initialized
-		if (info == "initialized") {
-			if (this._readyResolve) {
-				const resolveFn = this._readyResolve;
-				this._readyResolve = null;
-				this._readyPromise = null;
-				try { resolveFn(); } catch(e) { Logger.warn(e); }
-			}
-		}
-		
 		this.notifyEventListeners(info, obj);
 	}
 
@@ -2529,94 +2458,6 @@ export class WebRTCAdaptor {
 	closeStream() {
 		return this.mediaManager.closeStream();
 	};
-
-	// High-level join helper (non-breaking, optional to use)
-	join(options) {
-		const params = options || {};
-		const desiredRole = (params.role || "viewer").toLowerCase();
-		const streamId = params.streamId;
-		const timeoutMs = typeof params.timeoutMs !== 'undefined' && params.timeoutMs != null ? params.timeoutMs : 15000;
-		if (!streamId) {
-			return Promise.reject(new Error("join_requires_streamId"));
-		}
-
-		return this.ready().then(() => {
-			return new Promise((resolve, reject) => {
-				let timeoutId = -1;
-
-				const complete = (state) => {
-					cleanup();
-					resolve({ streamId: streamId, state: state });
-				};
-				const fail = (err, message) => {
-					cleanup();
-					reject(typeof err === 'string' ? new Error(err) : err || new Error("join_failed"));
-				};
-
-				const onIce = (obj) => {
-					if (obj && obj.streamId === streamId && (obj.state === "connected" || obj.state === "completed")) {
-						complete(obj.state);
-					}
-				};
-				const onTrack = (obj) => {
-					if (obj && obj.streamId === streamId) {
-						complete("track_added");
-					}
-				};
-				const onErr = (payload) => {
-					if (!payload) {
-						return;
-					}
-					const errStreamId = payload.streamId || (payload.message && payload.message.streamId) || null;
-					if (errStreamId == null || errStreamId === streamId) {
-						fail(payload.error || "error", payload.message);
-					}
-				};
-
-				this.on("ice_connection_state_changed", onIce);
-				this.on("newTrackAvailable", onTrack);
-				this.on("newStreamAvailable", onTrack);
-				this.on("error", onErr);
-
-				const cleanup = () => {
-					clearTimeout(timeoutId);
-					this.off("ice_connection_state_changed", onIce);
-					this.off("newTrackAvailable", onTrack);
-					this.off("newStreamAvailable", onTrack);
-					this.off("error", onErr);
-				};
-
-				timeoutId = setTimeout(() => {
-					fail("join_timeout");
-				}, timeoutMs);
-
-				if (desiredRole === "publisher" || desiredRole === "publish") {
-					this.publish(streamId,
-						params.token,
-						params.subscriberId,
-						params.subscriberCode,
-						params.streamName,
-						params.mainTrack,
-						params.metaData,
-						params.roleHint);
-				} else {
-					const playParams = {
-						streamId: streamId,
-						token: params.token,
-						roomId: params.roomId,
-						enableTracks: params.enableTracks,
-						subscriberId: params.subscriberId,
-						subscriberName: params.subscriberName,
-						subscriberCode: params.subscriberCode,
-						metaData: params.metaData,
-						role: params.roleHint,
-						disableTracksByDefault: params.disableTracksByDefault
-					};
-					this.playStream(playParams);
-				}
-			});
-		});
-	}
 }
 
 
