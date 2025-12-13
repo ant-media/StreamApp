@@ -315,6 +315,11 @@
 			<param-name>ExpiresByType application/x-mpegURL</param-name>
 			<param-value>access plus 0 seconds</param-value>
 		</init-param>
+		<!-- M3U8 mime-type is  application/vnd.apple.mpegurl so add the expire filter   -->
+		<init-param>
+			<param-name>ExpiresByType application/vnd.apple.mpegurl</param-name>
+			<param-value>access plus 0 seconds</param-value>
+		</init-param>
 		<init-param>
 			<param-name>ExpiresByType application/dash+xml</param-name>
 			<param-value>access plus 0 seconds</param-value>
