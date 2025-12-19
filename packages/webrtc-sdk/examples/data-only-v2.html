@@ -1,55 +1,290 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <meta charset="utf-8" />
+    <title>WebRTC Samples > Data Channel Only (TS v2)</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>webrtc-sdk data-only sample</title>
-    <style> body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 16px; } </style>
+    <meta charset="UTF-8" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css"
+    />
+    <style>
+      .jumbotron {
+        text-align: center;
+        padding: 2em;
+        padding-top: 3em;
+      }
+      .header,
+      .footer {
+        padding: 15px;
+      }
+      .header {
+        padding-bottom: 20px;
+      }
+      @media (min-width: 768px) {
+        .container {
+          max-width: 730px;
+        }
+      }
+      #dataMessagesTextarea {
+        font-size: 12px;
+        background-color: #f8f9fa;
+      }
+      pre#log {
+        text-align: left;
+        max-height: 200px;
+        overflow: auto;
+        background: #f8f9fa;
+        padding: 10px;
+        font-size: 12px;
+        margin-top: 20px;
+      }
+    </style>
   </head>
+
   <body>
-    <h2>Data-Only Publish (TS v2)</h2>
-    <div>
-      <input id="streamId" placeholder="stream id" />
-      <button id="start">Start</button>
-      <button id="stop" disabled>Stop</button>
+    <div class="container">
+      <div class="header clearfix">
+        <div class="row">
+          <h3 class="col text-muted">
+            <a href="samples.html">WebRTC Samples</a> > Data Channel Only (TS v2)
+          </h3>
+        </div>
+      </div>
+
+      <div class="jumbotron">
+        <div class="alert alert-primary text-center" role="alert" style="margin-top: -2em">
+          WebRTC Data Channel is an enterprise edition feature. <br />
+          <a href="https://antmedia.io">Try Enterprise Edition for free at antmedia.io</a>
+        </div>
+
+        <div class="form-group col-sm-12 text-left">
+          <input
+            type="text"
+            class="form-control"
+            id="streamName"
+            placeholder="Type stream name"
+          />
+        </div>
+
+        <div class="form-group col-sm-12 text-left">
+          <label>Data Channel Messages</label>
+          <textarea
+            class="form-control"
+            id="dataMessagesTextarea"
+            rows="10"
+            readonly
+          ></textarea>
+          <div class="form-row mt-2">
+            <div class="form-group col-sm-10">
+              <input
+                type="text"
+                class="form-control"
+                id="dataTextbox"
+                placeholder="Write your message to send"
+              />
+            </div>
+            <div class="form-group col-sm-2">
+              <button
+                type="button"
+                id="send"
+                class="btn btn-outline-primary btn-block"
+                disabled
+              >
+                Send
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group col-sm-12 text-center" id="offlineInfo">
+          <div class="form-group text-center" style="font-size: 1.2em">
+            <span class="badge badge-secondary">Status: Offline</span>
+          </div>
+        </div>
+        <div
+          class="form-group col-sm-12 text-center"
+          id="broadcastingInfo"
+          style="display: none"
+        >
+          <div class="form-group text-center" style="margin-bottom: 8px; font-size: 1em;">
+            <a href="" id="playlink" target="_blank">Join channel in a New Tab</a>
+          </div>
+          <div class="form-group text-center" style="font-size: 1.2em">
+            <span class="badge badge-success" id="statusBadge">Status: Connected</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <button class="btn btn-primary" id="connect_channel_button">
+            Join Channel
+          </button>
+          <button class="btn btn-primary" disabled id="disconnect_channel_button">
+            Disconnect
+          </button>
+        </div>
+      </div>
+
+      <pre id="log"></pre>
+
+      <footer class="footer text-left">
+        <div class="row">
+          <div class="col-sm-6 text-left">
+            <a href="http://antmedia.io" target="_blank">antmedia.io</a>
+          </div>
+          <div class="col-sm-6 text-right">
+            <span class="text-muted">Ant Media Server</span>
+          </div>
+        </div>
+      </footer>
     </div>
-    <fieldset style="margin-top:12px;">
-      <legend>Data Channel</legend>
-      <input id="dcText" placeholder="message" />
-      <button id="sendText" disabled>Send Text</button>
-      <button id="sendJSON" disabled>Send JSON</button>
-    </fieldset>
-    <pre id="log"></pre>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
 
     <script type="module">
-      import { StreamingClient, getWebSocketURL, generateRandomString } from './js/index.js';
-      const websocketURL = getWebSocketURL(window.location);
-      const streamIdEl = document.getElementById('streamId');
-      const startBtn = document.getElementById('start');
-      const stopBtn = document.getElementById('stop');
-      const dcText = document.getElementById('dcText');
-      const sendTextBtn = document.getElementById('sendText');
-      const sendJSONBtn = document.getElementById('sendJSON');
-      const logEl = document.getElementById('log');
-      let client = null;
-      let currentId = '';
-      function log(m) { logEl.textContent += m + '\n'; }
+      import {
+        StreamingClient,
+        getWebSocketURL,
+        generateRandomString,
+      } from "./js/index.js";
 
-      startBtn.onclick = async () => {
-        const id = streamIdEl.value.trim() || 'data_' + generateRandomString(6);
+      const streamNameInput = document.getElementById("streamName");
+      const connectBtn = document.getElementById("connect_channel_button");
+      const disconnectBtn = document.getElementById("disconnect_channel_button");
+      const sendBtn = document.getElementById("send");
+      const dataTextbox = document.getElementById("dataTextbox");
+      const messagesTextarea = document.getElementById("dataMessagesTextarea");
+      const logEl = document.getElementById("log");
+      const offlineInfo = document.getElementById("offlineInfo");
+      const broadcastingInfo = document.getElementById("broadcastingInfo");
+      const statusBadge = document.getElementById("statusBadge");
+      const playlink = document.getElementById("playlink");
+
+      let client = null;
+      let currentId = "";
+      let isPublisher = false;
+
+      function log(msg) {
+        logEl.textContent += msg + "\n";
+        logEl.scrollTop = logEl.scrollHeight;
+      }
+
+      function appendMessage(msg) {
+        messagesTextarea.value += msg + "\r\n";
+        messagesTextarea.scrollTop = messagesTextarea.scrollHeight;
+      }
+
+      const websocketURL = getWebSocketURL(window.location);
+
+      async function initClient() {
+        if (!client) {
+          client = new StreamingClient({
+            websocketURL,
+            onlyDataChannel: true,
+          });
+
+          client.on("initialized", () => log("initialized"));
+          client.on("data_channel_opened", () => {
+            log("data channel opened");
+            sendBtn.disabled = false;
+          });
+          client.on("data_channel_closed", () => {
+            log("data channel closed");
+            sendBtn.disabled = true;
+          });
+          client.on("data_received", ({ data }) => {
+            const msg = typeof data === "string" ? data : data.byteLength + " bytes";
+            log("dc <- " + msg);
+            appendMessage("Received: " + msg);
+          });
+          client.on("publish_started", (o) => {
+            log("publish_started " + o.streamId);
+            isPublisher = true;
+            updateStatus(true, "Connected (Publisher)");
+          });
+          client.on("play_started", (o) => {
+            log("play_started " + o.streamId);
+            isPublisher = false;
+            updateStatus(true, "Connected (Player)");
+          });
+          client.on("publish_finished", () => updateStatus(false));
+          client.on("play_finished", () => updateStatus(false));
+          client.on("error", (e) => log("error: " + (e.error || e.message || e)));
+          
+          await client.ready();
+        }
+        return client;
+      }
+
+      function updateStatus(connected, text = "Connected") {
+        if (connected) {
+          offlineInfo.style.display = "none";
+          broadcastingInfo.style.display = "block";
+          statusBadge.textContent = "Status: " + text;
+          connectBtn.disabled = true;
+          disconnectBtn.disabled = false;
+          playlink.href = window.location.pathname + "?id=" + currentId;
+        } else {
+          offlineInfo.style.display = "block";
+          broadcastingInfo.style.display = "none";
+          connectBtn.disabled = false;
+          disconnectBtn.disabled = true;
+          sendBtn.disabled = true;
+        }
+      }
+
+      connectBtn.onclick = async () => {
+        const id = streamNameInput.value.trim() || "stream_" + generateRandomString(6);
+        currentId = id;
+        
         try {
-          const r = await StreamingClient.createSession({ websocketURL, role: 'publisher', streamId: id, onlyDataChannel: true });
-          client = r.client; currentId = id; stopBtn.disabled = false;
-          client.on('data_channel_opened', () => { sendTextBtn.disabled = false; sendJSONBtn.disabled = false; log('data channel opened'); });
-          client.on('data_channel_closed', () => { sendTextBtn.disabled = true; sendJSONBtn.disabled = true; log('data channel closed'); });
-          client.on('data_received', ({ data }) => log('dc <- ' + (typeof data === 'string' ? data : (data.byteLength + ' bytes'))));
-          log('started data-only for ' + id);
-        } catch(e) { log('start failed: ' + (e && e.message ? e.message : e)); }
+          const sdk = await initClient();
+          log("Attempting to join as player...");
+          try {
+            await sdk.join({ role: "player", streamId: id, timeoutMs: 5000 });
+          } catch (e) {
+            log("Join as player failed or timed out, attempting as publisher...");
+            await sdk.join({ role: "publisher", streamId: id, timeoutMs: 5000 });
+          }
+        } catch (e) {
+          log("Connection failed: " + (e.message || e));
+          updateStatus(false);
+        }
       };
-      stopBtn.onclick = () => { if (client && currentId) { client.stop(currentId); stopBtn.disabled = true; } };
-      sendTextBtn.onclick = async () => { if (client && currentId) { await client.sendData(currentId, dcText.value || 'hello'); log('dc -> ' + (dcText.value || 'hello')); } };
-      sendJSONBtn.onclick = async () => { if (client && currentId) { await client.sendJSON(currentId, { hello: 'world' }); log('dc -> {"hello":"world"}'); } };
+
+      disconnectBtn.onclick = () => {
+        if (client && currentId) {
+          client.stop(currentId);
+        }
+      };
+
+      sendBtn.onclick = async () => {
+        if (client && currentId) {
+          const val = dataTextbox.value || "hello";
+          try {
+            await client.sendData(currentId, val);
+            log("dc -> " + val);
+            appendMessage("Sent: " + val);
+            dataTextbox.value = "";
+          } catch (e) {
+            log("send failed: " + e.message);
+          }
+        }
+      };
+
+      dataTextbox.onkeypress = (e) => {
+        if (e.key === "Enter") sendBtn.click();
+      };
+
+      // Set initial stream ID if present in URL
+      const urlParams = new URLSearchParams(window.location.search);
+      const idParam = urlParams.get("id") || urlParams.get("name");
+      if (idParam) {
+        streamNameInput.value = idParam;
+      } else {
+        streamNameInput.value = "stream1";
+      }
     </script>
   </body>
-  </html>
-
+</html>

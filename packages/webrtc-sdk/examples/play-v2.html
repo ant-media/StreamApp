@@ -496,8 +496,8 @@
       adaptor.on('ice_connection_state_changed', ({ state }) => log('ice: ' + state));
       adaptor.on('reconnected', ({ streamId }) => log('reconnected ' + streamId));
       adaptor.on('error', (e) => log('error: ' + e.error));
-		adaptor.on('data_channel_opened', () => { log('data channel opened'); sendTextBtn.disabled = false; sendFileBtn.disabled = false; });
-		adaptor.on('data_channel_closed', () => { log('data channel closed'); sendTextBtn.disabled = true; sendFileBtn.disabled = true; });
+	  adaptor.on('data_channel_opened', () => { log('data channel opened'); sendTextBtn.disabled = false; sendFileBtn.disabled = false; });
+	  adaptor.on('data_channel_closed', () => { log('data channel closed'); sendTextBtn.disabled = true; sendFileBtn.disabled = true; });
 
       adaptor.on('data_received', ({ data }) => {
 			if (typeof data === 'string') {
@@ -734,10 +734,10 @@
       };
 
       stopBtn.onclick = () => { if (currentId) { adaptor.stop(currentId); stopBtn.disabled = true; } };
-		optionsBtn.addEventListener("click", toggleOptions, false);
-		sendTextBtn.onclick = sendData;
-		sendFileBtn.onclick = () => sendFileInput.click();
-		sendFileInput.addEventListener("change", send_image);
+	  optionsBtn.addEventListener("click", toggleOptions, false);
+	  sendTextBtn.onclick = sendData;
+	  sendFileBtn.onclick = () => sendFileInput.click();
+	  sendFileInput.addEventListener("change", send_image);
 
       levelOn.onclick = async () => {
         if (!currentId) return;
