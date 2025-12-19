@@ -1,190 +1,505 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <meta charset="utf-8" />
+    <title>WebRTC Samples > Publish (TS v2)</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>webrtc-sdk publish sample</title>
+    <meta charset="UTF-8" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css"
+    />
     <style>
-      body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 16px; }
-      video { width: 100%; max-width: 520px; background: #000; height: 300px; }
-      .row { display: flex; gap: 16px; flex-wrap: wrap; }
+      video {
+        width: 100%;
+        max-width: 640px;
+      }
+      .jumbotron {
+        text-align: center;
+        padding: 2em;
+        padding-top: 3em;
+      }
+      .options {
+        display: none;
+      }
+      .message_area {
+        height: 200px;
+        overflow-y: auto;
+        border-style: groove;
+        border-width: thin;
+        background-color: white;
+        text-align: left;
+        padding: 10px;
+        margin-bottom: 10px;
+      }
+      #stats_panel {
+        display: none;
+      }
+      .header,
+      .footer {
+        padding: 15px;
+      }
+      .header {
+        padding-bottom: 20px;
+      }
+      @media (min-width: 768px) {
+        .container {
+          max-width: 730px;
+        }
+      }
+      pre#log {
+        text-align: left;
+        max-height: 200px;
+        overflow: auto;
+        background: #f8f9fa;
+        padding: 10px;
+        font-size: 12px;
+      }
     </style>
   </head>
+
   <body>
-    <h2>Publish Sample (TS v2)</h2>
-    <div class="row">
-      <div>
-        <label>Local</label>
-        <video id="local" autoplay playsinline muted></video>
+    <div class="container">
+      <div class="header clearfix">
+        <div class="row">
+          <h3 class="col text-muted">WebRTC Samples > Publish (TS v2)</h3>
+        </div>
       </div>
+
+      <div class="jumbotron">
+        <div class="col-sm-12 form-group">
+          <video id="localVideo" autoplay muted playsinline></video>
+        </div>
+
+        <div class="form-group col-sm-12 text-left">
+          <input
+            type="text"
+            class="form-control"
+            id="streamId"
+            placeholder="Type stream ID"
+          />
+        </div>
+        <div class="form-group col-sm-12 text-left">
+          <input
+            type="text"
+            class="form-control"
+            id="token"
+            placeholder="Token (optional)"
+          />
+        </div>
+
+        <div class="col-sm-12 text-right">
+          <button
+            type="button"
+            id="options"
+            class="btn btn-outline-primary btn-sm"
+          >
+            Options
+          </button>
+        </div>
+
+        <div class="form-group col-sm-12 text-left options">
+          <div class="dropdown-divider"></div>
+          <label for="maxBandwidthTextBox">Max Video Bitrate (Kbps):</label>
+          <div class="form-inline">
+            <input
+              type="number"
+              class="form-control mr-sm-2"
+              id="maxBandwidthTextBox"
+              placeholder="600"
+              value="600"
+              step="50"
+            />
+            <button
+              type="button"
+              class="btn btn-outline-primary btn-sm"
+              id="max_bandwidth_apply"
+            >
+              Apply
+            </button>
+            <button
+              type="button"
+              class="btn btn-outline-secondary btn-sm ml-2"
+              id="unlimited_bandwidth"
+            >
+              Unlimited
+            </button>
+          </div>
+
+          <div class="dropdown-divider"></div>
+          <label for="degrad">Degradation Preference:</label>
+          <div class="form-inline">
+            <select id="degrad" class="form-control mr-sm-2">
+              <option value="maintain-framerate">maintain-framerate</option>
+              <option value="maintain-resolution">maintain-resolution</option>
+              <option value="balanced">balanced</option>
+            </select>
+            <button
+              type="button"
+              class="btn btn-outline-primary btn-sm"
+              id="apply_degradation"
+            >
+              Apply
+            </button>
+          </div>
+
+          <div class="dropdown-divider"></div>
+          <legend class="col-form-label">Video Source</legend>
+          <select id="videoInput" class="form-control mb-2"></select>
+
+          <legend class="col-form-label">Audio Source</legend>
+          <select id="audioInput" class="form-control mb-2"></select>
+          <button
+            type="button"
+            class="btn btn-outline-info btn-sm mb-2"
+            id="refreshDevices"
+          >
+            Refresh Devices
+          </button>
+
+          <div class="dropdown-divider"></div>
+          <legend class="col-form-label">Microphone Gain & Level</legend>
+          <div class="form-inline">
+            <input
+              type="range"
+              id="volume_change_input"
+              min="0"
+              max="1"
+              value="1"
+              step="0.01"
+              class="mr-2"
+            />
+            <span id="audio_level_text">level: 0.00</span>
+          </div>
+          <div class="mt-2">
+            <button id="meterOn" class="btn btn-outline-secondary btn-sm">
+              Enable Level Meter
+            </button>
+            <button id="meterOff" class="btn btn-outline-secondary btn-sm">
+              Disable Level Meter
+            </button>
+          </div>
+
+          <div class="dropdown-divider"></div>
+          <legend class="col-form-label">Media Controls</legend>
+          <div class="btn-group btn-group-sm mb-2">
+            <button id="turnOffCam" class="btn btn-outline-danger">
+              Cam Off
+            </button>
+            <button id="turnOnCam" class="btn btn-outline-success">
+              Cam On
+            </button>
+          </div>
+          <div class="btn-group btn-group-sm mb-2">
+            <button id="pauseAudio" class="btn btn-outline-warning">
+              Pause Audio
+            </button>
+            <button id="resumeAudio" class="btn btn-outline-success">
+              Resume Audio
+            </button>
+          </div>
+          <div class="btn-group btn-group-sm mb-2">
+            <button id="pauseVideo" class="btn btn-outline-warning">
+              Pause Video
+            </button>
+            <button id="resumeVideo" class="btn btn-outline-success">
+              Resume Video
+            </button>
+          </div>
+
+          <div class="dropdown-divider"></div>
+          <legend class="col-form-label">Screen Share</legend>
+          <div class="btn-group btn-group-sm mb-2">
+            <button id="startShare" class="btn btn-outline-primary">
+              Start Share
+            </button>
+            <button id="stopShare" class="btn btn-outline-danger" disabled>
+              Stop Share
+            </button>
+          </div>
+          <div class="btn-group btn-group-sm mb-2">
+            <button id="startOverlay" class="btn btn-outline-primary">
+              Share + Cam Overlay
+            </button>
+            <button id="stopOverlay" class="btn btn-outline-danger" disabled>
+              Stop Overlay
+            </button>
+          </div>
+
+          <div class="dropdown-divider"></div>
+          <label>Data Channel Messages</label>
+          <div id="all-messages" class="message_area"></div>
+          <div class="form-row">
+            <div class="form-group col-sm-8">
+              <input
+                type="text"
+                class="form-control"
+                id="dataTextbox"
+                placeholder="Write message"
+              />
+            </div>
+            <div class="form-group col-sm-2">
+              <button
+                type="button"
+                id="sendText"
+                class="btn btn-outline-primary btn-block"
+                disabled
+              >
+                Send
+              </button>
+            </div>
+            <div class="form-group col-sm-2">
+              <button
+                type="button"
+                id="sendBin"
+                class="btn btn-outline-primary btn-block"
+                disabled
+              >
+                Binary
+              </button>
+            </div>
+          </div>
+          <div class="custom-control custom-switch">
+            <input
+              type="checkbox"
+              class="custom-control-input"
+              id="sanitize"
+            />
+            <label class="custom-control-label" for="sanitize"
+              >Sanitize Strings</label
+            >
+          </div>
+        </div>
+
+        <div class="form-group col-sm-12 text-center" id="offlineInfo">
+          <div class="form-group text-center" style="font-size: 1.2em">
+            <span class="badge badge-secondary">Status: Offline</span>
+          </div>
+        </div>
+        <div
+          class="form-group col-sm-12 text-center"
+          id="broadcastingInfo"
+          style="display: none"
+        >
+          <div class="form-group text-center" style="margin-bottom: 8px; font-size: 1em;">
+            <a href="" id="playlink" target="_blank" data-toggle="tooltip" title="Opens in New Tab">Play with WebRTC</a>
+          </div>
+          <div class="form-group text-center" style="font-size: 1.2em">
+            <span class="badge badge-success">Status: Publishing</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <button class="btn btn-primary" id="start_publish_button">
+            Start Publishing
+          </button>
+          <button class="btn btn-primary" disabled id="stop_publish_button">
+            Stop Publishing
+          </button>
+        </div>
+
+        <div class="col-sm-10 offset-sm-1" id="stats_panel">
+          <div class="row text-muted text-left">
+            <div class="col-sm-12">
+              <small>
+                <div id="stats_content"></div>
+              </small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <pre id="log" class="mt-3"></pre>
+
+      <footer class="footer text-left">
+        <div class="row">
+          <div class="col-sm-6 text-left">
+            <a href="http://antmedia.io" target="_blank">antmedia.io</a>
+          </div>
+          <div class="col-sm-6 text-right">
+            <span class="text-muted">Ant Media Server</span>
+          </div>
+        </div>
+      </footer>
     </div>
-    <div style="margin-top: 12px;">
-      <input id="streamId" placeholder="stream id" />
-      <input id="token" placeholder="token (optional)" />
-      <button id="start">Start</button>
-      <button id="stop" disabled>Stop</button>
-    </div>
-    <div style="margin-top: 12px;">
-      <label>Video Input:</label>
-      <select id="videoInput"></select>
-      <label>Audio Input:</label>
-      <select id="audioInput"></select>
-      <button id="refreshDevices">Refresh Devices</button>
-    </div>
-    <div style="margin-top:12px;">
-      <fieldset>
-        <legend>Controls</legend>
-        <button id="turnOffCam">Turn off Camera</button>
-        <button id="turnOnCam">Turn on Camera</button>
-        <button id="pauseAudio">Pause Audio</button>
-        <button id="resumeAudio">Resume Audio</button>
-        <button id="pauseVideo">Pause Video</button>
-        <button id="resumeVideo">Resume Video</button>
-      </fieldset>
-    </div>
-    <div style="margin-top:12px;">
-      <fieldset>
-        <legend>Network / QoS</legend>
-        <label>Bandwidth (kbps):</label>
-        <input id="bw" type="number" min="100" step="50" placeholder="600" style="width:100px" />
-        <button id="applyBw">Apply</button>
-        <button id="unlimitedBw">Unlimited</button>
-        <label style="margin-left:12px;">Degradation:</label>
-        <select id="degrad">
-          <option value="maintain-framerate">maintain-framerate</option>
-          <option value="maintain-resolution">maintain-resolution</option>
-          <option value="balanced">balanced</option>
-        </select>
-        <button id="applyDegrad">Apply</button>
-      </fieldset>
-    </div>
-    <div style="margin-top:12px;">
-      <fieldset>
-        <legend>Data Channel</legend>
-        <input id="dcText" placeholder="message" />
-        <button id="sendText" disabled>Send Text</button>
-        <button id="sendBin" disabled>Send 128KB Binary</button>
-        <label style="margin-left:12px"><input type="checkbox" id="sanitize" /> Sanitize Strings</label>
-      </fieldset>
-    </div>
-    <div style="margin-top:12px;">
-      <fieldset>
-        <legend>Screen Share</legend>
-        <button id="startShare">Start Share</button>
-        <button id="stopShare" disabled>Stop Share</button>
-        <button id="startOverlay">Start Share + Camera Overlay</button>
-        <button id="stopOverlay" disabled>Stop Overlay</button>
-      </fieldset>
-    </div>
-    <div style="margin-top:12px;">
-      <fieldset>
-        <legend>Audio</legend>
-        <label>Volume:</label>
-        <input id="volume" type="range" min="0" max="1" step="0.01" value="1" />
-        <button id="meterOn">Enable Level Meter</button>
-        <button id="meterOff">Disable Level Meter</button>
-        <span id="level">level: 0.00</span>
-      </fieldset>
-    </div>
-    <div style="margin-top:12px;">
-      <fieldset>
-        <legend>Stats</legend>
-        <button id="enableStats">Enable Stats</button>
-        <div id="stats"></div>
-      </fieldset>
-    </div>
-    <pre id="log"></pre>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
 
     <script type="module">
-      import { StreamingClient, getWebSocketURL, generateRandomString } from './js/index.js';
+      import {
+        StreamingClient,
+        getWebSocketURL,
+        generateRandomString,
+      } from "./js/index.js";
 
-      const local = document.getElementById('local');
-      const streamIdEl = document.getElementById('streamId');
-      const tokenEl = document.getElementById('token');
-      const startBtn = document.getElementById('start');
-      const stopBtn = document.getElementById('stop');
-      const videoSel = document.getElementById('videoInput');
-      const audioSel = document.getElementById('audioInput');
-      const refreshBtn = document.getElementById('refreshDevices');
-      const logEl = document.getElementById('log');
-      const dcText = document.getElementById('dcText');
-      const sendTextBtn = document.getElementById('sendText');
-      const sendBinBtn = document.getElementById('sendBin');
-      const sanitizeCb = document.getElementById('sanitize');
-      const statsEl = document.getElementById('stats');
-      const enableStatsBtn = document.getElementById('enableStats');
-      const startShareBtn = document.getElementById('startShare');
-      const stopShareBtn = document.getElementById('stopShare');
-      const startOverlayBtn = document.getElementById('startOverlay');
-      const stopOverlayBtn = document.getElementById('stopOverlay');
-      const turnOffCamBtn = document.getElementById('turnOffCam');
-      const turnOnCamBtn = document.getElementById('turnOnCam');
-      const pauseAudioBtn = document.getElementById('pauseAudio');
-      const resumeAudioBtn = document.getElementById('resumeAudio');
-      const pauseVideoBtn = document.getElementById('pauseVideo');
-      const resumeVideoBtn = document.getElementById('resumeVideo');
-      const bw = document.getElementById('bw');
-      const applyBw = document.getElementById('applyBw');
-      const unlimitedBw = document.getElementById('unlimitedBw');
-      const degradSel = document.getElementById('degrad');
-      const applyDegrad = document.getElementById('applyDegrad');
-      const vol = document.getElementById('volume');
-      const meterOn = document.getElementById('meterOn');
-      const meterOff = document.getElementById('meterOff');
-      const level = document.getElementById('level');
+      const localVideo = document.getElementById("localVideo");
+      const streamIdEl = document.getElementById("streamId");
+      const tokenEl = document.getElementById("token");
+      const startBtn = document.getElementById("start_publish_button");
+      const stopBtn = document.getElementById("stop_publish_button");
+      const optionsBtn = document.getElementById("options");
+      const videoSel = document.getElementById("videoInput");
+      const audioSel = document.getElementById("audioInput");
+      const refreshBtn = document.getElementById("refreshDevices");
+      const logEl = document.getElementById("log");
+      const dataTextbox = document.getElementById("dataTextbox");
+      const sendTextBtn = document.getElementById("sendText");
+      const sendBinBtn = document.getElementById("sendBin");
+      const sanitizeCb = document.getElementById("sanitize");
+      const statsPanel = document.getElementById("stats_panel");
+      const statsContent = document.getElementById("stats_content");
+      const startShareBtn = document.getElementById("startShare");
+      const stopShareBtn = document.getElementById("stopShare");
+      const startOverlayBtn = document.getElementById("startOverlay");
+      const stopOverlayBtn = document.getElementById("stopOverlay");
+      const turnOffCamBtn = document.getElementById("turnOffCam");
+      const turnOnCamBtn = document.getElementById("turnOnCam");
+      const pauseAudioBtn = document.getElementById("pauseAudio");
+      const resumeAudioBtn = document.getElementById("resumeAudio");
+      const pauseVideoBtn = document.getElementById("pauseVideo");
+      const resumeVideoBtn = document.getElementById("resumeVideo");
+      const maxBandwidthInput = document.getElementById("maxBandwidthTextBox");
+      const applyBwBtn = document.getElementById("max_bandwidth_apply");
+      const unlimitedBwBtn = document.getElementById("unlimited_bandwidth");
+      const degradSel = document.getElementById("degrad");
+      const applyDegradBtn = document.getElementById("apply_degradation");
+      const volInput = document.getElementById("volume_change_input");
+      const meterOnBtn = document.getElementById("meterOn");
+      const meterOffBtn = document.getElementById("meterOff");
+      const levelText = document.getElementById("audio_level_text");
+      const messagesArea = document.getElementById("all-messages");
+      const offlineInfo = document.getElementById("offlineInfo");
+      const broadcastingInfo = document.getElementById("broadcastingInfo");
+      const playlink = document.getElementById("playlink");
 
       function log(msg) {
-        logEl.textContent += msg + '\n';
+        logEl.textContent += msg + "\n";
+        logEl.scrollTop = logEl.scrollHeight;
       }
 
-      // derive ws URL similar to legacy utility
       const websocketURL = getWebSocketURL(window.location);
 
       const adaptor = new StreamingClient({
         websocketURL,
-        httpEndpointUrl: '',
-        localVideo: local,
+        localVideo: localVideo,
         isPlayMode: false,
         mediaConstraints: { video: true, audio: true },
       });
 
-      adaptor.on('initialized', () => log('initialized'));
-      adaptor.on('publish_started', (o) => { log('publish_started ' + o.streamId); stopBtn.disabled = false; });
-      adaptor.on('publish_finished', (o) => { log('publish_finished ' + o.streamId); stopBtn.disabled = true; });
-      adaptor.on('ice_connection_state_changed', ({ state }) => log('ice: ' + state));
-      adaptor.on('reconnected', ({ streamId }) => log('reconnected ' + streamId));
-      adaptor.on('devices_updated', (g) => {
-        videoSel.innerHTML = g.videoInputs.map(d => `<option value="${d.deviceId}">${d.label}</option>`).join('');
-        audioSel.innerHTML = g.audioInputs.map(d => `<option value="${d.deviceId}">${d.label}</option>`).join('');
+      optionsBtn.onclick = () => {
+        $(".options").toggle();
+      };
+
+      adaptor.on("initialized", () => {
+        log("initialized");
+        startBtn.disabled = false;
+        stopBtn.disabled = true;
+      });
+
+      adaptor.on("publish_started", (o) => {
+        log("publish_started " + o.streamId);
+        stopBtn.disabled = false;
+        startBtn.disabled = true;
+        offlineInfo.style.display = "none";
+        broadcastingInfo.style.display = "block";
+        playlink.href = "./play-v2.html?id=" + o.streamId;
+        statsPanel.style.display = "block";
+        adaptor.enableStats(o.streamId, 2000);
+      });
+
+      adaptor.on("publish_finished", (o) => {
+        log("publish_finished " + o.streamId);
+        stopBtn.disabled = true;
+        startBtn.disabled = false;
+        offlineInfo.style.display = "block";
+        broadcastingInfo.style.display = "none";
+        statsPanel.style.display = "none";
+      });
+
+      adaptor.on("ice_connection_state_changed", ({ state }) =>
+        log("ice: " + state)
+      );
+      adaptor.on("reconnected", ({ streamId }) => log("reconnected " + streamId));
+
+      adaptor.on("devices_updated", (g) => {
+        videoSel.innerHTML = g.videoInputs
+          .map((d) => `<option value="${d.deviceId}">${d.label}</option>`)
+          .join("");
+        audioSel.innerHTML = g.audioInputs
+          .map((d) => `<option value="${d.deviceId}">${d.label}</option>`)
+          .join("");
         if (g.selectedVideoInputId) videoSel.value = g.selectedVideoInputId;
         if (g.selectedAudioInputId) audioSel.value = g.selectedAudioInputId;
       });
-      refreshBtn.onclick = async () => { await adaptor.listDevices(); };
-      adaptor.on('data_channel_opened', () => { log('data channel opened'); sendTextBtn.disabled = false; sendBinBtn.disabled = false; });
-      adaptor.on('data_channel_closed', () => { log('data channel closed'); sendTextBtn.disabled = true; sendBinBtn.disabled = true; });
-      adaptor.on('data_received', ({ data }) => {
-        if (typeof data === 'string') log('dc <- ' + data);
-        else log('dc <- binary ' + (data.byteLength || 0) + ' bytes');
-      });
-      sanitizeCb.onchange = () => adaptor.setSanitizeDataChannelStrings(sanitizeCb.checked);
-      adaptor.on('updated_stats', (ps) => {
-        statsEl.textContent = `bytesSent=${ps.totalBytesSent} bytesRecv=${ps.totalBytesReceived}`;
-      });
-      adaptor.on('error', (e) => log('error: ' + e.error));
 
-      let currentId = '';
+      refreshBtn.onclick = async () => {
+        await adaptor.listDevices();
+      };
+
+      adaptor.on("data_channel_opened", () => {
+        log("data channel opened");
+        sendTextBtn.disabled = false;
+        sendBinBtn.disabled = false;
+      });
+
+      adaptor.on("data_channel_closed", () => {
+        log("data channel closed");
+        sendTextBtn.disabled = true;
+        sendBinBtn.disabled = true;
+      });
+
+      adaptor.on("data_received", ({ data }) => {
+        if (typeof data === "string") {
+          log("dc <- " + data);
+          const div = document.createElement("div");
+          div.textContent = "Received: " + data;
+          messagesArea.appendChild(div);
+          messagesArea.scrollTop = messagesArea.scrollHeight;
+        } else {
+          log("dc <- binary " + (data.byteLength || 0) + " bytes");
+          const div = document.createElement("div");
+          div.textContent = "Received binary: " + (data.byteLength || 0) + " bytes";
+          messagesArea.appendChild(div);
+          messagesArea.scrollTop = messagesArea.scrollHeight;
+        }
+      });
+
+      sanitizeCb.onchange = () =>
+        adaptor.setSanitizeDataChannelStrings(sanitizeCb.checked);
+
+      adaptor.on("updated_stats", (ps) => {
+        statsContent.innerHTML = `
+          <div>Total Bytes Sent: ${ps.totalBytesSent}</div>
+          <div>Total Bytes Received: ${ps.totalBytesReceived}</div>
+          ${ps.currentOutgoingBitrate ? `<div>Current Outgoing Bitrate: ${ps.currentOutgoingBitrate} kbps</div>` : ""}
+          ${ps.videoPacketsLost !== undefined ? `<div>Video Packets Lost: ${ps.videoPacketsLost}</div>` : ""}
+          ${ps.audioPacketsLost !== undefined ? `<div>Audio Packets Lost: ${ps.audioPacketsLost}</div>` : ""}
+          ${ps.frameWidth ? `<div>Resolution: ${ps.frameWidth}x${ps.frameHeight}</div>` : ""}
+        `;
+      });
+
+      adaptor.on("error", (e) => log("error: " + e.error));
+
+      let currentId = "";
       startBtn.onclick = async () => {
-        const id = streamIdEl.value || 'stream_' + generateRandomString(6);
+        const id = streamIdEl.value || "stream_" + generateRandomString(6);
         try {
-          await adaptor.join({ role: 'publisher', streamId: id, token: tokenEl.value.trim() || undefined, timeoutMs: 20000 });
+          await adaptor.join({
+            role: "publisher",
+            streamId: id,
+            token: tokenEl.value.trim() || undefined,
+            timeoutMs: 20000,
+          });
           currentId = id;
           startShareBtn.disabled = false;
         } catch (e) {
-          log('join failed: ' + e.message);
+          log("join failed: " + e.message);
         }
       };
 
-      stopBtn.onclick = () => { if (currentId) adaptor.stop(currentId); };
+      stopBtn.onclick = () => {
+        if (currentId) adaptor.stop(currentId);
+      };
 
       videoSel.onchange = async () => {
         await adaptor.selectVideoInput(videoSel.value);
@@ -195,38 +510,56 @@
 
       sendTextBtn.onclick = async () => {
         if (!currentId) return;
+        const val = dataTextbox.value || "hello";
         try {
-          await adaptor.sendData(currentId, dcText.value || 'hello');
-          log('dc -> ' + (dcText.value || 'hello'));
-        } catch (e) { log('send failed: ' + e.message); }
+          await adaptor.sendData(currentId, val);
+          log("dc -> " + val);
+          const div = document.createElement("div");
+          div.textContent = "Sent: " + val;
+          messagesArea.appendChild(div);
+          messagesArea.scrollTop = messagesArea.scrollHeight;
+          dataTextbox.value = "";
+        } catch (e) {
+          log("send failed: " + e.message);
+        }
       };
+
       sendBinBtn.onclick = async () => {
         if (!currentId) return;
         try {
           const size = 128 * 1024;
           const buf = new Uint8Array(size);
-          for (let i=0;i<size;i++) buf[i] = i % 251;
+          for (let i = 0; i < size; i++) buf[i] = i % 251;
           await adaptor.sendData(currentId, buf.buffer);
-          log('dc -> binary 131072 bytes');
-        } catch (e) { log('send failed: ' + e.message); }
+          log("dc -> binary 131072 bytes");
+          const div = document.createElement("div");
+          div.textContent = "Sent binary: 131072 bytes";
+          messagesArea.appendChild(div);
+          messagesArea.scrollTop = messagesArea.scrollHeight;
+        } catch (e) {
+          log("send failed: " + e.message);
+        }
       };
-      enableStatsBtn.onclick = () => { if (currentId) adaptor.enableStats(currentId, 2000); };
 
       startShareBtn.onclick = async () => {
         try {
           await adaptor.startScreenShare();
           startShareBtn.disabled = true;
           stopShareBtn.disabled = false;
-          log('screen share started');
-        } catch (e) { log('start share failed: ' + e.message); }
+          log("screen share started");
+        } catch (e) {
+          log("start share failed: " + e.message);
+        }
       };
       stopShareBtn.onclick = async () => {
         try {
           await adaptor.stopScreenShare();
           startShareBtn.disabled = false;
           stopShareBtn.disabled = true;
-          log('screen share stopped');
-        } catch (e) { log('stop share failed: ' + e.message); }
+          log("screen share stopped");
+        } catch (e) {
+          log("stop share failed: " + e.message);
+        }
       };
 
       startOverlayBtn.onclick = async () => {
@@ -234,61 +567,86 @@
           await adaptor.startScreenWithCameraOverlay();
           startOverlayBtn.disabled = true;
           stopOverlayBtn.disabled = false;
-          log('overlay started');
-        } catch (e) { log('start overlay failed: ' + e.message); }
+          log("overlay started");
+        } catch (e) {
+          log("start overlay failed: " + e.message);
+        }
       };
       stopOverlayBtn.onclick = async () => {
         try {
           await adaptor.stopScreenWithCameraOverlay();
           startOverlayBtn.disabled = false;
           stopOverlayBtn.disabled = true;
-          log('overlay stopped');
-        } catch (e) { log('stop overlay failed: ' + e.message); }
+          log("overlay stopped");
+        } catch (e) {
+          log("stop overlay failed: " + e.message);
+        }
       };
 
       turnOffCamBtn.onclick = () => {
         adaptor.turnOffLocalCamera();
-        log('camera turned off');
+        log("camera turned off");
       };
       turnOnCamBtn.onclick = () => {
         adaptor.turnOnLocalCamera();
-        log('camera turned on');
+        log("camera turned on");
       };
 
-      pauseAudioBtn.onclick = () => { adaptor.pauseTrack('audio'); log('audio paused'); };
-      resumeAudioBtn.onclick = () => { adaptor.resumeTrack('audio'); log('audio resumed'); };
-      pauseVideoBtn.onclick = () => { adaptor.pauseTrack('video'); log('video paused'); };
-      resumeVideoBtn.onclick = () => { adaptor.resumeTrack('video'); log('video resumed'); };
+      pauseAudioBtn.onclick = () => {
+        adaptor.pauseTrack("audio");
+        log("audio paused");
+      };
+      resumeAudioBtn.onclick = () => {
+        adaptor.resumeTrack("audio");
+        log("audio resumed");
+      };
+      pauseVideoBtn.onclick = () => {
+        adaptor.pauseTrack("video");
+        log("video paused");
+      };
+      resumeVideoBtn.onclick = () => {
+        adaptor.resumeTrack("video");
+        log("video resumed");
+      };
 
-      applyBw.onclick = async () => {
+      applyBwBtn.onclick = async () => {
         if (!currentId) return;
-        const val = parseInt(bw.value || '600', 10);
+        const val = parseInt(maxBandwidthInput.value || "600", 10);
         await adaptor.changeBandwidth(currentId, isFinite(val) ? val : 600);
-        log('bandwidth applied');
+        log("bandwidth applied: " + (isFinite(val) ? val : 600));
       };
-      unlimitedBw.onclick = async () => {
+      unlimitedBwBtn.onclick = async () => {
         if (!currentId) return;
-        await adaptor.changeBandwidth(currentId, 'unlimited');
-        log('bandwidth unlimited');
+        await adaptor.changeBandwidth(currentId, "unlimited");
+        log("bandwidth unlimited");
       };
-      applyDegrad.onclick = async () => {
+      applyDegradBtn.onclick = async () => {
         if (!currentId) return;
         await adaptor.setDegradationPreference(currentId, degradSel.value);
-        log('degradation set to ' + degradSel.value);
+        log("degradation set to " + degradSel.value);
       };
 
-      vol.oninput = () => {
-        adaptor.setVolumeLevel(parseFloat(vol.value));
+      volInput.oninput = () => {
+        adaptor.setVolumeLevel(parseFloat(volInput.value));
       };
-      meterOn.onclick = async () => {
+      meterOnBtn.onclick = async () => {
         await adaptor.enableAudioLevelForLocalStream((v) => {
-          level.textContent = 'level: ' + v.toFixed(2);
+          levelText.textContent = "level: " + v.toFixed(2);
         }, 200);
       };
-      meterOff.onclick = () => {
+      meterOffBtn.onclick = () => {
         adaptor.disableAudioLevelForLocalStream();
-        level.textContent = 'level: 0.00';
+        levelText.textContent = "level: 0.00";
       };
+
+      // Set initial stream ID if present in URL
+      const urlParams = new URLSearchParams(window.location.search);
+      const idParam = urlParams.get("id") || urlParams.get("name");
+      if (idParam) {
+        streamIdEl.value = idParam;
+      } else {
+        streamIdEl.value = "stream_" + generateRandomString(6);
+      }
     </script>
   </body>
 </html>
