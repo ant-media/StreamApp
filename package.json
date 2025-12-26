@@ -87,7 +87,7 @@
     "@rollup/plugin-node-resolve": "^15.2.3",
     "chai": "^4.3.7",
     "codecov": "^3.8.3",
-    "copy-files-from-to": "3.8.1",
+    "copy-files-from-to": "3.8.0",
     "eslint": "^8.9.0",
     "jsdoc": "^3.6.10",
     "karma": "^6.4.2",
