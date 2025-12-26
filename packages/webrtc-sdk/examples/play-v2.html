@@ -231,20 +231,9 @@
 
       function log(msg) { logEl.textContent += msg + '\n'; }
 
-		var appName = location.pathname.substring(0, location.pathname.lastIndexOf("/")+1);
-		var path =  location.hostname + ":" + location.port + appName + "websocket";
-		var websocketURL =  "ws://" + path;
+	  const websocketURL = getWebSocketURL(window.location);
 
-		if (location.protocol.startsWith("https")) {
-			websocketURL = "wss://" + path;
-		}
-
-		if (signaling)	{
-			//add signaling suffix to the websocket URL
-			websocketURL += "/signaling";
-		}
-
-      const adaptor = new WebRTCClient({
+	  const adaptor = new WebRTCClient({
         websocketURL,
         remoteVideo: remote,
         isPlayMode: true,

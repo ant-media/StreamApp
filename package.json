@@ -31,11 +31,35 @@
     },
     {
       "from": "./packages/webrtc-sdk/dist/**/*",
-      "to": "./src/main/webapp/js/"
+      "to": "./src/main/webapp/v2/js/"
     },
     {
       "from": "./packages/webrtc-sdk/examples/*",
-      "to": "./src/main/webapp/"
+      "to": "./src/main/webapp/v2/"
+    },
+    {
+      "from": "./src/main/webapp/js/external/**/*",
+      "to": "./src/main/webapp/v2/js/external/"
+    },
+    {
+      "from": "./src/main/webapp/js/external/**/*",
+      "to": "./src/main/webapp/v2/js/external/"
+    },
+    {
+      "from": "./src/main/webapp/js/fetch.stream.js",
+      "to": "./src/main/webapp/v2/js/"
+    },
+    {
+      "from": "./src/main/webapp/js/utility.js",
+      "to": "./src/main/webapp/v2/js/"
+    },
+    {
+      "from": "./src/main/webapp/js/external/**/*",
+      "to": "./src/main/webapp/v2/js/external/"
+    },
+    {
+      "from": "./src/main/webapp/css/**/*",
+      "to": "./src/main/webapp/v2/css/"
     }
   ],
   "copyFilesSettings": {
