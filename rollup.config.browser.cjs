@@ -8,7 +8,7 @@ const builds = {
     '@mediapipe/selfie_segmentation'
   ],
 
-  // ✅ loglevel "this is undefined" uyarısını yut
+  // ✅ loglevel "this is undefined" warning
   onwarn(warning, warn) {
     if (
       warning.code === 'THIS_IS_UNDEFINED' &&
