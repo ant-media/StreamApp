@@ -32,18 +32,7 @@ const builds = {
 		nodeResolve(),
 		commonjs(),
 		css()
-	],
-	// ✅ loglevel "this is undefined" warning
-  	onwarn(warning, warn) {
-  	  if (
-  	    warning.code === 'THIS_IS_UNDEFINED' &&
-  	    warning.id &&
-  	    warning.id.includes('loglevel.min.js')
-  	  ) {
-  	    return;
-  	  }
-  	  warn(warning);
-  	},
+	]
 
 };
 
