@@ -631,4 +631,78 @@ describe("MediaManager", function () {
 
   });
 
+  it("fallbacks to audio-only when camera permission denied", async function () {
+    var adaptor = new WebRTCAdaptor({
+      websocketURL: "ws://example.com",
+      initializeComponents: false,
+      mediaConstraints: {
+        video: true,
+        audio: true
+      }
+    });
+
+    // create a real audio track via WebAudio
+    var audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    var oscillator = audioContext.createOscillator();
+    oscillator.type = "sine";
+    oscillator.frequency.value = 440;
+    var destination = audioContext.createMediaStreamDestination();
+    oscillator.connect(destination);
+    oscillator.start();
+    var audioTrack = destination.stream.getAudioTracks()[0];
+
+    // stub getUserMedia: reject when video requested, resolve when audio-only
+    var originalGetUserMedia = navigator.mediaDevices.getUserMedia;
+    navigator.mediaDevices.getUserMedia = async (constraints) => {
+      if (constraints && constraints.video !== false) {
+        throw new DOMException("Permission denied", "NotAllowedError");
+      }
+      return new MediaStream([audioTrack]);
+    };
+
+    var fallbackEventFired = false;
+    adaptor.addEventListener((info, obj) => {
+      if (info === "audio_only_fallback") {
+        fallbackEventFired = true;
+      }
+    });
+
+    await adaptor.mediaManager.initLocalStream();
+
+    expect(fallbackEventFired).to.be.true;
+    expect(adaptor.mediaManager.localStream.getAudioTracks().length).to.be.equal(1);
+    expect(adaptor.mediaManager.localStream.getVideoTracks().length).to.be.equal(0);
+
+    navigator.mediaDevices.getUserMedia = originalGetUserMedia;
+  });
+
+  it("does not fallback when disabled and camera permission denied", async function () {
+    var adaptor = new WebRTCAdaptor({
+      websocketURL: "ws://example.com",
+      initializeComponents: false,
+      mediaConstraints: {
+        video: true,
+        audio: true
+      },
+      fallbackToAudioIfVideoPermissionDenied: false
+    });
+
+    var originalGetUserMedia = navigator.mediaDevices.getUserMedia;
+    navigator.mediaDevices.getUserMedia = async (constraints) => {
+      throw new DOMException("Permission denied", "NotAllowedError");
+    };
+
+    let failed = false;
+    try {
+      await adaptor.mediaManager.initLocalStream();
+    } catch (e) {
+      failed = true;
+      expect(e.name).to.be.equal("NotAllowedError");
+    }
+
+    expect(failed).to.be.true;
+
+    navigator.mediaDevices.getUserMedia = originalGetUserMedia;
+  });
+
 });
