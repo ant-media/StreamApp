@@ -662,7 +662,7 @@ export class WebRTCAdaptor {
 	 *  @param {string=} metaData :(string, json) a free text information for the stream to AMS. It is provided to Rest methods by the AMS
 	 *  @param {string=} [role] : role for the stream. It is used for selective forwarding of subtracks in conference mode.
 	 */
-	play(streamId, token, roomId, enableTracks, subscriberId, subscriberCode, metaData, role) {
+	play(streamId, token, roomId, enableTracks, subscriberId, subscriberCode, metaData, role, viewerInfo) {
 		if (typeof streamId === 'object') {
 			// Object-style: play({ streamId, token, ... })
 			this.playStream(streamId);
@@ -687,7 +687,8 @@ export class WebRTCAdaptor {
 			trackList: typeof enableTracks !== undefined && enableTracks != null ? enableTracks : [],
 			subscriberId: typeof subscriberId !== undefined && subscriberId != null ? subscriberId : "",
 			subscriberCode: typeof subscriberCode !== undefined && subscriberId != null ? subscriberCode : "",
-			viewerInfo: typeof metaData !== undefined && metaData != null ? metaData : "",
+			viewerInfo: typeof viewerInfo !== undefined && viewerInfo != null ? viewerInfo : "",
+			metaData: typeof metaData !== undefined && metaData != null ? metaData : "",
 			role: (typeof role !== undefined && role != null) ? role : "",
 			userPublishId: typeof this.publishStreamId !== undefined && this.publishStreamId != null ? this.publishStreamId : "",
 		}
