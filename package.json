@@ -9,9 +9,10 @@
     "doc": "doc"
   },
   "scripts": {
-    "compile": "npm run cleanup:tsbuild && npm run compile:js && npm run compile:ts && copy-files-from-to && npm run cleanup:tsbuild",
+    "compile": "npm run cleanup:tsbuild && npm run compile:js && npm run compile:ts && npm run compile:webrtc-sdk && copy-files-from-to && npm run cleanup:tsbuild",
     "compile:js": "rollup -c rollup.config.module.cjs && rollup -c rollup.config.browser.cjs ",
     "compile:ts": "tsc -p ./tsconfig.json && api-extractor run",
+    "compile:webrtc-sdk": "npm install --prefix packages/webrtc-sdk && npm run build --prefix packages/webrtc-sdk",
     "cleanup:tsbuild": "rimraf ./tsbuild",
     "test": "karma start karma.conf.cjs",
     "codecov": "codecov"
