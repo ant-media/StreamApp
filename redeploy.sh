@@ -2,6 +2,16 @@
 AMS_DIR=~/softwares/ant-media-server
  
 
+# Build WebRTC SDK so its artifacts can be included in the WAR
+cd packages/webrtc-sdk
+rm -rf dist
+npm run build
+OUT=$?
+if [ $OUT -ne 0 ]; then
+    exit $OUT
+fi
+cd ../..
+
 #Latest sdk is to be deployed to src/main/webapp 
 rm -rf dist
 npm run compile

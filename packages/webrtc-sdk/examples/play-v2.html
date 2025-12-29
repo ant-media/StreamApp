@@ -1,0 +1,749 @@
+<!doctype html>
+<html lang="en">
+  <head>
+<title>WebRTC SDK Samples > Play</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="UTF-8">
+<link rel="stylesheet" href="css/external/bootstrap4/bootstrap.min.css" />
+<script src="js/external/adapter-latest.js"></script>
+<link rel="stylesheet" href="css/samples.css" />
+<link rel="stylesheet" href="css/common.css" />
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  </head>
+  <body>
+
+	<div class="container">
+		<div class="header clearfix">
+			<div class="row">
+				<h3 class="col text-muted">
+					<a href="samples.html">WebRTC SDK Samples</a> > Play
+				</h3>
+			</div>
+		</div>
+
+
+		<div class="jumbotron">
+			<div class="alert alert-primary text-center enterprise-feature"
+				role="alert" style="margin-top: -2em">
+				WebRTC Playback is an enterprise edition feature. <br /> <a
+					href="https://antmedia.io">Try Enterprise Edition for free at
+					antmedia.io</a> <br /> <br />
+			</div>
+			<div class="col-sm-12 form-group">
+				<div id='video-overlay'>
+					<span class="loader"></span>
+				</div>
+				<video id="remote" autoplay controls playsinline></video>
+			</div>
+			<div class="form-group col-sm-12 text-left">
+				<input type="text" class="form-control" id="streamId"
+					placeholder="Type stream id">
+			</div>
+			<div class="form-group col-sm-12 text-left">
+				<input type="text" class="form-control" id="token"
+					placeholder="Token (optional)">
+			</div>
+			<div class="col-sm-12 text-right">
+				<button type="button" id="options"
+					class="btn btn-outline-primary btn-sm">Options</button>
+			</div>
+			<div class="form-group col-sm-12 text-left options">
+				<div class="dropdown">
+					<button class="btn btn-outline-primary btn-sm dropdown-toggle"
+						type="button" id="dropdownMenuButton" data-toggle="dropdown"
+						aria-haspopup="true" aria-expanded="false">Force Stream
+						Resolution</button>
+					<div id="dropdownMenu" class="dropdown-menu"
+						aria-labelledby="dropdownMenuButton">
+						<a class="dropdown-item active" href="#">Automatic</a>
+					</div>
+				</div>
+				<div class="dropdown-divider"></div>
+				<label>Data Channel Messages</label>
+				<div id="all-messages" class="message_area"></div>
+				<div class="form-row">
+					<div class="form-group col-sm-8">
+						<input type="text" class="form-control" id="dcText"
+							placeholder="Write your message to send publisher/players">
+					</div>
+					<div class="form-group col-sm-2">
+						<button type="button" id="sendText"
+							class="btn btn-outline-primary btn-block" disabled>Send</button>
+					</div>
+					<div class="form-group col-sm-2">
+						<button id="sendFileBtn" type="button"
+							class="btn btn-outline-primary btn-block" disabled>Image</button>
+						<input id="sendFile" type="file" name="name"
+							accept="image/x-png,image/gif,image/jpeg" style="display: none" />
+					</div>
+				</div>
+
+			</div>
+
+
+			<div class="form-group" style="margin-top:10px">
+				<button class="btn btn-primary" id="start">Start
+					Playing</button>
+				<button class="btn btn-primary" id="stop" disabled>Stop
+					Playing</button>
+			</div>
+
+			<div class="col-sm-10 offset-sm-1" id="stats_panel"
+				style="display: none;">
+				<div class="row text-muted text-left">
+					<div class="col-sm-6">
+						<small>
+							<div id="average_bit_rate_container">
+								Average Bitrate(Kbps): <span id="average_bit_rate"></span>
+							</div>
+							<div id="latest_bit_rate_container">
+								Latest Bitrate(Kbps): <span id="latest_bit_rate"></span>
+							</div>
+							<div id="packet_lost_container">
+								PacketsLost: <span id="packet_lost_text"></span>
+							</div>
+							<div id="jitter_container">
+								Jitter Average Delay(Secs): <span id="jitter_text"></span>
+							</div>
+							<div id="audio_level_container">
+								Audio Level: <span id="audio_level"></span>
+							</div>
+
+						</small>
+					</div>
+					<div class="col-sm-6">
+						<small>
+							<div id="incoming_resolution_container">
+								Frame WidthxHeight: <span id="frame_width"></span>x<span
+									id="frame_height"></span>
+							</div>
+							<div id="frame_rendered_containter">
+								Rendered FPS: <span id="frame_rendered"></span>
+							</div>
+							<div id="frame_decoded_container">
+								Decoded FPS: <span id="frame_decoded"></span>
+							</div>
+							<div id="frame_received_container">
+								Received FPS: <span id="frame_received"></span>
+							</div>
+							<div id="frame_dropped_container">
+								Frames Dropped: <span id="frame_dropped"></span>
+							</div>
+						</small>
+					</div>
+				</div>
+    <div>
+					<canvas id="fpsChart"></canvas>
+					<canvas id="DecodedFpsChart"></canvas>
+					<canvas id="ReceivedFpsChart"></canvas>
+				</div>
+
+			</div>
+			<span class="badge badge-warning" id="bitrateInfo"
+				style="font-size: 14px; display: none" style="display: none">Weak
+				Network Connection</span>
+
+    </div>
+		<footer class="footer text-center">
+			<p>
+				<a href="http://antmedia.io">antmedia.io</a>
+			</p>
+		</footer>
+    </div>
+
+	<script src="js/external/jquery-3.7.1.min.js" crossorigin="anonymous"></script>
+	<script src="js/external/popper.min.js" crossorigin="anonymous"></script>
+	<script src="js/external/bootstrap.min.js" crossorigin="anonymous"></script>
+	<script src="js/external/notify.min.js" crossorigin="anonymous"></script>
+
+	<div style="margin-top:12px; display: none;">
+      <fieldset>
+        <legend>Audio Output</legend>
+        <select id="audioOutput"></select>
+        <button id="refreshDevices">Refresh Devices</button>
+      </fieldset>
+    </div>
+	<div style="margin-top:12px; display: none;">
+      <fieldset>
+        <legend>Remote Audio Level</legend>
+        <button id="levelOn">Enable</button>
+        <button id="levelOff">Disable</button>
+        <span id="rlevel">level: 0.00</span>
+      </fieldset>
+    </div>
+	<pre id="log" style="display: none;"></pre>
+
+    <script type="module">
+      import { WebRTCClient, getWebSocketURL } from './js/index.js';
+		import {getUrlParameter} from "./js/fetch.stream.js"
+		import {errorHandler} from "./js/utility.js"
+		import "./js/loglevel.min.js";
+
+		const Logger = window.log;
+		Logger.setLevel("debug");
+
+		var token = getUrlParameter("token");
+
+		$(function() {
+		  var id = getUrlParameter("id");
+		  if(typeof id != "undefined") {
+			$("#streamId").val(id);
+		  }
+		  else {
+			id = getUrlParameter("name");
+			if (typeof id != "undefined") {
+				$("#streamId").val(id);
+			}
+			else {
+				$("#streamId").val("stream1");
+			}
+		  }
+		});
+
+		var signaling = getUrlParameter("signaling");
+		if (signaling == "true") {
+			signaling = true;
+		}
+		else {
+			signaling = false;
+		}
+
+		var subscriberId = getUrlParameter("subscriberId");
+		var subscriberCode = getUrlParameter("subscriberCode");
+		var metaData = getUrlParameter("metaData");
+
+      const remote = document.getElementById('remote');
+      const streamIdEl = document.getElementById('streamId');
+      const tokenEl = document.getElementById('token');
+      const startBtn = document.getElementById('start');
+      const stopBtn = document.getElementById('stop');
+		const optionsBtn = document.getElementById('options');
+      const dcText = document.getElementById('dcText');
+      const sendTextBtn = document.getElementById('sendText');
+      const sendFileInput = document.getElementById('sendFile');
+      const sendFileBtn = document.getElementById('sendFileBtn');
+		const logEl = document.getElementById('log');
+      const audioOutSel = document.getElementById('audioOutput');
+      const refreshBtn = document.getElementById('refreshDevices');
+      const levelOn = document.getElementById('levelOn');
+      const levelOff = document.getElementById('levelOff');
+      const rlevel = document.getElementById('rlevel');
+
+      function log(msg) { logEl.textContent += msg + '\n'; }
+
+	  const websocketURL = getWebSocketURL(window.location);
+
+	  const adaptor = new WebRTCClient({
+        websocketURL,
+        remoteVideo: remote,
+        isPlayMode: true,
+      });
+
+		// FPS Chart variables
+		const ctx = document.getElementById('fpsChart').getContext('2d');
+		const fpsChart = new Chart(ctx, {
+			type: 'line',
+			data: {
+				labels: [],
+				datasets: [{
+					label: 'Rendered FPS',
+					data: [],
+				},
+			]
+			},
+			options: {
+				scales: {
+					y: {
+						beginAtZero: true
+					}
+				}
+			}
+		});
+
+		const ctxDecodedFps = document.getElementById('DecodedFpsChart').getContext('2d');
+		const decodedFpsChart = new Chart(ctxDecodedFps, {
+			type: 'line',
+			data: {
+				labels: [],
+				datasets: [{
+					label: 'Decoded FPS',
+					data: [],
+				},
+			]
+			},
+			options: {
+				scales: {
+					y: {
+						beginAtZero: true
+					}
+				}
+			}
+		});
+
+		const ctxReceivedFps = document.getElementById('ReceivedFpsChart').getContext('2d');
+		const receivedFpsChart = new Chart(ctxReceivedFps, {
+			type: 'line',
+			data: {
+				labels: [],
+				datasets: [{
+					label: 'Received FPS',
+					data: [],
+				},
+			]
+			},
+			options: {
+				scales: {
+					y: {
+						beginAtZero: true
+					}
+				}
+			}
+		});
+
+		const maxCapacity = 60;
+		let frameTimestamps = [];
+		const fpsCalculationInterval = 1000;
+		var updateChart = false;
+		var lastRenderedFrameTimeMs = 0;
+		var lastFrameReceivedCount = 0;
+		var lastFrameDecodedCount = 0;
+		var lastStatsReceiveTime = 0;
+
+		const calculateFPS = (instant, metadata) => {
+			const now = performance.now();
+			frameTimestamps.push(now);
+
+			while (frameTimestamps.length > 0 && now - frameTimestamps[0] >= fpsCalculationInterval) {
+				frameTimestamps.shift();
+				updateChart = true;
+			}
+
+			const fps = frameTimestamps.length/(fpsCalculationInterval/1000);
+
+			if (updateChart) {
+				if (fpsChart.data.datasets[0].data.length > maxCapacity) {
+					fpsChart.data.datasets[0].data.shift();
+					fpsChart.data.labels.shift();
+				}
+
+				fpsChart.data.labels.push('');
+				fpsChart.data.datasets[0].data.push(fps);
+
+				fpsChart.update();
+				$("#frame_rendered").text(fps.toPrecision(3));
+				$("#frame_rendered").show();
+
+				frameTimestamps = [];
+				updateChart = false;
+			}
+
+			var state = adaptor.signallingState(currentId);
+			if (state != null && state != "closed") {
+				var iceState = adaptor.iceConnectionState(currentId);
+				if (iceState != null && iceState != "failed" && iceState != "disconnected") {
+					remote.requestVideoFrameCallback(calculateFPS);
+				}
+				else {
+					$("#frame_rendered").hide();
+				}
+			}
+			else {
+				$("#frame_rendered").hide();
+			}
+		};
+
+		function toggleOptions() {
+			$(".options").toggle();
+		}
+
+		function sendData() {
+			try {
+				var iceState = adaptor.iceConnectionState(currentId);
+				if (iceState != null && iceState != "failed" && iceState != "disconnected") {
+					adaptor.sendData(currentId, $("#dcText").val());
+					$("#all-messages").append("Sent: " + $("#dcText").val() + "<br>");
+					$("#dcText").val("");
+				}
+				else {
+					$.notify("WebRTC playing is not active. Please click Start Playing first", {
+						autoHideDelay:5000,
+						className:'error',
+						position:'top center'
+					});
+				}
+			}
+			catch (exception) {
+				console.error(exception);
+				$.notify("Warning: Message cannot be sent. Make sure you've enabled data channel and choose the correct player distribution on server web panel", {
+					autoHideDelay:5000,
+					className:'error',
+					position:'top center'
+				});
+			}
+		}
+
+		function send_image() {
+			var imageURL = sendFileInput.files[0];
+			var reader = new FileReader();
+			reader.onload = function (e) {
+				var arrayBuffer = this.result;
+				var bytes = new Uint8Array(arrayBuffer);
+				var blob = new Blob([bytes.buffer]);
+				var urlCreator = window.URL || window.webkitURL;
+				var imageBlobUrl = urlCreator.createObjectURL(blob);
+
+				$('<img src =' + imageBlobUrl +' style="width:100px;"><br>').appendTo($("#all-messages"));
+				sendBinaryData(arrayBuffer);
+			};
+			reader.readAsArrayBuffer(imageURL);
+		}
+
+		function sendBinaryData(data) {
+			try {
+				var iceState = adaptor.iceConnectionState(currentId);
+				if (iceState != null && iceState != "failed" && iceState != "disconnected") {
+					adaptor.sendData(currentId, data);
+				} else {
+					$.notify("WebRTC connection is not active. Please click start first", {
+						autoHideDelay:5000,
+						className:'error',
+						position:'top center'
+					});
+				}
+			} catch (exception) {
+				console.error(exception);
+				$.notify("Message cannot be sent. Make sure you've enabled data channel on server web panel", {
+					autoHideDelay:5000,
+					className:'error',
+					position:'top center'
+				});
+			}
+		}
+
+		function handleImageData(data) {
+			var bytes = new Uint8Array(data);
+			var blob = new Blob([bytes.buffer]);
+			var urlCreator = window.URL || window.webkitURL;
+			var imageUrl = urlCreator.createObjectURL(blob);
+			$('<img src =' + imageUrl +' style="width:100px;"><br>').appendTo($("#all-messages"));
+		}
+
+		function startAnimation() {
+			$("#bitrateInfo").fadeIn(800, function () {
+				$("#bitrateInfo").fadeOut(800, function () {
+					$("#bitrateInfo").html("Weak Network Connection");
+				});
+			});
+		}
+
+		adaptor.on('initialized', () => {
+			log('initialized');
+			startBtn.disabled = false;
+			stopBtn.disabled = true;
+		});
+
+		adaptor.on('play_started', (o) => {
+			log('play started ' + o.streamId);
+			startBtn.disabled = true;
+			stopBtn.disabled = false;
+			adaptor.getStreamInfo(currentId);
+			adaptor.enableStats(currentId, 1000);
+			frameTimestamps = [];
+			lastFrameDecodedCount = 0;
+			lastFrameReceivedCount = 0;
+			lastStatsReceiveTime = 0;
+			fpsChart.data.labels = [];
+			fpsChart.data.datasets.forEach((dataset) => {
+				dataset.data = [];
+			});
+			fpsChart.update();
+
+			receivedFpsChart.data.labels = [];
+			receivedFpsChart.data.datasets.forEach((dataset) => {
+				dataset.data = [];
+			});
+			receivedFpsChart.update();
+
+			decodedFpsChart.data.labels = [];
+			decodedFpsChart.data.datasets.forEach((dataset) => {
+				dataset.data = [];
+			});
+			decodedFpsChart.update();
+
+			remote.requestVideoFrameCallback(calculateFPS);
+		});
+
+		adaptor.on('play_finished', (o) => {
+			log('play finished ' + o.streamId);
+			startBtn.disabled = false;
+			stopBtn.disabled = true;
+			$("#stats_panel").hide();
+			document.getElementById("dropdownMenu").innerHTML = '<a class="dropdown-item active" href="#">Automatic</a>';
+		});
+
+      adaptor.on('newTrackAvailable', ({ streamId }) => log('new track for ' + streamId));
+      adaptor.on('ice_connection_state_changed', ({ state }) => log('ice: ' + state));
+      adaptor.on('reconnected', ({ streamId }) => log('reconnected ' + streamId));
+      adaptor.on('error', (e) => log('error: ' + e.error));
+	  adaptor.on('data_channel_opened', () => { log('data channel opened'); sendTextBtn.disabled = false; sendFileBtn.disabled = false; });
+	  adaptor.on('data_channel_closed', () => { log('data channel closed'); sendTextBtn.disabled = true; sendFileBtn.disabled = true; });
+
+      adaptor.on('data_received', ({ data }) => {
+			if (typeof data === 'string') {
+				var notificationEvent;
+				try {
+					notificationEvent = JSON.parse(data);
+					if(notificationEvent != null && typeof(notificationEvent) == "object") {
+						var eventType = notificationEvent.eventType;
+						if (eventType == "UPDATE_AUDIO_LEVEL") {
+							console.debug("Update audio level from server(max:0, min:127): " + notificationEvent.audioLevel);
+						}
+						else {
+							$("#all-messages").append("Received: " + data + "<br>");
+						}
+					}
+					else {
+						$("#all-messages").append("Received: " + data + "<br>");
+					}
+				}
+				catch (exception) {
+					$("#all-messages").append("Received: " + data + "<br>");
+				}
+			}
+			else {
+				handleImageData(data);
+			}
+		});
+
+		adaptor.on('streamInformation', (obj) => {
+			var streamResolutions = new Array();
+			obj.streamInfo.forEach(function(entry) {
+				if(!streamResolutions.includes(entry.streamHeight)){
+					streamResolutions.push(entry.streamHeight);
+				}
+			});
+			streamResolutions = streamResolutions.sort(function(a, b){return a-b});
+			const dropdownMenu = document.querySelector('.dropdown-menu');
+			streamResolutions.forEach(streamResolution => {
+				dropdownMenu.innerHTML += '<a class="dropdown-item" href="#">'+streamResolution+'p</a>';
+			});
+
+			$('.dropdown-menu a').click(function(){
+				var dropdownSelectedItem = $(this).text();
+				if(dropdownSelectedItem == "Automatic"){
+					dropdownSelectedItem = "0p";
+				}
+				dropdownSelectedItem = dropdownSelectedItem.replace('p', '');
+				adaptor.forceStreamQuality(currentId, Number(dropdownSelectedItem));
+				$('a.dropdown-item.active').removeClass("active");
+				$(this).addClass("active");
+			});
+		});
+
+      adaptor.on('updated_stats', (ps) => {
+			const now = performance.now();
+
+			$("#average_bit_rate").text(ps.averageIncomingBitrate);
+			if (ps.averageIncomingBitrate > 0) {
+				$("#average_bit_rate_container").show();
+			}
+			else {
+				$("#average_bit_rate_container").hide();
+			}
+
+			$("#latest_bit_rate").text(ps.currentIncomingBitrate);
+			if (ps.currentIncomingBitrate > 0) {
+				$("#latest_bit_rate_container").show();
+			}
+			else {
+				$("#latest_bit_rate_container").hide();
+			}
+
+			var packetLost = parseInt(ps.videoPacketsLost) + parseInt(ps.audioPacketsLost);
+			$("#packet_lost_text").text(packetLost);
+			if (packetLost > -1) {
+				$("#packet_lost_container").show();
+			}
+			else {
+				$("#packet_lost_container").hide();
+			}
+
+			var jitterAverageDelay = ((parseFloat(ps.videoJitterAverageDelay) + parseFloat(ps.audioJitterAverageDelay)) / 2).toPrecision(3);
+			$("#jitter_text").text(jitterAverageDelay);
+			if (jitterAverageDelay > 0) {
+				$("#jitter_container").show();
+			}
+			else {
+				$("#jitter_container").hide();
+			}
+
+			$("#audio_level").text(ps.audioLevel.toPrecision(3));
+			if (ps.audioLevel > -1) {
+				$("#audio_level_container").show();
+			}
+			else {
+				$("#audio_level_container").hide();
+			}
+
+			$("#frame_width").text(ps.frameWidth);
+			$("#frame_height").text(ps.frameHeight);
+			if (ps.frameWidth > 0 && ps.frameHeight > 0) {
+				$("#incoming_resolution_container").show();
+			}
+			else {
+				$("#incoming_resolution_container").hide();
+			}
+
+			$("#frame_received").text(ps.framesReceived);
+			$("#frame_received_container").hide();
+			if (ps.framesReceived > -1) {
+				if (lastFrameReceivedCount == 0) {
+					lastFrameReceivedCount = ps.framesReceived;
+				}
+				else if (lastStatsReceiveTime > 0) {
+					var timeDiff = now - lastStatsReceiveTime;
+					if (timeDiff > 0) {
+						var fps = (ps.framesReceived - lastFrameReceivedCount) / timeDiff * 1000;
+						$("#frame_received").text(fps.toPrecision(3));
+						$("#frame_received_container").show();
+
+						if (receivedFpsChart.data.datasets[0].data.length > maxCapacity) {
+							receivedFpsChart.data.datasets[0].data.shift();
+							receivedFpsChart.data.labels.shift();
+						}
+						receivedFpsChart.data.labels.push('');
+						receivedFpsChart.data.datasets[0].data.push(fps);
+						receivedFpsChart.update();
+					}
+					lastFrameReceivedCount = ps.framesReceived;
+				}
+			}
+
+			$("#frame_decoded").text(ps.framesDecoded);
+			$("#frame_decoded_container").hide();
+			if (ps.framesDecoded > -1) {
+				if (lastFrameDecodedCount == 0) {
+					lastFrameDecodedCount = ps.framesDecoded;
+				}
+				else if (lastStatsReceiveTime > 0) {
+					var timeDiff = now - lastStatsReceiveTime;
+					if (timeDiff > 0) {
+						var fps = (ps.framesDecoded - lastFrameDecodedCount) / timeDiff * 1000;
+						$("#frame_decoded").text(fps.toPrecision(3));
+						$("#frame_decoded_container").show();
+
+						if (decodedFpsChart.data.datasets[0].data.length > maxCapacity) {
+							decodedFpsChart.data.datasets[0].data.shift();
+							decodedFpsChart.data.labels.shift();
+						}
+						decodedFpsChart.data.labels.push('');
+						decodedFpsChart.data.datasets[0].data.push(fps);
+						decodedFpsChart.update();
+					}
+					lastFrameDecodedCount = ps.framesDecoded;
+				}
+			}
+
+			$("#frame_dropped").text(ps.framesDropped);
+			if (ps.framesDropped > -1) {
+				$("#frame_dropped_container").show();
+			}
+			else {
+				$("#frame_dropped_container").hide();
+			}
+
+			$("#stats_panel").show();
+			lastStatsReceiveTime = now;
+
+			console.debug("Average incoming kbits/sec: " + ps.averageIncomingBitrate
+				+ " Current incoming kbits/sec: " + ps.currentIncomingBitrate
+				+ " video packetLost: " + ps.videoPacketsLost
+				+ " audio packetLost: " + ps.audioPacketsLost
+				+ " frame width: " + ps.frameWidth
+				+ " frame height: " + ps.frameHeight
+				+ " frame received: " + ps.framesReceived
+				+ " frame decoded: " + ps.framesDecoded
+				+ " frame dropped: " + ps.framesDropped
+				+ " video jitter average delay: " + ps.videoJitterAverageDelay
+				+ " audio jitter average delay: " + ps.audioJitterAverageDelay
+				+ " audio level: " + ps.audioLevel);
+		});
+
+		adaptor.on('bitrateMeasurement', (obj) => {
+			console.debug(obj);
+			if(obj.audioBitrate+obj.videoBitrate > obj.targetBitrate) {
+				startAnimation();
+			}
+			$("#video_bit_rate").text(parseInt(obj.audioBitrate) + parseInt(obj.videoBitrate));
+		});
+
+		adaptor.on('resolutionChangeInfo', (obj) => {
+			console.log("Resolution is changed to "+obj.streamHeight);
+			let getVideo = document.getElementById("remote");
+			let overlay = document.getElementById('video-overlay');
+			getVideo.pause();
+			overlay.style.display = "block";
+			setTimeout(function(){ getVideo.play();overlay.style.display = "none";}, 2000);
+		});
+
+		adaptor.on('error', (error, message) => {
+			$('video').notify("Warning: " + errorHandler(error, message), {
+				autoHideDelay:5000,
+				className:'error',
+				position:'bottom center'
+			});
+      });
+
+      async function refreshDevices() {
+        try {
+          const g = await adaptor.listDevices();
+          audioOutSel.innerHTML = g.audioOutputs.map(d => `<option value="${d.deviceId}">${d.label}</option>`).join('');
+        } catch {}
+      }
+      refreshBtn.onclick = refreshDevices;
+      refreshDevices();
+
+      let currentId = '';
+      startBtn.onclick = async () => {
+			currentId = streamIdEl.value.trim();
+			if (!currentId) { log('enter stream id'); return; }
+			try {
+				await adaptor.join({
+					role: 'viewer',
+					streamId: currentId,
+					token: tokenEl.value.trim() || token || undefined,
+					timeoutMs: 20000,
+					subscriberId,
+					subscriberCode,
+					metaData
+				});
+        } catch (e) {
+          log('join failed: ' + e.message);
+        }
+      };
+
+      stopBtn.onclick = () => { if (currentId) { adaptor.stop(currentId); stopBtn.disabled = true; } };
+	  optionsBtn.addEventListener("click", toggleOptions, false);
+	  sendTextBtn.onclick = sendData;
+	  sendFileBtn.onclick = () => sendFileInput.click();
+	  sendFileInput.addEventListener("change", send_image);
+
+      levelOn.onclick = async () => {
+        if (!currentId) return;
+        await adaptor.enableRemoteAudioLevel(currentId, (v) => { rlevel.textContent = 'level: ' + v.toFixed(2); }, 200);
+      };
+      levelOff.onclick = () => { if (currentId) { adaptor.disableRemoteAudioLevel(currentId); rlevel.textContent = 'level: 0.00'; } };
+
+      audioOutSel.onchange = async () => {
+        const sinkId = audioOutSel.value;
+        if (typeof remote.sinkId !== 'undefined' && remote.setSinkId) {
+          try { await remote.setSinkId(sinkId); log('Audio output -> ' + sinkId); } catch { log('setSinkId failed'); }
+        } else {
+          log('setSinkId not supported in this browser');
+        }
+      };
+
+		window.adaptor = adaptor;
+    </script>
+  </body>
+</html>
