@@ -11,7 +11,12 @@ const builds = {
     }
   }],
   external: ['@mediapipe/selfie_segmentation'],
-  plugins: [babel({ babelHelpers: 'bundled' })]
+  plugins: [babel({ babelHelpers: 'bundled' })],
+
+  onwarn(warning, warn) {
+    if (warning.code === 'THIS_IS_UNDEFINED') return;
+    warn(warning);
+  }
 };
 
 module.exports = builds;
