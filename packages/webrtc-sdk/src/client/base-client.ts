@@ -898,6 +898,7 @@ export abstract class BaseClient extends Emitter<EventMap> {
       }
 
       this.onInitialized();
+      this.emit("initialized", undefined as never);
       return;
     } else if (info === "start") {
       const { streamId } = obj as { streamId: string };
