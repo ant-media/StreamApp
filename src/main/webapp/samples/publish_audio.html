@@ -3,7 +3,8 @@
 	<title>WebRTC Samples > Publish Audio</title>
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<meta charset="UTF-8">
-	<link rel="stylesheet" href="../css/external/bootstrap4/bootstrap.min.css">
+	<link rel="stylesheet" href="../css/external/bootstrap5/bootstrap.min.css">
+	<link rel="stylesheet" href="../css/external/bootstrap5/bootstrap4-compat.css">
 	<link rel="stylesheet" href="../css/common.css" />
 	<link rel="stylesheet" href="../css/samples.css" />
 	<script src="../js/external/adapter-latest.js"></script>
@@ -31,7 +32,7 @@
 			</div>
 			<div class="form-group col-sm-12 text-center" id="broadcastingInfo" style="display: none;">
 				<div class="form-group text-center"  style="margin-bottom: 8px;font-size:1em;">
-					<a href="" id="playlink" target="_blank" data-toggle="tooltip" title="Opens in New Tab">Play with WebRTC</a>
+					<a href="" id="playlink" target="_blank" data-bs-toggle="tooltip" title="Opens in New Tab">Play with WebRTC</a>
 				</div>
 				<div class="form-group text-center" style="font-size:1.2em">
 					<span class="badge  badge-success" >Status: Publishing</span>
@@ -55,8 +56,7 @@
 
 	</div>
 	<script src="../js/external/jquery-3.7.1.min.js" crossorigin="anonymous"></script>
-	<script src="../js/external/popper.min.js" crossorigin="anonymous"></script>
-	<script src="../js/external/bootstrap.min.js" crossorigin="anonymous"></script>
+	<script src="../js/external/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
 	<script src="../js/external/notify.min.js" crossorigin="anonymous"></script>
 </body>
 <script type="module">
@@ -89,7 +89,7 @@
 	}
 
 	function init() {
-        $('[data-toggle="tooltip"]').tooltip()
+        document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (el) { new bootstrap.Tooltip(el); });
 		var id = getUrlParameter("id");
 		if (typeof id != "undefined") {
 			$("#streamId").val(id);
