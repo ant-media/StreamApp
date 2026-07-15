@@ -4,7 +4,69 @@ var webPlayer = new WebPlayer(window, document.getElementById("video_container")
 
 webPlayer.initialize().then(() => {
     webPlayer.play();
+    initializeMultiAudioSelector();
 });
+
+function initializeMultiAudioSelector() {
+    const streamId = getUrlParameter("id", window.location.search);
+    const token = getUrlParameter("token", window.location.search);
+    const container = document.getElementById("audioTrackSelectorContainer");
+    const selector = document.getElementById("audioTrackSelector");
+    let attempts = 0;
+
+    const findWebRTCHandler = window.setInterval(() => {
+        attempts++;
+        const player = webPlayer.videojsPlayer;
+        const tech = player && typeof player.tech === "function" ? player.tech() : null;
+        const handler = tech && tech.webrtc;
+        if (!handler || !handler.webRTCAdaptor) {
+            if (attempts >= 100) {
+                window.clearInterval(findWebRTCHandler);
+                console.warn("[MultiAudio] WebRTC handler was not available");
+            }
+            return;
+        }
+
+        window.clearInterval(findWebRTCHandler);
+        const adaptor = handler.webRTCAdaptor;
+        const updateSelector = trackList => {
+            console.log("[MultiAudio] Tracks returned by server:", trackList);
+            const audioTrackIds = [streamId].concat(trackList.filter(trackId =>
+                trackId.startsWith(`${streamId}_audio_`)
+            ));
+            console.log("[MultiAudio] Audio tracks available to selector:", audioTrackIds);
+
+            selector.innerHTML = "";
+            audioTrackIds.forEach((trackId, index) => {
+                const option = document.createElement("option");
+                option.value = trackId;
+                option.textContent = index === 0 ? "Audio 1 (default)" : `Audio ${index + 1}`;
+                selector.appendChild(option);
+            });
+
+            const selectAudioTrack = selectedTrackId => {
+                audioTrackIds.forEach(trackId => {
+                    adaptor.toggleAudio(streamId, trackId, trackId === selectedTrackId);
+                });
+            };
+            selector.onchange = () => selectAudioTrack(selector.value);
+            container.style.display = audioTrackIds.length > 1 ? "block" : "none";
+            console.log("[MultiAudio] Selector visible:", audioTrackIds.length > 1);
+            selectAudioTrack(audioTrackIds[0]);
+        };
+
+        player.on("webrtc-info", (event, data) => {
+            if (data && data.info === "trackList") {
+                console.log("[MultiAudio] Raw trackList callback:", data.obj);
+                updateSelector(data.obj.trackList || []);
+            }
+            else if (data && data.info === "play_started") {
+                adaptor.getTracks(streamId, token);
+            }
+        });
+        adaptor.getTracks(streamId, token);
+    }, 100);
+}
 
 
 
