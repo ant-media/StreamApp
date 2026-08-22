@@ -5,6 +5,7 @@ var webPlayer = new WebPlayer(window, document.getElementById("video_container")
 webPlayer.initialize().then(() => {
     webPlayer.play();
     initializeMultiAudioSelector();
+    initializeHlsAudioTrackLabels();
 });
 
 function initializeMultiAudioSelector() {
@@ -40,7 +41,13 @@ function initializeMultiAudioSelector() {
         };
 
         const updateSelector = trackList => {
-            const audioTrackIds = [streamId].concat(trackList || [])
+            const trackIdsFromServer = (trackList || [])
+                .filter((trackId, index, trackIds) => trackId && trackIds.indexOf(trackId) === index);
+            const hasLanguageTrackIds = trackIdsFromServer.some(trackId => {
+                const languagePart = getAudioLanguageFromTrackId(trackId);
+                return languagePart && !/^audio_\d+$/.test(languagePart);
+            });
+            const audioTrackIds = (hasLanguageTrackIds ? trackIdsFromServer : [streamId].concat(trackIdsFromServer))
                 .filter((trackId, index, trackIds) => trackId && trackIds.indexOf(trackId) === index);
             console.log("[MultiAudio] Audio tracks from getTrackList:", audioTrackIds);
             container.style.display = audioTrackIds.length > 1 ? "block" : "none";
@@ -53,17 +60,20 @@ function initializeMultiAudioSelector() {
             audioTrackIds.forEach((trackId, index) => {
                 const option = document.createElement("option");
                 option.value = trackId;
-                option.textContent = index === 0 ? "Audio 1 (default)" : `Audio ${index + 1}`;
+                option.textContent = getAudioTrackLabel(trackId, index);
                 selector.appendChild(option);
             });
 
             const selectAudioTrack = selectedTrackId => {
+                const primaryAudioTrackId = audioTrackIds[0];
                 adaptor.enableTrack(streamId, selectedTrackId, true);
-                audioTrackIds.forEach(trackId => {
-                    if (trackId !== streamId && trackId !== selectedTrackId) {
-                        adaptor.enableTrack(streamId, trackId, false);
-                    }
-                });
+                [streamId].concat(audioTrackIds)
+                    .filter((trackId, index, trackIds) => trackId && trackIds.indexOf(trackId) === index)
+                    .forEach(trackId => {
+                        if (trackId !== selectedTrackId && !(trackId === streamId && selectedTrackId === primaryAudioTrackId)) {
+                            adaptor.enableTrack(streamId, trackId, false);
+                        }
+                    });
             };
             selector.onchange = () => selectAudioTrack(selector.value);
             console.log("[MultiAudio] Selector visible:", audioTrackIds.length > 1);
@@ -73,6 +83,19 @@ function initializeMultiAudioSelector() {
                 selectAudioTrack(selector.value);
             }
             return audioTrackIds.length;
+        };
+
+        const getAudioLanguageFromTrackId = trackId => {
+            const prefix = `${streamId}_`;
+            return trackId && trackId.startsWith(prefix) ? trackId.substring(prefix.length) : "";
+        };
+
+        const getAudioTrackLabel = (trackId, index) => {
+            const language = getAudioLanguageFromTrackId(trackId);
+            if (language && !/^audio_\d+$/.test(language)) {
+                return language.replace(/_/g, " ");
+            }
+            return index === 0 ? "Audio 1 (default)" : `Audio ${index + 1}`;
         };
 
         const refreshTrackListUntilAudioTracksAreReady = () => {
@@ -109,6 +132,40 @@ function initializeMultiAudioSelector() {
             handleWebRTCInfo(payload.info, payload.obj);
         });
         requestTrackList();
+    }, 100);
+}
+
+function initializeHlsAudioTrackLabels() {
+    let attempts = 0;
+    const findVideoJSPlayer = window.setInterval(() => {
+        attempts++;
+        const player = webPlayer.videojsPlayer;
+        if (!player || typeof player.audioTracks !== "function") {
+            if (attempts >= 100) {
+                window.clearInterval(findVideoJSPlayer);
+            }
+            return;
+        }
+
+        window.clearInterval(findVideoJSPlayer);
+        const audioTracks = player.audioTracks();
+        const updateDefaultAudioTrackLabels = () => {
+            for (let i = 0; i < audioTracks.length; i++) {
+                const track = audioTracks[i];
+                if (/^audio_\d+$/.test(track.label) && track.language && track.language.toLowerCase() !== "und") {
+                    track.label = track.language;
+                }
+            }
+        };
+
+        audioTracks.addEventListener("addtrack", updateDefaultAudioTrackLabels);
+        audioTracks.addEventListener("change", updateDefaultAudioTrackLabels);
+        player.on("loadedmetadata", updateDefaultAudioTrackLabels);
+        player.on("dispose", () => {
+            audioTracks.removeEventListener("addtrack", updateDefaultAudioTrackLabels);
+            audioTracks.removeEventListener("change", updateDefaultAudioTrackLabels);
+        });
+        updateDefaultAudioTrackLabels();
     }, 100);
 }
 
