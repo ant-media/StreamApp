@@ -997,13 +997,16 @@ export class WebRTCAdaptor {
 	 * @param {string}  trackId : unique id for the track that you want to enable/disable data flow for
 	 * @param {boolean} enabled : true or false
 	 */
-	enableTrack(mainTrackId, trackId, enabled) {
+	enableTrack(mainTrackId, trackId, enabled, audioOnly) {
 		var jsCmd = {
 			command: "enableTrack",
 			streamId: mainTrackId,
 			trackId: trackId,
 			enabled: enabled,
 		};
+		if (typeof audioOnly !== "undefined") {
+			jsCmd.audioOnly = audioOnly;
+		}
 		this.webSocketAdaptor.send(JSON.stringify(jsCmd));
 	}
 

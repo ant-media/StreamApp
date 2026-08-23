@@ -64,14 +64,27 @@ function initializeMultiAudioSelector() {
                 selector.appendChild(option);
             });
 
+            const enableAudioTrack = (trackId, enabled) => {
+                if (adaptor.webSocketAdaptor && typeof adaptor.webSocketAdaptor.send === "function") {
+                    adaptor.webSocketAdaptor.send(JSON.stringify({
+                        command: "enableTrack",
+                        streamId: streamId,
+                        trackId: trackId,
+                        enabled: enabled,
+                        audioOnly: true,
+                    }));
+                    return;
+                }
+                adaptor.enableTrack(streamId, trackId, enabled, true);
+            };
+
             const selectAudioTrack = selectedTrackId => {
-                const primaryAudioTrackId = audioTrackIds[0];
-                adaptor.enableTrack(streamId, selectedTrackId, true);
+                enableAudioTrack(selectedTrackId, true);
                 [streamId].concat(audioTrackIds)
                     .filter((trackId, index, trackIds) => trackId && trackIds.indexOf(trackId) === index)
                     .forEach(trackId => {
-                        if (trackId !== selectedTrackId && !(trackId === streamId && selectedTrackId === primaryAudioTrackId)) {
-                            adaptor.enableTrack(streamId, trackId, false);
+                        if (trackId !== selectedTrackId && trackId !== streamId) {
+                            enableAudioTrack(trackId, false);
                         }
                     });
             };
