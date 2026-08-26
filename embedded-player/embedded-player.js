@@ -41,7 +41,7 @@ function initializeMultiAudioSelector() {
         window.clearInterval(findWebRTCHandler);
         const adaptor = handler.webRTCAdaptor;
         window.webRTCAdaptor = adaptor;
-        console.log("[MultiAudio] Exposed window.webRTCAdaptor");
+        console.log("[MultiAudio] WebRTC adaptor is ready");
 
         const requestTrackList = () => {
             if (typeof adaptor.getTracks === "function") {
@@ -50,14 +50,15 @@ function initializeMultiAudioSelector() {
         };
 
         const updateSelector = trackList => {
+            console.log("[MultiAudio] WebRTC raw trackList:", trackList);
             const trackIdsFromServer = (trackList || [])
                 .filter((trackId, index, trackIds) => trackId && trackIds.indexOf(trackId) === index);
-            const hasLanguageTrackIds = trackIdsFromServer.some(trackId => {
+            const hasLanguageTrackIds = trackIdsFromServer.some(trackId => trackId !== streamId && getAudioLanguageFromTrackId(trackId));
+            const audioTrackIds = trackIdsFromServer.filter(trackId => {
                 const languagePart = getAudioLanguageFromTrackId(trackId);
-                return languagePart && !/^audio_\d+$/.test(languagePart);
+                return !(hasLanguageTrackIds && trackId === streamId) && !isDefaultAudioTrackId(languagePart || trackId);
             });
-            const audioTrackIds = (hasLanguageTrackIds ? trackIdsFromServer : [streamId].concat(trackIdsFromServer))
-                .filter((trackId, index, trackIds) => trackId && trackIds.indexOf(trackId) === index);
+            console.log("[MultiAudio] WebRTC audio track ids:", audioTrackIds);
             container.style.display = audioTrackIds.length > 1 ? "block" : "none";
             if (audioTrackIds.join("|") === lastAudioTrackIds.join("|")) {
                 return audioTrackIds.length;
@@ -69,6 +70,7 @@ function initializeMultiAudioSelector() {
                 const option = document.createElement("option");
                 option.value = trackId;
                 option.textContent = getAudioTrackLabel(trackId, index);
+                console.log("[MultiAudio] WebRTC audio option:", trackId, option.textContent);
                 selector.appendChild(option);
             });
 
@@ -78,10 +80,10 @@ function initializeMultiAudioSelector() {
 
             const selectAudioTrack = selectedTrackId => {
                 enableAudioTrack(selectedTrackId, true);
-                [streamId].concat(audioTrackIds)
+                audioTrackIds
                     .filter((trackId, index, trackIds) => trackId && trackIds.indexOf(trackId) === index)
                     .forEach(trackId => {
-                        if (trackId !== selectedTrackId && trackId !== streamId) {
+                        if (trackId !== selectedTrackId) {
                             enableAudioTrack(trackId, false);
                         }
                     });
@@ -102,11 +104,13 @@ function initializeMultiAudioSelector() {
 
         const getAudioTrackLabel = (trackId, index) => {
             const language = getAudioLanguageFromTrackId(trackId);
-            if (language && !/^audio_\d+$/.test(language)) {
+            if (language && !isDefaultAudioTrackId(language)) {
                 return language.replace(/_/g, " ");
             }
             return index === 0 ? "Audio 1 (default)" : `Audio ${index + 1}`;
         };
+
+        const isDefaultAudioTrackId = trackId => /^audio(_\d+)?$/i.test(trackId);
 
         const refreshTrackListUntilAudioTracksAreReady = () => {
             let refreshAttempts = 0;
@@ -124,6 +128,7 @@ function initializeMultiAudioSelector() {
         };
 
         const handleWebRTCInfo = (info, obj) => {
+            console.log("[MultiAudio] WebRTC info:", info, obj);
             if (info === "play_started") {
                 refreshTrackListUntilAudioTracksAreReady();
             }
@@ -145,8 +150,6 @@ function initializeMultiAudioSelector() {
 }
 
 function initializeHlsAudioTrackLabels() {
-    const container = document.getElementById("audioTrackSelectorContainer");
-    const selector = document.getElementById("audioTrackSelector");
     let attempts = 0;
     const findVideoJSPlayer = window.setInterval(() => {
         attempts++;
@@ -160,44 +163,25 @@ function initializeHlsAudioTrackLabels() {
 
         window.clearInterval(findVideoJSPlayer);
         const audioTracks = player.audioTracks();
-        const updateAudioTracks = () => {
-            const selectedTrackId = selector.value;
-            selector.innerHTML = "";
-
+        const updateDefaultAudioTrackLabels = () => {
             for (let i = 0; i < audioTracks.length; i++) {
                 const track = audioTracks[i];
-                if (/^audio_\d+$/.test(track.label) && track.language && track.language.toLowerCase() !== "und") {
+                if (/^audio(_\d+)?$/i.test(track.label) && track.language && track.language.toLowerCase() !== "und") {
                     track.label = track.language;
                 }
-                const option = document.createElement("option");
-                option.value = track.id || track.label || String(i);
-                option.textContent = track.label || track.language || `Audio ${i + 1}`;
-                selector.appendChild(option);
-            }
-
-            container.style.display = audioTracks.length > 1 ? "block" : "none";
-            if (audioTracks.length > 0) {
-                selector.selectedIndex = Math.max(0, Array.from(selector.options).findIndex(option => option.value === selectedTrackId));
-                audioTracks[selector.selectedIndex].enabled = true;
             }
         };
 
-        selector.onchange = () => {
-            for (let i = 0; i < audioTracks.length; i++) {
-                audioTracks[i].enabled = i === selector.selectedIndex;
-            }
-        };
-
-        audioTracks.addEventListener("addtrack", updateAudioTracks);
-        player.on("loadedmetadata", updateAudioTracks);
+        audioTracks.addEventListener("addtrack", updateDefaultAudioTrackLabels);
+        audioTracks.addEventListener("change", updateDefaultAudioTrackLabels);
+        player.on("loadedmetadata", updateDefaultAudioTrackLabels);
         player.on("dispose", () => {
-            audioTracks.removeEventListener("addtrack", updateAudioTracks);
+            audioTracks.removeEventListener("addtrack", updateDefaultAudioTrackLabels);
+            audioTracks.removeEventListener("change", updateDefaultAudioTrackLabels);
         });
-        updateAudioTracks();
+        updateDefaultAudioTrackLabels();
     }, 100);
 }
-
-
 
 webPlayer.addWebRTCDataListener((data) => {
     console.debug("Data received: " + data);
