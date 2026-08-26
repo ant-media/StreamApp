@@ -4,9 +4,18 @@ var webPlayer = new WebPlayer(window, document.getElementById("video_container")
 
 webPlayer.initialize().then(() => {
     webPlayer.play();
-    initializeMultiAudioSelector();
-    initializeHlsAudioTrackLabels();
+    if (isPlayOrderEnabled("webrtc")) {
+        initializeMultiAudioSelector();
+    }
+    if (isPlayOrderEnabled("hls") || isPlayOrderEnabled("ll-hls")) {
+        initializeHlsAudioTrackLabels();
+    }
 });
+
+function isPlayOrderEnabled(playType) {
+    const playOrder = getUrlParameter("playOrder", window.location.search);
+    return !playOrder || playOrder.split(",").map(item => item.trim()).includes(playType);
+}
 
 function initializeMultiAudioSelector() {
     const streamId = getUrlParameter("id", window.location.search);
@@ -49,7 +58,6 @@ function initializeMultiAudioSelector() {
             });
             const audioTrackIds = (hasLanguageTrackIds ? trackIdsFromServer : [streamId].concat(trackIdsFromServer))
                 .filter((trackId, index, trackIds) => trackId && trackIds.indexOf(trackId) === index);
-            console.log("[MultiAudio] Audio tracks from getTrackList:", audioTrackIds);
             container.style.display = audioTrackIds.length > 1 ? "block" : "none";
             if (audioTrackIds.join("|") === lastAudioTrackIds.join("|")) {
                 return audioTrackIds.length;
@@ -65,16 +73,6 @@ function initializeMultiAudioSelector() {
             });
 
             const enableAudioTrack = (trackId, enabled) => {
-                if (adaptor.webSocketAdaptor && typeof adaptor.webSocketAdaptor.send === "function") {
-                    adaptor.webSocketAdaptor.send(JSON.stringify({
-                        command: "enableTrack",
-                        streamId: streamId,
-                        trackId: trackId,
-                        enabled: enabled,
-                        audioOnly: true,
-                    }));
-                    return;
-                }
                 adaptor.enableTrack(streamId, trackId, enabled, true);
             };
 
@@ -89,7 +87,6 @@ function initializeMultiAudioSelector() {
                     });
             };
             selector.onchange = () => selectAudioTrack(selector.value);
-            console.log("[MultiAudio] Selector visible:", audioTrackIds.length > 1);
             lastAudioTrackIds = audioTrackIds;
             if (audioTrackIds.length > 0) {
                 selector.value = audioTrackIds.includes(selectedTrackId) ? selectedTrackId : audioTrackIds[0];
@@ -127,7 +124,6 @@ function initializeMultiAudioSelector() {
         };
 
         const handleWebRTCInfo = (info, obj) => {
-            console.log("[MultiAudio] WebRTC info:", info, obj);
             if (info === "play_started") {
                 refreshTrackListUntilAudioTracksAreReady();
             }
@@ -149,6 +145,8 @@ function initializeMultiAudioSelector() {
 }
 
 function initializeHlsAudioTrackLabels() {
+    const container = document.getElementById("audioTrackSelectorContainer");
+    const selector = document.getElementById("audioTrackSelector");
     let attempts = 0;
     const findVideoJSPlayer = window.setInterval(() => {
         attempts++;
@@ -162,23 +160,40 @@ function initializeHlsAudioTrackLabels() {
 
         window.clearInterval(findVideoJSPlayer);
         const audioTracks = player.audioTracks();
-        const updateDefaultAudioTrackLabels = () => {
+        const updateAudioTracks = () => {
+            const selectedTrackId = selector.value;
+            selector.innerHTML = "";
+
             for (let i = 0; i < audioTracks.length; i++) {
                 const track = audioTracks[i];
                 if (/^audio_\d+$/.test(track.label) && track.language && track.language.toLowerCase() !== "und") {
                     track.label = track.language;
                 }
+                const option = document.createElement("option");
+                option.value = track.id || track.label || String(i);
+                option.textContent = track.label || track.language || `Audio ${i + 1}`;
+                selector.appendChild(option);
+            }
+
+            container.style.display = audioTracks.length > 1 ? "block" : "none";
+            if (audioTracks.length > 0) {
+                selector.selectedIndex = Math.max(0, Array.from(selector.options).findIndex(option => option.value === selectedTrackId));
+                audioTracks[selector.selectedIndex].enabled = true;
             }
         };
 
-        audioTracks.addEventListener("addtrack", updateDefaultAudioTrackLabels);
-        audioTracks.addEventListener("change", updateDefaultAudioTrackLabels);
-        player.on("loadedmetadata", updateDefaultAudioTrackLabels);
+        selector.onchange = () => {
+            for (let i = 0; i < audioTracks.length; i++) {
+                audioTracks[i].enabled = i === selector.selectedIndex;
+            }
+        };
+
+        audioTracks.addEventListener("addtrack", updateAudioTracks);
+        player.on("loadedmetadata", updateAudioTracks);
         player.on("dispose", () => {
-            audioTracks.removeEventListener("addtrack", updateDefaultAudioTrackLabels);
-            audioTracks.removeEventListener("change", updateDefaultAudioTrackLabels);
+            audioTracks.removeEventListener("addtrack", updateAudioTracks);
         });
-        updateDefaultAudioTrackLabels();
+        updateAudioTracks();
     }, 100);
 }
 
