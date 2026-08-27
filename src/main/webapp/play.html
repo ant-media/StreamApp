@@ -21,10 +21,6 @@
 	<div id="video_container">
 		<video id='video-player' class='video-js vjs-default-skin vjs-big-play-centered' controls playsinline></video>
 	</div>
-	<div id="audioTrackSelectorContainer">
-		<label for="audioTrackSelector">Audio track</label>
-		<select id="audioTrackSelector"></select>
-	</div>
 
 	<div id="networkWarning">Your connection isn't fast enough to play this stream!</div>
 	<img id="play_button" src="images/play.png" onclick="playWebRTCVideo()"
@@ -35,7 +31,7 @@
 	<button id="unmuteButton" title="Mute/Unmute Video">
 		Unmute
 	</button>
-	<script type="module" src="./js/embedded-player.js?v=multi-audio-track-selection">
+	<script type="module" src="./js/embedded-player.js">
 		/**
 		* This page accepts following arguments through http query parameters
         *

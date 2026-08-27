@@ -8,30 +8,6 @@ body {
     display: none;
 }
 
-#audioTrackSelectorContainer {
-    display: none;
-    position: fixed;
-    top: 16px;
-    right: 16px;
-    z-index: 10000000;
-    width: 210px;
-    padding: 9px 11px;
-    border-radius: 6px;
-    background: rgba(0, 0, 0, .72);
-    color: white;
-    font-size: 13px;
-}
-
-#audioTrackSelectorContainer label {
-    display: block;
-    margin-bottom: 5px;
-}
-
-#audioTrackSelector {
-    width: 100%;
-    padding: 5px;
-}
-
 #video_info {
     color: white !important;
     position: absolute;
