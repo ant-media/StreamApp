@@ -8,6 +8,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>io.antmedia.webrtc</groupId>
 	<artifactId>StreamApp</artifactId>
+	<version>${project.parent.version}</version>
 	<packaging>war</packaging>
 	<name>StreamApp Maven Webapp</name>
 	<url>http://maven.apache.org</url>
@@ -28,6 +29,11 @@
 			<comments>A business-friendly OSS license</comments>
 		</license>
 	</licenses>
+	<scm>
+		<connection>scm:git:https://github.com/ant-media/StreamApp.git</connection>
+		<developerConnection>scm:git:git@github.com:ant-media/StreamApp.git</developerConnection>
+		<url>https://github.com/ant-media/StreamApp</url>
+	</scm>
 	
 	<repositories>
         <repository>
@@ -150,6 +156,7 @@
 		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-api</artifactId>
+			<version>${slf4j.version}</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
@@ -168,6 +175,7 @@
 		<dependency>
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-context-support</artifactId>
+			<version>${spring.version}</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
@@ -179,11 +187,13 @@
 		<dependency>
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-context</artifactId>
+			<version>${spring.version}</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-core</artifactId>
+			<version>${spring.version}</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
@@ -207,6 +217,7 @@
 		<dependency>
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-web</artifactId>
+			<version>${spring.version}</version>
 			<scope>provided</scope>
 		</dependency>
 		  <dependency>
@@ -226,26 +237,31 @@
 		<dependency>
 			<groupId>org.springframework.security</groupId>
 			<artifactId>spring-security-core</artifactId>
+			<version>${spring-security-core.version}</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.security</groupId>
 			<artifactId>spring-security-config</artifactId>
+			<version>${spring-security-core.version}</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.security</groupId>
 			<artifactId>spring-security-web</artifactId>
+			<version>${spring-security-core.version}</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.security</groupId>
 			<artifactId>spring-security-crypto</artifactId>
+			<version>${spring-security-core.version}</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.security</groupId>
 			<artifactId>spring-security-oauth2-authorization-server</artifactId>
+			<version>1.4.0</version>
 			<scope>provided</scope>
 		</dependency>
 
@@ -254,17 +270,20 @@
 		<dependency>
 			<groupId>org.springframework.security</groupId>
 			<artifactId>spring-security-oauth2-client</artifactId>
+			<version>${spring-security-core.version}</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.security</groupId>
 			<artifactId>spring-security-oauth2-jose</artifactId>
+			<version>${spring-security-core.version}</version>
 			<scope>provided</scope>
 		</dependency>
 		
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
+			<version>${junit.version}</version>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
