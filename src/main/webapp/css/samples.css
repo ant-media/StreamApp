@@ -25,7 +25,6 @@ video{
 @media ( min-width : 768px) {
 	.container {
 		max-width: 730px;
-		--bs-gutter-x: 1.875rem;
 	}
 }
 
@@ -43,11 +42,6 @@ video{
 	border-radius: 0.3rem;
 }
 
-/* Bootstrap 4 padded columns even when they were not direct children of a row. */
-.jumbotron > .col-sm-12 {
-	padding-right: 15px;
-	padding-left: 15px;
-}
 #stats_panel {
 	display: none;
 }
