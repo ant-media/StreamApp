@@ -15,23 +15,23 @@
 <body>
 	<div>
 		<div class="jumbotron">
-			<div class="col-sm-12 form-group">
+			<div class="col-sm-12 mb-3">
 				<video id="localVideo" autoplay muted controls playsinline></video>
 			</div>
 
-			<div class="form-group col-sm-12 text-left">
+			<div class="mb-3 col-sm-12 text-start">
 				<input type="text" class="form-control" id="streamId" name="streamIdTextBox"
 					placeholder="Type stream ID">
 
 			</div>
-			<div class="col-sm-12 text-right">
+			<div class="col-sm-12 text-end">
 				<button type="button" id="options" class="btn btn-outline-primary btn-sm">Options</button>
 			</div>
-			<div class="form-group col-sm-12 text-left options">
+			<div class="mb-3 col-sm-12 text-start options">
 
-				<label class=" mr-2" for="inlineFormCustomSelectPref">Max Video Bitrate(Kbps):</label>
-				<div class="form-inline">
-					<input type="text" class="form-control  mr-sm-2" id="maxBandwidthTextBox" name="maxBandwidthTextBox"
+				<label class="me-2" for="inlineFormCustomSelectPref">Max Video Bitrate(Kbps):</label>
+				<div class="d-flex align-items-center gap-2">
+					<input type="text" class="form-control" id="maxBandwidthTextBox" name="maxBandwidthTextBox"
 						value="1200">
 
 					<button type="button" class="btn btn-outline-primary btn-sm" id="max_bandwidth_apply">Apply</button>
@@ -45,37 +45,37 @@
 
 
 				<legend class="col-form-label microphone-gain-legend">Microphone Gain</legend>
-				<div class="form-inline"><input type=range id="volume_change_input" min=0 max=1 value=1 step=0.01></div>
+				<div class="d-flex"><input type=range id="volume_change_input" min=0 max=1 value=1 step=0.01></div>
 				<legend class="col-form-label audio-quality-legend">Audio Quality</legend>
-				<div class="form-check-inline form-inline">
-					<div class="custom-control custom-switch">
-						<input type="checkbox" class="custom-control-input" name="noiseSuppression"  checked="true"
+				<div class="form-check form-switch form-check-inline">
+					<div>
+						<input type="checkbox" class="form-check-input" name="noiseSuppression"  checked="true"
 							id="noiseSuppression">
-						<label class="custom-control-label" for="noiseSuppression">Noise Supression</label>
+						<label class="form-check-label" for="noiseSuppression">Noise Supression</label>
 					</div>
 				</div>
-				<div class="form-check-inline form-inline">
-					<div class="custom-control custom-switch">
-						<input type="checkbox" class="custom-control-input" name="echoCancellation"
+				<div class="form-check form-switch form-check-inline">
+					<div>
+						<input type="checkbox" class="form-check-input" name="echoCancellation"
 							id="echoCancellation" checked="true">
-						<label class="custom-control-label" for="echoCancellation">Echo Cancellation</label>
+						<label class="form-check-label" for="echoCancellation">Echo Cancellation</label>
 					</div>
 				</div>
 
 			</div>
-			<div class="form-group col-sm-12 text-left options">
+			<div class="mb-3 col-sm-12 text-start options">
 				<label>Data Channel Messages</label>
 				<div id="all-messages" class="message_area"></div>
-				<div class="form-row">
-					<div class="form-group col-sm-8">
+				<div class="row g-2">
+					<div class="col-sm-8">
 						<input type="text" class="form-control" id="dataTextbox"
 							placeholder="Write your message to send players">
 					</div>
-					<div class="form-group col-sm-2">
-						<button type="button" id="send" class="btn btn-outline-primary btn-block">Send</button>
+					<div class="col-sm-2">
+						<button type="button" id="send" class="btn btn-outline-primary w-100">Send</button>
 					</div>
-					<div class="form-group col-sm-2">
-						<button id="send-image-button" type="button" class="btn btn-outline-primary btn-block">
+					<div class="col-sm-2">
+						<button id="send-image-button" type="button" class="btn btn-outline-primary w-100">
 							Image
 						</button>
 						<input id="file-input" type="file" name="name" accept="image/x-png,image/gif,image/jpeg"
@@ -84,29 +84,29 @@
 				</div>
 			</div>
 
-			<div class="form-group col-sm-12 text-center" id="offlineInfo" >
-				<div class="form-group col-sm-4 offset-sm-4 text-center" style="margin-bottom: 8px;font-size:1em;">
+			<div class="mb-3 col-sm-12 text-center" id="offlineInfo" >
+				<div class="mb-2 col-sm-4 offset-sm-4 text-center" style="font-size:1em;">
 					<a href="" target="_blank">&nbsp;</a> <!-- this is a place holder to keep the same alignment -->
 				</div>
-				<div class="form-group col-sm-4 offset-sm-4 text-center" style="font-size:1.2em">
-					<span class="badge  badge-secondary">Status: Offline</span>
+				<div class="mb-3 col-sm-4 offset-sm-4 text-center" style="font-size:1.2em">
+					<span class="badge text-bg-secondary">Status: Offline</span>
 				</div>
 			</div>
-			<div class="form-group col-sm-12 text-center" id="broadcastingInfo" style="display: none;">
-				<div class="form-group text-center"  style="margin-bottom: 8px;font-size:1em;">
+			<div class="mb-3 col-sm-12 text-center" id="broadcastingInfo" style="display: none;">
+				<div class="mb-2 text-center" style="font-size:1em;">
 					<a href="" id="playlink" target="_blank" data-bs-toggle="tooltip" title="Opens in New Tab">Play with WebRTC</a>
 				</div>
-				<div class="form-group text-center" style="font-size:1.2em">
-					<span class="badge  badge-success" >Status: Publishing</span>
+				<div class="mb-3 text-center" style="font-size:1.2em">
+					<span class="badge text-bg-success" >Status: Publishing</span>
 				</div>
 			</div>
 
-			<div class="form-group">
+			<div class="mb-3">
 				<button class="btn btn-primary" disabled id="start_publish_button">Start Publishing</button>
 				<button class="btn btn-primary" disabled id="stop_publish_button">Stop Publishing</button>
 			</div>
 			<div class="col-sm-10 offset-sm-1" id="stats_panel">
-				<div class="row text-muted text-left">
+				<div class="row text-muted text-start">
 					<div class="col-sm-6">
 						<small>
 							<div id="average_bit_rate_container">Average Bitrate(Kbps): <span
@@ -135,10 +135,10 @@
 				</div>
 			</div>
 		</div>
-		<footer class="footer text-left">
+		<footer class="footer text-start">
 			<div class="row">
-				<div class="col-sm-6 text-left"><a target="_parent" href="https://github.com/ant-media/StreamApp/tree/master/src/main/webapp/samples/publish_webrtc.html">View Source on Github</a></div>
-				<div class="col-sm-6 text-right">
+				<div class="col-sm-6 text-start"><a target="_parent" href="https://github.com/ant-media/StreamApp/tree/master/src/main/webapp/samples/publish_webrtc.html">View Source on Github</a></div>
+				<div class="col-sm-6 text-end">
 					<a href="http://antmedia.io" target="_parent">antmedia.io</a>
 				</div>
 			</div>

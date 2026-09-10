@@ -3,6 +3,102 @@
  * Keeps existing sample page markup visually stable.
  */
 
+/* Bootstrap 4 did not enable smooth document scrolling. */
+html {
+  scroll-behavior: auto !important;
+}
+
+:root {
+  --bs-primary: #007bff;
+  --bs-primary-rgb: 0, 123, 255;
+  --bs-secondary: #6c757d;
+  --bs-secondary-rgb: 108, 117, 125;
+  --bs-success: #28a745;
+  --bs-success-rgb: 40, 167, 69;
+  --bs-danger: #dc3545;
+  --bs-danger-rgb: 220, 53, 69;
+  --bs-warning: #ffc107;
+  --bs-warning-rgb: 255, 193, 7;
+  --bs-info: #17a2b8;
+  --bs-info-rgb: 23, 162, 184;
+  --bs-link-color: #007bff;
+  --bs-link-color-rgb: 0, 123, 255;
+  --bs-border-radius: 0.25rem;
+  --bs-border-radius-sm: 0.2rem;
+}
+
+a {
+  color: #007bff;
+  text-decoration: none;
+  background-color: transparent;
+}
+a:hover {
+  color: #0056b3;
+  text-decoration: underline;
+}
+
+/* Restore Bootstrap 4's 30px grid gutter. */
+.container,
+.container-fluid {
+  --bs-gutter-x: 1.875rem;
+}
+.row:not(.g-0):not(.g-1):not(.g-2):not(.g-3):not(.g-4):not(.g-5):not(.gx-0):not(.gx-1):not(.gx-2):not(.gx-3):not(.gx-4):not(.gx-5) {
+  --bs-gutter-x: 1.875rem;
+}
+:not(.row) > .col,
+:not(.row) > [class^="col-"]:not(.col-form-label),
+:not(.row) > [class*=" col-"]:not(.col-form-label) {
+  padding-right: 15px;
+  padding-left: 15px;
+}
+
+.form-control {
+  color: #495057;
+  border-color: #ced4da;
+  border-radius: 0.25rem;
+}
+.form-control:focus {
+  color: #495057;
+  background-color: #fff;
+  border-color: #80bdff;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.btn {
+  --bs-btn-border-radius: 0.25rem;
+}
+.btn-sm {
+  --bs-btn-border-radius: 0.2rem;
+}
+.btn-primary {
+  --bs-btn-bg: #007bff;
+  --bs-btn-border-color: #007bff;
+  --bs-btn-hover-bg: #0069d9;
+  --bs-btn-hover-border-color: #0062cc;
+  --bs-btn-focus-shadow-rgb: 38, 143, 255;
+  --bs-btn-active-bg: #0062cc;
+  --bs-btn-active-border-color: #005cbf;
+  --bs-btn-disabled-bg: #007bff;
+  --bs-btn-disabled-border-color: #007bff;
+}
+.btn-outline-primary {
+  --bs-btn-color: #007bff;
+  --bs-btn-border-color: #007bff;
+  --bs-btn-hover-bg: #007bff;
+  --bs-btn-hover-border-color: #007bff;
+  --bs-btn-focus-shadow-rgb: 0, 123, 255;
+  --bs-btn-active-bg: #007bff;
+  --bs-btn-active-border-color: #007bff;
+  --bs-btn-disabled-color: #007bff;
+  --bs-btn-disabled-border-color: #007bff;
+}
+
+.badge {
+  --bs-badge-padding-x: 0.4em;
+  --bs-badge-padding-y: 0.25em;
+  --bs-badge-border-radius: 0.25rem;
+}
+
 /* --- Spacing / text utilities renamed in BS5 --- */
 .ml-0 { margin-left: 0 !important; }
 .ml-1 { margin-left: 0.25rem !important; }
