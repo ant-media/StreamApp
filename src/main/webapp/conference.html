@@ -654,6 +654,10 @@
 
 	function handleMainTrackBroadcastObject(broadcastObject) {
 		let participantIds = broadcastObject.subTrackStreamIds;
+		if (participantIds === undefined || participantIds === null) {
+			console.warn("Skipping conference participant update: subTrackStreamIds is missing.");
+			return;
+		}
 
 		//find and remove not available tracks
 		let currentTracks = Object.keys(allParticipants);
