@@ -37,7 +37,14 @@ jobs:
         cd ..
         
     - name: Clone and build server project
+      env:
+        # Requires contents:read access to the private native-webrtc-build repository.
+        GITHUB_TOKEN: ${{ secrets.NATIVE_WEBRTC_TOKEN }}
       run: |
+        if [ -z "$GITHUB_TOKEN" ]; then
+          echo "::error::NATIVE_WEBRTC_TOKEN is required to download native WebRTC dependencies. Configure it with contents:read access to ant-media/native-webrtc-build."
+          exit 1
+        fi
         git clone --depth=1 -b ${{ github.ref_name }} https://github.com/ant-media/Ant-Media-Server.git || git clone --depth=1 https://github.com/ant-media/Ant-Media-Server.git
         cd Ant-Media-Server
         mvn clean install -DskipTests -Dmaven.javadoc.skip=true -Dgpg.skip=true --quiet
