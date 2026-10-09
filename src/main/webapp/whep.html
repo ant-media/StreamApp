@@ -75,11 +75,14 @@
                     iceServers: [{ urls: 'stun:stun1.l.google.com:19302' }]
                 });
                 
+                const remoteStream = new MediaStream();
+                video.srcObject = remoteStream;
+
                 // Add event listeners
                 pc.ontrack = (event) => {
                     console.log('Received track', event);
                     if (event.track.kind === 'video' || event.track.kind === 'audio') {
-                        video.srcObject = event.streams[0];
+                        remoteStream.addTrack(event.track);
                     }
                 };
                 
