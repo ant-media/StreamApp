@@ -43,6 +43,7 @@ public class WebSocketSignalingLocalHandler {
 
         //increase max text buffer size - Chrome 90 requires
         session.setMaxTextMessageBufferSize(8192 * 10);
+        session.setMaxIdleTimeout(30000);
         
     }
 
