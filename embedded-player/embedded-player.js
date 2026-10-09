@@ -6,8 +6,6 @@ webPlayer.initialize().then(() => {
     webPlayer.play();
 });
 
-
-
 webPlayer.addWebRTCDataListener((data) => {
     console.debug("Data received: " + data);
 });

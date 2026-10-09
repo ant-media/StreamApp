@@ -4,8 +4,9 @@
 	<title>Ant Media Server WebRTC Publish</title>
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<meta charset="UTF-8">
-	<link rel="stylesheet" href="css/external/bootstrap4/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+	<link rel="stylesheet" href="css/external/bootstrap5/bootstrap.min.css" crossorigin="anonymous">
 
+	<link rel="stylesheet" href="css/external/bootstrap5/bootstrap4-compat.css">
 	<script src="js/external/adapter-latest.js"></script>
 
 
@@ -130,31 +131,31 @@
 						<div class="col-sm-4">
 
 							<div>
-								<a id="publish_min_bit_rate_warn" style="display:none" href="#" data-toggle="tooltip" title="Min Bitrate parameter should at least 250kbps"><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/false-icon.png"></a>
+								<a id="publish_min_bit_rate_warn" style="display:none" href="#" data-bs-toggle="tooltip" title="Min Bitrate parameter should at least 250kbps"><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/false-icon.png"></a>
 								<span id="publish_min_bit_rate_info" style="display:none"><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/true-icon.png"></span>
 								<span id="publish_min_bit_rate_container">Min Bitrate(Kbps): <span id="publish_min_bit_rate"></span></span>
 							</div>
 
 							<div>
-								<a id="publish_average_bit_rate_warn" style="display:none" href="#" data-toggle="tooltip" title="Average Bitrate parameter should at least 250kbps"><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/false-icon.png"></a>
+								<a id="publish_average_bit_rate_warn" style="display:none" href="#" data-bs-toggle="tooltip" title="Average Bitrate parameter should at least 250kbps"><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/false-icon.png"></a>
 								<span id="publish_average_bit_rate_info" style="display:none"><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/true-icon.png"></span>
 								<span id="publish_average_bit_rate_container">Average Bitrate(Kbps): <span id="publish_average_bit_rate"></span></span>
 							</div>
 
 							<div>
-								<a id="publish_max_bit_rate_warn" style="display:none" href="#" data-toggle="tooltip" title="Max Bitrate parameter should at least 250kbps"><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/false-icon.png"></a>
+								<a id="publish_max_bit_rate_warn" style="display:none" href="#" data-bs-toggle="tooltip" title="Max Bitrate parameter should at least 250kbps"><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/false-icon.png"></a>
 								<span id="publish_max_bit_rate_info" style="display:none"><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/true-icon.png"></span>
 								<span id="publish_max_bit_rate_container">Max Bitrate(Kbps): <span id="publish_max_bit_rate"></span></span>
 							</div>
 
 							<div>
-								<a id="publish_packet_lost_warn" style="display:none" href="#" data-toggle="tooltip" title="Packet lost parameter should max 20"><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/false-icon.png"></a>
+								<a id="publish_packet_lost_warn" style="display:none" href="#" data-bs-toggle="tooltip" title="Packet lost parameter should max 20"><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/false-icon.png"></a>
 								<span id="publish_packet_lost_info" style="display:none"><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/true-icon.png"></span>
 								<span id="publish_packet_lost_container">PacketsLost: <span id="publish_packet_lost_text"></span></span>
 							</div>
 
 							<div>
-								<a id="publish_jitter_warn" style="display:none" href="#" data-toggle="tooltip" title="Jitter parameter should max 100ms"><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/false-icon.png"></a>
+								<a id="publish_jitter_warn" style="display:none" href="#" data-bs-toggle="tooltip" title="Jitter parameter should max 100ms"><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/false-icon.png"></a>
 								<span id="publish_jitter_info" style="display:none"><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/true-icon.png"></span>
 								<span id="publish_jitter_container">Jitter(Secs): <span id="publish_jitter_text"></span></span>
 							</div>
@@ -164,25 +165,25 @@
 						<div class="col-sm-4">
 
 							<div>
-								<a id="round_trip_time_warn" style="display:none" href="#" data-toggle="tooltip" title="RTT parameter should max 100ms"><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/false-icon.png"></a>
+								<a id="round_trip_time_warn" style="display:none" href="#" data-bs-toggle="tooltip" title="RTT parameter should max 100ms"><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/false-icon.png"></a>
 								<span id="round_trip_time_info" style="display:none"><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/true-icon.png"></span>
 								<span id="round_trip_time_container">Round Trip Time(Secs): <span id="publish_round_trip_time"></span></span>
 							</div>
 
 							<div>
-								<a id="source_resolution_warn" style="display:none" href="#" data-toggle="tooltip" title=""><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/false-icon.png"></a>
+								<a id="source_resolution_warn" style="display:none" href="#" data-bs-toggle="tooltip" title=""><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/false-icon.png"></a>
 								<span id="source_resolution_info" style="display:none"><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/true-icon.png"></span>
 								<span id="source_resolution_container">Source WidthxHeight: <span id="publish_source_width"></span> x <span id="publish_source_height"></span></span>
 							</div>
 
 							<div>
-								<a id="ongoing_resolution_warn" style="display:none" href="#" data-toggle="tooltip" title=""><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/false-icon.png"></a>
+								<a id="ongoing_resolution_warn" style="display:none" href="#" data-bs-toggle="tooltip" title=""><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/false-icon.png"></a>
 								<span id="ongoing_resolution_info" style="display:none"><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/true-icon.png"></span>
 								<span id="ongoing_resolution_container">On-going WidthxHeight: <span id="publish_ongoing_width"></span> x <span id="publish_ongoing_height"></span></span>
 							</div>
 
 							<div>
-								<a id="on_going_fps_warn" style="display:none" href="#" data-toggle="tooltip" title=""><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/false-icon.png"></a>
+								<a id="on_going_fps_warn" style="display:none" href="#" data-bs-toggle="tooltip" title=""><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/false-icon.png"></a>
 								<span id="on_going_fps_info" style="display:none"><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/true-icon.png"></span>
 								<span id="on_going_fps_container">On-going FPS: <span id="publish_on_going_fps"></span></span>
 							</div>
@@ -203,31 +204,31 @@
 					<div class="col-sm-4">
 
 						<div>
-							<a id="play_min_bit_rate_warn" style="display:none" href="#" data-toggle="tooltip" title="Min Bitrate parameter should at least 250kbps"><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/false-icon.png"></a>
+							<a id="play_min_bit_rate_warn" style="display:none" href="#" data-bs-toggle="tooltip" title="Min Bitrate parameter should at least 250kbps"><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/false-icon.png"></a>
 							<span id="play_min_bit_rate_info" style="display:none"><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/true-icon.png"></span>
 							<span id="play_min_bit_rate_container">Min Bitrate(Kbps): <span id="play_min_bit_rate"></span></span>
 						</div>
 
 						<div>
-							<a id="play_average_bit_rate_warn" style="display:none" href="#" data-toggle="tooltip" title="Average Bitrate parameter should at least 250kbps"><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/false-icon.png"></a>
+							<a id="play_average_bit_rate_warn" style="display:none" href="#" data-bs-toggle="tooltip" title="Average Bitrate parameter should at least 250kbps"><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/false-icon.png"></a>
 							<span id="play_average_bit_rate_info" style="display:none"><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/true-icon.png"></span>
 							<span id="play_average_bit_rate_container">Average Bitrate(Kbps): <span id="play_average_bit_rate"></span></span>
 						</div>
 
 						<div>
-							<a id="play_max_bit_rate_warn" style="display:none" href="#" data-toggle="tooltip" title="Max Bitrate parameter should at least 250kbps"><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/false-icon.png"></a>
+							<a id="play_max_bit_rate_warn" style="display:none" href="#" data-bs-toggle="tooltip" title="Max Bitrate parameter should at least 250kbps"><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/false-icon.png"></a>
 							<span id="play_max_bit_rate_info" style="display:none"><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/true-icon.png"></span>
 							<span id="play_max_bit_rate_container">Max Bitrate(Kbps): <span id="play_max_bit_rate"></span></span>
 						</div>
 
 						<div>
-							<a id="play_packet_lost_warn" style="display:none"  href="#" data-toggle="tooltip" title="Packet lost parameter should max 20"><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/false-icon.png"></a>
+							<a id="play_packet_lost_warn" style="display:none"  href="#" data-bs-toggle="tooltip" title="Packet lost parameter should max 20"><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/false-icon.png"></a>
 							<span id="play_packet_lost_info" style="display:none"><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/true-icon.png"></span>
 							<span id="play_packet_lost_container">PacketsLost: <span id="play_packet_lost_text"></span></span>
 						</div>
 
 						<div>
-							<a id="play_jitter_warn" style="display:none" href="#" data-toggle="tooltip" title="Jitter parameter should max 100ms"><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/false-icon.png"></a>
+							<a id="play_jitter_warn" style="display:none" href="#" data-bs-toggle="tooltip" title="Jitter parameter should max 100ms"><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/false-icon.png"></a>
 							<span id="play_jitter_info" style="display:none"><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/true-icon.png"></span>
 							<span id="play_jitter_container">Jitter Average Delay(Secs): <span id="play_jitter_text"></span></span>
 						</div>
@@ -236,25 +237,25 @@
 					<div class="col-sm-4">
 
 						<div>
-							<a id="incoming_resolution_warn" style="display:none" href="#" data-toggle="tooltip" title=""><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/false-icon.png"></a>
+							<a id="incoming_resolution_warn" style="display:none" href="#" data-bs-toggle="tooltip" title=""><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/false-icon.png"></a>
 							<span id="incoming_resolution_info" style="display:none"><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/true-icon.png"></span>
 							<span id="incoming_resolution_container">Frame WidthxHeight: <span id="play_frame_width"></span>x<span id="play_frame_height"></span></span>
 						</div>
 
 						<div>
-							<a id="frame_decoded_warn" style="display:none" href="#" data-toggle="tooltip" title=""><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/false-icon.png"></a>
+							<a id="frame_decoded_warn" style="display:none" href="#" data-bs-toggle="tooltip" title=""><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/false-icon.png"></a>
 							<span id="frame_decoded_info" style="display:none"><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/true-icon.png"></span>
 							<span id="frame_decoded_container">Frames Decoded: <span id="play_frame_decoded"></span></span>
 						</div>
 
 						<div>
-							<a id="frame_dropped_warn" style="display:none" href="#" data-toggle="tooltip" title="Frames Dropped parameter should max 20"><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/false-icon.png"></a>
+							<a id="frame_dropped_warn" style="display:none" href="#" data-bs-toggle="tooltip" title="Frames Dropped parameter should max 20"><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/false-icon.png"></a>
 							<span id="frame_dropped_info" style="display:none"><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/true-icon.png"></span>
 							<span id="frame_dropped_container">Frames Dropped: <span id="play_frame_dropped"></span></span>
 						</div>
 
 						<div>
-							<a id="frame_received_warn" style="display:none" href="#" data-toggle="tooltip" title=""><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/false-icon.png"></a>
+							<a id="frame_received_warn" style="display:none" href="#" data-bs-toggle="tooltip" title=""><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/false-icon.png"></a>
 							<span id="frame_received_info" style="display:none"><img src="https://raw.githubusercontent.com/wiki/ant-media/Ant-Media-Server/images/true-icon.png"></span>
 							<span id="frame_received_container">Frames Received: <span id="play_frame_received"></span></span>
 						</div>
@@ -280,8 +281,7 @@
 	</div>
 
 	<script src="js/external/jquery-3.7.1.min.js"  crossorigin="anonymous"></script>
-	<script src="js/external/popper.min.js" crossorigin="anonymous"></script>
-	<script src="js/external/bootstrap.min.js"  crossorigin="anonymous"></script>
+	<script src="js/external/bootstrap.bundle.min.js"  crossorigin="anonymous"></script>
 	<script src="js/external/notify.min.js" crossorigin="anonymous"></script>
 
 </body>
@@ -290,6 +290,9 @@
 	import {getUrlParameter} from "./js/fetch.stream.js"
 
 	function init () {
+		document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (el) {
+			new bootstrap.Tooltip(el);
+		});
 		var id = getUrlParameter("id");
 		if(typeof id != "undefined") {
 			$("#streamName").val(id);
