@@ -6,7 +6,7 @@
     <meta charset="UTF-8" />
     <link
       rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css"
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
     />
     <style>
       video {
@@ -55,7 +55,16 @@
         font-size: 12px;
       }
     </style>
-  </head>
+  
+    <style>
+      .jumbotron {
+        padding: 2rem 1rem;
+        margin-bottom: 2rem;
+        background-color: #e9ecef;
+        border-radius: 0.3rem;
+      }
+    </style>
+</head>
 
   <body>
     <div class="container">
@@ -281,7 +290,7 @@
           style="display: none"
         >
           <div class="form-group text-center" style="margin-bottom: 8px; font-size: 1em;">
-            <a href="" id="playlink" target="_blank" data-toggle="tooltip" title="Opens in New Tab">Play with WebRTC</a>
+            <a href="" id="playlink" target="_blank" data-bs-toggle="tooltip" title="Opens in New Tab">Play with WebRTC</a>
           </div>
           <div class="form-group text-center" style="font-size: 1.2em">
             <span class="badge badge-success">Status: Publishing</span>
@@ -323,7 +332,7 @@
     </div>
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
 
     <script type="module">
       import {
