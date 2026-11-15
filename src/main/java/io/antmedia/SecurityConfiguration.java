@@ -31,7 +31,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.session.RegisterSessionAuthenticationStrategy;
 import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
 import org.springframework.security.web.session.HttpSessionEventPublisher;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
 
 @EnableWebSecurity
 class SecurityConfiguration {
@@ -58,16 +58,16 @@ class SecurityConfiguration {
     public SecurityFilterChain resourceServerFilterChain(HttpSecurity http) throws Exception {
         http.authorizeHttpRequests(auth -> auth
                 // Allows preflight requests from browser for any paths under /appName/**
-                .requestMatchers(new AntPathRequestMatcher("/**", HttpMethod.OPTIONS.name()))
+                .requestMatchers(PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.OPTIONS, "/**"))
                 .permitAll()
                 // Allow access without authentication to /appName/rest/**
-                .requestMatchers(new AntPathRequestMatcher("/rest/**"))
+                .requestMatchers(PathPatternRequestMatcher.withDefaults().matcher("/rest/**"))
                 .permitAll()
                 // Require authentication for all other paths under /appName/**
-                .requestMatchers(new AntPathRequestMatcher("/" + appName + "/**"))
+                .requestMatchers(PathPatternRequestMatcher.withDefaults().matcher("/" + appName + "/**"))
                 .hasRole(role)
                 // Permit access to the root URL
-                .requestMatchers(new AntPathRequestMatcher("/"))
+                .requestMatchers(PathPatternRequestMatcher.withDefaults().matcher("/"))
                 .permitAll()
                 // Authenticate any other request
                 .anyRequest().authenticated()
