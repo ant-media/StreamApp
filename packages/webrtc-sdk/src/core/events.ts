@@ -9,6 +9,14 @@ export interface EventMap {
   initialized: void;
   closed: unknown;
   server_will_stop: unknown;
+  /** Emitted when auto-managed endpoint resolution begins (Lambda call) */
+  endpoint_resolving: void;
+  /** Emitted when the Lambda returns instance info successfully */
+  endpoint_resolved: { websocketUrl: string; httpUrl: string };
+  /** Emitted while polling for the auto-managed instance to become ready */
+  instance_waiting: { attempt: number; elapsedMs: number };
+  /** Emitted when endpoint resolution or instance readiness times out */
+  endpoint_timeout: { elapsedMs: number; maxMs: number };
   /** Emitted when new local tracks are attached or replaced; used internally to refresh senders */
   publish_started: { streamId: string };
   publish_finished: { streamId: string };

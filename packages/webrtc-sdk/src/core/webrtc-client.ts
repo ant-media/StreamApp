@@ -172,6 +172,8 @@ export class WebRTCClient extends Emitter<EventMap> {
       this.ws = new WebSocketAdaptor({
         websocketURL: opts.websocketURL,
         httpEndpointUrl: opts.httpEndpointUrl,
+        httpEndpointAccessToken: opts.httpEndpointAccessToken,
+        endpointTimeoutMs: opts.endpointTimeoutMs,
         webrtcadaptor: {
           notifyEventListeners: (info: string, obj?: unknown) =>
             this.notify(info as keyof EventMap, obj as never),

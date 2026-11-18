@@ -141,6 +141,8 @@ export abstract class BaseClient extends Emitter<EventMap> {
       this.ws = new WebSocketAdaptor({
         websocketURL: opts.websocketURL,
         httpEndpointUrl: opts.httpEndpointUrl,
+        httpEndpointAccessToken: opts.httpEndpointAccessToken,
+        endpointTimeoutMs: opts.endpointTimeoutMs,
         webrtcadaptor: {
           notifyEventListeners: (info: string, obj?: unknown) =>
             this.handleTransportEvent(info, obj),
@@ -896,6 +898,7 @@ export abstract class BaseClient extends Emitter<EventMap> {
       }
 
       this.onInitialized();
+      this.emit("initialized", undefined as never);
       return;
     } else if (info === "start") {
       const { streamId } = obj as { streamId: string };

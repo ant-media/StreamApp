@@ -11,8 +11,12 @@ export type Role = "publisher" | "viewer";
 export interface BaseClientOptions {
   /** WebSocket signaling URL (e.g. wss://host:5443/App/websocket) */
   websocketURL?: string;
-  /** HTTP REST endpoint of Ant Media (used as fallback by signaling layer) */
+  /** HTTP endpoint URL (e.g. Lambda URL) that returns the websocket URL for auto-managed instances */
   httpEndpointUrl?: string;
+  /** Access token sent as a query parameter when resolving the HTTP endpoint */
+  httpEndpointAccessToken?: string;
+  /** Maximum time (ms) to wait for auto-managed endpoint resolution and instance readiness (default: 120000) */
+  endpointTimeoutMs?: number;
   /** If true, initializes in play-only mode and skips getUserMedia */
   isPlayMode?: boolean;
   /** If true, creates data-only sessions without capturing audio/video locally */
